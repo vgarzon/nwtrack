@@ -9,13 +9,12 @@ from nwtrack.config import settings
 
 
 def init_db_from_ddl_script(ddl_script_path: str) -> None:
-    conn = sqlite3.connect(settings.db_file_path)
-    conn.execute("PRAGMA foreign_keys = ON;")
-    cursor = conn.cursor()
-
     with open(ddl_script_path, "r") as f:
         ddl_script = f.read()
 
+    conn = sqlite3.connect(settings.db_file_path)
+    conn.execute("PRAGMA foreign_keys = ON;")
+    cursor = conn.cursor()
     cursor.executescript(ddl_script)
     conn.commit()
     conn.close()
