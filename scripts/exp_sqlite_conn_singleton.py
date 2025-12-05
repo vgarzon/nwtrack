@@ -1,7 +1,5 @@
 """
 nwtracK: Net worth tracker app experimental script
-
-Prototype SQLite connection singleton and database initialization
 """
 
 import sqlite3
@@ -9,9 +7,28 @@ import sqlite3
 from nwtrack.config import settings
 from nwtrack.fileio import csv_file_to_list_dict
 
+from typing import Protocol
 
-# SQLite database from DDL script.
+
+class DBConnection(Protocol):
+    """Database connection manager protocol."""
+
+    def get_connection(self): ...
+
+    def execute_script(self, sql: str) -> None: ...
+
+    def execute(self, query: str, params: dict = {}) -> int: ...
+
+    def execute_many(self, query: str, params: list[dict] = []) -> int: ...
+
+    def fetch_all(self, query: str, params: dict = {}) -> list[dict]: ...
+
+    def close_connection(self) -> None: ...
+
+
 class SQLiteConnection:
+    """SQLite database connection manager."""
+
     def __init__(self, db_file_path: str = ":memory:") -> None:
         self._db_file_path = db_file_path
         self._connection = None
@@ -30,13 +47,13 @@ class SQLiteConnection:
         with self.get_connection() as conn:
             conn.executescript(sql)
 
-    def execute(self, query: str, params: dict = {}) -> list[dict]:
+    def execute(self, query: str, params: dict = {}) -> int:
         with self.get_connection() as conn:
             cursor = conn.execute(query, params)
             rowcount = cursor.rowcount
         return rowcount
 
-    def execute_many(self, query: str, params: dict = {}) -> list[dict]:
+    def execute_many(self, query: str, params: list[dict] = []) -> int:
         with self.get_connection() as conn:
             cursor = conn.executemany(query, params)
             rowcount = cursor.rowcount
@@ -48,25 +65,21 @@ class SQLiteConnection:
             results = cursor.fetchall()
         return results
 
-    def close_connection(self):
+    def close_connection(self) -> None:
         if self._connection:
             self._connection.close()
             self._connection = None
 
 
-# Initialize database schema from DDL script.
-
-
-def init_db_from_ddl_script(db: SQLiteConnection, ddl_script_path: str) -> None:
+def init_db_from_ddl_script(db: DBConnection, ddl_script_path: str) -> None:
+    """Initialize the database schema from a DDL script file."""
     with open(ddl_script_path, "r") as f:
         ddl_script = f.read()
     db.execute_script(ddl_script)
 
 
-# Initialize reference tables.
-
-
-def init_currencies(db: SQLiteConnection, data: list[dict]) -> None:
+def init_currencies(db: DBConnection, data: list[dict]) -> None:
+    """Initialize the currencies table with data."""
     rowcount = db.execute_many(
         "INSERT INTO currencies (code, name) VALUES (:code, :name);",
         data,
@@ -74,7 +87,8 @@ def init_currencies(db: SQLiteConnection, data: list[dict]) -> None:
     print(rowcount, "currencies inserted.")
 
 
-def init_account_types(db: SQLiteConnection, data: list[dict]) -> None:
+def init_account_types(db: DBConnection, data: list[dict]) -> None:
+    """Initialize the account_types table with data."""
     rowcount = db.execute_many(
         "INSERT INTO account_types (type, kind) VALUES (:type, :kind);",
         data,
@@ -82,10 +96,8 @@ def init_account_types(db: SQLiteConnection, data: list[dict]) -> None:
     print(rowcount, "account types inserted.")
 
 
-# Insert sample account data
-
-
-def insert_accounts(db: SQLiteConnection, data: list[dict]) -> None:
+def insert_accounts(db: DBConnection, data: list[dict]) -> None:
+    """Insert account data into the accounts table."""
     rowcount = db.execute_many(
         """
         INSERT INTO accounts (id, name, description, type, currency, status)
@@ -96,10 +108,8 @@ def insert_accounts(db: SQLiteConnection, data: list[dict]) -> None:
     print(rowcount, "account rows inserted.")
 
 
-# Insert sample balances ata
-
-
-def insert_balances(db: SQLiteConnection, data: list[dict]) -> None:
+def insert_balances(db: DBConnection, data: list[dict]) -> None:
+    """Insert balance data into the balances table."""
     rowcount = db.execute_many(
         """
         INSERT INTO balances (id, account_id, date, amount)
@@ -110,10 +120,8 @@ def insert_balances(db: SQLiteConnection, data: list[dict]) -> None:
     print(rowcount, "balance rows inserted.")
 
 
-# Retrieve active accounts from the database
-
-
-def find_active_accounts(db: SQLiteConnection) -> list[dict]:
+def find_active_accounts(db: DBConnection) -> list[dict]:
+    """Find all active accounts."""
     results = db.fetch_all(
         """
         SELECT id, name
@@ -122,16 +130,13 @@ def find_active_accounts(db: SQLiteConnection) -> list[dict]:
         """
     )
     active_accounts = [{"id": account_id, "name": name} for account_id, name in results]
-
     return active_accounts
 
 
-# Calculate net worth from account balances.
-
-
 def get_net_worth_at_date(
-    db: SQLiteConnection, date: str, currency: str = "USD"
+    db: DBConnection, date: str, currency: str = "USD"
 ) -> list[dict]:
+    """Get net worth at a specific date."""
     query = """
         SELECT total_assets, total_liabilities, net_worth FROM networth_history
         WHERE date = :date AND currency = :currency;
@@ -140,7 +145,8 @@ def get_net_worth_at_date(
     return results
 
 
-def get_net_worth_history(db: SQLiteConnection, currency: str = "USD") -> list[dict]:
+def get_net_worth_history(db: DBConnection, currency: str = "USD") -> list[dict]:
+    """Get net worth history."""
     query = """
     SELECT date, total_assets, total_liabilities, net_worth FROM networth_history
     WHERE currency = :currency
@@ -150,12 +156,10 @@ def get_net_worth_history(db: SQLiteConnection, currency: str = "USD") -> list[d
     return results
 
 
-# Update account balance value.
-
-
 def update_account_balance(
-    db: SQLiteConnection, account_id: int, date: str, new_amount: int
+    db: DBConnection, account_id: int, date: str, new_amount: int
 ) -> None:
+    """Update the balance for a specific account on a specific date."""
     update_query = """
     UPDATE balances
     SET amount = :amount
@@ -167,13 +171,10 @@ def update_account_balance(
 
 
 def print_net_worth_at_date(
-    db: SQLiteConnection, as_of_date: str, currency: str = "USD"
+    db: DBConnection, as_of_date: str, currency: str = "USD"
 ) -> None:
-    query = """
-    SELECT total_assets, total_liabilities, net_worth FROM networth_history
-    WHERE date = :date AND currency = :currency;
-    """
-    results = db.fetch_all(query, {"date": as_of_date, "currency": currency})
+    results = get_net_worth_at_date(db, as_of_date, currency)
+    assert len(results) == 1, "Expected exactly one record for the given date."
 
     for row in results:
         assets, liabilities, net_worth = row
@@ -218,14 +219,6 @@ def main():
     for account in accounts:
         print(f"Account ID: {account['id']}, Name: {account['name']}")
 
-    rows = get_net_worth_at_date(db, as_of_date)
-    assert len(rows) == 1, "Expected exactly one record for the given date."
-    res = rows[0]
-    print(
-        f"Date: {as_of_date}, assets: {res['total_assets']}, "
-        f"liabilities: {res['total_liabilities']}, "
-        f"net worth: {res['net_worth']}"
-    )
     rows = get_net_worth_history(db)
     for res in rows:
         print(
