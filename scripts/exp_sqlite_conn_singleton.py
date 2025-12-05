@@ -26,6 +26,29 @@ class SQLiteConnection:
         self._connection.execute("PRAGMA foreign_keys = ON;")
         self._connection.row_factory = sqlite3.Row
 
+    def execute(self, query: str, params: dict = {}) -> list[dict]:
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(query, params)
+        rowcount = cursor.rowcount
+        conn.commit()
+        return rowcount
+
+    def execute_many(self, query: str, params: dict = {}) -> list[dict]:
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.executemany(query, params)
+        rowcount = cursor.rowcount
+        conn.commit()
+        return rowcount
+
+    def fetch_all(self, query: str, params: dict = {}) -> list[dict]:
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(query, params)
+        results = cursor.fetchall()
+        return results
+
     def close_connection(self):
         if self._connection:
             self._connection.close()
@@ -44,84 +67,61 @@ def init_db_from_ddl_script(db: SQLiteConnection, ddl_script_path: str) -> None:
 
 
 def init_currencies(db: SQLiteConnection, data: list[dict]) -> None:
-    conn = db.get_connection()
-    cursor = conn.cursor()
-    cursor.executemany(
+    rowcount = db.execute_many(
         "INSERT INTO currencies (code, name) VALUES (:code, :name);",
         data,
     )
-    print(cursor.rowcount, "currencies inserted.")
-    conn.commit()
+    print(rowcount, "currencies inserted.")
 
 
 def init_account_types(db: SQLiteConnection, data: list[dict]) -> None:
-    conn = db.get_connection()
-    cursor = conn.cursor()
-    cursor.executemany(
+    rowcount = db.execute_many(
         "INSERT INTO account_types (type, kind) VALUES (:type, :kind);",
         data,
     )
-    print(cursor.rowcount, "account types inserted.")
-    conn.commit()
+    print(rowcount, "account types inserted.")
 
 
 # Insert sample account data
 
 
 def insert_accounts(db: SQLiteConnection, data: list[dict]) -> None:
-    conn = db.get_connection()
-    cursor = conn.cursor()
-    cursor.executemany(
+    rowcount = db.execute_many(
         """
         INSERT INTO accounts (id, name, description, type, currency, status)
         VALUES (:id, :name, :description, :type, :currency, :status);
         """,
         data,
     )
-    print(cursor.rowcount, "account rows inserted.")
-    conn.commit()
+    print(rowcount, "account rows inserted.")
 
 
-# Insert sample balances data
+# Insert sample balances ata
 
 
 def insert_balances(db: SQLiteConnection, data: list[dict]) -> None:
-    conn = db.get_connection()
-    cursor = conn.cursor()
-    cursor.executemany(
+    rowcount = db.execute_many(
         """
         INSERT INTO balances (id, account_id, date, amount)
         VALUES (:id, :account_id, :date, :amount);
         """,
         data,
     )
-    print(cursor.rowcount, "balance rows inserted.")
-    conn.commit()
+    print(rowcount, "balance rows inserted.")
 
 
 # Retrieve active accounts from the database
 
 
 def find_active_accounts(db: SQLiteConnection) -> list[dict]:
-    conn = sqlite3.connect(settings.db_file_path)
-    cursor = conn.cursor()
-    query = """
-    SELECT id, name
-    FROM accounts
-    WHERE status = 'active';
-    """
-    cursor.execute(query)
-    results = cursor.fetchall()
-
-    active_accounts = []
-    for row in results:
-        account_id, name = row
-        active_accounts.append(
-            {
-                "id": account_id,
-                "name": name,
-            }
-        )
+    results = db.fetch_all(
+        """
+        SELECT id, name
+        FROM accounts
+        WHERE status = 'active';
+        """
+    )
+    active_accounts = [{"id": account_id, "name": name} for account_id, name in results]
 
     return active_accounts
 
@@ -132,29 +132,21 @@ def find_active_accounts(db: SQLiteConnection) -> list[dict]:
 def get_net_worth_at_date(
     db: SQLiteConnection, date: str, currency: str = "USD"
 ) -> list[dict]:
-    conn = db.get_connection()
-    cursor = conn.cursor()
     query = """
-    SELECT total_assets, total_liabilities, net_worth FROM networth_history
-    WHERE date = ? AND currency = ?;
-    """
-    cursor.execute(query, (date, currency))
-    results = cursor.fetchall()
-
+        SELECT total_assets, total_liabilities, net_worth FROM networth_history
+        WHERE date = :date AND currency = :currency;
+        """
+    results = db.fetch_all(query, {"date": date, "currency": currency})
     return results
 
 
 def get_net_worth_history(db: SQLiteConnection, currency: str = "USD") -> list[dict]:
-    conn = db.get_connection()
-    cursor = conn.cursor()
     query = """
     SELECT date, total_assets, total_liabilities, net_worth FROM networth_history
-    WHERE currency = ?
+    WHERE currency = :currency
     ORDER BY date;
     """
-    cursor.execute(query, (currency,))
-    results = cursor.fetchall()
-
+    results = db.fetch_all(query, {"currency": currency})
     return results
 
 
@@ -164,31 +156,24 @@ def get_net_worth_history(db: SQLiteConnection, currency: str = "USD") -> list[d
 def update_account_balance(
     db: SQLiteConnection, account_id: int, date: str, new_amount: int
 ) -> None:
-    conn = db.get_connection()
-    cursor = conn.cursor()
     update_query = """
     UPDATE balances
-    SET amount = ?
-    WHERE account_id = ? AND date = ?;
+    SET amount = :amount
+    WHERE account_id = :account_id AND date = :date;
     """
-    cursor.execute(update_query, (new_amount, account_id, date))
-    print(f"{cursor.rowcount} row(s) updated for account_id {account_id} on {date}.")
-    conn.commit()
+    params = {"amount": new_amount, "account_id": account_id, "date": date}
+    rowcount = db.execute(update_query, params)
+    print(f"{rowcount} row(s) updated for account_id {account_id} on {date}.")
 
 
 def print_net_worth_at_date(
     db: SQLiteConnection, as_of_date: str, currency: str = "USD"
 ) -> None:
-    conn = db.get_connection()
-    cursor = conn.cursor()
-
-    # load net worth history from networth_history view
     query = """
     SELECT total_assets, total_liabilities, net_worth FROM networth_history
-    WHERE date = ? AND currency = ?;
+    WHERE date = :date AND currency = :currency;
     """
-    cursor.execute(query, (as_of_date, currency))
-    results = cursor.fetchall()
+    results = db.fetch_all(query, {"date": as_of_date, "currency": currency})
 
     for row in results:
         assets, liabilities, net_worth = row
@@ -249,7 +234,7 @@ def main():
             f"net worth: {res['net_worth']}"
         )
 
-    # Example usage: update balance for account_id 1 on 2024-02-01 to 530
+    # update balance for account_id 1 on 2024-02-01 to 530
     print("Before update:")
     print_net_worth_at_date(db, as_of_date=as_of_date)
     update_account_balance(db, account_id=1, date=as_of_date, new_amount=530)
