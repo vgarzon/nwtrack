@@ -26,27 +26,26 @@ class SQLiteConnection:
         self._connection.execute("PRAGMA foreign_keys = ON;")
         self._connection.row_factory = sqlite3.Row
 
+    def execute_script(self, sql: str) -> None:
+        with self.get_connection() as conn:
+            conn.executescript(sql)
+
     def execute(self, query: str, params: dict = {}) -> list[dict]:
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        cursor.execute(query, params)
-        rowcount = cursor.rowcount
-        conn.commit()
+        with self.get_connection() as conn:
+            cursor = conn.execute(query, params)
+            rowcount = cursor.rowcount
         return rowcount
 
     def execute_many(self, query: str, params: dict = {}) -> list[dict]:
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        cursor.executemany(query, params)
-        rowcount = cursor.rowcount
-        conn.commit()
+        with self.get_connection() as conn:
+            cursor = conn.executemany(query, params)
+            rowcount = cursor.rowcount
         return rowcount
 
     def fetch_all(self, query: str, params: dict = {}) -> list[dict]:
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        cursor.execute(query, params)
-        results = cursor.fetchall()
+        with self.get_connection() as conn:
+            cursor = conn.execute(query, params)
+            results = cursor.fetchall()
         return results
 
     def close_connection(self):
@@ -55,12 +54,13 @@ class SQLiteConnection:
             self._connection = None
 
 
+# Initialize database schema from DDL script.
+
+
 def init_db_from_ddl_script(db: SQLiteConnection, ddl_script_path: str) -> None:
-    conn = db.get_connection()
     with open(ddl_script_path, "r") as f:
         ddl_script = f.read()
-    conn.executescript(ddl_script)
-    conn.commit()
+    db.execute_script(ddl_script)
 
 
 # Initialize reference tables.
@@ -240,6 +240,8 @@ def main():
     update_account_balance(db, account_id=1, date=as_of_date, new_amount=530)
     print("After update:")
     print_net_worth_at_date(db, as_of_date=as_of_date)
+
+    db.close_connection()
 
 
 if __name__ == "__main__":
