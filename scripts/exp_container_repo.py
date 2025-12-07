@@ -32,30 +32,24 @@ def setup_container() -> Container:
 
 
 def main():
-    currencies_file = "data/reference/currencies.csv"
-    account_types_file = "data/reference/account_types.csv"
-    accounts_file = "data/sample/accounts.csv"
-    balances_file = "data/sample/balances.csv"
+    input_files = {
+        "currencies": "data/reference/currencies.csv",
+        "account_types": "data/reference/account_types.csv",
+        "accounts": "data/sample/accounts.csv",
+        "balances": "data/sample/balances.csv",
+    }
     as_of_date = "2024-02-01"
 
     container = setup_container()
     repo = container.resolve(NwTrackRepository)
 
-    print(f"Initializing currency table from {currencies_file}.")
-    currencies_data = csv_file_to_list_dict(currencies_file)
-    repo.init_currencies(currencies_data)
+    # load data from CSV files
+    data = {k: csv_file_to_list_dict(v) for k, v in input_files.items()}
 
-    print(f"Initializing account types table from {account_types_file}.")
-    account_types_data = csv_file_to_list_dict(account_types_file)
-    repo.init_account_types(account_types_data)
-
-    accounts_data = csv_file_to_list_dict(accounts_file)
-    print(f"Loaded {len(accounts_data)} accounts from {accounts_file}.")
-    repo.insert_accounts(accounts_data)
-
-    balances_data = csv_file_to_list_dict(balances_file)
-    print(f"Loaded {len(balances_data)} balance records from {balances_file}.")
-    repo.insert_balances(balances_data)
+    repo.init_currencies(data["currencies"])
+    repo.init_account_types(data["account_types"])
+    repo.insert_accounts(data["accounts"])
+    repo.insert_balances(data["balances"])
 
     accounts = repo.find_active_accounts()
     for account in accounts:
