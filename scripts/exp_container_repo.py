@@ -5,10 +5,10 @@ Experiment with dependency injection container
 """
 
 from nwtrack.config import Config, load_config
-from nwtrack.fileio import csv_file_to_list_dict
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
 from nwtrack.repos import NwTrackRepository
 from nwtrack.container import Container, Lifetime
+from nwtrack.services import NWTrackService
 
 
 def setup_container() -> Container:
@@ -25,8 +25,10 @@ def setup_container() -> Container:
         lifetime=Lifetime.SINGLETON,
     ).register(
         NwTrackRepository,
-        lambda c: NwTrackRepository(c.resolve(Config), c.resolve(DBConnectionManager)),
-        lifetime=Lifetime.SINGLETON,
+        lambda c: NwTrackRepository(c.resolve(DBConnectionManager)),
+    ).register(
+        NWTrackService,
+        lambda c: NWTrackService(c.resolve(Config), c.resolve(NwTrackRepository)),
     )
     return container
 
@@ -42,14 +44,17 @@ def main():
 
     container = setup_container()
     repo = container.resolve(NwTrackRepository)
+    svc = container.resolve(NWTrackService)
 
-    # load data from CSV files
-    data = {k: csv_file_to_list_dict(v) for k, v in input_files.items()}
-
-    repo.init_currencies(data["currencies"])
-    repo.init_account_types(data["account_types"])
-    repo.insert_accounts(data["accounts"])
-    repo.insert_balances(data["balances"])
+    svc.init_database()
+    svc.initialize_reference_data(
+        currencies_path=input_files["currencies"],
+        account_types_path=input_files["account_types"],
+    )
+    svc.insert_sample_data(
+        accounts_path=input_files["accounts"],
+        balances_path=input_files["balances"],
+    )
 
     accounts = repo.find_active_accounts()
     for account in accounts:

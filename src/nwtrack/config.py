@@ -23,9 +23,6 @@ def load_config() -> Config:
     Returns:
         Settings: An instance of the Settings dataclass with loaded configuration.
     """
-    db_file_path = os.getenv("DB_FILE_PATH", ":memory:")
-    db_ddl_path = os.getenv("DB_DDL_PATH", "sql/nwtrack_ddl.sql")
+    db_file_path = os.getenv("NWTRACK_DB_FILE_PATH", ":memory:")
+    db_ddl_path = os.getenv("NWTRACK_DB_DDL_PATH", "sql/nwtrack_ddl.sql")
     return Config(db_file_path=db_file_path, db_ddl_path=db_ddl_path)
-
-
-# settings = load_config()

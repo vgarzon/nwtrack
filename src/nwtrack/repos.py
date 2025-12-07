@@ -4,27 +4,22 @@ Repository module for nwtrack database operations.
 
 from __future__ import annotations
 
-from nwtrack.config import Config
 from nwtrack.dbmanager import DBConnectionManager
 
 
 class NwTrackRepository:
     """Repository for nwtrack database operations."""
 
-    def __init__(self, config: Config, db: DBConnectionManager) -> None:
+    def __init__(self, db: DBConnectionManager) -> None:
         self._db = db
-        self._db_ddl_path = config.db_ddl_path
-        self.init_database(self._db_ddl_path)
 
-    def init_database(self, ddl_script_path: str) -> None:
+    def init_database_ddl(self, ddl_script: str) -> None:
         """Initialize the database schema from a DDL script file.
 
         Args:
-            ddl_script_path (str): Path to the DDL script file.
+            ddl_script (str): DDL script
         """
-        print(f"Initializing database tables with script {ddl_script_path}.")
-        with open(ddl_script_path, "r") as f:
-            ddl_script = f.read()
+        print(f"Initializing database tables.")
         self._db.execute_script(ddl_script)
 
     def init_currencies(self, data: list[dict]) -> None:
