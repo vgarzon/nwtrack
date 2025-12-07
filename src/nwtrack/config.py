@@ -22,7 +22,7 @@ def _load() -> Settings:
     Returns:
         Settings: An instance of the Settings dataclass with loaded configuration.
     """
-    db_file_path = os.getenv("DB_FILE_PATH", "data/sqlite/nwtrack.db")
+    db_file_path = os.getenv("DB_FILE_PATH", ":memory:")
     return Settings(db_file_path=db_file_path)
 
 
