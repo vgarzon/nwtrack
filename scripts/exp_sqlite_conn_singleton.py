@@ -1,5 +1,7 @@
 """
 nwtracK: Net worth tracker app experimental script
+
+Experiment with dependency injection container
 """
 
 import sqlite3
@@ -219,6 +221,9 @@ class NwTrackRepository:
                 f"Net Worth: {net_worth}"
             )
 
+    def close_db_connection(self) -> None:
+        self._db.close_connection()
+
 
 def main():
     ddl_script = "sql/nwtrack_ddl.sql"
@@ -270,7 +275,7 @@ def main():
     print("After update:")
     repo.print_net_worth_at_date(as_of_date=as_of_date)
 
-    repo._db.close_connection()
+    repo.close_db_connection()
 
 
 if __name__ == "__main__":
