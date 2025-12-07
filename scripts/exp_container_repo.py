@@ -4,43 +4,42 @@ nwtrack: Net worth tracker app experimental script
 Experiment with dependency injection container
 """
 
-from nwtrack.config import settings
+from nwtrack.config import Config, load_config
 from nwtrack.fileio import csv_file_to_list_dict
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
 from nwtrack.repos import NwTrackRepository
 from nwtrack.container import Container, Lifetime
 
 
-def setup_container(db_path: str) -> Container:
-    print(f"Initializing container with {db_path=}.")
+def setup_container() -> Container:
+    print(f"Initializing container.")
     container = Container()
 
     container.register(
+        Config,
+        lambda c: load_config(),
+        lifetime=Lifetime.SINGLETON,
+    ).register(
         DBConnectionManager,
-        lambda c: SQLiteConnectionManager(db_path),
+        lambda c: SQLiteConnectionManager(c.resolve(Config)),
         lifetime=Lifetime.SINGLETON,
     ).register(
         NwTrackRepository,
-        lambda c: NwTrackRepository(c.resolve(DBConnectionManager)),
+        lambda c: NwTrackRepository(c.resolve(Config), c.resolve(DBConnectionManager)),
         lifetime=Lifetime.SINGLETON,
     )
     return container
 
 
 def main():
-    ddl_script = "sql/nwtrack_ddl.sql"
     currencies_file = "data/reference/currencies.csv"
     account_types_file = "data/reference/account_types.csv"
     accounts_file = "data/sample/accounts.csv"
     balances_file = "data/sample/balances.csv"
     as_of_date = "2024-02-01"
 
-    container = setup_container(settings.db_file_path)
-
+    container = setup_container()
     repo = container.resolve(NwTrackRepository)
-
-    print(f"DDL script: {ddl_script}.")
-    repo.init_database(ddl_script)
 
     print(f"Initializing currency table from {currencies_file}.")
     currencies_data = csv_file_to_list_dict(currencies_file)
