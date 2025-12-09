@@ -12,12 +12,12 @@ from nwtrack.services import NWTrackService
 
 
 def setup_container() -> Container:
-    print(f"Initializing container.")
+    print("Initializing container.")
     container = Container()
 
     container.register(
         Config,
-        lambda c: load_config(),
+        lambda _: load_config(),
         lifetime=Lifetime.SINGLETON,
     ).register(
         DBConnectionManager,
