@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS balances;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS account_types;
 DROP TABLE IF EXISTS currencies;
+DROP TABLE IF EXISTS exchange_rates;
 
 CREATE TABLE currencies (
     code TEXT PRIMARY KEY,  -- currency code, e.g., USD, EUR
@@ -35,9 +36,20 @@ CREATE TABLE accounts (
 CREATE TABLE balances (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     account_id INTEGER NOT NULL REFERENCES accounts(id),
-    date DATE NOT NULL,
+    year INTEGER NOT NULL,
+    month INTEGER NOT NULL,
     amount INTEGER NOT NULL,
-    UNIQUE(account_id, date)
+    UNIQUE(account_id, year, month)
+);
+
+-- Exchanges rates to convert from other currencies to USD
+CREATE TABLE exchange_rates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    currency TEXT NOT NULL REFERENCES currencies(code),
+    rate REAL NOT NULL,
+    year INTEGER NOT NULL,
+    month INTEGER NOT NULL,
+    UNIQUE(currency, year, month)
 );
 
 -------------
@@ -46,10 +58,11 @@ CREATE TABLE balances (
 
 DROP VIEW IF EXISTS networth_history;
 
--- Summary of assets and liabilities by date and currency
+-- Summary of assets and liabilities by year, month, and currency
 CREATE VIEW networth_history AS
 SELECT
-    b.date,
+    b.year,
+    b.month,
     a.currency,
     SUM(CASE WHEN at.kind = 'asset' THEN b.amount ELSE 0 END) AS total_assets,
     SUM(CASE WHEN at.kind = 'liability' THEN b.amount ELSE 0 END) AS total_liabilities,
@@ -62,7 +75,7 @@ JOIN
 JOIN
     account_types at ON a.type = at.type
 GROUP BY
-    b.date, a.currency
+    b.year, b.month, a.currency
 ORDER BY
-    b.date, a.currency;
+    b.year, b.month, a.currency;
 
