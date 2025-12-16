@@ -1,7 +1,7 @@
 """
 nwtrack: Net worth tracker
 
-Experiment with data model, database operations, and services.
+Example script to demo container, services, and repository usage with balance data
 """
 
 from nwtrack.config import Config, load_config
@@ -39,7 +39,6 @@ def main():
         "account_types": "data/sample/account_types.csv",
         "accounts": "data/sample/accounts.csv",
         "balances": "data/sample/balances.csv",
-        "exchange_rates": "data/sample/exchange_rates.csv",
     }
     account_name = "bank_1_checking"
     year = 2024

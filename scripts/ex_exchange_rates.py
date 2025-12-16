@@ -1,7 +1,7 @@
 """
 nwtrack: Net worth tracker
 
-Experiment with inserting exchange rates.
+Example script demonstrating exchange rage data handling.
 """
 
 from nwtrack.config import Config, load_config
