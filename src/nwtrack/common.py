@@ -32,5 +32,4 @@ def setup_basic_container() -> Container:
         NWTrackService,
         lambda c: NWTrackService(c.resolve(Config), c.resolve(NwTrackRepository)),
     )
-    print(container)
     return container

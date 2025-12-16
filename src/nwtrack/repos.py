@@ -180,6 +180,46 @@ class NwTrackRepository:
             name: account_id for account_id, name in results
         }
 
+    def get_balances_at_year_month(
+        self, year: int, month: int, active_only: bool = True
+    ) -> list[dict]:
+        """Get all account balances at a specific year and month.
+
+        Args:
+            year (int): Year
+            month (int): Month
+            active_only (bool): Whether to include only active accounts
+
+        Returns:
+            list[dict]: List of account balances.
+        """
+        if active_only:
+            query = """
+            SELECT a.id, a.name, b.amount
+            FROM accounts a
+            JOIN balances b ON a.id = b.account_id
+            WHERE b.year = :year AND b.month = :month AND a.status = 'active';
+            """
+        else:
+            query = """
+            SELECT a.id, a.name, b.amount
+            FROM accounts a
+            JOIN balances b ON a.id = b.account_id
+            WHERE b.year = :year AND b.month = :month;
+            """
+        results = self._db.fetch_all(query, {"year": year, "month": month})
+        balances = [
+            {
+                "account_id": account_id,
+                "account_name": name,
+                "year": year,
+                "month": month,
+                "amount": amount,
+            }
+            for account_id, name, amount in results
+        ]
+        return balances
+
     def get_account_id_by_name(self, account_name: str) -> int | None:
         """Get the account ID for a given account name.
 
@@ -277,6 +317,54 @@ class NwTrackRepository:
             for year, month, rate in results
         ]
         return exchange_rates
+
+    def check_year_month_exists_in_balances(self, year: int, month: int):
+        """Check if a specific year and month exists in the balances table.
+
+        Args:
+            year (int): Year
+            month (int): Month
+
+        Returns:
+            bool: True if the year and month exist, else False.
+        """
+        query = """
+        SELECT 1 FROM balances
+        WHERE year = :year AND month = :month
+        LIMIT 1;
+        """
+        result = self._db.fetch_one(query, {"year": year, "month": month})
+        return result is not None
+
+    def copy_balances_to_next_month(self, year: int, month: int) -> None:
+        """Roll account balances forward from one month to the next.
+
+        Args:
+            year (int): Year of the source month.
+            month (int): Month of the source month.
+        """
+        insert_query = """
+        INSERT OR IGNORE INTO balances (account_id, year, month, amount)
+        SELECT account_id, :next_year, :next_month, amount
+        FROM balances
+        WHERE year = :year AND month = :month;
+        """
+        next_year = year
+        next_month = month + 1
+        if next_month > 12:
+            next_month = 1
+            next_year += 1
+        params = {
+            "year": year,
+            "month": month,
+            "next_year": next_year,
+            "next_month": next_month,
+        }
+        cur = self._db.execute(insert_query, params)
+        print(
+            f"Copied {cur.rowcount} balances from {year}-{month:02d} "
+            f"to {next_year}-{next_month:02d}."
+        )
 
     def close_db_connection(self) -> None:
         self._db.close_connection()

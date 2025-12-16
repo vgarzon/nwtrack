@@ -131,6 +131,24 @@ class NWTrackService:
 
         self._repo.insert_exchange_rates(rates)
 
+    def copy_balances_to_next_month(self, year: int, month: int) -> None:
+        """Copy all active account balances from one month to the next.
+
+        Args:
+            year (int): Year of the source month.
+            month (int): Month of the source month.
+        """
+        # check that month is valid
+        if month < 1 or month > 12:
+            raise ValueError(f"Invalid month: {month}. Must be between 1 and 12.")
+        if not self._repo.check_year_month_exists_in_balances(year, month):
+            raise ValueError(f"No balances found for {year}-{month:02d}.")
+        print(
+            f"Service: Copying balances from {year}-{month:02d} "
+            f"to {year}-{month + 1:02d}."
+        )
+        self._repo.copy_balances_to_next_month(year, month)
+
     def print_active_accounts(self) -> None:
         """Print a table of all active accounts."""
         accounts = self._repo.get_active_accounts()
@@ -202,6 +220,26 @@ class NWTrackService:
         print("currency, year, month, rate")
         for r in rates:
             print(f"{r['currency']}, {r['year']}, {r['month']}, {r['rate']}")
+
+    def print_balances_at_year_month(
+        self, year: int, month: int, active_only: bool = True
+    ) -> None:
+        """Print all account balances at a specific year and month.
+
+        Args:
+            year (int): Year
+            month (int): Month
+            active_only (bool): Whether to include only active accounts
+        """
+        # valedate month
+        if month < 1 or month > 12:
+            raise ValueError(f"Invalid month: {month}. Must be between 1 and 12.")
+        balances = self._repo.get_balances_at_year_month(year, month, active_only)
+        print("account_name, year, month, amount")
+        for bal in balances:
+            print(
+                f"{bal['account_name']}, {bal['year']}, {bal['month']}, {bal['amount']}"
+            )
 
     def close_repo(self) -> None:
         """Close open repos."""
