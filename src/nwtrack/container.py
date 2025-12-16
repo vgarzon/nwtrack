@@ -64,3 +64,30 @@ class Container:
             self._singletons[token] = instance
 
         return instance
+
+
+def setup_basic_container() -> Container:
+    """Setup basic container with common dependencies.
+
+    Returns:
+        Container: Configured DI container.
+    """
+    print("Initializing container.")
+    container = Container()
+
+    container.register(
+        Config,
+        lambda _: load_config(),
+        lifetime=Lifetime.SINGLETON,
+    ).register(
+        DBConnectionManager,
+        lambda c: SQLiteConnectionManager(c.resolve(Config)),
+        lifetime=Lifetime.SINGLETON,
+    ).register(
+        NwTrackRepository,
+        lambda c: NwTrackRepository(c.resolve(DBConnectionManager)),
+    ).register(
+        NWTrackService,
+        lambda c: NWTrackService(c.resolve(Config), c.resolve(NwTrackRepository)),
+    )
+    return container

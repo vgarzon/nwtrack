@@ -4,33 +4,8 @@ nwtrack: Net worth tracker
 Example script demonstrating exchange rage data handling.
 """
 
-from nwtrack.config import Config, load_config
-from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
-from nwtrack.repos import NwTrackRepository
+from nwtrack.common import setup_basic_container
 from nwtrack.services import NWTrackService
-from nwtrack.container import Container, Lifetime
-
-
-def setup_container() -> Container:
-    print("Initializing container.")
-    container = Container()
-
-    container.register(
-        Config,
-        lambda _: load_config(),
-        lifetime=Lifetime.SINGLETON,
-    ).register(
-        DBConnectionManager,
-        lambda c: SQLiteConnectionManager(c.resolve(Config)),
-        lifetime=Lifetime.SINGLETON,
-    ).register(
-        NwTrackRepository,
-        lambda c: NwTrackRepository(c.resolve(DBConnectionManager)),
-    ).register(
-        NWTrackService,
-        lambda c: NWTrackService(c.resolve(Config), c.resolve(NwTrackRepository)),
-    )
-    return container
 
 
 def main():
@@ -41,7 +16,7 @@ def main():
     }
     year, month = 2024, 6
 
-    container = setup_container()
+    container = setup_basic_container()
     svc = container.resolve(NWTrackService)
 
     svc.init_database()
