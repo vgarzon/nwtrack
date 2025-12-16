@@ -95,6 +95,42 @@ class NWTrackService:
 
         self._repo.insert_balances(balances)
 
+    def insert_exchange_rates(self, exchange_rates_path: str) -> None:
+        """Insert exchange rates from a CSV file.
+
+        Args:
+            exchange_rates_path (str): Path to the exchange rates CSV file.
+        """
+        print(f"Service: Inserting exchange rates from {exchange_rates_path}.")
+        exchange_rates_data = csv_file_to_list_dict(exchange_rates_path)
+        assert exchange_rates_data, "No exchange rates data found."
+
+        # check that currency codes in the file exist in the database
+        currency_codes = self._repo.get_all_currency_codes()
+        row = exchange_rates_data[0]
+        for key in row:
+            if key.lower() in ("date", "year", "month"):
+                continue
+            if key not in currency_codes:
+                raise ValueError(f"Currency code '{key}' not found in database.")
+
+        rates = []
+        for row in exchange_rates_data:
+            for key in row:
+                if key.lower() in ("date", "year", "month"):
+                    continue
+                if not row[key]:
+                    continue
+                rate = {
+                    "currency": key,
+                    "year": int(row["year"]),
+                    "month": int(row["month"]),
+                    "rate": float(row[key]),
+                }
+                rates.append(rate)
+
+        self._repo.insert_exchange_rates(rates)
+
     def print_active_accounts(self) -> None:
         """Print a table of all active accounts."""
         accounts = self._repo.get_active_accounts()
@@ -135,6 +171,37 @@ class NWTrackService:
                 f"{res['year']}, {res['month']}, {res['total_assets']}, "
                 f"{res['total_liabilities']}, {res['net_worth']}"
             )
+
+    def print_exchange_rate(self, currency: str, year: int, month: int) -> None:
+        """Print exchange rates for a specific currency, year, month
+
+        Args:
+            currency (str): Currency code
+            year (int): Year
+            month (int): Month
+        """
+        all_currency_codes = self._repo.get_all_currency_codes()
+        if currency not in all_currency_codes:
+            raise ValueError(f"Currency code '{currency}' not found in database.")
+        rate = self._repo.get_exchange_rate(year, month, currency)
+        if rate:
+            print(f"Exchange rate {currency} to USD on {year}-{month}: {rate}")
+        else:
+            print(f"No exchange rate found for {currency} on {year}-{month}.")
+
+    def print_exchange_rate_history(self, currency: str) -> None:
+        """Print exchange rate history.
+
+        Args:
+            currency (str): Currency code
+        """
+        all_currency_codes = self._repo.get_all_currency_codes()
+        if currency not in all_currency_codes:
+            raise ValueError(f"Currency code '{currency}' not found in database.")
+        rates = self._repo.get_exchange_rate_history(currency)
+        print("currency, year, month, rate")
+        for r in rates:
+            print(f"{r['currency']}, {r['year']}, {r['month']}, {r['rate']}")
 
     def close_repo(self) -> None:
         """Close open repos."""

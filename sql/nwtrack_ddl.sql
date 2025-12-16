@@ -46,9 +46,9 @@ CREATE TABLE balances (
 CREATE TABLE exchange_rates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     currency TEXT NOT NULL REFERENCES currencies(code),
-    rate REAL NOT NULL,
     year INTEGER NOT NULL,
     month INTEGER NOT NULL,
+    rate REAL NOT NULL,
     UNIQUE(currency, year, month)
 );
 

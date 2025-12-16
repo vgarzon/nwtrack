@@ -31,6 +31,8 @@ class DBConnectionManager(Protocol):
 
     def fetch_all(self, query: str, params: dict = {}) -> list[dict]: ...
 
+    def fetch_one(self, query: str, params: dict = {}) -> dict | None: ...
+
     def close_connection(self) -> None: ...
 
 
@@ -84,6 +86,12 @@ class SQLiteConnectionManager:
             cursor = conn.execute(query, params)
             results = cursor.fetchall()
         return results
+
+    def fetch_one(self, query: str, params: dict = {}) -> dict | None:
+        with self.get_connection() as conn:
+            cursor = conn.execute(query, params)
+            result = cursor.fetchone()
+        return result
 
     def close_connection(self) -> None:
         if self._connection:

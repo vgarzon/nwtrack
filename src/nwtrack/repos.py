@@ -77,6 +77,21 @@ class NwTrackRepository:
         )
         print(rowcount, "balance rows inserted.")
 
+    def insert_exchange_rates(self, data: list[dict]) -> None:
+        """Insert exchange rate data into the exchange_rates table.
+
+        Args:
+            data (list[dict]): List o exchange rate data dictionaries.
+        """
+        rowcount = self._db.execute_many(
+            """
+            INSERT INTO exchange_rates (currency, year, month, rate)
+            VALUES (:currency, :year, :month, :rate);
+            """,
+            data,
+        )
+        print("Inserted", rowcount, "exchange rate rows.")
+
     def get_active_accounts(self) -> list[dict]:
         """Get all active accounts."""
         results = self._db.fetch_all(
@@ -203,6 +218,65 @@ class NwTrackRepository:
         cur = self._db.execute(update_query, params)
         assert cur.rowcount == 1, "Expected exactly one row to be updated."
         print(f"Updated account {account_id} on {year}-{month}.")
+
+    def get_all_currency_codes(self) -> list[str]:
+        """Get all currency codes.
+
+        Returns:
+            list[str]: List of currency codes.
+        """
+        query = "SELECT code FROM currencies;"
+        results = self._db.fetch_all(query)
+        currency_codes = [code for (code,) in results]
+        return currency_codes
+
+    def get_exchange_rate(self, currency: str, year: int, month: int) -> float | None:
+        """Get the exchange rate for a specific currency code, year, and month
+
+        Args:
+            currency (str): Currency code
+            year (int): Year
+            month (int): Month
+
+        Returns:
+            float | None: Exchange rate if found, else None
+        """
+        query = """
+        SELECT rate FROM exchange_rates
+        WHERE currency = :currency AND year = :year AND month = :month;
+        """
+        result = self._db.fetch_one(
+            query, {"currency": currency, "year": year, "month": month}
+        )
+        if result:
+            return float(result[0])
+        return None
+
+    def get_exchange_rate_history(self, currency: str) -> list[dict]:
+        """Get exchange rate history.
+
+        Args:
+            currency (str): Currency code
+
+        Returns:
+            list[dict]: List of exchange rate records over time.
+        """
+        query = """
+        SELECT year, month, rate FROM exchange_rates
+        WHERE currency = :currency
+        ORDER BY currency, year, month;
+        """
+        results = self._db.fetch_all(query, {"currency": currency})
+        exchange_rates = [
+            {
+                "currency": currency,
+                "year": int(year),
+                "month": int(month),
+                "rate": float(rate),
+            }
+            for year, month, rate in results
+        ]
+        return exchange_rates
 
     def close_db_connection(self) -> None:
         self._db.close_connection()
