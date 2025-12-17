@@ -8,6 +8,7 @@ from nwtrack.repos import (
     SQLiteCurrencyRepository,
     SQLiteAccountTypeRepository,
     SQLiteExchangeRateRepository,
+    SQLiteAccountRepository,
     NwTrackRepository,
 )
 from nwtrack.services import NWTrackService
@@ -41,6 +42,9 @@ def setup_basic_container() -> Container:
         SQLiteExchangeRateRepository,
         lambda c: SQLiteExchangeRateRepository(c.resolve(DBConnectionManager)),
     ).register(
+        SQLiteAccountRepository,
+        lambda c: SQLiteAccountRepository(c.resolve(DBConnectionManager)),
+    ).register(
         NwTrackRepository,
         lambda c: NwTrackRepository(c.resolve(DBConnectionManager)),
     ).register(
@@ -53,6 +57,7 @@ def setup_basic_container() -> Container:
             currency_repo=c.resolve(SQLiteCurrencyRepository),
             account_types_repo=c.resolve(SQLiteAccountTypeRepository),
             exchange_rate_repo=c.resolve(SQLiteExchangeRateRepository),
+            account_repo=c.resolve(SQLiteAccountRepository),
             repo=c.resolve(NwTrackRepository),
         ),
     )

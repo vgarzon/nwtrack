@@ -122,15 +122,15 @@ class SQLiteExchangeRateRepository:
         return exchange_rates
 
 
-class NwTrackRepository:
-    """Repository for nwtrack database operations."""
+class SQLiteAccountRepository:
+    """Repository for account SQLite database operations."""
 
     def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
-        self._account_id_map: dict[str, int] | None = None
+        self._id_map: dict[str, int] | None = None
 
-    def insert_accounts(self, data: list[dict]) -> None:
-        """Insert account data into the accounts table.
+    def insert_many(self, data: list[dict]) -> None:
+        """Insert list of accounts into the accounts table.
 
         Args:
             data (list[dict]): List of account data dictionaries.
@@ -142,24 +142,9 @@ class NwTrackRepository:
             """,
             data,
         )
-        print(rowcount, "account rows inserted.")
+        print("Inserted", rowcount, "account rows.")
 
-    def insert_balances(self, data: list[dict]) -> None:
-        """Insert balance data into the balances table.
-
-        Args:
-            data (list[dict]): List of balance data dictionaries.
-        """
-        rowcount = self._db.execute_many(
-            """
-            INSERT INTO balances (account_id, month, amount)
-            VALUES (:account_id, :month, :amount);
-            """,
-            data,
-        )
-        print(rowcount, "balance rows inserted.")
-
-    def get_active_accounts(self) -> list[dict]:
+    def get_active(self) -> list[dict]:
         """Get all active accounts."""
         results = self._db.fetch_all(
             """
@@ -173,7 +158,7 @@ class NwTrackRepository:
         ]
         return active_accounts
 
-    def get_all_accounts(self) -> list[dict]:
+    def get_all(self) -> list[dict]:
         """Get all accounts.
 
         Returns:
@@ -195,6 +180,54 @@ class NwTrackRepository:
             for account_id, name, description, type_, currency, status in results
         ]
         return accounts
+
+    def init_id_map(self) -> None:
+        """Initialize a mapping of account names to their IDs.
+
+        Returns:
+            dict[str, int]: A dictionary mapping account names to IDs.
+        """
+        # account_id_map = {acc["name"]: acc["id"] for acc in accounts}
+        query = "SELECT id, name FROM accounts;"
+        results = self._db.fetch_all(query)
+        self._id_map: dict[str, int] = {
+            name: account_id for account_id, name in results
+        }
+
+    def get_id(self, account_name: str) -> int | None:
+        """Get the account ID for a given account name.
+
+        Args:
+            account_name (str): The name of the account.
+
+        Returns:
+            int | None: The account ID if found, else None.
+        """
+        if self._id_map is None:
+            self.init_id_map()
+        return self._id_map.get(account_name, None)
+
+
+class NwTrackRepository:
+    """Repository for nwtrack database operations."""
+
+    def __init__(self, db: DBConnectionManager) -> None:
+        self._db: DBConnectionManager = db
+
+    def insert_balances(self, data: list[dict]) -> None:
+        """Insert balance data into the balances table.
+
+        Args:
+            data (list[dict]): List of balance data dictionaries.
+        """
+        rowcount = self._db.execute_many(
+            """
+            INSERT INTO balances (account_id, month, amount)
+            VALUES (:account_id, :month, :amount);
+            """,
+            data,
+        )
+        print(rowcount, "balance rows inserted.")
 
     def get_net_worth_on_month(self, month: str, currency: str = "USD") -> list[dict]:
         """Get net worth at a specific year and month
@@ -228,19 +261,6 @@ class NwTrackRepository:
         """
         results = self._db.fetch_all(query, {"currency": currency})
         return results
-
-    def init_account_id_map(self) -> None:
-        """Initialize a mapping of account names to their IDs.
-
-        Returns:
-            dict[str, int]: A dictionary mapping account names to IDs.
-        """
-        # account_id_map = {acc["name"]: acc["id"] for acc in accounts}
-        query = "SELECT id, name FROM accounts;"
-        results = self._db.fetch_all(query)
-        self._account_id_map: dict[str, int] = {
-            name: account_id for account_id, name in results
-        }
 
     def get_balances_on_month(self, month: str, active_only: bool = True) -> list[dict]:
         """Get all account balances at a specific month.
@@ -277,19 +297,6 @@ class NwTrackRepository:
             for account_id, name, amount in results
         ]
         return balances
-
-    def get_account_id_by_name(self, account_name: str) -> int | None:
-        """Get the account ID for a given account name.
-
-        Args:
-            account_name (str): The name of the account.
-
-        Returns:
-            int | None: The account ID if found, else None.
-        """
-        if self._account_id_map is None:
-            self.init_account_id_map()
-        return self._account_id_map.get(account_name, None)
 
     def update_account_balance(
         self, account_id: int, month: str, new_amount: int

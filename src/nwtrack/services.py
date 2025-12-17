@@ -6,6 +6,7 @@ from nwtrack.repos import (
     SQLiteCurrencyRepository,
     SQLiteAccountTypeRepository,
     SQLiteExchangeRateRepository,
+    SQLiteAccountRepository,
     NwTrackRepository,
 )
 from nwtrack.fileio import csv_file_to_list_dict
@@ -19,11 +20,13 @@ class NWTrackService:
         currency_repo: SQLiteCurrencyRepository,
         account_types_repo: SQLiteAccountTypeRepository,
         exchange_rate_repo: SQLiteExchangeRateRepository,
+        account_repo: SQLiteAccountRepository,
         repo: NwTrackRepository,
     ) -> None:
         self._currency_repo = currency_repo
         self._account_type_repo = account_types_repo
         self._exchange_rate_repo = exchange_rate_repo
+        self._account_repo = account_repo
         self._repo = repo
 
     def initialize_reference_data(
@@ -60,14 +63,14 @@ class NWTrackService:
         print("Service: Inserting sample data.")
         accounts_data = csv_file_to_list_dict(accounts_path)
         balances_data = csv_file_to_list_dict(balances_path)
-        self._repo.insert_accounts(accounts_data)
+        self._account_repo.insert_many(accounts_data)
 
         balances = []
         for row in balances_data:
             for key in row:
                 if key.lower() in ("date", "year", "month"):
                     continue
-                account_id = self._repo.get_account_id_by_name(key)
+                account_id = self._account_repo.get_id(key)
                 if not account_id:
                     raise ValueError(f"Account name '{key}' not found in accounts.")
                 bal = {
@@ -122,7 +125,7 @@ class NWTrackService:
             month (str): Month of the balance to update, format "YYYY-MM".
             new_ammount (int): New balance amount.
         """
-        account_id = self._repo.get_account_id_by_name(account_name)
+        account_id = self._account_repo.get_id(account_name)
         if not account_id:
             raise ValueError(f"Account name '{account_name}' not found.")
 
@@ -151,7 +154,7 @@ class NWTrackService:
 
     def print_active_accounts(self) -> None:
         """Print a table of all active accounts."""
-        accounts = self._repo.get_active_accounts()
+        accounts = self._account_repo.get_active()
         print("Active accounts:")
         for account in accounts:
             print(f"Account ID: {account['id']}, Name: {account['name']}")
