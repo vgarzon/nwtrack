@@ -4,7 +4,8 @@ nwtrack: Net worth tracker
 Example script demonstrating exchange rage data handling.
 """
 
-from nwtrack.common import setup_basic_container
+from nwtrack.compose import setup_basic_container
+from nwtrack.admin import AdminService
 from nwtrack.services import NWTrackService
 
 
@@ -17,9 +18,10 @@ def main():
     month = "2024-06"
 
     container = setup_basic_container()
+    admin_svc = container.resolve(AdminService)
     svc = container.resolve(NWTrackService)
 
-    svc.init_database()
+    admin_svc.init_database()
     svc.initialize_reference_data(
         currencies_path=input_files["currencies"],
         account_types_path=input_files["account_types"],

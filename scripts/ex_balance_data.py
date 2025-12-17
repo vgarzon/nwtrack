@@ -4,8 +4,9 @@ nwtrack: Net worth tracker
 Example script to demo container, services, and repository usage with balance data
 """
 
-from nwtrack.common import setup_basic_container
+from nwtrack.compose import setup_basic_container
 from nwtrack.services import NWTrackService
+from nwtrack.admin import AdminService
 
 
 def main():
@@ -20,9 +21,11 @@ def main():
     new_amount = 530
 
     container = setup_basic_container()
+    admin_svc = container.resolve(AdminService)
     svc = container.resolve(NWTrackService)
 
-    svc.init_database()
+    admin_svc.init_database()
+
     svc.initialize_reference_data(
         currencies_path=input_files["currencies"],
         account_types_path=input_files["account_types"],
