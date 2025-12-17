@@ -2,8 +2,12 @@
 Service layer for managing user operations.
 """
 
-from nwtrack.repos import SQLiteCurrencyRepository, SQLiteAccountTypeRepository
-from nwtrack.repos import NwTrackRepository
+from nwtrack.repos import (
+    SQLiteCurrencyRepository,
+    SQLiteAccountTypeRepository,
+    SQLiteExchangeRateRepository,
+    NwTrackRepository,
+)
 from nwtrack.fileio import csv_file_to_list_dict
 
 
@@ -14,10 +18,12 @@ class NWTrackService:
         self,
         currency_repo: SQLiteCurrencyRepository,
         account_types_repo: SQLiteAccountTypeRepository,
+        exchange_rate_repo: SQLiteExchangeRateRepository,
         repo: NwTrackRepository,
     ) -> None:
         self._currency_repo = currency_repo
         self._account_type_repo = account_types_repo
+        self._exchange_rate_repo = exchange_rate_repo
         self._repo = repo
 
     def initialize_reference_data(
@@ -35,24 +41,8 @@ class NWTrackService:
         self._currency_repo.insert_many(currencies)
         self._account_type_repo.insert_many(account_types)
 
-    def update_balance(self, account_name: str, month: str, new_amount: int) -> None:
-        """Update the balance for a specific account on a given month.
-
-        Args:
-            account_name (str): Name of the account.
-            month (str): Month of the balance to update, format "YYYY-MM".
-            new_ammount (int): New balance amount.
-        """
-        account_id = self._repo.get_account_id_by_name(account_name)
-        if not account_id:
-            raise ValueError(f"Account name '{account_name}' not found.")
-
-        self._repo.update_account_balance(
-            account_id=account_id, month=month, new_amount=new_amount
-        )
-
     def insert_sample_data(self, accounts_path: str, balances_path: str) -> None:
-        """Insert sample data into the database.
+        """Insert sample accounts and balances data.
 
         Args:
             accounts_path (str): Path to the accounts CSV file.
@@ -90,7 +80,7 @@ class NWTrackService:
         self._repo.insert_balances(balances)
 
     def insert_exchange_rates(self, exchange_rates_path: str) -> None:
-        """Insert exchange rates from a CSV file.
+        """Insert exchange rate data from a CSV file.
 
         Args:
             exchange_rates_path (str): Path to the exchange rates CSV file.
@@ -122,7 +112,23 @@ class NWTrackService:
                 }
                 rates.append(rate)
 
-        self._repo.insert_exchange_rates(rates)
+        self._exchange_rate_repo.insert_many(rates)
+
+    def update_balance(self, account_name: str, month: str, new_amount: int) -> None:
+        """Update the balance for a specific account on a given month.
+
+        Args:
+            account_name (str): Name of the account.
+            month (str): Month of the balance to update, format "YYYY-MM".
+            new_ammount (int): New balance amount.
+        """
+        account_id = self._repo.get_account_id_by_name(account_name)
+        if not account_id:
+            raise ValueError(f"Account name '{account_name}' not found.")
+
+        self._repo.update_account_balance(
+            account_id=account_id, month=month, new_amount=new_amount
+        )
 
     def copy_balances_to_next_month(self, month: str) -> None:
         """Copy all active account balances from one month to the next.
@@ -190,7 +196,7 @@ class NWTrackService:
         all_currency_codes = self._currency_repo.get_codes()
         if currency not in all_currency_codes:
             raise ValueError(f"Currency code '{currency}' not found in database.")
-        rate = self._repo.get_exchange_rate(month, currency)
+        rate = self._exchange_rate_repo.get(month, currency)
         if rate:
             print(f"Exchange rate {currency} to USD on {month}: {rate}")
         else:
@@ -205,7 +211,7 @@ class NWTrackService:
         all_currency_codes = self._currency_repo.get_codes()
         if currency not in all_currency_codes:
             raise ValueError(f"Currency code '{currency}' not found in database.")
-        rates = self._repo.get_exchange_rate_history(currency)
+        rates = self._exchange_rate_repo.history(currency)
         print("currency, month, rate")
         for r in rates:
             print(f"{r['currency']}, {r['month']}, {r['rate']}")
