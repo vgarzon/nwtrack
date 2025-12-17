@@ -2,7 +2,6 @@
 Service layer for managing user operations.
 """
 
-from nwtrack.config import Config
 from nwtrack.repos import NwTrackRepository
 from nwtrack.fileio import csv_file_to_list_dict
 
@@ -10,17 +9,8 @@ from nwtrack.fileio import csv_file_to_list_dict
 class NWTrackService:
     """Service layer for nwtrack operations."""
 
-    def __init__(self, config: Config, repo: NwTrackRepository) -> None:
-        self._config = config
+    def __init__(self, repo: NwTrackRepository) -> None:
         self._repo = repo
-
-    def init_database(self) -> None:
-        """Initialize the database schema."""
-        print("Service: Initializing database.")
-        ddl_path = self._config.db_ddl_path
-        with open(ddl_path, "r", encoding="utf-8") as f:
-            ddl_script = f.read()
-        self._repo.init_database_ddl(ddl_script)
 
     def initialize_reference_data(
         self, currencies_path: str, account_types_path: str

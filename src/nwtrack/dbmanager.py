@@ -25,7 +25,7 @@ class DBConnectionManager(Protocol):
         self, sql: str, params: ParamMapping | ParamSequence | None = None
     ) -> Any: ...
 
-    def execute_script(self, sql: str) -> None: ...
+    def script(self, sql: str) -> None: ...
 
     def execute_many(self, query: str, params: list[dict] = []) -> int: ...
 
@@ -70,7 +70,7 @@ class SQLiteConnectionManager:
         conn.commit()
         return cursor
 
-    def execute_script(self, sql: str) -> None:
+    def script(self, sql: str) -> None:
         with self.get_connection() as conn:
             conn.executescript(sql)
             conn.commit()

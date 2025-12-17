@@ -14,15 +14,6 @@ class NwTrackRepository:
         self._db: DBConnectionManager = db
         self._account_id_map: dict[str, int] | None = None
 
-    def init_database_ddl(self, ddl_script: str) -> None:
-        """Initialize the database schema from a DDL script file.
-
-        Args:
-            ddl_script (str): DDL script
-        """
-        print("Initializing database tables.")
-        self._db.execute_script(ddl_script)
-
     def init_currencies(self, data: list[dict]) -> None:
         """Initialize the currencies table with data.
 
