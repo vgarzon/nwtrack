@@ -7,6 +7,7 @@ from nwtrack.repos import (
     SQLiteAccountTypeRepository,
     SQLiteExchangeRateRepository,
     SQLiteAccountRepository,
+    SQLiteBalanceRepository,
     NwTrackRepository,
 )
 from nwtrack.fileio import csv_file_to_list_dict
@@ -21,12 +22,14 @@ class NWTrackService:
         account_types_repo: SQLiteAccountTypeRepository,
         exchange_rate_repo: SQLiteExchangeRateRepository,
         account_repo: SQLiteAccountRepository,
+        balance_repo: SQLiteBalanceRepository,
         repo: NwTrackRepository,
     ) -> None:
         self._currency_repo = currency_repo
         self._account_type_repo = account_types_repo
         self._exchange_rate_repo = exchange_rate_repo
         self._account_repo = account_repo
+        self._balance_repo = balance_repo
         self._repo = repo
 
     def initialize_reference_data(
@@ -80,7 +83,7 @@ class NWTrackService:
                 }
                 balances.append(bal)
 
-        self._repo.insert_balances(balances)
+        self._balance_repo.insert_many(balances)
 
     def insert_exchange_rates(self, exchange_rates_path: str) -> None:
         """Insert exchange rate data from a CSV file.
@@ -129,7 +132,7 @@ class NWTrackService:
         if not account_id:
             raise ValueError(f"Account name '{account_name}' not found.")
 
-        self._repo.update_account_balance(
+        self._balance_repo.update(
             account_id=account_id, month=month, new_amount=new_amount
         )
 
@@ -143,14 +146,14 @@ class NWTrackService:
         year_int, month_int = map(int, month.split("-"))
         if month_int < 1 or month_int > 12:
             raise ValueError(f"Invalid month: {month_int}. Must be between 1 and 12.")
-        if not self._repo.check_month_exists_in_balances(month):
+        if not self._balance_repo.check_month(month):
             raise ValueError("No balances found for month.")
         if month_int == 12:
             next_month = f"{year_int + 1}-01"
         else:
             next_month = f"{year_int}-{month_int + 1:02d}"
         print(f"Service: Copying balances from {month} to {next_month}.")
-        self._repo.copy_balances_to_next_month(month)
+        self._balance_repo.roll_forward(month)
 
     def print_active_accounts(self) -> None:
         """Print a table of all active accounts."""
@@ -230,7 +233,7 @@ class NWTrackService:
         year_int, month_int = map(int, month.split("-"))
         if month_int < 1 or month_int > 12:
             raise ValueError(f"Invalid month: {month_int}. Must be between 1 and 12.")
-        balances = self._repo.get_balances_on_month(month, active_only)
+        balances = self._balance_repo.get_month(month, active_only)
         print("account_name, month, amount")
         for bal in balances:
             print(f"{bal['account_name']}, {bal['month']}, {bal['amount']}")

@@ -208,14 +208,14 @@ class SQLiteAccountRepository:
         return self._id_map.get(account_name, None)
 
 
-class NwTrackRepository:
-    """Repository for nwtrack database operations."""
+class SQLiteBalanceRepository:
+    """Repository for balances SQLite database operations."""
 
     def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
 
-    def insert_balances(self, data: list[dict]) -> None:
-        """Insert balance data into the balances table.
+    def insert_many(self, data: list[dict]) -> None:
+        """Insert list of balances into the balances table.
 
         Args:
             data (list[dict]): List of balance data dictionaries.
@@ -227,43 +227,10 @@ class NwTrackRepository:
             """,
             data,
         )
-        print(rowcount, "balance rows inserted.")
+        print("Inserted", rowcount, "balance rows.")
 
-    def get_net_worth_on_month(self, month: str, currency: str = "USD") -> list[dict]:
-        """Get net worth at a specific year and month
-
-        Args:
-            month (str): The month to query net worth for in "YYYY-MM" format.
-            currency (str, optional): The currency code. Defaults to "USD".
-
-        Returns:
-            list[dict]: List of net worth records for the specified year, month and currency.
-        """
-        query = """
-            SELECT total_assets, total_liabilities, net_worth FROM networth_history
-            WHERE month = :month AND currency = :currency;
-            """
-        results = self._db.fetch_all(query, {"month": month, "currency": currency})
-        return results
-
-    def get_net_worth_history(self, currency: str = "USD") -> list[dict]:
-        """Get net worth history.
-        Args:
-            currency (str, optional): The currency code. Defaults to "USD".
-
-        Returns:
-            list[dict]: List of net worth records over time for the specified currency.
-        """
-        query = """
-        SELECT month, total_assets, total_liabilities, net_worth FROM networth_history
-        WHERE currency = :currency
-        ORDER BY month;
-        """
-        results = self._db.fetch_all(query, {"currency": currency})
-        return results
-
-    def get_balances_on_month(self, month: str, active_only: bool = True) -> list[dict]:
-        """Get all account balances at a specific month.
+    def get_month(self, month: str, active_only: bool = True) -> list[dict]:
+        """Get all account balances on a specific month.
 
         Args:
             month (): Month in "YYYY-MM" format
@@ -298,10 +265,8 @@ class NwTrackRepository:
         ]
         return balances
 
-    def update_account_balance(
-        self, account_id: int, month: str, new_amount: int
-    ) -> None:
-        """Update the balance for a specific account on a specific date.
+    def update(self, account_id: int, month: str, new_amount: int) -> None:
+        """Update the balance for specific account and month.
 
         Args:
             account_id (int): The account ID.
@@ -322,8 +287,8 @@ class NwTrackRepository:
         assert cur.rowcount == 1, "Expected exactly one row to be updated."
         print(f"Updated account {account_id} on {month}.")
 
-    def check_month_exists_in_balances(self, month: str):
-        """Check if a specific month exists in the balances table.
+    def check_month(self, month: str):
+        """Check that there are balance entries for a given month.
 
         Args:
             month (str): Month in "YYYY-MM" format
@@ -339,7 +304,7 @@ class NwTrackRepository:
         result = self._db.fetch_one(query, {"month": month})
         return result is not None
 
-    def copy_balances_to_next_month(self, month: str) -> None:
+    def roll_forward(self, month: str) -> None:
         """Roll account balances forward from one month to the next.
 
         Args:
@@ -365,6 +330,46 @@ class NwTrackRepository:
         }
         cur = self._db.execute(insert_query, params)
         print(f"Copied {cur.rowcount} balances from {month} to {next_month}.")
+
+
+class NwTrackRepository:
+    """Repository for nwtrack database operations."""
+
+    def __init__(self, db: DBConnectionManager) -> None:
+        self._db: DBConnectionManager = db
+
+    def get_net_worth_on_month(self, month: str, currency: str = "USD") -> list[dict]:
+        """Get net worth at a specific year and month
+
+        Args:
+            month (str): The month to query net worth for in "YYYY-MM" format.
+            currency (str, optional): The currency code. Defaults to "USD".
+
+        Returns:
+            list[dict]: List of net worth records for the specified year, month and currency.
+        """
+        query = """
+            SELECT total_assets, total_liabilities, net_worth FROM networth_history
+            WHERE month = :month AND currency = :currency;
+            """
+        results = self._db.fetch_all(query, {"month": month, "currency": currency})
+        return results
+
+    def get_net_worth_history(self, currency: str = "USD") -> list[dict]:
+        """Get net worth history.
+        Args:
+            currency (str, optional): The currency code. Defaults to "USD".
+
+        Returns:
+            list[dict]: List of net worth records over time for the specified currency.
+        """
+        query = """
+        SELECT month, total_assets, total_liabilities, net_worth FROM networth_history
+        WHERE currency = :currency
+        ORDER BY month;
+        """
+        results = self._db.fetch_all(query, {"currency": currency})
+        return results
 
     def close_db_connection(self) -> None:
         self._db.close_connection()
