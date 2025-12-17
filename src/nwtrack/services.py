@@ -8,7 +8,7 @@ from nwtrack.repos import (
     SQLiteExchangeRateRepository,
     SQLiteAccountRepository,
     SQLiteBalanceRepository,
-    NwTrackRepository,
+    NetWorthRepository,
 )
 from nwtrack.fileio import csv_file_to_list_dict
 
@@ -23,14 +23,14 @@ class NWTrackService:
         exchange_rate_repo: SQLiteExchangeRateRepository,
         account_repo: SQLiteAccountRepository,
         balance_repo: SQLiteBalanceRepository,
-        repo: NwTrackRepository,
+        net_worth_repo: NetWorthRepository,
     ) -> None:
         self._currency_repo = currency_repo
         self._account_type_repo = account_types_repo
         self._exchange_rate_repo = exchange_rate_repo
         self._account_repo = account_repo
         self._balance_repo = balance_repo
-        self._repo = repo
+        self._net_worth_repo = net_worth_repo
 
     def initialize_reference_data(
         self, currencies_path: str, account_types_path: str
@@ -172,7 +172,7 @@ class NWTrackService:
         Returns:
             None
         """
-        results = self._repo.get_net_worth_on_month(month, currency)
+        results = self._net_worth_repo.get(month, currency)
         assert len(results) == 1, (
             f"Expected exactly one record for {month} in {currency}"
         )
@@ -184,7 +184,7 @@ class NWTrackService:
 
     def print_net_worth_history(self) -> None:
         """Print net worth history."""
-        nw_hist = self._repo.get_net_worth_history()
+        nw_hist = self._net_worth_repo.history()
         print("month, assets, liabilities, net_worth")
         for res in nw_hist:
             print(
@@ -240,4 +240,4 @@ class NWTrackService:
 
     def close_repo(self) -> None:
         """Close open repos."""
-        self._repo.close_db_connection()
+        self._net_worth_repo.close_db_connection()

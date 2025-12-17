@@ -332,36 +332,36 @@ class SQLiteBalanceRepository:
         print(f"Copied {cur.rowcount} balances from {month} to {next_month}.")
 
 
-class NwTrackRepository:
-    """Repository for nwtrack database operations."""
+class NetWorthRepository:
+    """Repository net worth operations."""
 
     def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
 
-    def get_net_worth_on_month(self, month: str, currency: str = "USD") -> list[dict]:
-        """Get net worth at a specific year and month
+    def get(self, month: str, currency: str = "USD") -> list[dict]:
+        """Get net worth value for given month and currency
 
         Args:
             month (str): The month to query net worth for in "YYYY-MM" format.
             currency (str, optional): The currency code. Defaults to "USD".
 
         Returns:
-            list[dict]: List of net worth records for the specified year, month and currency.
+            list[dict]: List of net worth records.
         """
         query = """
-            SELECT total_assets, total_liabilities, net_worth FROM networth_history
-            WHERE month = :month AND currency = :currency;
-            """
+        SELECT total_assets, total_liabilities, net_worth FROM networth_history
+        WHERE month = :month AND currency = :currency;
+        """
         results = self._db.fetch_all(query, {"month": month, "currency": currency})
         return results
 
-    def get_net_worth_history(self, currency: str = "USD") -> list[dict]:
-        """Get net worth history.
+    def history(self, currency: str = "USD") -> list[dict]:
+        """Get net worth history for a given currency.
         Args:
             currency (str, optional): The currency code. Defaults to "USD".
 
         Returns:
-            list[dict]: List of net worth records over time for the specified currency.
+            list[dict]: List of net worth records.
         """
         query = """
         SELECT month, total_assets, total_liabilities, net_worth FROM networth_history
