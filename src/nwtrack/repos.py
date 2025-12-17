@@ -37,15 +37,14 @@ class SQLiteCurrencyRepository:
         return currency_codes
 
 
-class NwTrackRepository:
-    """Repository for nwtrack database operations."""
+class SQLiteAccountTypeRepository:
+    """Repository for account types SQLite database operations."""
 
     def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
-        self._account_id_map: dict[str, int] | None = None
 
-    def init_account_types(self, data: list[dict]) -> None:
-        """Initialize the account_types table with data.
+    def insert_many(self, data: list[dict]) -> None:
+        """Insert list of account types into the account_types table.
 
         Args:
             data (list[dict]): List of account type data dictionaries.
@@ -55,6 +54,14 @@ class NwTrackRepository:
             data,
         )
         print(rowcount, "account types inserted.")
+
+
+class NwTrackRepository:
+    """Repository for nwtrack database operations."""
+
+    def __init__(self, db: DBConnectionManager) -> None:
+        self._db: DBConnectionManager = db
+        self._account_id_map: dict[str, int] | None = None
 
     def insert_accounts(self, data: list[dict]) -> None:
         """Insert account data into the accounts table.

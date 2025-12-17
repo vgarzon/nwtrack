@@ -2,7 +2,7 @@
 Service layer for managing user operations.
 """
 
-from nwtrack.repos import SQLiteCurrencyRepository
+from nwtrack.repos import SQLiteCurrencyRepository, SQLiteAccountTypeRepository
 from nwtrack.repos import NwTrackRepository
 from nwtrack.fileio import csv_file_to_list_dict
 
@@ -11,9 +11,13 @@ class NWTrackService:
     """Service layer for nwtrack operations."""
 
     def __init__(
-        self, currency_repo: SQLiteCurrencyRepository, repo: NwTrackRepository
+        self,
+        currency_repo: SQLiteCurrencyRepository,
+        account_types_repo: SQLiteAccountTypeRepository,
+        repo: NwTrackRepository,
     ) -> None:
         self._currency_repo = currency_repo
+        self._account_type_repo = account_types_repo
         self._repo = repo
 
     def initialize_reference_data(
@@ -29,7 +33,7 @@ class NWTrackService:
         currencies = csv_file_to_list_dict(currencies_path)
         account_types = csv_file_to_list_dict(account_types_path)
         self._currency_repo.insert_many(currencies)
-        self._repo.init_account_types(account_types)
+        self._account_type_repo.insert_many(account_types)
 
     def update_balance(self, account_name: str, month: str, new_amount: int) -> None:
         """Update the balance for a specific account on a given month.

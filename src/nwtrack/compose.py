@@ -4,7 +4,7 @@ Common dependency injection container setup for NWTrack application.
 
 from nwtrack.config import Config, load_config
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
-from nwtrack.repos import SQLiteCurrencyRepository
+from nwtrack.repos import SQLiteCurrencyRepository, SQLiteAccountTypeRepository
 from nwtrack.repos import NwTrackRepository
 from nwtrack.services import NWTrackService
 from nwtrack.admin import AdminService
@@ -31,6 +31,9 @@ def setup_basic_container() -> Container:
         SQLiteCurrencyRepository,
         lambda c: SQLiteCurrencyRepository(c.resolve(DBConnectionManager)),
     ).register(
+        SQLiteAccountTypeRepository,
+        lambda c: SQLiteAccountTypeRepository(c.resolve(DBConnectionManager)),
+    ).register(
         NwTrackRepository,
         lambda c: NwTrackRepository(c.resolve(DBConnectionManager)),
     ).register(
@@ -40,7 +43,9 @@ def setup_basic_container() -> Container:
     ).register(
         NWTrackService,
         lambda c: NWTrackService(
-            c.resolve(SQLiteCurrencyRepository), c.resolve(NwTrackRepository)
+            currency_repo=c.resolve(SQLiteCurrencyRepository),
+            account_types_repo=c.resolve(SQLiteAccountTypeRepository),
+            repo=c.resolve(NwTrackRepository),
         ),
     )
     return container
