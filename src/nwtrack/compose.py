@@ -6,6 +6,7 @@ from nwtrack.config import Config, load_config
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
 from nwtrack.repos import NwTrackRepository
 from nwtrack.services import NWTrackService
+from nwtrack.admin import AdminService
 from nwtrack.container import Container, Lifetime
 
 
@@ -29,7 +30,11 @@ def setup_basic_container() -> Container:
         NwTrackRepository,
         lambda c: NwTrackRepository(c.resolve(DBConnectionManager)),
     ).register(
+        AdminService,
+        lambda c: AdminService(c.resolve(Config), c.resolve(DBConnectionManager)),
+        lifetime=Lifetime.SINGLETON,
+    ).register(
         NWTrackService,
-        lambda c: NWTrackService(c.resolve(Config), c.resolve(NwTrackRepository)),
+        lambda c: NWTrackService(c.resolve(NwTrackRepository)),
     )
     return container
