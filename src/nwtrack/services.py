@@ -2,6 +2,7 @@
 Service layer for managing user operations.
 """
 
+from nwtrack.repos import SQLiteCurrencyRepository
 from nwtrack.repos import NwTrackRepository
 from nwtrack.fileio import csv_file_to_list_dict
 
@@ -9,7 +10,10 @@ from nwtrack.fileio import csv_file_to_list_dict
 class NWTrackService:
     """Service layer for nwtrack operations."""
 
-    def __init__(self, repo: NwTrackRepository) -> None:
+    def __init__(
+        self, currency_repo: SQLiteCurrencyRepository, repo: NwTrackRepository
+    ) -> None:
+        self._currency_repo = currency_repo
         self._repo = repo
 
     def initialize_reference_data(
@@ -24,7 +28,7 @@ class NWTrackService:
         print("Service: Initializing reference data.")
         currencies = csv_file_to_list_dict(currencies_path)
         account_types = csv_file_to_list_dict(account_types_path)
-        self._repo.init_currencies(currencies)
+        self._currency_repo.insert_many(currencies)
         self._repo.init_account_types(account_types)
 
     def update_balance(self, account_name: str, month: str, new_amount: int) -> None:
@@ -92,7 +96,7 @@ class NWTrackService:
         assert exchange_rates_data, "No exchange rates data found."
 
         # check that currency codes in the file exist in the database
-        currency_codes = self._repo.get_all_currency_codes()
+        currency_codes = self._currency_repo.get_codes()
         row = exchange_rates_data[0]
         for key in row:
             if key.lower() in ("date", "year", "month"):
@@ -179,7 +183,7 @@ class NWTrackService:
             currency (str): Currency code
             month (str): Month in "YYYY-MM" format
         """
-        all_currency_codes = self._repo.get_all_currency_codes()
+        all_currency_codes = self._currency_repo.get_codes()
         if currency not in all_currency_codes:
             raise ValueError(f"Currency code '{currency}' not found in database.")
         rate = self._repo.get_exchange_rate(month, currency)
@@ -194,7 +198,7 @@ class NWTrackService:
         Args:
             currency (str): Currency code
         """
-        all_currency_codes = self._repo.get_all_currency_codes()
+        all_currency_codes = self._currency_repo.get_codes()
         if currency not in all_currency_codes:
             raise ValueError(f"Currency code '{currency}' not found in database.")
         rates = self._repo.get_exchange_rate_history(currency)

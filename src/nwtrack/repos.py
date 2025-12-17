@@ -7,15 +7,14 @@ from __future__ import annotations
 from nwtrack.dbmanager import DBConnectionManager
 
 
-class NwTrackRepository:
-    """Repository for nwtrack database operations."""
+class SQLiteCurrencyRepository:
+    """Repository for currencies SQLite database operations."""
 
     def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
-        self._account_id_map: dict[str, int] | None = None
 
-    def init_currencies(self, data: list[dict]) -> None:
-        """Initialize the currencies table with data.
+    def insert_many(self, data: list[dict]) -> None:
+        """Insert list of currencies into the currencies table.
 
         Args:
             data (list[dict]): List of currency data dictionaries.
@@ -25,6 +24,25 @@ class NwTrackRepository:
             data,
         )
         print(rowcount, "currencies inserted.")
+
+    def get_codes(self) -> list[str]:
+        """Get all currency codes.
+
+        Returns:
+            list[str]: List of currency codes.
+        """
+        query = "SELECT code FROM currencies;"
+        results = self._db.fetch_all(query)
+        currency_codes = [code for (code,) in results]
+        return currency_codes
+
+
+class NwTrackRepository:
+    """Repository for nwtrack database operations."""
+
+    def __init__(self, db: DBConnectionManager) -> None:
+        self._db: DBConnectionManager = db
+        self._account_id_map: dict[str, int] | None = None
 
     def init_account_types(self, data: list[dict]) -> None:
         """Initialize the account_types table with data.
@@ -238,17 +256,6 @@ class NwTrackRepository:
         cur = self._db.execute(update_query, params)
         assert cur.rowcount == 1, "Expected exactly one row to be updated."
         print(f"Updated account {account_id} on {month}.")
-
-    def get_all_currency_codes(self) -> list[str]:
-        """Get all currency codes.
-
-        Returns:
-            list[str]: List of currency codes.
-        """
-        query = "SELECT code FROM currencies;"
-        results = self._db.fetch_all(query)
-        currency_codes = [code for (code,) in results]
-        return currency_codes
 
     def get_exchange_rate(self, currency: str, month: str) -> float | None:
         """Get the exchange rate for a specific currency code and month
