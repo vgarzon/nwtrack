@@ -37,15 +37,12 @@ class NWTrackService:
         self._repo.init_currencies(currencies)
         self._repo.init_account_types(account_types)
 
-    def update_balance(
-        self, account_name: str, year: int, month: int, new_amount: int
-    ) -> None:
-        """Update the balance for a specific account at a given year and month.
+    def update_balance(self, account_name: str, month: str, new_amount: int) -> None:
+        """Update the balance for a specific account on a given month.
 
         Args:
             account_name (str): Name of the account.
-            year (int): Year of the balance to update.
-            month (int): Month of the balance to update.
+            month (str): Month of the balance to update, format "YYYY-MM".
             new_ammount (int): New balance amount.
         """
         account_id = self._repo.get_account_id_by_name(account_name)
@@ -53,7 +50,7 @@ class NWTrackService:
             raise ValueError(f"Account name '{account_name}' not found.")
 
         self._repo.update_account_balance(
-            account_id=account_id, year=year, month=month, new_amount=new_amount
+            account_id=account_id, month=month, new_amount=new_amount
         )
 
     def insert_sample_data(self, accounts_path: str, balances_path: str) -> None:
@@ -87,8 +84,7 @@ class NWTrackService:
                     raise ValueError(f"Account name '{key}' not found in accounts.")
                 bal = {
                     "account_id": int(account_id),
-                    "year": int(row["year"]),
-                    "month": int(row["month"]),
+                    "month": f"{row['year']}-{int(row['month']):0>2}",
                     "amount": abs(int(row[key])) if row[key] else 0,
                 }
                 balances.append(bal)
@@ -123,31 +119,31 @@ class NWTrackService:
                     continue
                 rate = {
                     "currency": key,
-                    "year": int(row["year"]),
-                    "month": int(row["month"]),
+                    "month": f"{row['year']}-{int(row['month']):0>2}",
                     "rate": float(row[key]),
                 }
                 rates.append(rate)
 
         self._repo.insert_exchange_rates(rates)
 
-    def copy_balances_to_next_month(self, year: int, month: int) -> None:
+    def copy_balances_to_next_month(self, month: str) -> None:
         """Copy all active account balances from one month to the next.
 
         Args:
-            year (int): Year of the source month.
-            month (int): Month of the source month.
+            month (str): Month of the source month, format "YYYY-MM".
         """
         # check that month is valid
-        if month < 1 or month > 12:
-            raise ValueError(f"Invalid month: {month}. Must be between 1 and 12.")
-        if not self._repo.check_year_month_exists_in_balances(year, month):
-            raise ValueError(f"No balances found for {year}-{month:02d}.")
-        print(
-            f"Service: Copying balances from {year}-{month:02d} "
-            f"to {year}-{month + 1:02d}."
-        )
-        self._repo.copy_balances_to_next_month(year, month)
+        year_int, month_int = map(int, month.split("-"))
+        if month_int < 1 or month_int > 12:
+            raise ValueError(f"Invalid month: {month_int}. Must be between 1 and 12.")
+        if not self._repo.check_month_exists_in_balances(month):
+            raise ValueError("No balances found for month.")
+        if month_int == 12:
+            next_month = f"{year_int + 1}-01"
+        else:
+            next_month = f"{year_int}-{month_int + 1:02d}"
+        print(f"Service: Copying balances from {month} to {next_month}.")
+        self._repo.copy_balances_to_next_month(month)
 
     def print_active_accounts(self) -> None:
         """Print a table of all active accounts."""
@@ -156,56 +152,51 @@ class NWTrackService:
         for account in accounts:
             print(f"Account ID: {account['id']}, Name: {account['name']}")
 
-    def print_net_worth_at_year_month(
-        self, year: int, month: int, currency: str = "USD"
-    ) -> None:
-        """Print net worth at a specific year and month.
+    def print_net_worth_on_month(self, month: str, currency: str = "USD") -> None:
+        """Print net worth on a specific month.
 
         Args:
-            year (int): Year
-            month (int): Month
+            month (str): Month in "YYYY-MM" format
             currency (str): Currency code (default: "USD")
 
         Returns:
             None
         """
-        results = self._repo.get_net_worth_at_year_month(year, month, currency)
+        results = self._repo.get_net_worth_on_month(month, currency)
         assert len(results) == 1, (
-            f"Expected exactly one record for {year}-{month} in {currency}"
+            f"Expected exactly one record for {month} in {currency}"
         )
         assets, liabilities, net_worth = results[0]
         print(
-            f"Year: {year}, Month: {month}, Currency: {currency}, "
-            f"Assets: {assets}, Liabilities: {liabilities}, "
-            f"Net Worth: {net_worth}"
+            f"Month: {month}, Currency: {currency}, Assets: {assets}, "
+            f"Liabilities: {liabilities}, Net Worth: {net_worth}"
         )
 
     def print_net_worth_history(self) -> None:
         """Print net worth history."""
         nw_hist = self._repo.get_net_worth_history()
-        print("year, month, assets, liabilities, net_worth")
+        print("month, assets, liabilities, net_worth")
         for res in nw_hist:
             print(
-                f"{res['year']}, {res['month']}, {res['total_assets']}, "
+                f"{res['month']}, {res['total_assets']}, "
                 f"{res['total_liabilities']}, {res['net_worth']}"
             )
 
-    def print_exchange_rate(self, currency: str, year: int, month: int) -> None:
-        """Print exchange rates for a specific currency, year, month
+    def print_exchange_rate(self, currency: str, month: str) -> None:
+        """Print exchange rates for a specific currency and month
 
         Args:
             currency (str): Currency code
-            year (int): Year
-            month (int): Month
+            month (str): Month in "YYYY-MM" format
         """
         all_currency_codes = self._repo.get_all_currency_codes()
         if currency not in all_currency_codes:
             raise ValueError(f"Currency code '{currency}' not found in database.")
-        rate = self._repo.get_exchange_rate(year, month, currency)
+        rate = self._repo.get_exchange_rate(month, currency)
         if rate:
-            print(f"Exchange rate {currency} to USD on {year}-{month}: {rate}")
+            print(f"Exchange rate {currency} to USD on {month}: {rate}")
         else:
-            print(f"No exchange rate found for {currency} on {year}-{month}.")
+            print(f"No exchange rate found for {currency} on {month}.")
 
     def print_exchange_rate_history(self, currency: str) -> None:
         """Print exchange rate history.
@@ -217,29 +208,25 @@ class NWTrackService:
         if currency not in all_currency_codes:
             raise ValueError(f"Currency code '{currency}' not found in database.")
         rates = self._repo.get_exchange_rate_history(currency)
-        print("currency, year, month, rate")
+        print("currency, month, rate")
         for r in rates:
-            print(f"{r['currency']}, {r['year']}, {r['month']}, {r['rate']}")
+            print(f"{r['currency']}, {r['month']}, {r['rate']}")
 
-    def print_balances_at_year_month(
-        self, year: int, month: int, active_only: bool = True
-    ) -> None:
-        """Print all account balances at a specific year and month.
+    def print_balances_on_month(self, month: str, active_only: bool = True) -> None:
+        """Print all account balances at a specific month.
 
         Args:
-            year (int): Year
-            month (int): Month
+            month (str): Month in "YYYY-MM" format
             active_only (bool): Whether to include only active accounts
         """
-        # valedate month
-        if month < 1 or month > 12:
-            raise ValueError(f"Invalid month: {month}. Must be between 1 and 12.")
-        balances = self._repo.get_balances_at_year_month(year, month, active_only)
-        print("account_name, year, month, amount")
+        # validate month
+        year_int, month_int = map(int, month.split("-"))
+        if month_int < 1 or month_int > 12:
+            raise ValueError(f"Invalid month: {month_int}. Must be between 1 and 12.")
+        balances = self._repo.get_balances_on_month(month, active_only)
+        print("account_name, month, amount")
         for bal in balances:
-            print(
-                f"{bal['account_name']}, {bal['year']}, {bal['month']}, {bal['amount']}"
-            )
+            print(f"{bal['account_name']}, {bal['month']}, {bal['amount']}")
 
     def close_repo(self) -> None:
         """Close open repos."""

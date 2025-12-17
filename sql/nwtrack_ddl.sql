@@ -36,20 +36,18 @@ CREATE TABLE accounts (
 CREATE TABLE balances (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     account_id INTEGER NOT NULL REFERENCES accounts(id),
-    year INTEGER NOT NULL,
-    month INTEGER NOT NULL,
+    month TEXT NOT NULL,  -- format 'YYYY-MM'
     amount INTEGER NOT NULL,
-    UNIQUE(account_id, year, month)
+    UNIQUE(account_id, month)
 );
 
 -- Exchanges rates to convert from other currencies to USD
 CREATE TABLE exchange_rates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     currency TEXT NOT NULL REFERENCES currencies(code),
-    year INTEGER NOT NULL,
-    month INTEGER NOT NULL,
+    month TEXT NOT NULL,  -- format 'YYYY-MM'
     rate REAL NOT NULL,
-    UNIQUE(currency, year, month)
+    UNIQUE(currency, month)
 );
 
 -------------
@@ -58,10 +56,9 @@ CREATE TABLE exchange_rates (
 
 DROP VIEW IF EXISTS networth_history;
 
--- Summary of assets and liabilities by year, month, and currency
+-- Summary of assets and liabilities by month, and currency
 CREATE VIEW networth_history AS
 SELECT
-    b.year,
     b.month,
     a.currency,
     SUM(CASE WHEN at.kind = 'asset' THEN b.amount ELSE 0 END) AS total_assets,
@@ -75,7 +72,7 @@ JOIN
 JOIN
     account_types at ON a.type = at.type
 GROUP BY
-    b.year, b.month, a.currency
+    b.month, a.currency
 ORDER BY
-    b.year, b.month, a.currency;
+    b.month, a.currency;
 

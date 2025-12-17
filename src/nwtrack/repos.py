@@ -70,8 +70,8 @@ class NwTrackRepository:
         """
         rowcount = self._db.execute_many(
             """
-            INSERT INTO balances (account_id, year, month, amount)
-            VALUES (:account_id, :year, :month, :amount);
+            INSERT INTO balances (account_id, month, amount)
+            VALUES (:account_id, :month, :amount);
             """,
             data,
         )
@@ -85,8 +85,8 @@ class NwTrackRepository:
         """
         rowcount = self._db.execute_many(
             """
-            INSERT INTO exchange_rates (currency, year, month, rate)
-            VALUES (:currency, :year, :month, :rate);
+            INSERT INTO exchange_rates (currency, month, rate)
+            VALUES (:currency, :month, :rate);
             """,
             data,
         )
@@ -129,14 +129,11 @@ class NwTrackRepository:
         ]
         return accounts
 
-    def get_net_worth_at_year_month(
-        self, year: int, month: int, currency: str = "USD"
-    ) -> list[dict]:
+    def get_net_worth_on_month(self, month: str, currency: str = "USD") -> list[dict]:
         """Get net worth at a specific year and month
 
         Args:
-            year (int): The year to query net worth for.
-            month (int): The month to query net worth for.
+            month (str): The month to query net worth for in "YYYY-MM" format.
             currency (str, optional): The currency code. Defaults to "USD".
 
         Returns:
@@ -144,11 +141,9 @@ class NwTrackRepository:
         """
         query = """
             SELECT total_assets, total_liabilities, net_worth FROM networth_history
-            WHERE year = :year AND month = :month AND currency = :currency;
+            WHERE month = :month AND currency = :currency;
             """
-        results = self._db.fetch_all(
-            query, {"year": year, "month": month, "currency": currency}
-        )
+        results = self._db.fetch_all(query, {"month": month, "currency": currency})
         return results
 
     def get_net_worth_history(self, currency: str = "USD") -> list[dict]:
@@ -160,9 +155,9 @@ class NwTrackRepository:
             list[dict]: List of net worth records over time for the specified currency.
         """
         query = """
-        SELECT year, month, total_assets, total_liabilities, net_worth FROM networth_history
+        SELECT month, total_assets, total_liabilities, net_worth FROM networth_history
         WHERE currency = :currency
-        ORDER BY year, month;
+        ORDER BY month;
         """
         results = self._db.fetch_all(query, {"currency": currency})
         return results
@@ -180,14 +175,11 @@ class NwTrackRepository:
             name: account_id for account_id, name in results
         }
 
-    def get_balances_at_year_month(
-        self, year: int, month: int, active_only: bool = True
-    ) -> list[dict]:
-        """Get all account balances at a specific year and month.
+    def get_balances_on_month(self, month: str, active_only: bool = True) -> list[dict]:
+        """Get all account balances at a specific month.
 
         Args:
-            year (int): Year
-            month (int): Month
+            month (): Month in "YYYY-MM" format
             active_only (bool): Whether to include only active accounts
 
         Returns:
@@ -198,21 +190,20 @@ class NwTrackRepository:
             SELECT a.id, a.name, b.amount
             FROM accounts a
             JOIN balances b ON a.id = b.account_id
-            WHERE b.year = :year AND b.month = :month AND a.status = 'active';
+            WHERE b.month = :month AND a.status = 'active';
             """
         else:
             query = """
             SELECT a.id, a.name, b.amount
             FROM accounts a
             JOIN balances b ON a.id = b.account_id
-            WHERE b.year = :year AND b.month = :month;
+            WHERE b.month = :month;
             """
-        results = self._db.fetch_all(query, {"year": year, "month": month})
+        results = self._db.fetch_all(query, {"month": month})
         balances = [
             {
                 "account_id": account_id,
                 "account_name": name,
-                "year": year,
                 "month": month,
                 "amount": amount,
             }
@@ -234,30 +225,28 @@ class NwTrackRepository:
         return self._account_id_map.get(account_name, None)
 
     def update_account_balance(
-        self, account_id: int, year: int, month: int, new_amount: int
+        self, account_id: int, month: str, new_amount: int
     ) -> None:
         """Update the balance for a specific account on a specific date.
 
         Args:
             account_id (int): The account ID.
-            year (int): The year of the entry to update.
-            month (int): The month to the entry to update.
+            month (str): The month to the entry to update, in "YYYY-MM" format.
             new_amount (int): The new balance amount.
         """
         update_query = """
         UPDATE balances
         SET amount = :amount
-        WHERE account_id = :account_id AND year = :year AND month = :month;
+        WHERE account_id = :account_id AND month = :month;
         """
         params: dict[str, str | int | None] = {
             "amount": new_amount,
             "account_id": account_id,
-            "year": year,
             "month": month,
         }
         cur = self._db.execute(update_query, params)
         assert cur.rowcount == 1, "Expected exactly one row to be updated."
-        print(f"Updated account {account_id} on {year}-{month}.")
+        print(f"Updated account {account_id} on {month}.")
 
     def get_all_currency_codes(self) -> list[str]:
         """Get all currency codes.
@@ -270,24 +259,21 @@ class NwTrackRepository:
         currency_codes = [code for (code,) in results]
         return currency_codes
 
-    def get_exchange_rate(self, currency: str, year: int, month: int) -> float | None:
-        """Get the exchange rate for a specific currency code, year, and month
+    def get_exchange_rate(self, currency: str, month: str) -> float | None:
+        """Get the exchange rate for a specific currency code and month
 
         Args:
             currency (str): Currency code
-            year (int): Year
-            month (int): Month
+            month (str): Month
 
         Returns:
             float | None: Exchange rate if found, else None
         """
         query = """
         SELECT rate FROM exchange_rates
-        WHERE currency = :currency AND year = :year AND month = :month;
+        WHERE currency = :currency AND month = :month;
         """
-        result = self._db.fetch_one(
-            query, {"currency": currency, "year": year, "month": month}
-        )
+        result = self._db.fetch_one(query, {"currency": currency, "month": month})
         if result:
             return float(result[0])
         return None
@@ -302,69 +288,63 @@ class NwTrackRepository:
             list[dict]: List of exchange rate records over time.
         """
         query = """
-        SELECT year, month, rate FROM exchange_rates
+        SELECT month, rate FROM exchange_rates
         WHERE currency = :currency
-        ORDER BY currency, year, month;
+        ORDER BY currency, month;
         """
         results = self._db.fetch_all(query, {"currency": currency})
         exchange_rates = [
             {
                 "currency": currency,
-                "year": int(year),
-                "month": int(month),
+                "month": month,
                 "rate": float(rate),
             }
-            for year, month, rate in results
+            for month, rate in results
         ]
         return exchange_rates
 
-    def check_year_month_exists_in_balances(self, year: int, month: int):
-        """Check if a specific year and month exists in the balances table.
+    def check_month_exists_in_balances(self, month: str):
+        """Check if a specific month exists in the balances table.
 
         Args:
-            year (int): Year
-            month (int): Month
+            month (str): Month in "YYYY-MM" format
 
         Returns:
             bool: True if the year and month exist, else False.
         """
         query = """
         SELECT 1 FROM balances
-        WHERE year = :year AND month = :month
+        WHERE month = :month
         LIMIT 1;
         """
-        result = self._db.fetch_one(query, {"year": year, "month": month})
+        result = self._db.fetch_one(query, {"month": month})
         return result is not None
 
-    def copy_balances_to_next_month(self, year: int, month: int) -> None:
+    def copy_balances_to_next_month(self, month: str) -> None:
         """Roll account balances forward from one month to the next.
 
         Args:
-            year (int): Year of the source month.
-            month (int): Month of the source month.
+            month (str): Month of the source month in "YYYY-MM" format.
         """
         insert_query = """
-        INSERT OR IGNORE INTO balances (account_id, year, month, amount)
-        SELECT account_id, :next_year, :next_month, amount
+        INSERT OR IGNORE INTO balances (account_id, month, amount)
+        SELECT account_id, :next_month, amount
         FROM balances
-        WHERE year = :year AND month = :month;
+        WHERE month = :month;
         """
-        next_year = year
-        next_month = month + 1
-        if next_month > 12:
-            next_month = 1
-            next_year += 1
+        year_int, month_int = map(int, month.split("-"))
+        if month_int < 1 or month_int > 12:
+            raise ValueError(f"Invalid month: {month_int}. Must be between 1 and 12.")
+        if month_int == 12:
+            next_month = f"{year_int + 1}-01"
+        else:
+            next_month = f"{year_int}-{month_int + 1:02d}"
         params = {
-            "year": year,
             "month": month,
-            "next_year": next_year,
             "next_month": next_month,
         }
         cur = self._db.execute(insert_query, params)
-        print(
-            f"Copied {cur.rowcount} balances from {year}-{month:02d} "
-            f"to {next_year}-{next_month:02d}."
-        )
+        print(f"Copied {cur.rowcount} balances from {month} to {next_month}.")
 
     def close_db_connection(self) -> None:
         self._db.close_connection()

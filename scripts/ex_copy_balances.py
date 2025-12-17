@@ -15,8 +15,7 @@ def main():
         "accounts": "data/sample/accounts.csv",
         "balances": "data/sample/balances.csv",
     }
-    year = 2025
-    month = 11
+    month = "2025-11"
 
     container = setup_basic_container()
     svc = container.resolve(NWTrackService)
@@ -31,12 +30,16 @@ def main():
         balances_path=input_files["balances"],
     )
 
+    year_int, month_int = map(int, month.split("-"))
+    next_month = (
+        f"{year_int + 1}-01" if month_int == 12 else f"{year_int}-{month_int + 1:02d}"
+    )
     print("Before roll forward:")
-    svc.print_balances_at_year_month(year=year, month=month)
-    print(f"Copying balances from {year}-{month:02d} to {year}-{month + 1:02d}...")
-    svc.copy_balances_to_next_month(year=year, month=month)
+    svc.print_balances_on_month(month=month)
+    print(f"Copying balances from {month} to {next_month}...")
+    svc.copy_balances_to_next_month(month=month)
     print("After copying:")
-    svc.print_balances_at_year_month(year=year, month=month + 1)
+    svc.print_balances_on_month(month=next_month)
 
     svc.close_repo()
 

@@ -14,7 +14,7 @@ def main():
         "account_types": "data/sample/account_types.csv",
         "exchange_rates": "data/sample/exchange_rates.csv",
     }
-    year, month = 2024, 6
+    month = "2024-06"
 
     container = setup_basic_container()
     svc = container.resolve(NWTrackService)
@@ -26,7 +26,7 @@ def main():
     )
     svc.insert_exchange_rates(input_files["exchange_rates"])
 
-    svc.print_exchange_rate("CNY", year, month)
+    svc.print_exchange_rate("CNY", month)
     svc.print_exchange_rate_history("CHF")
     try:
         svc.print_exchange_rate_history("EUR")

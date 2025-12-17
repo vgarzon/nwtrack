@@ -16,8 +16,7 @@ def main():
         "balances": "data/sample/balances.csv",
     }
     account_name = "bank_1_checking"
-    year = 2024
-    month = 6
+    month = "2024-06"
     new_amount = 530
 
     container = setup_basic_container()
@@ -36,18 +35,16 @@ def main():
     svc.print_active_accounts()
     svc.print_net_worth_history()
 
-    # update balance for account_id 1 on 2024-02-01 to 530
     print("Before update:")
-    svc.print_net_worth_at_year_month(year=year, month=month)
+    svc.print_net_worth_on_month(month=month)
 
     svc.update_balance(
         account_name=account_name,
-        year=year,
         month=month,
         new_amount=new_amount,
     )
     print("After update:")
-    svc.print_net_worth_at_year_month(year=year, month=month)
+    svc.print_net_worth_on_month(month=month)
 
     svc.close_repo()
 
