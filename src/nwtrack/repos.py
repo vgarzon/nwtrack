@@ -335,10 +335,11 @@ class NwTrackRepository:
         year_int, month_int = map(int, month.split("-"))
         if month_int < 1 or month_int > 12:
             raise ValueError(f"Invalid month: {month_int}. Must be between 1 and 12.")
-        if month_int == 12:
-            next_month = f"{year_int + 1}-01"
-        else:
-            next_month = f"{year_int}-{month_int + 1:02d}"
+        next_month = (
+            f"{year_int + 1}-01"
+            if month_int == 12
+            else f"{year_int}-{month_int + 1:02d}"
+        )
         params = {
             "month": month,
             "next_month": next_month,
