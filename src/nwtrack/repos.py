@@ -5,6 +5,8 @@ Repository module for nwtrack database operations.
 from __future__ import annotations
 
 from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.models import Currency, AccountType, AccountKind
+from dataclasses import asdict
 
 
 class SQLiteCurrencyRepository:
@@ -13,17 +15,17 @@ class SQLiteCurrencyRepository:
     def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
 
-    def insert_many(self, data: list[dict]) -> None:
+    def insert_many(self, data: list[Currency]) -> None:
         """Insert list of currencies into the currencies table.
 
         Args:
-            data (list[dict]): List of currency data dictionaries.
+            data (list[Currency]): List of Currency objects.
         """
         rowcount = self._db.execute_many(
             "INSERT INTO currencies (code, name) VALUES (:code, :name);",
-            data,
+            [asdict(currency) for currency in data],
         )
-        print("Inserted", rowcount, "currencies rows.")
+        print("Inserted", rowcount, "currency rows.")
 
     def get_codes(self) -> list[str]:
         """Get all currency codes.
@@ -43,15 +45,15 @@ class SQLiteAccountTypeRepository:
     def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
 
-    def insert_many(self, data: list[dict]) -> None:
+    def insert_many(self, data: list[AccountType]) -> None:
         """Insert list of account types into the account_types table.
 
         Args:
-            data (list[dict]): List of account type data dictionaries.
+            data (list[AccountType]): List of account type data dictionaries.
         """
         rowcount = self._db.execute_many(
             "INSERT INTO account_types (type, kind) VALUES (:type, :kind);",
-            data,
+            [asdict(account_type) for account_type in data],
         )
         print("Inserted", rowcount, "account type rows.")
 

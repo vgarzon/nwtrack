@@ -4,6 +4,14 @@ Service layer for managing user operations using unit of work pattern.
 
 from nwtrack.unitofwork import SQLiteUnitOfWork
 from nwtrack.fileio import csv_file_to_list_dict
+from nwtrack.models import (
+    Account,
+    Balance,
+    Currency,
+    ExchangeRate,
+    AccountType,
+    AccountKind,
+)
 
 
 class NWTrackService:
@@ -24,6 +32,12 @@ class NWTrackService:
         print("Service: Initializing reference data.")
         currencies = csv_file_to_list_dict(currencies_path)
         account_types = csv_file_to_list_dict(account_types_path)
+
+        currencies = [Currency(**c) for c in currencies]
+        account_types = [
+            AccountType(type=at["type"], kind=AccountKind(at["kind"]))
+            for at in account_types
+        ]
         with self._uow() as uow:
             uow.currency.insert_many(currencies)
             uow.account_type.insert_many(account_types)
