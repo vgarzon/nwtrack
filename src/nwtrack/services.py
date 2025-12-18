@@ -5,13 +5,14 @@ Service layer for managing user operations using unit of work pattern.
 from nwtrack.unitofwork import SQLiteUnitOfWork
 from nwtrack.fileio import csv_file_to_list_dict
 from nwtrack.models import (
-    # Account,
-    # Balance,
+    Account,
+    Balance,
     Category,
     Side,
     Currency,
     ExchangeRate,
     Month,
+    Status,
 )
 
 
@@ -42,6 +43,92 @@ class NWTrackService:
             uow.currency.insert_many(currencies)
             uow.category.insert_many(categories)
 
+    def insert_accounts(self, accounts: list[Account]) -> None:
+        """Insert accounts into the database.
+
+        Args:
+            accounts_data (list[dict]): list of Account objects.
+        """
+        print("Service: Inserting sample accounts data.")
+        with self._uow() as uow:
+            uow.account.insert_many(accounts)
+
+    def parse_account_data(self, accounts_data: list[dict]) -> list[Account]:
+        """Parse account data from list of dicts to list of Account objects.
+
+        Args:
+            accounts_data (list[dict]): list of account data as dicts.
+
+        Returns:
+            list[Account]: list of Account objects.
+        """
+        with self._uow() as uow:
+            currency_map = uow.currency.get_dict()
+            category_map = uow.category.get_dict()
+        accounts = []
+        for row in accounts_data:
+            currency = currency_map.get(row["currency"], None)
+            if not currency:
+                raise ValueError(
+                    f"Currency code '{row['currency']}' not found in database."
+                )
+            category = category_map.get(row["category"], None)
+            if not category:
+                raise ValueError(
+                    f"Category name '{row['category']}' not found in database."
+                )
+            account = Account(
+                id=0,  # id will be set by the database
+                name=row["name"],
+                description=row["description"],
+                category=category,
+                currency=currency,
+                status=Status(row["status"]),
+            )
+            accounts.append(account)
+        return accounts
+
+    def insert_balances(self, balances: list[Balance]) -> None:
+        """Insert balances into the database.
+
+        Args:
+            balances (list[Balance]): list of Balance objects.
+        """
+        print("Service: Inserting sample balances data.")
+        with self._uow() as uow:
+            uow.balance.insert_many(balances)
+
+    def parse_balance_data(self, balances_data: list[dict]) -> list[Balance]:
+        """Parse balance data from list of dicts to list of Balance objects.
+
+        Args:
+            balances_data (list[dict]): list of balance data as dicts.
+
+        Returns:
+            list[Balance]: list of Balance objects.
+        """
+        skip_cols = ("date", "year", "month")
+        with self._uow() as uow:
+            account_map = uow.account.get_dict_name()
+        balances = []
+        for row in balances_data:
+            for key in row:
+                if key.lower() in skip_cols:
+                    continue
+                with self._uow() as uow:
+                    account = account_map.get(key, None)
+                if not account:
+                    raise ValueError(f"Account name '{key}' not found in accounts.")
+                bal = Balance(
+                    id=0,  # id will be set by the database
+                    account=account,
+                    month=Month(year=int(row["year"]), month=int(row["month"])),
+                    amount=abs(int(row[key])) if row[key] else 0,
+                )
+                if bal.amount != 0:
+                    balances.append(bal)
+        return balances
+
     def insert_sample_data(self, accounts_path: str, balances_path: str) -> None:
         """Insert sample accounts and balances data.
 
@@ -53,35 +140,19 @@ class NWTrackService:
           - accounts.csv: name, description, category, currency, status
           - balances.csv: Date, year, month, <account_name_1>, <acct_name_2>, ...
 
-        Notes :
+        Notes:
           - Liabilities are assumed to be in negative amounts and will be stored as
-            positive.
           - Account names in the header must match those in the accounts.csv file.
+            positive.
         """
         print("Service: Inserting sample data.")
         accounts_data = csv_file_to_list_dict(accounts_path)
+        accounts = self.parse_account_data(accounts_data)
+        self.insert_accounts(accounts)
+
         balances_data = csv_file_to_list_dict(balances_path)
-        with self._uow() as uow:
-            uow.account.insert_many(accounts_data)
-
-        balances = []
-        for row in balances_data:
-            for key in row:
-                if key.lower() in ("date", "year", "month"):
-                    continue
-                with self._uow() as uow:
-                    account_id = uow.account.get_id(key)
-                if not account_id:
-                    raise ValueError(f"Account name '{key}' not found in accounts.")
-                bal = {
-                    "account_id": int(account_id),
-                    "month": f"{row['year']}-{int(row['month']):0>2}",
-                    "amount": abs(int(row[key])) if row[key] else 0,
-                }
-                balances.append(bal)
-
-        with self._uow() as uow:
-            uow.balance.insert_many(balances)
+        balances = self.parse_balance_data(balances_data)
+        self.insert_balances(balances)
 
     def insert_exchange_rates(self, exchange_rates_path: str) -> None:
         """Insert exchange rate data from a CSV file.

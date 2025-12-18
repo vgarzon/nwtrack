@@ -74,6 +74,7 @@ class Account:
 
 @dataclass
 class Balance:
+    id: int
     account: Account
     month: Month
     amount: int

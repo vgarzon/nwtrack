@@ -5,7 +5,15 @@ Repository module for nwtrack database operations.
 from __future__ import annotations
 
 from nwtrack.dbmanager import DBConnectionManager
-from nwtrack.models import Currency, Category, ExchangeRate
+from nwtrack.models import (
+    Account,
+    Balance,
+    Currency,
+    Category,
+    ExchangeRate,
+    Side,
+    Status,
+)
 from dataclasses import asdict
 
 
@@ -81,6 +89,27 @@ class SQLiteCategoryRepository:
         )
         print("Inserted", rowcount, "category rows.")
 
+    def get_all(self) -> list[Category]:
+        """Get all Categories.
+
+        Returns:
+            list[Category]: List of category objects.
+        """
+        query = "SELECT name, side FROM categories;"
+        results = self._db.fetch_all(query)
+        categories = [Category(name=r["name"], side=Side(r["side"])) for r in results]
+        return categories
+
+    def get_dict(self) -> list[Category]:
+        """Get all categories in a dictionary indexed by code.
+
+        Returns:
+            dict[str, Category]: Dictionary of categories records indexed by name.
+        """
+        results = self.get_all()
+        categories = {result.name: result for result in results}
+        return categories
+
 
 class SQLiteExchangeRateRepository:
     """Repository for exchange rates SQLite database operations."""
@@ -94,9 +123,6 @@ class SQLiteExchangeRateRepository:
         Args:
             data (list[ExchangeRate]): List of ExchangeRate objects.
         """
-        print(len(data))
-        print(data[0])
-        print(asdict(data[0]))
         rates = [
             {
                 "currency": r.currency.code,
@@ -162,22 +188,40 @@ class SQLiteExchangeRateRepository:
 class SQLiteAccountRepository:
     """Repository for account SQLite database operations."""
 
-    def __init__(self, db: DBConnectionManager) -> None:
+    def __init__(
+        self,
+        db: DBConnectionManager,
+        currency: SQLiteCurrencyRepository,
+        category: SQLiteCategoryRepository,
+    ) -> None:
         self._db: DBConnectionManager = db
         self._id_map: dict[str, int] | None = None
+        self._currency_repo = currency
+        self._category_repo = category
 
-    def insert_many(self, data: list[dict]) -> None:
+    def insert_many(self, data: list[Account]) -> None:
         """Insert list of accounts into the accounts table.
 
         Args:
-            data (list[dict]): List of account data dictionaries.
+            data (list[Account]): List of Account objects
         """
+        accounts = [
+            {
+                "name": acc.name,
+                "description": acc.description,
+                "category": acc.category.name,
+                "currency": acc.currency.code,
+                "status": str(acc.status),
+            }
+            for acc in data
+        ]
+
         rowcount = self._db.execute_many(
             """
             INSERT INTO accounts (name, description, category, currency, status)
             VALUES (:name, :description, :category, :currency, :status);
             """,
-            data,
+            accounts,
         )
         print("Inserted", rowcount, "account rows.")
 
@@ -195,27 +239,39 @@ class SQLiteAccountRepository:
         ]
         return active_accounts
 
-    def get_all(self) -> list[dict]:
+    def get_all(self) -> list[Account]:
         """Get all accounts.
 
         Returns:
-            list[dict]: List of account records.
+            list[Account]: List of account objects.
         """
         query = """
         SELECT id, name, description, category, currency, status FROM accounts;
         """
         results = self._db.fetch_all(query)
+        category_map = self._category_repo.get_dict()
+        currency_map = self._currency_repo.get_dict()
         accounts = [
-            {
-                "id": account_id,
-                "name": name,
-                "description": description,
-                "category": category,
-                "currency": currency,
-                "status": status,
-            }
+            Account(
+                id=account_id,
+                name=name,
+                description=description,
+                category=category_map[category],
+                currency=currency_map[currency],
+                status=Status(status),
+            )
             for account_id, name, description, category, currency, status in results
         ]
+        return accounts
+
+    def get_dict_name(self) -> dict[str, Account]:
+        """Get all accounts in a dictionary indexed by name.
+
+        Returns:
+            dict[str, Account]: Dictionary of account records indexed by name.
+        """
+        results = self.get_all()
+        accounts = {result.name: result for result in results}
         return accounts
 
     def init_id_map(self) -> None:
@@ -248,21 +304,32 @@ class SQLiteAccountRepository:
 class SQLiteBalanceRepository:
     """Repository for balances SQLite database operations."""
 
-    def __init__(self, db: DBConnectionManager) -> None:
+    def __init__(
+        self, db: DBConnectionManager, account: SQLiteAccountRepository
+    ) -> None:
         self._db: DBConnectionManager = db
+        self._account_repo = account
 
-    def insert_many(self, data: list[dict]) -> None:
+    def insert_many(self, data: list[Balance]) -> None:
         """Insert list of balances into the balances table.
 
         Args:
-            data (list[dict]): List of balance data dictionaries.
+            data (list[Balance]): List of balance objects
         """
+        balances = [
+            {
+                "account_id": bal.account.id,
+                "month": str(bal.month),
+                "amount": bal.amount,
+            }
+            for bal in data
+        ]
         rowcount = self._db.execute_many(
             """
             INSERT INTO balances (account_id, month, amount)
             VALUES (:account_id, :month, :amount);
             """,
-            data,
+            balances,
         )
         print("Inserted", rowcount, "balance rows.")
 

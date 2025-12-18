@@ -32,8 +32,8 @@ class SQLiteUnitOfWork:
         self.currency = SQLiteCurrencyRepository(self._db)
         self.category = SQLiteCategoryRepository(self._db)
         self.exchange_rate = SQLiteExchangeRateRepository(self._db)
-        self.account = SQLiteAccountRepository(self._db)
-        self.balance = SQLiteBalanceRepository(self._db)
+        self.account = SQLiteAccountRepository(self._db, self.currency, self.category)
+        self.balance = SQLiteBalanceRepository(self._db, self.account)
         self.net_worth = SQLiteNetWorthRepository(self._db)
         return self
 
