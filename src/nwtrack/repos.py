@@ -23,7 +23,7 @@ class SQLiteCurrencyRepository:
             "INSERT INTO currencies (code, name) VALUES (:code, :name);",
             data,
         )
-        print(rowcount, "currencies inserted.")
+        print("Inserted", rowcount, "currencies rows.")
 
     def get_codes(self) -> list[str]:
         """Get all currency codes.
@@ -53,7 +53,7 @@ class SQLiteAccountTypeRepository:
             "INSERT INTO account_types (type, kind) VALUES (:type, :kind);",
             data,
         )
-        print(rowcount, "account types inserted.")
+        print("Inserted", rowcount, "account type rows.")
 
 
 class SQLiteExchangeRateRepository:
@@ -332,7 +332,7 @@ class SQLiteBalanceRepository:
         print(f"Copied {cur.rowcount} balances from {month} to {next_month}.")
 
 
-class NetWorthRepository:
+class SQLiteNetWorthRepository:
     """Repository net worth operations."""
 
     def __init__(self, db: DBConnectionManager) -> None:

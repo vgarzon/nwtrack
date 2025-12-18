@@ -1,36 +1,16 @@
 """
-Service layer for managing user operations.
+Service layer for managing user operations using unit of work pattern.
 """
 
-from nwtrack.repos import (
-    SQLiteCurrencyRepository,
-    SQLiteAccountTypeRepository,
-    SQLiteExchangeRateRepository,
-    SQLiteAccountRepository,
-    SQLiteBalanceRepository,
-    NetWorthRepository,
-)
+from nwtrack.unitofwork import SQLiteUnitOfWork
 from nwtrack.fileio import csv_file_to_list_dict
 
 
 class NWTrackService:
-    """Service layer for nwtrack operations."""
+    """Service layer for nwtrack operations with unit of work pattern."""
 
-    def __init__(
-        self,
-        currency_repo: SQLiteCurrencyRepository,
-        account_types_repo: SQLiteAccountTypeRepository,
-        exchange_rate_repo: SQLiteExchangeRateRepository,
-        account_repo: SQLiteAccountRepository,
-        balance_repo: SQLiteBalanceRepository,
-        net_worth_repo: NetWorthRepository,
-    ) -> None:
-        self._currency_repo = currency_repo
-        self._account_type_repo = account_types_repo
-        self._exchange_rate_repo = exchange_rate_repo
-        self._account_repo = account_repo
-        self._balance_repo = balance_repo
-        self._net_worth_repo = net_worth_repo
+    def __init__(self, uow: SQLiteUnitOfWork) -> None:
+        self._uow = uow
 
     def initialize_reference_data(
         self, currencies_path: str, account_types_path: str
@@ -44,8 +24,9 @@ class NWTrackService:
         print("Service: Initializing reference data.")
         currencies = csv_file_to_list_dict(currencies_path)
         account_types = csv_file_to_list_dict(account_types_path)
-        self._currency_repo.insert_many(currencies)
-        self._account_type_repo.insert_many(account_types)
+        with self._uow() as uow:
+            uow.currency.insert_many(currencies)
+            uow.account_type.insert_many(account_types)
 
     def insert_sample_data(self, accounts_path: str, balances_path: str) -> None:
         """Insert sample accounts and balances data.
@@ -66,14 +47,16 @@ class NWTrackService:
         print("Service: Inserting sample data.")
         accounts_data = csv_file_to_list_dict(accounts_path)
         balances_data = csv_file_to_list_dict(balances_path)
-        self._account_repo.insert_many(accounts_data)
+        with self._uow() as uow:
+            uow.account.insert_many(accounts_data)
 
         balances = []
         for row in balances_data:
             for key in row:
                 if key.lower() in ("date", "year", "month"):
                     continue
-                account_id = self._account_repo.get_id(key)
+                with self._uow() as uow:
+                    account_id = uow.account.get_id(key)
                 if not account_id:
                     raise ValueError(f"Account name '{key}' not found in accounts.")
                 bal = {
@@ -83,7 +66,8 @@ class NWTrackService:
                 }
                 balances.append(bal)
 
-        self._balance_repo.insert_many(balances)
+        with self._uow() as uow:
+            uow.balance.insert_many(balances)
 
     def insert_exchange_rates(self, exchange_rates_path: str) -> None:
         """Insert exchange rate data from a CSV file.
@@ -96,7 +80,8 @@ class NWTrackService:
         assert exchange_rates_data, "No exchange rates data found."
 
         # check that currency codes in the file exist in the database
-        currency_codes = self._currency_repo.get_codes()
+        with self._uow() as uow:
+            currency_codes = uow.currency.get_codes()
         row = exchange_rates_data[0]
         for key in row:
             if key.lower() in ("date", "year", "month"):
@@ -118,7 +103,8 @@ class NWTrackService:
                 }
                 rates.append(rate)
 
-        self._exchange_rate_repo.insert_many(rates)
+        with self._uow() as uow:
+            uow.exchange_rate.insert_many(rates)
 
     def update_balance(self, account_name: str, month: str, new_amount: int) -> None:
         """Update the balance for a specific account on a given month.
@@ -128,13 +114,15 @@ class NWTrackService:
             month (str): Month of the balance to update, format "YYYY-MM".
             new_ammount (int): New balance amount.
         """
-        account_id = self._account_repo.get_id(account_name)
+        with self._uow() as uow:
+            account_id = uow.account.get_id(account_name)
         if not account_id:
             raise ValueError(f"Account name '{account_name}' not found.")
 
-        self._balance_repo.update(
-            account_id=account_id, month=month, new_amount=new_amount
-        )
+        with self._uow() as uow:
+            uow.balance.update(
+                account_id=account_id, month=month, new_amount=new_amount
+            )
 
     def copy_balances_to_next_month(self, month: str) -> None:
         """Copy all active account balances from one month to the next.
@@ -146,18 +134,21 @@ class NWTrackService:
         year_int, month_int = map(int, month.split("-"))
         if month_int < 1 or month_int > 12:
             raise ValueError(f"Invalid month: {month_int}. Must be between 1 and 12.")
-        if not self._balance_repo.check_month(month):
-            raise ValueError("No balances found for month.")
+        with self._uow() as uow:
+            if not uow.balance.check_month(month):
+                raise ValueError("No balances found for month.")
         if month_int == 12:
             next_month = f"{year_int + 1}-01"
         else:
             next_month = f"{year_int}-{month_int + 1:02d}"
         print(f"Service: Copying balances from {month} to {next_month}.")
-        self._balance_repo.roll_forward(month)
+        with self._uow() as uow:
+            uow.balance.roll_forward(month)
 
     def print_active_accounts(self) -> None:
         """Print a table of all active accounts."""
-        accounts = self._account_repo.get_active()
+        with self._uow() as uow:
+            accounts = uow.account.get_active()
         print("Active accounts:")
         for account in accounts:
             print(f"Account ID: {account['id']}, Name: {account['name']}")
@@ -172,7 +163,8 @@ class NWTrackService:
         Returns:
             None
         """
-        results = self._net_worth_repo.get(month, currency)
+        with self._uow() as uow:
+            results = uow.net_worth.get(month, currency)
         assert len(results) == 1, (
             f"Expected exactly one record for {month} in {currency}"
         )
@@ -184,7 +176,8 @@ class NWTrackService:
 
     def print_net_worth_history(self) -> None:
         """Print net worth history."""
-        nw_hist = self._net_worth_repo.history()
+        with self._uow() as uow:
+            nw_hist = uow.net_worth.history()
         print("month, assets, liabilities, net_worth")
         for res in nw_hist:
             print(
@@ -199,10 +192,11 @@ class NWTrackService:
             currency (str): Currency code
             month (str): Month in "YYYY-MM" format
         """
-        all_currency_codes = self._currency_repo.get_codes()
-        if currency not in all_currency_codes:
-            raise ValueError(f"Currency code '{currency}' not found in database.")
-        rate = self._exchange_rate_repo.get(month, currency)
+        with self._uow() as uow:
+            all_currency_codes = uow.currency.get_codes()
+            if currency not in all_currency_codes:
+                raise ValueError(f"Currency code '{currency}' not found in database.")
+            rate = uow.exchange_rate.get(month, currency)
         if rate:
             print(f"Exchange rate {currency} to USD on {month}: {rate}")
         else:
@@ -214,10 +208,11 @@ class NWTrackService:
         Args:
             currency (str): Currency code
         """
-        all_currency_codes = self._currency_repo.get_codes()
-        if currency not in all_currency_codes:
-            raise ValueError(f"Currency code '{currency}' not found in database.")
-        rates = self._exchange_rate_repo.history(currency)
+        with self._uow() as uow:
+            all_currency_codes = uow.currency.get_codes()
+            if currency not in all_currency_codes:
+                raise ValueError(f"Currency code '{currency}' not found in database.")
+            rates = uow.exchange_rate.history(currency)
         print("currency, month, rate")
         for r in rates:
             print(f"{r['currency']}, {r['month']}, {r['rate']}")
@@ -233,11 +228,8 @@ class NWTrackService:
         year_int, month_int = map(int, month.split("-"))
         if month_int < 1 or month_int > 12:
             raise ValueError(f"Invalid month: {month_int}. Must be between 1 and 12.")
-        balances = self._balance_repo.get_month(month, active_only)
+        with self._uow() as uow:
+            balances = uow.balance.get_month(month, active_only)
         print("account_name, month, amount")
         for bal in balances:
             print(f"{bal['account_name']}, {bal['month']}, {bal['amount']}")
-
-    def close_repo(self) -> None:
-        """Close open repos."""
-        self._net_worth_repo.close_db_connection()

@@ -33,6 +33,10 @@ class DBConnectionManager(Protocol):
 
     def fetch_one(self, query: str, params: dict = {}) -> dict | None: ...
 
+    def commit(self) -> None: ...
+
+    def rollback(self) -> None: ...
+
     def close_connection(self) -> None: ...
 
 
@@ -52,7 +56,7 @@ class SQLiteConnectionManager:
     def _create_connection(self) -> DBAPIConnection:
         print("Creating new SQLite connection.")
         conn = sqlite3.connect(self._db_file_path)
-        conn.execute("PRAGMA foreign_keys = ON;")
+        conn.execute("PRAGMA foreign_keys = ON;")  # NOTE: Enabled in DDL script too
         conn.row_factory = sqlite3.Row
         self._connection = conn
         return conn
@@ -93,7 +97,16 @@ class SQLiteConnectionManager:
             result = cursor.fetchone()
         return result
 
+    def commit(self) -> None:
+        with self.get_connection() as conn:
+            conn.commit()
+
+    def rollback(self) -> None:
+        with self.get_connection() as conn:
+            conn.rollback()
+
     def close_connection(self) -> None:
+        print("Closing SQLite connection.")
         if self._connection:
             self._connection.close()
             self._connection = None

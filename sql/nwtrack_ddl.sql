@@ -1,6 +1,9 @@
 -- Simple schema for a simple networth tracking application
 -- Prototype SQLite version
 
+-- Disabl3e foreign keys temporarily to make dropping easier
+PRAGMA foreign_keys = OFF;
+
 --------------
 --  Tables  --
 --------------
@@ -76,3 +79,5 @@ GROUP BY
 ORDER BY
     b.month, a.currency;
 
+-- Vacuum database to reclaim unused space
+PRAGMA foreign_keys = ON;

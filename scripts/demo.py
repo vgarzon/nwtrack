@@ -1,13 +1,12 @@
 """
-nwtrack: Net worth tracker
-
-Sample container, services, and repository usage
+Demo unit of work pattern implementation.
 """
 
-from nwtrack.admin import AdminService
-from nwtrack.compose import setup_basic_container
 from nwtrack.container import Container
+from nwtrack.compose import build_uow_container
+from nwtrack.admin import AdminService
 from nwtrack.services import NWTrackService
+from nwtrack.dbmanager import DBConnectionManager
 
 
 def demo_init(container: Container) -> None:
@@ -22,7 +21,6 @@ def demo_init(container: Container) -> None:
     container.resolve(AdminService).init_database()
 
     svc = container.resolve(NWTrackService)
-
     svc.initialize_reference_data(
         currencies_path=input_files["currencies"],
         account_types_path=input_files["account_types"],
@@ -86,14 +84,15 @@ def demo_roll_forward(container: Container) -> None:
 
 
 def main():
-    container = setup_basic_container()
+    container = build_uow_container()
 
     demo_init(container)
     demo_balance(container)
     demo_exchange_rate(container)
     demo_roll_forward(container)
 
-    container.resolve(NWTrackService).close_repo()
+    # DB connection singleton cleanup
+    container.resolve(DBConnectionManager).close_connection()
 
 
 if __name__ == "__main__":
