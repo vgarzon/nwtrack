@@ -10,26 +10,26 @@ PRAGMA foreign_keys = OFF;
 
 DROP TABLE IF EXISTS balances;
 DROP TABLE IF EXISTS accounts;
-DROP TABLE IF EXISTS account_types;
+DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS currencies;
 DROP TABLE IF EXISTS exchange_rates;
 
 CREATE TABLE currencies (
-    code TEXT PRIMARY KEY,  -- currency code, e.g., USD, EUR
-    name TEXT NOT NULL      -- currency name, e.g., US Dollar, Euro
+    code TEXT PRIMARY KEY,     -- currency code, e.g., USD, EUR
+    description TEXT NOT NULL  -- currency name, e.g., US Dollar, Euro
 );
 
-CREATE TABLE account_types (
-    type TEXT PRIMARY KEY,              -- account type , e.g., checking, savings, credit card
-    kind TEXT NOT NULL DEFAULT 'asset'  -- account kind, either 'asset' or 'liability'
-        CHECK (kind IN ('asset', 'liability'))
+CREATE TABLE categories (
+    name TEXT PRIMARY KEY,               -- category name , e.g., checking, savings, credit card
+    side TEXT NOT NULL DEFAULT 'asset'  -- accounting side, either 'asset' or 'liability'
+        CHECK (side IN ('asset', 'liability'))
 );
 
 CREATE TABLE accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT,
-    type TEXT NOT NULL REFERENCES account_types(type),
+    category TEXT NOT NULL REFERENCES categories(name),
     currency TEXT NOT NULL DEFAULT 'USD' REFERENCES currencies(code),
     status TEXT NOT NULL DEFAULT 'active'
 	CHECK (status IN ('active', 'inactive')),
@@ -64,16 +64,16 @@ CREATE VIEW networth_history AS
 SELECT
     b.month,
     a.currency,
-    SUM(CASE WHEN at.kind = 'asset' THEN b.amount ELSE 0 END) AS total_assets,
-    SUM(CASE WHEN at.kind = 'liability' THEN b.amount ELSE 0 END) AS total_liabilities,
-    SUM(CASE WHEN at.kind = 'asset' THEN b.amount ELSE 0 END) -
-    SUM(CASE WHEN at.kind = 'liability' THEN b.amount ELSE 0 END) AS net_worth
+    SUM(CASE WHEN at.side = 'asset' THEN b.amount ELSE 0 END) AS total_assets,
+    SUM(CASE WHEN at.side = 'liability' THEN b.amount ELSE 0 END) AS total_liabilities,
+    SUM(CASE WHEN at.side = 'asset' THEN b.amount ELSE 0 END) -
+    SUM(CASE WHEN at.side = 'liability' THEN b.amount ELSE 0 END) AS net_worth
 FROM
     balances b
 JOIN
     accounts a ON b.account_id = a.id
 JOIN
-    account_types at ON a.type = at.type
+    categories at ON a.category = at.name
 GROUP BY
     b.month, a.currency
 ORDER BY

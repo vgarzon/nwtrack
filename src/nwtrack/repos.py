@@ -5,7 +5,7 @@ Repository module for nwtrack database operations.
 from __future__ import annotations
 
 from nwtrack.dbmanager import DBConnectionManager
-from nwtrack.models import Currency, AccountType, AccountKind
+from nwtrack.models import Currency, Category
 from dataclasses import asdict
 
 
@@ -22,7 +22,7 @@ class SQLiteCurrencyRepository:
             data (list[Currency]): List of Currency objects.
         """
         rowcount = self._db.execute_many(
-            "INSERT INTO currencies (code, name) VALUES (:code, :name);",
+            "INSERT INTO currencies (code, description) VALUES (:code, :description);",
             [asdict(currency) for currency in data],
         )
         print("Inserted", rowcount, "currency rows.")
@@ -39,23 +39,23 @@ class SQLiteCurrencyRepository:
         return currency_codes
 
 
-class SQLiteAccountTypeRepository:
-    """Repository for account types SQLite database operations."""
+class SQLiteCategoryRepository:
+    """Repository for category SQLite database operations."""
 
     def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
 
-    def insert_many(self, data: list[AccountType]) -> None:
-        """Insert list of account types into the account_types table.
+    def insert_many(self, data: list[Category]) -> None:
+        """Insert list of categories into SQLite database.
 
         Args:
-            data (list[AccountType]): List of account type data dictionaries.
+            data (list[Category]): List of category data dictionaries.
         """
         rowcount = self._db.execute_many(
-            "INSERT INTO account_types (type, kind) VALUES (:type, :kind);",
-            [asdict(account_type) for account_type in data],
+            "INSERT INTO categories (name, side) VALUES (:name, :side);",
+            [asdict(category) for category in data],
         )
-        print("Inserted", rowcount, "account type rows.")
+        print("Inserted", rowcount, "category rows.")
 
 
 class SQLiteExchangeRateRepository:
@@ -139,8 +139,8 @@ class SQLiteAccountRepository:
         """
         rowcount = self._db.execute_many(
             """
-            INSERT INTO accounts (name, description, type, currency, status)
-            VALUES (:name, :description, :type, :currency, :status);
+            INSERT INTO accounts (name, description, category, currency, status)
+            VALUES (:name, :description, :category, :currency, :status);
             """,
             data,
         )
@@ -167,7 +167,7 @@ class SQLiteAccountRepository:
             list[dict]: List of account records.
         """
         query = """
-        SELECT id, name, description, type, currency, status FROM accounts;
+        SELECT id, name, description, category, currency, status FROM accounts;
         """
         results = self._db.fetch_all(query)
         accounts = [
@@ -175,11 +175,11 @@ class SQLiteAccountRepository:
                 "id": account_id,
                 "name": name,
                 "description": description,
-                "type": type_,
+                "category": category,
                 "currency": currency,
                 "status": status,
             }
-            for account_id, name, description, type_, currency, status in results
+            for account_id, name, description, category, currency, status in results
         ]
         return accounts
 
@@ -332,6 +332,28 @@ class SQLiteBalanceRepository:
         }
         cur = self._db.execute(insert_query, params)
         print(f"Copied {cur.rowcount} balances from {month} to {next_month}.")
+
+    def fetch_sample(self, limit: int = 5) -> list[dict]:
+        """Fetch sample balance records for debugging.
+
+        Args:
+            limit (int, optional): Number of sample records to fetch. Defaults to 5.
+        Returns:
+            list[dict]: List of balance records.
+        """
+        query = """SELECT account_id, month, amount FROM balances
+        LIMIT :limit;
+        """
+        results = self._db.fetch_all(query, {"limit": limit})
+        balances = [
+            {
+                "account_id": account_id,
+                "month": month,
+                "amount": amount,
+            }
+            for account_id, month, amount in results
+        ]
+        return balances
 
 
 class SQLiteNetWorthRepository:

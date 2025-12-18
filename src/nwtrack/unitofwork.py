@@ -5,7 +5,7 @@ Unit of work pattern implementation for managing database transactions.
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.repos import (
     SQLiteCurrencyRepository,
-    SQLiteAccountTypeRepository,
+    SQLiteCategoryRepository,
     SQLiteExchangeRateRepository,
     SQLiteAccountRepository,
     SQLiteBalanceRepository,
@@ -17,7 +17,7 @@ class SQLiteUnitOfWork:
     """Unit of Work protocol for managing SQLite database transactions."""
 
     currency: SQLiteCurrencyRepository
-    account_type: SQLiteAccountTypeRepository
+    category: SQLiteCategoryRepository
     exchange_rate: SQLiteExchangeRateRepository
     account: SQLiteAccountRepository
     balance: SQLiteBalanceRepository
@@ -30,7 +30,7 @@ class SQLiteUnitOfWork:
     def __enter__(self) -> "SQLiteUnitOfWork":
         """Enter the runtime context related to this object."""
         self.currency = SQLiteCurrencyRepository(self._db)
-        self.account_type = SQLiteAccountTypeRepository(self._db)
+        self.category = SQLiteCategoryRepository(self._db)
         self.exchange_rate = SQLiteExchangeRateRepository(self._db)
         self.account = SQLiteAccountRepository(self._db)
         self.balance = SQLiteBalanceRepository(self._db)

@@ -12,7 +12,7 @@ from nwtrack.dbmanager import DBConnectionManager
 def demo_init(container: Container) -> None:
     input_files = {
         "currencies": "data/sample/currencies.csv",
-        "account_types": "data/sample/account_types.csv",
+        "categories": "data/sample/categories.csv",
         "accounts": "data/sample/accounts.csv",
         "balances": "data/sample/balances.csv",
         "exchange_rates": "data/sample/exchange_rates.csv",
@@ -23,7 +23,7 @@ def demo_init(container: Container) -> None:
     svc = container.resolve(NWTrackService)
     svc.initialize_reference_data(
         currencies_path=input_files["currencies"],
-        account_types_path=input_files["account_types"],
+        categories_path=input_files["categories"],
     )
     svc.insert_sample_data(
         accounts_path=input_files["accounts"],

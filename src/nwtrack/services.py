@@ -5,12 +5,12 @@ Service layer for managing user operations using unit of work pattern.
 from nwtrack.unitofwork import SQLiteUnitOfWork
 from nwtrack.fileio import csv_file_to_list_dict
 from nwtrack.models import (
-    Account,
-    Balance,
+    # Account,
+    # Balance,
+    Category,
+    Side,
     Currency,
-    ExchangeRate,
-    AccountType,
-    AccountKind,
+    # ExchangeRate,
 )
 
 
@@ -21,26 +21,25 @@ class NWTrackService:
         self._uow = uow
 
     def initialize_reference_data(
-        self, currencies_path: str, account_types_path: str
+        self, currencies_path: str, categories_path: str
     ) -> None:
         """Initialize reference data in the database.
 
         Args:
-            currencies_path (str): Path to the currencies CSV file.
-            account_types_path (str): Path to the account types CSV file.
+            currencies_path (str): Path to currencies CSV file.
+            categories_path (str): Path to categories CSV file.
         """
         print("Service: Initializing reference data.")
         currencies = csv_file_to_list_dict(currencies_path)
-        account_types = csv_file_to_list_dict(account_types_path)
+        categories = csv_file_to_list_dict(categories_path)
 
         currencies = [Currency(**c) for c in currencies]
-        account_types = [
-            AccountType(type=at["type"], kind=AccountKind(at["kind"]))
-            for at in account_types
+        categories = [
+            Category(name=at["name"], side=Side(at["side"])) for at in categories
         ]
         with self._uow() as uow:
             uow.currency.insert_many(currencies)
-            uow.account_type.insert_many(account_types)
+            uow.category.insert_many(categories)
 
     def insert_sample_data(self, accounts_path: str, balances_path: str) -> None:
         """Insert sample accounts and balances data.
@@ -50,7 +49,7 @@ class NWTrackService:
             balances_path (str): Path to the balances CSV file.
 
         File formats:
-          - accounts.csv: name, description, type, currency, status
+          - accounts.csv: name, description, category, currency, status
           - balances.csv: Date, year, month, <account_name_1>, <acct_name_2>, ...
 
         Notes :

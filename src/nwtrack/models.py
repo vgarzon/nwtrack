@@ -40,12 +40,12 @@ class Month:
             return Month(self.year, self.month + 1)
 
 
-class AccountKind(StrEnum):
+class Side(StrEnum):
     ASSET = "asset"
     LIABILITY = "liability"
 
 
-class AccountStatus(StrEnum):
+class Status(StrEnum):
     ACTIVE = "active"
     INACTIVE = "inactive"
 
@@ -53,13 +53,13 @@ class AccountStatus(StrEnum):
 @dataclass
 class Currency:
     code: str
-    name: str
+    description: str
 
 
 @dataclass
-class AccountType:
-    type: str
-    kind: AccountKind
+class Category:
+    name: str
+    side: Side
 
 
 @dataclass
@@ -67,9 +67,9 @@ class Account:
     id: int
     name: str
     description: str
-    type: AccountType
+    category: Category
     currency: Currency
-    status: AccountStatus
+    status: Status
 
 
 @dataclass
