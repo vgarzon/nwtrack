@@ -81,8 +81,8 @@ class NWTrackService:
                 id=0,  # id will be set by the database
                 name=row["name"],
                 description=row["description"],
-                category=category,
-                currency=currency,
+                category_name=category.name,
+                currency_code=currency.code,
                 status=Status(row["status"]),
             )
             accounts.append(account)
@@ -115,13 +115,12 @@ class NWTrackService:
             for key in row:
                 if key.lower() in skip_cols:
                     continue
-                with self._uow() as uow:
-                    account = account_map.get(key, None)
+                account = account_map.get(key, None)
                 if not account:
                     raise ValueError(f"Account name '{key}' not found in accounts.")
                 bal = Balance(
                     id=0,  # id will be set by the database
-                    account=account,
+                    account_id=account.id,
                     month=Month(year=int(row["year"]), month=int(row["month"])),
                     amount=abs(int(row[key])) if row[key] else 0,
                 )
@@ -165,10 +164,9 @@ class NWTrackService:
         assert exchange_rates_data, "No exchange rates data found."
 
         # check that currency codes in the file exist in the database
-        skip_cols = ("date", "year", "month")
         with self._uow() as uow:
-            currency_map = uow.currency.get_dict()
             currency_codes = uow.currency.get_codes()
+        skip_cols = ("date", "year", "month")
         row = exchange_rates_data[0]
         for key in row:
             if key.lower() in skip_cols:
@@ -184,7 +182,7 @@ class NWTrackService:
                 if not row[key]:
                     continue
                 rate = ExchangeRate(
-                    currency=currency_map.get(key, None),
+                    currency_code=key,
                     month=Month(year=int(row["year"]), month=int(row["month"])),
                     rate=float(row[key]),
                 )

@@ -18,10 +18,10 @@ class SQLiteUnitOfWork:
 
     currency: SQLiteCurrencyRepository
     category: SQLiteCategoryRepository
-    exchange_rate: SQLiteExchangeRateRepository
     account: SQLiteAccountRepository
     balance: SQLiteBalanceRepository
     net_worth: SQLiteNetWorthRepository
+    exchange_rate: SQLiteExchangeRateRepository
 
     def __init__(self, db: DBConnectionManager) -> None:
         """Initialize the Unit of Work with repository instances."""
@@ -31,10 +31,10 @@ class SQLiteUnitOfWork:
         """Enter the runtime context related to this object."""
         self.currency = SQLiteCurrencyRepository(self._db)
         self.category = SQLiteCategoryRepository(self._db)
-        self.exchange_rate = SQLiteExchangeRateRepository(self._db)
-        self.account = SQLiteAccountRepository(self._db, self.currency, self.category)
-        self.balance = SQLiteBalanceRepository(self._db, self.account)
+        self.account = SQLiteAccountRepository(self._db)
+        self.balance = SQLiteBalanceRepository(self._db)
         self.net_worth = SQLiteNetWorthRepository(self._db)
+        self.exchange_rate = SQLiteExchangeRateRepository(self._db)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:

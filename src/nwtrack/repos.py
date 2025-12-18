@@ -123,20 +123,19 @@ class SQLiteExchangeRateRepository:
         Args:
             data (list[ExchangeRate]): List of ExchangeRate objects.
         """
-        rates = [
-            {
-                "currency": r.currency.code,
-                "month": str(r.month),
-                "rate": r.rate,
-            }
-            for r in data
-        ]
         rowcount = self._db.execute_many(
             """
             INSERT INTO exchange_rates (currency, month, rate)
             VALUES (:currency, :month, :rate);
             """,
-            rates,
+            [
+                {
+                    "currency": r.currency_code,
+                    "month": str(r.month),
+                    "rate": r.rate,
+                }
+                for r in data
+            ],
         )
         print("Inserted", rowcount, "exchange rate rows.")
 
@@ -188,16 +187,9 @@ class SQLiteExchangeRateRepository:
 class SQLiteAccountRepository:
     """Repository for account SQLite database operations."""
 
-    def __init__(
-        self,
-        db: DBConnectionManager,
-        currency: SQLiteCurrencyRepository,
-        category: SQLiteCategoryRepository,
-    ) -> None:
+    def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
         self._id_map: dict[str, int] | None = None
-        self._currency_repo = currency
-        self._category_repo = category
 
     def insert_many(self, data: list[Account]) -> None:
         """Insert list of accounts into the accounts table.
@@ -205,23 +197,21 @@ class SQLiteAccountRepository:
         Args:
             data (list[Account]): List of Account objects
         """
-        accounts = [
-            {
-                "name": acc.name,
-                "description": acc.description,
-                "category": acc.category.name,
-                "currency": acc.currency.code,
-                "status": str(acc.status),
-            }
-            for acc in data
-        ]
-
         rowcount = self._db.execute_many(
             """
             INSERT INTO accounts (name, description, category, currency, status)
             VALUES (:name, :description, :category, :currency, :status);
             """,
-            accounts,
+            [
+                {
+                    "name": acc.name,
+                    "description": acc.description,
+                    "category": acc.category_name,
+                    "currency": acc.currency_code,
+                    "status": str(acc.status),
+                }
+                for acc in data
+            ],
         )
         print("Inserted", rowcount, "account rows.")
 
@@ -249,15 +239,13 @@ class SQLiteAccountRepository:
         SELECT id, name, description, category, currency, status FROM accounts;
         """
         results = self._db.fetch_all(query)
-        category_map = self._category_repo.get_dict()
-        currency_map = self._currency_repo.get_dict()
         accounts = [
             Account(
                 id=account_id,
                 name=name,
                 description=description,
-                category=category_map[category],
-                currency=currency_map[currency],
+                category_name=category,
+                currency_code=currency,
                 status=Status(status),
             )
             for account_id, name, description, category, currency, status in results
@@ -304,11 +292,8 @@ class SQLiteAccountRepository:
 class SQLiteBalanceRepository:
     """Repository for balances SQLite database operations."""
 
-    def __init__(
-        self, db: DBConnectionManager, account: SQLiteAccountRepository
-    ) -> None:
+    def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
-        self._account_repo = account
 
     def insert_many(self, data: list[Balance]) -> None:
         """Insert list of balances into the balances table.
@@ -316,20 +301,19 @@ class SQLiteBalanceRepository:
         Args:
             data (list[Balance]): List of balance objects
         """
-        balances = [
-            {
-                "account_id": bal.account.id,
-                "month": str(bal.month),
-                "amount": bal.amount,
-            }
-            for bal in data
-        ]
         rowcount = self._db.execute_many(
             """
             INSERT INTO balances (account_id, month, amount)
             VALUES (:account_id, :month, :amount);
             """,
-            balances,
+            [
+                {
+                    "account_id": bal.account_id,
+                    "month": str(bal.month),
+                    "amount": bal.amount,
+                }
+                for bal in data
+            ],
         )
         print("Inserted", rowcount, "balance rows.")
 

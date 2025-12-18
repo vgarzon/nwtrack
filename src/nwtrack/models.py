@@ -67,21 +67,21 @@ class Account:
     id: int
     name: str
     description: str
-    category: Category
-    currency: Currency
+    category_name: str
+    currency_code: str
     status: Status
 
 
 @dataclass
 class Balance:
     id: int
-    account: Account
+    account_id: int
     month: Month
     amount: int
 
 
 @dataclass
 class ExchangeRate:
-    currency: Currency
+    currency_code: str
     month: Month
     rate: float
