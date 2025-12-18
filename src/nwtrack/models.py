@@ -1,0 +1,86 @@
+"""
+Primary data models
+"""
+
+from dataclasses import dataclass
+from enum import StrEnum
+
+
+@dataclass
+class Month:
+    year: int
+    month: int
+
+    def __init__(self, year: int, month: int):
+        if month < 1 or month > 12:
+            raise ValueError(f"Invalid month: {month}")
+        if year < 0:
+            raise ValueError(f"Invalid year: {year}")
+        self.year = year
+        self.month = month
+
+    def __str__(self) -> str:
+        return f"{self.year:04d}-{self.month:02d}"
+
+    @staticmethod
+    def parse(s: str) -> "Month":
+        year, month = map(int, s.split("-"))
+        if "-" not in s or len(s.split("-")) != 2:
+            raise ValueError(f"Invalid month format: {s}")
+        if month < 1 or month > 12:
+            raise ValueError(f"Invalid month: {month}")
+        if year < 0:
+            raise ValueError(f"Invalid year: {year}")
+        return Month(year, month)
+
+    def increment(self) -> "Month":
+        if self.month == 12:
+            return Month(self.year + 1, 1)
+        else:
+            return Month(self.year, self.month + 1)
+
+
+class AccountKind(StrEnum):
+    ASSET = "asset"
+    LIABILITY = "liability"
+
+
+class AccountStatus(StrEnum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+
+@dataclass
+class Currency:
+    code: str
+    name: str
+
+
+@dataclass
+class AccountType:
+    type: str
+    kind: AccountKind
+
+
+@dataclass
+class Account:
+    id: int
+    name: str
+    description: str
+    type: AccountType
+    currency: Currency
+    status: AccountStatus
+
+
+@dataclass
+class Balance:
+    account: Account
+    month: Month
+    amount: int
+
+
+@dataclass
+class ExchangeRate:
+    currency: Currency
+    month: Month
+    rate: float
