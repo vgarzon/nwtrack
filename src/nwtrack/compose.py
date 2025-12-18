@@ -4,10 +4,10 @@ Common dependency injection container setup for NWTrack application.
 
 from nwtrack.config import Config, load_config
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
-from nwtrack.services import NWTrackService
 from nwtrack.admin import AdminService
 from nwtrack.container import Container, Lifetime
 from nwtrack.unitofwork import SQLiteUnitOfWork
+from nwtrack.services import InitDataService, UpdateService, ReportService
 
 
 def build_uow_container() -> Container:
@@ -33,7 +33,13 @@ def build_uow_container() -> Container:
         AdminService,
         lambda c: AdminService(c.resolve(Config), c.resolve(DBConnectionManager)),
     ).register(
-        NWTrackService,
-        lambda c: NWTrackService(uow=lambda: c.resolve(SQLiteUnitOfWork)),
+        InitDataService,
+        lambda c: InitDataService(uow=lambda: c.resolve(SQLiteUnitOfWork)),
+    ).register(
+        UpdateService,
+        lambda c: UpdateService(uow=lambda: c.resolve(SQLiteUnitOfWork)),
+    ).register(
+        ReportService,
+        lambda c: ReportService(uow=lambda: c.resolve(SQLiteUnitOfWork)),
     )
     return container

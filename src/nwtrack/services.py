@@ -16,8 +16,8 @@ from nwtrack.models import (
 )
 
 
-class NWTrackService:
-    """Service layer for nwtrack operations with unit of work pattern."""
+class InitDataService:
+    """Initialize reference and sample data in the database."""
 
     def __init__(self, uow: SQLiteUnitOfWork) -> None:
         self._uow = uow
@@ -191,6 +191,13 @@ class NWTrackService:
         with self._uow() as uow:
             uow.exchange_rate.insert_many(rates)
 
+
+class UpdateService:
+    """Service layer to update balance and other data using unit of work pattern."""
+
+    def __init__(self, uow: SQLiteUnitOfWork) -> None:
+        self._uow = uow
+
     def update_balance(self, account_name: str, month: str, new_amount: int) -> None:
         """Update the balance for a specific account on a given month.
 
@@ -209,7 +216,7 @@ class NWTrackService:
                 account_id=account_id, month=month, new_amount=new_amount
             )
 
-    def copy_balances_to_next_month(self, month: str) -> None:
+    def roll_balances_forward(self, month: str) -> None:
         """Copy all active account balances from one month to the next.
 
         Args:
@@ -230,6 +237,13 @@ class NWTrackService:
         with self._uow() as uow:
             uow.balance.roll_forward(month)
 
+
+class ReportService:
+    """Printing and reporting service using unit of work pattern."""
+
+    def __init__(self, uow: SQLiteUnitOfWork) -> None:
+        self._uow = uow
+
     def print_active_accounts(self) -> None:
         """Print a table of all active accounts."""
         with self._uow() as uow:
@@ -237,6 +251,19 @@ class NWTrackService:
         print("Active accounts:")
         for account in accounts:
             print(f"Account ID: {account['id']}, Name: {account['name']}")
+
+    def print_balances_on_month(self, month: Month, active_only: bool = True) -> None:
+        """Print all account balances at a specific month.
+
+        Args:
+            month (Month): Month object
+            active_only (bool): Whether to include only active accounts
+        """
+        with self._uow() as uow:
+            balances = uow.balance.get_month(str(month), active_only)
+        print("account_name, month, amount")
+        for bal in balances:
+            print(f"{bal['account_name']}, {bal['month']}, {bal['amount']}")
 
     def print_net_worth_on_month(self, month: str, currency: str = "USD") -> None:
         """Print net worth on a specific month.
@@ -301,20 +328,3 @@ class NWTrackService:
         print("currency, month, rate")
         for r in rates:
             print(f"{r['currency']}, {r['month']}, {r['rate']}")
-
-    def print_balances_on_month(self, month: str, active_only: bool = True) -> None:
-        """Print all account balances at a specific month.
-
-        Args:
-            month (str): Month in "YYYY-MM" format
-            active_only (bool): Whether to include only active accounts
-        """
-        # validate month
-        year_int, month_int = map(int, month.split("-"))
-        if month_int < 1 or month_int > 12:
-            raise ValueError(f"Invalid month: {month_int}. Must be between 1 and 12.")
-        with self._uow() as uow:
-            balances = uow.balance.get_month(month, active_only)
-        print("account_name, month, amount")
-        for bal in balances:
-            print(f"{bal['account_name']}, {bal['month']}, {bal['amount']}")

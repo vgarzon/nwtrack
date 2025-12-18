@@ -5,8 +5,9 @@ Demo unit of work pattern implementation.
 from nwtrack.container import Container
 from nwtrack.compose import build_uow_container
 from nwtrack.admin import AdminService
-from nwtrack.services import NWTrackService
 from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.services import InitDataService, UpdateService, ReportService
+from nwtrack.models import Month
 
 
 def demo_init(container: Container) -> None:
@@ -20,16 +21,16 @@ def demo_init(container: Container) -> None:
 
     container.resolve(AdminService).init_database()
 
-    svc = container.resolve(NWTrackService)
-    svc.initialize_reference_data(
+    data_svc = container.resolve(InitDataService)
+    data_svc.initialize_reference_data(
         currencies_path=input_files["currencies"],
         categories_path=input_files["categories"],
     )
-    svc.insert_sample_data(
+    data_svc.insert_sample_data(
         accounts_path=input_files["accounts"],
         balances_path=input_files["balances"],
     )
-    svc.insert_exchange_rates(input_files["exchange_rates"])
+    data_svc.insert_exchange_rates(input_files["exchange_rates"])
 
 
 def demo_balance(container: Container) -> None:
@@ -37,31 +38,32 @@ def demo_balance(container: Container) -> None:
     month = "2024-06"
     new_amount = 530
 
-    svc = container.resolve(NWTrackService)
+    upd_svc = container.resolve(UpdateService)
+    prn_svc = container.resolve(ReportService)
 
-    svc.print_active_accounts()
-    svc.print_net_worth_history()
+    prn_svc.print_active_accounts()
+    prn_svc.print_net_worth_history()
 
     print("Before update:")
-    svc.print_net_worth_on_month(month=month)
-    svc.update_balance(
+    prn_svc.print_net_worth_on_month(month=month)
+    upd_svc.update_balance(
         account_name=account_name,
         month=month,
         new_amount=new_amount,
     )
     print("After update:")
-    svc.print_net_worth_on_month(month=month)
+    prn_svc.print_net_worth_on_month(month=month)
 
 
 def demo_exchange_rate(container: Container) -> None:
     month = "2024-06"
 
-    svc = container.resolve(NWTrackService)
+    prn_svc = container.resolve(ReportService)
 
-    svc.print_exchange_rate("CNY", month)
-    svc.print_exchange_rate_history("CHF")
+    prn_svc.print_exchange_rate("CNY", month)
+    prn_svc.print_exchange_rate_history("CHF")
     try:
-        svc.print_exchange_rate_history("EUR")
+        prn_svc.print_exchange_rate_history("EUR")
     except ValueError as e:
         print(e)
 
@@ -69,18 +71,17 @@ def demo_exchange_rate(container: Container) -> None:
 def demo_roll_forward(container: Container) -> None:
     month = "2025-11"
 
-    svc = container.resolve(NWTrackService)
+    prn_svc = container.resolve(ReportService)
+    upd_svc = container.resolve(UpdateService)
 
-    year_int, month_int = map(int, month.split("-"))
-    next_month = (
-        f"{year_int + 1}-01" if month_int == 12 else f"{year_int}-{month_int + 1:02d}"
-    )
+    next_month = str(Month.parse(month).increment())
+
     print("Before roll forward:")
-    svc.print_balances_on_month(month=month)
+    prn_svc.print_balances_on_month(month=month)
     print(f"Copying balances from {month} to {next_month}...")
-    svc.copy_balances_to_next_month(month=month)
+    upd_svc.roll_balances_forward(month=month)
     print("After copying:")
-    svc.print_balances_on_month(month=next_month)
+    prn_svc.print_balances_on_month(month=next_month)
 
 
 def main():
