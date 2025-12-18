@@ -13,6 +13,7 @@ from nwtrack.models import (
     ExchangeRate,
     Side,
     Status,
+    Month,
 )
 from dataclasses import asdict
 
@@ -301,11 +302,12 @@ class SQLiteBalanceRepository:
         Args:
             data (list[Balance]): List of balance objects
         """
+        query = """
+        INSERT INTO balances (account_id, month, amount)
+        VALUES (:account_id, :month, :amount);
+        """
         rowcount = self._db.execute_many(
-            """
-            INSERT INTO balances (account_id, month, amount)
-            VALUES (:account_id, :month, :amount);
-            """,
+            query,
             [
                 {
                     "account_id": bal.account_id,
@@ -392,11 +394,11 @@ class SQLiteBalanceRepository:
         result = self._db.fetch_one(query, {"month": month})
         return result is not None
 
-    def roll_forward(self, month: str) -> None:
+    def roll_forward(self, month: Month) -> None:
         """Roll account balances forward from one month to the next.
 
         Args:
-            month (str): Month of the source month in "YYYY-MM" format.
+            month (Month): Source Month object
         """
         insert_query = """
         INSERT OR IGNORE INTO balances (account_id, month, amount)
@@ -404,20 +406,13 @@ class SQLiteBalanceRepository:
         FROM balances
         WHERE month = :month;
         """
-        year_int, month_int = map(int, month.split("-"))
-        if month_int < 1 or month_int > 12:
-            raise ValueError(f"Invalid month: {month_int}. Must be between 1 and 12.")
-        next_month = (
-            f"{year_int + 1}-01"
-            if month_int == 12
-            else f"{year_int}-{month_int + 1:02d}"
-        )
+        next_month = month.increment()
         params = {
-            "month": month,
-            "next_month": next_month,
+            "month": str(month),
+            "next_month": str(next_month),
         }
         cur = self._db.execute(insert_query, params)
-        print(f"Copied {cur.rowcount} balances from {month} to {next_month}.")
+        print(f"Rolled {cur.rowcount} balances forward to {next_month}.")
 
     def fetch_sample(self, limit: int = 5) -> list[dict]:
         """Fetch sample balance records for debugging.

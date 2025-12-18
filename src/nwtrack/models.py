@@ -22,6 +22,9 @@ class Month:
     def __str__(self) -> str:
         return f"{self.year:04d}-{self.month:02d}"
 
+    def __repr__(self) -> str:
+        return f"{self.year:04d}-{self.month:02d}"
+
     @staticmethod
     def parse(s: str) -> "Month":
         year, month = map(int, s.split("-"))

@@ -79,7 +79,7 @@ def demo_roll_forward(container: Container) -> None:
     print("Before roll forward:")
     prn_svc.print_balances_on_month(month=month)
     print(f"Copying balances from {month} to {next_month}...")
-    upd_svc.roll_balances_forward(month=month)
+    upd_svc.roll_balances_forward(month_str=month)
     print("After copying:")
     prn_svc.print_balances_on_month(month=next_month)
 
