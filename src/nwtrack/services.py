@@ -10,7 +10,8 @@ from nwtrack.models import (
     Category,
     Side,
     Currency,
-    # ExchangeRate,
+    ExchangeRate,
+    Month,
 )
 
 
@@ -93,11 +94,13 @@ class NWTrackService:
         assert exchange_rates_data, "No exchange rates data found."
 
         # check that currency codes in the file exist in the database
+        skip_cols = ("date", "year", "month")
         with self._uow() as uow:
+            currency_map = uow.currency.get_dict()
             currency_codes = uow.currency.get_codes()
         row = exchange_rates_data[0]
         for key in row:
-            if key.lower() in ("date", "year", "month"):
+            if key.lower() in skip_cols:
                 continue
             if key not in currency_codes:
                 raise ValueError(f"Currency code '{key}' not found in database.")
@@ -105,15 +108,15 @@ class NWTrackService:
         rates = []
         for row in exchange_rates_data:
             for key in row:
-                if key.lower() in ("date", "year", "month"):
+                if key.lower() in skip_cols:
                     continue
                 if not row[key]:
                     continue
-                rate = {
-                    "currency": key,
-                    "month": f"{row['year']}-{int(row['month']):0>2}",
-                    "rate": float(row[key]),
-                }
+                rate = ExchangeRate(
+                    currency=currency_map.get(key, None),
+                    month=Month(year=int(row["year"]), month=int(row["month"])),
+                    rate=float(row[key]),
+                )
                 rates.append(rate)
 
         with self._uow() as uow:

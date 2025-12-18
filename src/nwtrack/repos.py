@@ -5,7 +5,7 @@ Repository module for nwtrack database operations.
 from __future__ import annotations
 
 from nwtrack.dbmanager import DBConnectionManager
-from nwtrack.models import Currency, Category
+from nwtrack.models import Currency, Category, ExchangeRate
 from dataclasses import asdict
 
 
@@ -38,6 +38,30 @@ class SQLiteCurrencyRepository:
         currency_codes = [code for (code,) in results]
         return currency_codes
 
+    def get_all(self) -> list[Currency]:
+        """Get all currencies.
+
+        Returns:
+            list[Currency]: List of currency records.
+        """
+        query = "SELECT code, description FROM currencies;"
+        results = self._db.fetch_all(query)
+        currencies = [
+            Currency(code=code, description=description)
+            for code, description in results
+        ]
+        return currencies
+
+    def get_dict(self) -> list[Currency]:
+        """Get all currencies in a dictionary indexed by code.
+
+        Returns:
+            dict[str, Currency]: Dictionary of currency records indexed by code.
+        """
+        results = self.get_all()
+        currencies = {result.code: result for result in results}
+        return currencies
+
 
 class SQLiteCategoryRepository:
     """Repository for category SQLite database operations."""
@@ -64,18 +88,29 @@ class SQLiteExchangeRateRepository:
     def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
 
-    def insert_many(self, data: list[dict]) -> None:
+    def insert_many(self, data: list[ExchangeRate]) -> None:
         """Insert list of exchange rates into the exchange_rates table.
 
         Args:
-            data (list[dict]): List of exchange rate data dictionaries.
+            data (list[ExchangeRate]): List of ExchangeRate objects.
         """
+        print(len(data))
+        print(data[0])
+        print(asdict(data[0]))
+        rates = [
+            {
+                "currency": r.currency.code,
+                "month": str(r.month),
+                "rate": r.rate,
+            }
+            for r in data
+        ]
         rowcount = self._db.execute_many(
             """
             INSERT INTO exchange_rates (currency, month, rate)
             VALUES (:currency, :month, :rate);
             """,
-            data,
+            rates,
         )
         print("Inserted", rowcount, "exchange rate rows.")
 
