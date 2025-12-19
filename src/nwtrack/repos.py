@@ -14,6 +14,7 @@ from nwtrack.models import (
     Side,
     Status,
     Month,
+    NetWorth,
 )
 from dataclasses import asdict
 
@@ -216,17 +217,25 @@ class SQLiteAccountRepository:
         )
         print("Inserted", rowcount, "account rows.")
 
-    def get_active(self) -> list[dict]:
+    def get_active(self) -> list[Account]:
         """Get all active accounts."""
         results = self._db.fetch_all(
             """
-            SELECT id, name
+            SELECT id, name, description, category, currency, status
             FROM accounts
             WHERE status = 'active';
             """
         )
         active_accounts = [
-            {"id": account_id, "name": name} for account_id, name in results
+            Account(
+                id=account_id,
+                name=name,
+                description=description,
+                category_name=category,
+                currency_code=currency,
+                status=Status(status),
+            )
+            for account_id, name, description, category, currency, status in results
         ]
         return active_accounts
 
@@ -319,48 +328,77 @@ class SQLiteBalanceRepository:
         )
         print("Inserted", rowcount, "balance rows.")
 
-    def get_month(self, month: str, active_only: bool = True) -> list[dict]:
+    def get(self, month: Month, account_name: str) -> list[dict]:
         """Get all account balances on a specific month.
 
         Args:
-            month (): Month in "YYYY-MM" format
+            month (Month): Month object
+            account_name (str): Account name
+
+        Returns:
+            Account: Account object
+        """
+        query = """
+        SELECT a.id, b.account_id, a.name, b.amount
+        FROM accounts a
+        JOIN balances b ON a.id = b.account_id
+        WHERE b.month = :month AND a.name = :account_name;
+        """
+        results = self._db.fetch_all(
+            query, {"month": str(month), "account_name": account_name}
+        )
+        assert len(results) <= 1, "Expected at most one balance record."
+        res = results[0]
+        balance = Balance(
+            id=res["id"],
+            account_id=res["account_id"],
+            month=str(month),
+            amount=res["amount"],
+        )
+        return balance
+
+    def get_month(self, month: Month, active_only: bool = True) -> list[Balance]:
+        """Get all account balances on a specific month.
+
+        Args:
+            month (Month): Month object
             active_only (bool): Whether to include only active accounts
 
         Returns:
-            list[dict]: List of account balances.
+            list[Balance]: List of account balances.
         """
         if active_only:
             query = """
-            SELECT a.id, a.name, b.amount
+            SELECT a.id, b.account_id, a.name, b.amount
             FROM accounts a
             JOIN balances b ON a.id = b.account_id
             WHERE b.month = :month AND a.status = 'active';
             """
         else:
             query = """
-            SELECT a.id, a.name, b.amount
+            SELECT a.id, b.account_id, a.name, b.amount
             FROM accounts a
             JOIN balances b ON a.id = b.account_id
             WHERE b.month = :month;
             """
-        results = self._db.fetch_all(query, {"month": month})
+        results = self._db.fetch_all(query, {"month": str(month)})
         balances = [
-            {
-                "account_id": account_id,
-                "account_name": name,
-                "month": month,
-                "amount": amount,
-            }
-            for account_id, name, amount in results
+            Balance(
+                id=res["id"],
+                account_id=res["account_id"],
+                month=str(month),
+                amount=res["amount"],
+            )
+            for res in results
         ]
         return balances
 
-    def update(self, account_id: int, month: str, new_amount: int) -> None:
+    def update(self, account_id: int, month: Month, new_amount: int) -> None:
         """Update the balance for specific account and month.
 
         Args:
             account_id (int): The account ID.
-            month (str): The month to the entry to update, in "YYYY-MM" format.
+            month (Month): The month to the entry to update.
             new_amount (int): The new balance amount.
         """
         update_query = """
@@ -371,7 +409,7 @@ class SQLiteBalanceRepository:
         params: dict[str, str | int | None] = {
             "amount": new_amount,
             "account_id": account_id,
-            "month": month,
+            "month": str(month),
         }
         cur = self._db.execute(update_query, params)
         assert cur.rowcount == 1, "Expected exactly one row to be updated."
@@ -443,27 +481,37 @@ class SQLiteNetWorthRepository:
     def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
 
-    def get(self, month: str, currency: str = "USD") -> list[dict]:
+    def get(self, month: Month, currency_code: str = "USD") -> list[NetWorth]:
         """Get net worth value for given month and currency
 
         Args:
-            month (str): The month to query net worth for in "YYYY-MM" format.
-            currency (str, optional): The currency code. Defaults to "USD".
+            month (Month): The month to query net worth.
+            currency_code (str, optional): The currency code. Defaults to "USD".
 
         Returns:
-            list[dict]: List of net worth records.
+            NetWorth: Net worth record.
         """
         query = """
         SELECT total_assets, total_liabilities, net_worth FROM networth_history
         WHERE month = :month AND currency = :currency;
         """
-        results = self._db.fetch_all(query, {"month": month, "currency": currency})
-        return results
+        results = self._db.fetch_all(
+            query, {"month": str(month), "currency": currency_code}
+        )
+        assert len(results) <= 1, "Expected at most one net worth record."
+        result = results[0]
+        nw = NetWorth(
+            month=month,
+            assets=result["total_assets"],
+            liabilities=result["total_liabilities"],
+            net_worth=result["net_worth"],
+        )
+        return nw
 
-    def history(self, currency: str = "USD") -> list[dict]:
+    def history(self, currency_code: str = "USD") -> list[dict]:
         """Get net worth history for a given currency.
         Args:
-            currency (str, optional): The currency code. Defaults to "USD".
+            currency_code (str, optional): The currency code. Defaults to "USD".
 
         Returns:
             list[dict]: List of net worth records.
@@ -473,8 +521,17 @@ class SQLiteNetWorthRepository:
         WHERE currency = :currency
         ORDER BY month;
         """
-        results = self._db.fetch_all(query, {"currency": currency})
-        return results
+        results = self._db.fetch_all(query, {"currency": currency_code})
+        net_worths = [
+            NetWorth(
+                month=Month.parse(month),
+                assets=total_assets,
+                liabilities=total_liabilities,
+                net_worth=net_worth,
+            )
+            for month, total_assets, total_liabilities, net_worth in results
+        ]
+        return net_worths
 
     def close_db_connection(self) -> None:
         self._db.close_connection()

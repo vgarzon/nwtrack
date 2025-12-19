@@ -8,6 +8,7 @@ from nwtrack.models import (
     Account,
     Balance,
     Category,
+    NetWorth,
     Side,
     Currency,
     ExchangeRate,
@@ -198,12 +199,12 @@ class UpdateService:
     def __init__(self, uow: SQLiteUnitOfWork) -> None:
         self._uow = uow
 
-    def update_balance(self, account_name: str, month: str, new_amount: int) -> None:
+    def update_balance(self, account_name: str, month: Month, new_amount: int) -> None:
         """Update the balance for a specific account on a given month.
 
         Args:
             account_name (str): Name of the account.
-            month (str): Month of the balance to update, format "YYYY-MM".
+            month (Month): Month of the balance to update.
             new_ammount (int): New balance amount.
         """
         with self._uow() as uow:
@@ -239,58 +240,138 @@ class ReportService:
     def __init__(self, uow: SQLiteUnitOfWork) -> None:
         self._uow = uow
 
-    def print_active_accounts(self) -> None:
-        """Print a table of all active accounts."""
-        with self._uow() as uow:
-            accounts = uow.account.get_active()
-        print("Active accounts:")
-        for account in accounts:
-            print(f"Account ID: {account['id']}, Name: {account['name']}")
+    def get_accounts(self, active_only: bool = True) -> list[Account]:
+        """Get a list of all active accounts.
 
-    def print_balances_on_month(self, month: Month, active_only: bool = True) -> None:
-        """Print all account balances at a specific month.
+        Args:
+            active_only (bool): Whether to include only active accounts.
+
+        Returns:
+            list[Account]: List of active Account objects.
+        """
+        if active_only:
+            with self._uow() as uow:
+                accounts = uow.account.get_active()
+        else:
+            with self._uow() as uow:
+                accounts = uow.account.get_all()
+        return accounts
+
+    def print_accounts(self, active: bool = True) -> None:
+        """Print a table of all active accounts.
+
+        Args:
+            active (bool): Whether to include only active accounts.
+        """
+        accounts = self.get_accounts(active=active)
+        print("Accounts:")
+        print("id, name, category, status")
+        for account in accounts:
+            print(account.id, account.name, account.category_name, account.status)
+
+    def get_balance(self, month: Month, account_name: str) -> Balance:
+        """Get balance for an account on a specific month.
+
+        Args:
+            month (Month): Month object
+            account_name (str): Name of the account
+
+        Return:
+            Balance: Balance object for the specified account and month.
+        """
+        with self._uow() as uow:
+            balance = uow.balance.get(month, account_name)
+        return balance
+
+    def get_month_balances(
+        self, month: Month, active_only: bool = True
+    ) -> list[Balance]:
+        """Get balance all accounts on a specific month.
+
+        Args:
+            month (Month): Month object
+            active_only (bool): Whether to include only active accounts
+
+        Return:
+            list[Balance]: List of Balance object for the specified account and month.
+        """
+        with self._uow() as uow:
+            balances = uow.balance.get_month(month, active_only)
+        return balances
+
+    def print_balance(self, month: Month, account_name: str) -> None:
+        """Print account balance for a specific month.
+
+        Args:
+            month (Month): Month object
+            account_name (str): Name of the account
+        """
+        bal = self.get_balance(month, account_name)
+        print("Balance for", account_name, "on", str(bal.month), "=", bal.amount)
+
+    def print_month_balances(self, month: Month, active_only: bool = True) -> None:
+        """Print account balances on a specific month.
 
         Args:
             month (Month): Month object
             active_only (bool): Whether to include only active accounts
         """
-        with self._uow() as uow:
-            balances = uow.balance.get_month(str(month), active_only)
-        print("account_name, month, amount")
+        balances = self.get_month_balances(month, active_only)
+        accounts = self.get_accounts(active_only)
+        account_map = {acc.id: acc for acc in accounts}
+        print("id, account_id, month, amount")
         for bal in balances:
-            print(f"{bal['account_name']}, {bal['month']}, {bal['amount']}")
+            account_name = account_map[bal.account_id].name
+            print(bal.id, account_name, str(bal.month), bal.amount)
 
-    def print_net_worth_on_month(self, month: str, currency: str = "USD") -> None:
+    def get_net_worth(self, month: Month) -> NetWorth:
+        """Get net worth for a specific month.
+
+        Args:
+            month (Month): Month object
+
+        Returns:
+            NetWorth: NetWorth object for the specified month.
+        """
+        with self._uow() as uow:
+            nw = uow.net_worth.get(month)
+        return nw
+
+    def get_net_worth_history(self) -> list[NetWorth]:
+        """Get net worth history.
+
+        Returns:
+            list[NetWorth]: List of net worth records.
+        """
+        with self._uow() as uow:
+            nw_hist = uow.net_worth.history()
+        return nw_hist
+
+    def print_net_worth(self, month: Month, currency_code: str = "USD") -> None:
         """Print net worth on a specific month.
 
         Args:
-            month (str): Month in "YYYY-MM" format
+            month (Month): Month object
             currency (str): Currency code (default: "USD")
 
         Returns:
             None
         """
         with self._uow() as uow:
-            results = uow.net_worth.get(month, currency)
-        assert len(results) == 1, (
-            f"Expected exactly one record for {month} in {currency}"
-        )
-        assets, liabilities, net_worth = results[0]
+            nw = uow.net_worth.get(month, currency_code)
+        if not nw:
+            raise ValueError(f"No net worth data found for {month} in {currency_code}")
         print(
-            f"Month: {month}, Currency: {currency}, Assets: {assets}, "
-            f"Liabilities: {liabilities}, Net Worth: {net_worth}"
+            f"Month: {month}, Currency: {currency_code}, Assets: {nw.assets}, "
+            f"Liabilities: {nw.liabilities}, Net Worth: {nw.net_worth}"
         )
 
     def print_net_worth_history(self) -> None:
         """Print net worth history."""
-        with self._uow() as uow:
-            nw_hist = uow.net_worth.history()
+        nw_hist = self.get_net_worth_history()
         print("month, assets, liabilities, net_worth")
-        for res in nw_hist:
-            print(
-                f"{res['month']}, {res['total_assets']}, "
-                f"{res['total_liabilities']}, {res['net_worth']}"
-            )
+        for nw in nw_hist:
+            print(nw.month, nw.assets, nw.liabilities, nw.net_worth)
 
     def print_exchange_rate(self, currency: str, month: str) -> None:
         """Print exchange rates for a specific currency and month

@@ -88,3 +88,11 @@ class ExchangeRate:
     currency_code: str
     month: Month
     rate: float
+
+
+@dataclass
+class NetWorth:
+    month: Month
+    assets: int
+    liabilities: int
+    net_worth: int
