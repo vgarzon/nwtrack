@@ -3,22 +3,20 @@ Unit of work pattern implementation for managing database transactions.
 """
 
 from typing import Protocol
+
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.repos import (
-    CurrencyRepository,
-    CategoryRepository,
-    ExchangeRateRepository,
     AccountRepository,
     BalanceRepository,
+    CategoryRepository,
+    CurrencyRepository,
+    ExchangeRateRepository,
     NetWorthRepository,
-)
-
-from nwtrack.repos import (
-    SQLiteCurrencyRepository,
-    SQLiteCategoryRepository,
-    SQLiteExchangeRateRepository,
     SQLiteAccountRepository,
     SQLiteBalanceRepository,
+    SQLiteCategoryRepository,
+    SQLiteCurrencyRepository,
+    SQLiteExchangeRateRepository,
     SQLiteNetWorthRepository,
 )
 

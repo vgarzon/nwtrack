@@ -2,12 +2,12 @@
 Common dependency injection container setup for NWTrack application.
 """
 
-from nwtrack.config import Config, load_config
-from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
 from nwtrack.admin import DBAdminService, SQLiteAdminService
+from nwtrack.config import Config, load_config
 from nwtrack.container import Container, Lifetime
-from nwtrack.unitofwork import UnitOfWork, SQLiteUnitOfWork
-from nwtrack.services import InitDataService, UpdateService, ReportService
+from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
+from nwtrack.services import InitDataService, ReportService, UpdateService
+from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
 
 
 def build_sqlite_uow_container() -> Container:

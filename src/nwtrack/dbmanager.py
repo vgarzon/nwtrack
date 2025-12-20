@@ -5,8 +5,8 @@ Relational database manager module.
 from __future__ import annotations
 
 import sqlite3
-from typing import Protocol, TypeAlias, Any
-from collections.abc import Sequence, Mapping
+from collections.abc import Mapping, Sequence
+from typing import Any, Protocol, TypeAlias
 
 from nwtrack.config import Config
 

@@ -2,12 +2,12 @@
 Demo unit of work pattern implementation.
 """
 
-from nwtrack.container import Container
-from nwtrack.compose import build_sqlite_uow_container
 from nwtrack.admin import DBAdminService
+from nwtrack.compose import build_sqlite_uow_container
+from nwtrack.container import Container
 from nwtrack.dbmanager import DBConnectionManager
-from nwtrack.services import InitDataService, UpdateService, ReportService
 from nwtrack.models import Month
+from nwtrack.services import InitDataService, ReportService, UpdateService
 
 
 def demo_init(container: Container) -> None:

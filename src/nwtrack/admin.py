@@ -3,6 +3,7 @@ Admin Serviced to manage initialization and setup
 """
 
 from typing import Protocol
+
 from nwtrack.config import Config
 from nwtrack.dbmanager import DBConnectionManager
 

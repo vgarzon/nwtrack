@@ -4,20 +4,21 @@ Repository module for nwtrack database operations.
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from typing import Protocol
+
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.models import (
     Account,
     Balance,
-    Currency,
     Category,
+    Currency,
     ExchangeRate,
-    Side,
-    Status,
     Month,
     NetWorth,
+    Side,
+    Status,
 )
-from dataclasses import asdict
 
 
 class CurrencyRepository(Protocol):
@@ -671,6 +672,3 @@ class SQLiteNetWorthRepository:
             for month, total_assets, total_liabilities, net_worth in results
         ]
         return net_worths
-
-    def close_db_connection(self) -> None:
-        self._db.close_connection()
