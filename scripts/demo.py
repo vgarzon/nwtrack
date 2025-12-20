@@ -134,16 +134,16 @@ def demo_roll_forward(container: Container) -> None:
     next_month = month.increment()
 
     print("Before roll forward:")
-    curr_bal = prn_svc.get_month_balances(month=month)
+    curr_bal = prn_svc.get_month_balances(month)
     curr_sum = sum(b.amount for b in curr_bal)
     assert curr_sum == 277600, "Current month balances sum mismatch"
     print(f"Copying balances from {month} to {next_month}...")
-    upd_svc.roll_balances_forward(month_str=str(month))
+    upd_svc.roll_balances_forward(month)
     print("After copying:")
-    next_bal = prn_svc.get_month_balances(month=month)
+    next_bal = prn_svc.get_month_balances(month)
     next_sum = sum(b.amount for b in next_bal)
     assert next_sum == 277600, "Next month balances sum mismatch"
-    prn_svc.print_month_balances(month=next_month)
+    prn_svc.print_month_balances(next_month)
 
 
 def main():

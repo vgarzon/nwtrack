@@ -442,11 +442,11 @@ class SQLiteBalanceRepository:
         assert cur.rowcount == 1, "Expected exactly one row to be updated."
         print(f"Updated account {account_id} on {month}.")
 
-    def check_month(self, month: str):
+    def check_month(self, month: Month):
         """Check that there are balance entries for a given month.
 
         Args:
-            month (str): Month in "YYYY-MM" format
+            month (Month): Month object
 
         Returns:
             bool: True if the year and month exist, else False.
@@ -456,7 +456,7 @@ class SQLiteBalanceRepository:
         WHERE month = :month
         LIMIT 1;
         """
-        result = self._db.fetch_one(query, {"month": month})
+        result = self._db.fetch_one(query, {"month": str(month)})
         return result is not None
 
     def roll_forward(self, month: Month) -> None:
@@ -487,17 +487,20 @@ class SQLiteBalanceRepository:
         Returns:
             list[dict]: List of balance records.
         """
-        query = """SELECT account_id, month, amount FROM balances
+        query = """
+        SELECT id, account_id, month, amount
+        FROM balances
         LIMIT :limit;
         """
         results = self._db.fetch_all(query, {"limit": limit})
         balances = [
-            {
-                "account_id": account_id,
-                "month": month,
-                "amount": amount,
-            }
-            for account_id, month, amount in results
+            Balance(
+                id=res["id"],
+                account_id=res["account_id"],
+                month=Month.parse(res["month"]),
+                amount=res["amount"],
+            )
+            for res in results
         ]
         return balances
 

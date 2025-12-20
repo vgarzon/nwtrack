@@ -217,18 +217,17 @@ class UpdateService:
                 account_id=account_id, month=month, new_amount=new_amount
             )
 
-    def roll_balances_forward(self, month_str: str) -> None:
+    def roll_balances_forward(self, month: Month) -> None:
         """Copy all active account balances from one month to the next.
 
         Args:
-            month (str): Month of the source month, format "YYYY-MM".
+            month (Month): Month of the source month.
         """
         # check that month is valid
-        month = Month.parse(month_str)
         with self._uow() as uow:
-            if not uow.balance.check_month(month_str):
+            if not uow.balance.check_month(month):
                 raise ValueError("No balances found for month.")
-        next_month = str(month.increment())
+        next_month = month.increment()
         print(f"Service: Copying balances from {month} to {next_month}.")
         with self._uow() as uow:
             uow.balance.roll_forward(month)
