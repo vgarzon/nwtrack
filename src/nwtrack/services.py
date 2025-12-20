@@ -16,13 +16,13 @@ from nwtrack.models import (
     Side,
     Status,
 )
-from nwtrack.unitofwork import SQLiteUnitOfWork
+from nwtrack.unitofwork import UnitOfWork
 
 
 class InitDataService:
     """Initialize reference and sample data in the database."""
 
-    def __init__(self, uow: Callable[[], SQLiteUnitOfWork]) -> None:
+    def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
 
     def initialize_reference_data(
@@ -198,7 +198,7 @@ class InitDataService:
 class UpdateService:
     """Service layer to update balance and other data using unit of work pattern."""
 
-    def __init__(self, uow: Callable[[], SQLiteUnitOfWork]) -> None:
+    def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
 
     def update_balance(self, account_name: str, month: Month, new_amount: int) -> None:
@@ -239,7 +239,7 @@ class UpdateService:
 class ReportService:
     """Printing and reporting service using unit of work pattern."""
 
-    def __init__(self, uow: Callable[[], SQLiteUnitOfWork]) -> None:
+    def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
 
     def get_accounts(self, active_only: bool = True) -> list[Account]:
