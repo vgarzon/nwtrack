@@ -62,7 +62,7 @@ class SQLiteCurrencyRepository:
         ]
         return currencies
 
-    def get_dict(self) -> list[Currency]:
+    def get_dict(self) -> dict[str, Currency]:
         """Get all currencies in a dictionary indexed by code.
 
         Returns:
@@ -102,7 +102,7 @@ class SQLiteCategoryRepository:
         categories = [Category(name=r["name"], side=Side(r["side"])) for r in results]
         return categories
 
-    def get_dict(self) -> list[Category]:
+    def get_dict(self) -> dict[str, Category]:
         """Get all categories in a dictionary indexed by code.
 
         Returns:
@@ -205,7 +205,7 @@ class SQLiteExchangeRateRepository:
         exchange_rates = [
             ExchangeRate(
                 currency_code=res["currency"],
-                month=str(month),
+                month=month,
                 rate=res["rate"],
             )
             for res in results
@@ -218,7 +218,6 @@ class SQLiteAccountRepository:
 
     def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
-        self._id_map: dict[str, int] | None = None
 
     def insert_many(self, data: list[Account]) -> None:
         """Insert list of accounts into the accounts table.
@@ -289,6 +288,16 @@ class SQLiteAccountRepository:
         ]
         return accounts
 
+    def get_dict_id(self) -> dict[int, Account]:
+        """Get all accounts in a dictionary indexed by accoun id.
+
+        Returns:
+            dict[int, Account]: Dictionary of account records indexed by id.
+        """
+        results = self.get_all()
+        accounts = {result.id: result for result in results}
+        return accounts
+
     def get_dict_name(self) -> dict[str, Account]:
         """Get all accounts in a dictionary indexed by name.
 
@@ -298,32 +307,6 @@ class SQLiteAccountRepository:
         results = self.get_all()
         accounts = {result.name: result for result in results}
         return accounts
-
-    def init_id_map(self) -> None:
-        """Initialize a mapping of account names to their IDs.
-
-        Returns:
-            dict[str, int]: A dictionary mapping account names to IDs.
-        """
-        # account_id_map = {acc["name"]: acc["id"] for acc in accounts}
-        query = "SELECT id, name FROM accounts;"
-        results = self._db.fetch_all(query)
-        self._id_map: dict[str, int] = {
-            name: account_id for account_id, name in results
-        }
-
-    def get_id(self, account_name: str) -> int | None:
-        """Get the account ID for a given account name.
-
-        Args:
-            account_name (str): The name of the account.
-
-        Returns:
-            int | None: The account ID if found, else None.
-        """
-        if self._id_map is None:
-            self.init_id_map()
-        return self._id_map.get(account_name, None)
 
 
 class SQLiteBalanceRepository:
@@ -355,7 +338,7 @@ class SQLiteBalanceRepository:
         )
         print("Inserted", rowcount, "balance rows.")
 
-    def get(self, month: Month, account_name: str) -> list[dict]:
+    def get(self, month: Month, account_name: str) -> Balance:
         """Get all account balances on a specific month.
 
         Args:
@@ -363,7 +346,7 @@ class SQLiteBalanceRepository:
             account_name (str): Account name
 
         Returns:
-            Account: Account object
+            Balance: Account balance record
         """
         query = """
         SELECT b.id, b.account_id, a.name, b.amount
@@ -379,7 +362,7 @@ class SQLiteBalanceRepository:
         balance = Balance(
             id=res["id"],
             account_id=res["account_id"],
-            month=str(month),
+            month=month,
             amount=res["amount"],
         )
         return balance
@@ -413,7 +396,7 @@ class SQLiteBalanceRepository:
             Balance(
                 id=res["id"],
                 account_id=res["account_id"],
-                month=str(month),
+                month=month,
                 amount=res["amount"],
             )
             for res in results
@@ -479,13 +462,13 @@ class SQLiteBalanceRepository:
         cur = self._db.execute(insert_query, params)
         print(f"Rolled {cur.rowcount} balances forward to {next_month}.")
 
-    def fetch_sample(self, limit: int = 5) -> list[dict]:
+    def fetch_sample(self, limit: int = 5) -> list[Balance]:
         """Fetch sample balance records for debugging.
 
         Args:
             limit (int, optional): Number of sample records to fetch. Defaults to 5.
         Returns:
-            list[dict]: List of balance records.
+            list[Balance]: List of balance records.
         """
         query = """
         SELECT id, account_id, month, amount
@@ -511,7 +494,7 @@ class SQLiteNetWorthRepository:
     def __init__(self, db: DBConnectionManager) -> None:
         self._db: DBConnectionManager = db
 
-    def get(self, month: Month, currency_code: str = "USD") -> list[NetWorth]:
+    def get(self, month: Month, currency_code: str = "USD") -> NetWorth:
         """Get net worth value for given month and currency
 
         Args:
@@ -538,16 +521,17 @@ class SQLiteNetWorthRepository:
         )
         return nw
 
-    def history(self, currency_code: str = "USD") -> list[dict]:
+    def history(self, currency_code: str = "USD") -> list[NetWorth]:
         """Get net worth history for a given currency.
         Args:
             currency_code (str, optional): The currency code. Defaults to "USD".
 
         Returns:
-            list[dict]: List of net worth records.
+            list[NetWorth]: List of Net Worth records.
         """
         query = """
-        SELECT month, total_assets, total_liabilities, net_worth FROM networth_history
+        SELECT month, total_assets, total_liabilities, net_worth
+        FROM networth_history
         WHERE currency = :currency
         ORDER BY month;
         """

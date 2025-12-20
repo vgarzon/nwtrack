@@ -2,6 +2,7 @@
 Service layer for managing user operations using unit of work pattern.
 """
 
+from typing import Callable
 from nwtrack.unitofwork import SQLiteUnitOfWork
 from nwtrack.fileio import csv_file_to_list_dict
 from nwtrack.models import (
@@ -20,7 +21,7 @@ from nwtrack.models import (
 class InitDataService:
     """Initialize reference and sample data in the database."""
 
-    def __init__(self, uow: SQLiteUnitOfWork) -> None:
+    def __init__(self, uow: Callable[[], SQLiteUnitOfWork]) -> None:
         self._uow = uow
 
     def initialize_reference_data(
@@ -33,12 +34,12 @@ class InitDataService:
             categories_path (str): Path to categories CSV file.
         """
         print("Service: Initializing reference data.")
-        currencies = csv_file_to_list_dict(currencies_path)
-        categories = csv_file_to_list_dict(categories_path)
+        currency_data = csv_file_to_list_dict(currencies_path)
+        category_data = csv_file_to_list_dict(categories_path)
 
-        currencies = [Currency(**c) for c in currencies]
-        categories = [
-            Category(name=at["name"], side=Side(at["side"])) for at in categories
+        currencies: list[Currency] = [Currency(**c) for c in currency_data]
+        categories: list[Category] = [
+            Category(name=at["name"], side=Side(at["side"])) for at in category_data
         ]
         with self._uow() as uow:
             uow.currency.insert_many(currencies)
@@ -196,7 +197,7 @@ class InitDataService:
 class UpdateService:
     """Service layer to update balance and other data using unit of work pattern."""
 
-    def __init__(self, uow: SQLiteUnitOfWork) -> None:
+    def __init__(self, uow: Callable[[], SQLiteUnitOfWork]) -> None:
         self._uow = uow
 
     def update_balance(self, account_name: str, month: Month, new_amount: int) -> None:
@@ -208,13 +209,14 @@ class UpdateService:
             new_ammount (int): New balance amount.
         """
         with self._uow() as uow:
-            account_id = uow.account.get_id(account_name)
-        if not account_id:
+            account_map = uow.account.get_dict_name()
+        account = account_map.get(account_name, None)
+        if not account:
             raise ValueError(f"Account name '{account_name}' not found.")
 
         with self._uow() as uow:
             uow.balance.update(
-                account_id=account_id, month=month, new_amount=new_amount
+                account_id=account.id, month=month, new_amount=new_amount
             )
 
     def roll_balances_forward(self, month: Month) -> None:
@@ -236,7 +238,7 @@ class UpdateService:
 class ReportService:
     """Printing and reporting service using unit of work pattern."""
 
-    def __init__(self, uow: SQLiteUnitOfWork) -> None:
+    def __init__(self, uow: Callable[[], SQLiteUnitOfWork]) -> None:
         self._uow = uow
 
     def get_accounts(self, active_only: bool = True) -> list[Account]:
@@ -262,7 +264,7 @@ class ReportService:
         Args:
             active (bool): Whether to include only active accounts.
         """
-        accounts = self.get_accounts(active=active)
+        accounts = self.get_accounts(active_only=active)
         print("Accounts:")
         print("id, name, category, status")
         for account in accounts:

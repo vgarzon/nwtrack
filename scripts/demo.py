@@ -22,7 +22,7 @@ def demo_init(container: Container) -> None:
 
     container.resolve(AdminService).init_database()
 
-    data_svc = container.resolve(InitDataService)
+    data_svc: InitDataService = container.resolve(InitDataService)
     data_svc.initialize_reference_data(
         currencies_path=input_files["currencies"],
         categories_path=input_files["categories"],
@@ -93,7 +93,7 @@ def demo_fetch_balance(container: Container) -> None:
         "Balance account name mismatch"
     )
     assert single_bal.account_id == 2, "Balance account id mismatch"
-    assert single_bal.month == str(month), "Balance month mismatch"
+    assert single_bal.month == month, "Balance month mismatch"
     assert single_bal.amount == 200, "Balance amount mismatch"
 
     month_bals = prn_svc.get_month_balances(month)
@@ -140,6 +140,7 @@ def demo_exchange_rate(container: Container) -> None:
     month = Month.parse(month_str)
 
     rate = prn_svc.get_exchange_rate(month, currency_codes[0])
+    assert rate is not None, "Exchange rate not found"
     assert rate.rate == 6.5, "Exchange rate value mismatch"
     prn_svc.print_exchange_rate(month, currency_codes[0])
 
