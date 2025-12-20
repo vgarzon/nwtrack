@@ -3,8 +3,8 @@ Demo unit of work pattern implementation.
 """
 
 from nwtrack.container import Container
-from nwtrack.compose import build_uow_container
-from nwtrack.admin import AdminService
+from nwtrack.compose import build_sqlite_uow_container
+from nwtrack.admin import DBAdminService
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.services import InitDataService, UpdateService, ReportService
 from nwtrack.models import Month
@@ -20,7 +20,7 @@ def demo_init(container: Container) -> None:
     }
     print("*** Demo initializing database and loading sample data ***")
 
-    container.resolve(AdminService).init_database()
+    container.resolve(DBAdminService).init_database()
 
     data_svc: InitDataService = container.resolve(InitDataService)
     data_svc.initialize_reference_data(
@@ -175,7 +175,7 @@ def demo_roll_forward(container: Container) -> None:
 
 
 def main():
-    container = build_uow_container()
+    container = build_sqlite_uow_container()
 
     demo_init(container)
     demo_accounts(container)

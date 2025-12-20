@@ -2,7 +2,17 @@
 Unit of work pattern implementation for managing database transactions.
 """
 
+from typing import Protocol
 from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.repos import (
+    CurrencyRepository,
+    CategoryRepository,
+    ExchangeRateRepository,
+    AccountRepository,
+    BalanceRepository,
+    NetWorthRepository,
+)
+
 from nwtrack.repos import (
     SQLiteCurrencyRepository,
     SQLiteCategoryRepository,
@@ -11,6 +21,33 @@ from nwtrack.repos import (
     SQLiteBalanceRepository,
     SQLiteNetWorthRepository,
 )
+
+
+class UnitOfWork(Protocol):
+    """Unit of Work protocol for managing database transactions."""
+
+    currency: CurrencyRepository
+    category: CategoryRepository
+    account: AccountRepository
+    balance: BalanceRepository
+    net_worth: NetWorthRepository
+    exchange_rate: ExchangeRateRepository
+
+    def __enter__(self) -> "UnitOfWork":
+        """Enter the runtime context related to this object."""
+        ...
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """Exit the runtime context related to this object."""
+        ...
+
+    def commit(self) -> None:
+        """Commit the transaction."""
+        ...
+
+    def rollback(self) -> None:
+        """Rollback the transaction."""
+        ...
 
 
 class SQLiteUnitOfWork:

@@ -2,11 +2,20 @@
 Admin Serviced to manage initialization and setup
 """
 
+from typing import Protocol
 from nwtrack.config import Config
 from nwtrack.dbmanager import DBConnectionManager
 
 
-class AdminService:
+class DBAdminService(Protocol):
+    """Admin services to manage initialization and setup."""
+
+    def init_database(self) -> None:
+        """Initialize the database schema."""
+        ...
+
+
+class SQLiteAdminService:
     """Admin services to manage initialization and setup."""
 
     def __init__(self, config: Config, db_conn: DBConnectionManager) -> None:

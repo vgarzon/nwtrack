@@ -4,6 +4,7 @@ Repository module for nwtrack database operations.
 
 from __future__ import annotations
 
+from typing import Protocol
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.models import (
     Account,
@@ -17,6 +18,130 @@ from nwtrack.models import (
     NetWorth,
 )
 from dataclasses import asdict
+
+
+class CurrencyRepository(Protocol):
+    """Protocol for currency repository operations."""
+
+    def insert_many(self, data: list[Currency]) -> None:
+        """Insert list of currencies into the currencies table."""
+        ...
+
+    def get_codes(self) -> list[str]:
+        """Get all currency codes."""
+        ...
+
+    def get_all(self) -> list[Currency]:
+        """Get all currencies."""
+        ...
+
+    def get_dict(self) -> dict[str, Currency]:
+        """Get all currencies in a dictionary indexed by code."""
+        ...
+
+
+class CategoryRepository(Protocol):
+    """Protocol for category repository operations."""
+
+    def insert_many(self, data: list[Category]) -> None:
+        """Insert list of categories into the categories table."""
+        ...
+
+    def get_all(self) -> list[Category]:
+        """Get all categories."""
+        ...
+
+    def get_dict(self) -> dict[str, Category]:
+        """Get all categories in a dictionary indexed by name."""
+        ...
+
+
+class ExchangeRateRepository(Protocol):
+    """Protocol for exchange rate repository operations."""
+
+    def insert_many(self, data: list[ExchangeRate]) -> None:
+        """Insert list of exchange rates into the exchange_rates table."""
+        ...
+
+    def get(self, month: Month, currency_code: str) -> ExchangeRate | None:
+        """Get the exchange rate for a specific currency code and month."""
+        ...
+
+    def get_currency(self, currency_code: str) -> list[ExchangeRate]:
+        """Get exchange rates for a given currency code."""
+        ...
+
+    def get_month(self, month: Month) -> list[ExchangeRate]:
+        """Get exchange rates for all currencies for a given month."""
+        ...
+
+
+class AccountRepository(Protocol):
+    """Protocol for account repository operations."""
+
+    def insert_many(self, data: list[Account]) -> None:
+        """Insert list of accounts into the accounts table."""
+        ...
+
+    def get_active(self) -> list[Account]:
+        """Get all active accounts."""
+        ...
+
+    def get_all(self) -> list[Account]:
+        """Get all accounts."""
+        ...
+
+    def get_dict_id(self) -> dict[int, Account]:
+        """Get all accounts in a dictionary indexed by account id."""
+        ...
+
+    def get_dict_name(self) -> dict[str, Account]:
+        """Get all accounts in a dictionary indexed by name."""
+        ...
+
+
+class BalanceRepository(Protocol):
+    """Protocol for balance repository operations."""
+
+    def insert_many(self, data: list[Balance]) -> None:
+        """Insert list of balances into the balances table."""
+        ...
+
+    def get(self, month: Month, account_name: str) -> Balance:
+        """Get all account balances on a specific month."""
+        ...
+
+    def get_month(self, month: Month, active_only: bool = True) -> list[Balance]:
+        """Get all account balances on a specific month."""
+        ...
+
+    def update(self, account_id: int, month: Month, new_amount: int) -> None:
+        """Update the balance for specific account and month."""
+        ...
+
+    def check_month(self, month: Month):
+        """Check that there are balance entries for a given month."""
+        ...
+
+    def roll_forward(self, month: Month) -> None:
+        """Roll account balances forward from one month to the next."""
+        ...
+
+    def fetch_sample(self, limit: int = 5) -> list[Balance]:
+        """Fetch sample balance records for debugging."""
+        ...
+
+
+class NetWorthRepository(Protocol):
+    """Protocol for net worth repository operations."""
+
+    def get(self, month: Month, currency_code: str = "USD") -> NetWorth:
+        """Get net worth value for given month and currency."""
+        ...
+
+    def history(self, currency_code: str = "USD") -> list[NetWorth]:
+        """Get net worth history for a given currency."""
+        ...
 
 
 class SQLiteCurrencyRepository:
