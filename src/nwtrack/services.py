@@ -298,6 +298,16 @@ class ReportService:
             balances = uow.balance.get_month(month, active_only)
         return balances
 
+    def get_balances_sample(self, limit: int = 5) -> list[Balance]:
+        """Get sample balances for testing.
+
+        Returns:
+            list[Balance]: List of sample Balance objects.
+        """
+        with self._uow() as uow:
+            balances = uow.balance.fetch_sample(limit)
+        return balances
+
     def print_balance(self, month: Month, account_name: str) -> None:
         """Print account balance for a specific month.
 

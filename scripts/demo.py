@@ -76,7 +76,34 @@ def demo_net_worth(container: Container) -> None:
     )
 
 
-def demo_balance(container: Container) -> None:
+def demo_fetch_balance(container: Container) -> None:
+    account_name = "bank_1_checking"
+    month_str = "2025-10"
+
+    print("*** Demo fetching balance data ***")
+
+    prn_svc: ReportService = container.resolve(ReportService)
+    month = Month.parse(month_str)
+
+    account_map = {acc.id: acc for acc in prn_svc.get_accounts()}
+    single_bal = prn_svc.get_balance(month, account_name)
+
+    assert single_bal.id == 401, "Balance id mismatch"
+    assert account_map[single_bal.account_id].name == account_name, (
+        "Balance account name mismatch"
+    )
+    assert single_bal.account_id == 2, "Balance account id mismatch"
+    assert single_bal.month == str(month), "Balance month mismatch"
+    assert single_bal.amount == 200, "Balance amount mismatch"
+
+    month_bals = prn_svc.get_month_balances(month)
+    assert len(month_bals) == 8, "Month balances length mismatch"
+
+    for acc in prn_svc.get_balances_sample():
+        print(acc)
+
+
+def demo_update_balance(container: Container) -> None:
     account_name = "bank_1_checking"
     month_str = "2024-06"
     new_amount = 500
@@ -152,7 +179,8 @@ def main():
     demo_init(container)
     demo_accounts(container)
     demo_net_worth(container)
-    demo_balance(container)
+    demo_fetch_balance(container)
+    demo_update_balance(container)
     demo_exchange_rate(container)
     demo_roll_forward(container)
 
