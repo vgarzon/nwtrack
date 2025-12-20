@@ -25,16 +25,14 @@ class InitDataService:
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
 
-    def initialize_reference_data(
-        self, currencies_path: str, categories_path: str
-    ) -> None:
-        """Initialize reference data in the database.
+    def insert_reference_data(self, currencies_path: str, categories_path: str) -> None:
+        """Insert currency and category data in respective tables.
 
         Args:
             currencies_path (str): Path to currencies CSV file.
             categories_path (str): Path to categories CSV file.
         """
-        print("Service: Initializing reference data.")
+        print("Service: Initializing currency and category data.")
         currency_data = csv_file_to_list_dict(currencies_path)
         category_data = csv_file_to_list_dict(categories_path)
 
@@ -42,8 +40,60 @@ class InitDataService:
         categories: list[Category] = [
             Category(name=at["name"], side=Side(at["side"])) for at in category_data
         ]
+        self.insert_currencies(currencies)
+        self.insert_categories(categories)
+
+    def insert_sample_data(
+        self, accounts_path: str, balances_path: str, exchange_rates_path
+    ) -> None:
+        """Insert sample accounts, balances, and exchange rates data from CSV files.
+
+        Args:
+            accounts_path (str): Path to the accounts CSV file.
+            balances_path (str): Path to the balances CSV file.
+            exchange_rates_path (str): Path to the exchange rates CSV file.
+
+        File formats:
+          - accounts.csv: name, description, category, currency, status
+          - balances.csv: date, year, month, <account_name_1>, <acct_name_2>, ...
+          - exchange_rates.csv: date, year, month, <currency_code_1>, <code_2>, ...
+
+        Notes:
+          - Liabilities are assumed to be in negative amounts and will be stored as
+          - Account names in the header must match those in the accounts.csv file.
+            positive.
+        """
+        print("Service: Inserting sample account, balance, and exhange rate data.")
+        accounts_data = csv_file_to_list_dict(accounts_path)
+        accounts = self.parse_account_data(accounts_data)
+        self.insert_accounts(accounts)
+
+        balances_data = csv_file_to_list_dict(balances_path)
+        balances = self.parse_balance_data(balances_data)
+        self.insert_balances(balances)
+
+        exchange_rates_data = csv_file_to_list_dict(exchange_rates_path)
+        exchange_rates = self.parse_exchange_rates_data(exchange_rates_data)
+        self.insert_exchange_rates(exchange_rates)
+
+    def insert_currencies(self, currencies: list[Currency]) -> None:
+        """Insert currencies into the database.
+
+        Args:
+            currencies (list[Currency]): list of Currency objects.
+        """
+        print("Service: Inserting sample currencies data.")
         with self._uow() as uow:
             uow.currency.insert_many(currencies)
+
+    def insert_categories(self, categories: list[Category]) -> None:
+        """Insert categories into the database.
+
+        Args:
+            categories (list[Category]): list of Category objects.
+        """
+        print("Service: Inserting sample categories data.")
+        with self._uow() as uow:
             uow.category.insert_many(categories)
 
     def insert_accounts(self, accounts: list[Account]) -> None:
@@ -55,6 +105,26 @@ class InitDataService:
         print("Service: Inserting sample accounts data.")
         with self._uow() as uow:
             uow.account.insert_many(accounts)
+
+    def insert_balances(self, balances: list[Balance]) -> None:
+        """Insert balances into the database.
+
+        Args:
+            balances (list[Balance]): list of Balance objects.
+        """
+        print("Service: Inserting sample balances data.")
+        with self._uow() as uow:
+            uow.balance.insert_many(balances)
+
+    def insert_exchange_rates(self, exchange_rates: list[ExchangeRate]) -> None:
+        """Insert exchange rate data into database.
+
+        Args:
+            exchange_rates (list[ExchangeRate]): list of ExchangeRate objects.
+        """
+        print("Service: Inserting exchange rates.")
+        with self._uow() as uow:
+            uow.exchange_rate.insert_many(exchange_rates)
 
     def parse_account_data(self, accounts_data: list[dict]) -> list[Account]:
         """Parse account data from list of dicts to list of Account objects.
@@ -91,16 +161,6 @@ class InitDataService:
             accounts.append(account)
         return accounts
 
-    def insert_balances(self, balances: list[Balance]) -> None:
-        """Insert balances into the database.
-
-        Args:
-            balances (list[Balance]): list of Balance objects.
-        """
-        print("Service: Inserting sample balances data.")
-        with self._uow() as uow:
-            uow.balance.insert_many(balances)
-
     def parse_balance_data(self, balances_data: list[dict]) -> list[Balance]:
         """Parse balance data from list of dicts to list of Balance objects.
 
@@ -131,45 +191,18 @@ class InitDataService:
                     balances.append(bal)
         return balances
 
-    def insert_sample_data(self, accounts_path: str, balances_path: str) -> None:
-        """Insert sample accounts and balances data.
-
-        Args:
-            accounts_path (str): Path to the accounts CSV file.
-            balances_path (str): Path to the balances CSV file.
-
-        File formats:
-          - accounts.csv: name, description, category, currency, status
-          - balances.csv: Date, year, month, <account_name_1>, <acct_name_2>, ...
-
-        Notes:
-          - Liabilities are assumed to be in negative amounts and will be stored as
-          - Account names in the header must match those in the accounts.csv file.
-            positive.
-        """
-        print("Service: Inserting sample data.")
-        accounts_data = csv_file_to_list_dict(accounts_path)
-        accounts = self.parse_account_data(accounts_data)
-        self.insert_accounts(accounts)
-
-        balances_data = csv_file_to_list_dict(balances_path)
-        balances = self.parse_balance_data(balances_data)
-        self.insert_balances(balances)
-
-    def insert_exchange_rates(self, exchange_rates_path: str) -> None:
-        """Insert exchange rate data from a CSV file.
+    def parse_exchange_rates_data(
+        self, exchange_rates_data: list[dict]
+    ) -> list[ExchangeRate]:
+        """Parse exchange rate data from list of dicts to list of ExchangeRate objects.
 
         Args:
             exchange_rates_path (str): Path to the exchange rates CSV file.
         """
-        print(f"Service: Inserting exchange rates from {exchange_rates_path}.")
-        exchange_rates_data = csv_file_to_list_dict(exchange_rates_path)
-        assert exchange_rates_data, "No exchange rates data found."
-
+        skip_cols = ("date", "year", "month")
         # check that currency codes in the file exist in the database
         with self._uow() as uow:
             currency_codes = uow.currency.get_codes()
-        skip_cols = ("date", "year", "month")
         row = exchange_rates_data[0]
         for key in row:
             if key.lower() in skip_cols:
@@ -190,9 +223,7 @@ class InitDataService:
                     rate=float(row[key]),
                 )
                 rates.append(rate)
-
-        with self._uow() as uow:
-            uow.exchange_rate.insert_many(rates)
+        return rates
 
 
 class UpdateService:

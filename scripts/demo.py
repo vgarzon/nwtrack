@@ -23,15 +23,15 @@ def demo_init(container: Container) -> None:
     container.resolve(DBAdminService).init_database()
 
     data_svc: InitDataService = container.resolve(InitDataService)
-    data_svc.initialize_reference_data(
+    data_svc.insert_reference_data(
         currencies_path=input_files["currencies"],
         categories_path=input_files["categories"],
     )
     data_svc.insert_sample_data(
         accounts_path=input_files["accounts"],
         balances_path=input_files["balances"],
+        exchange_rates_path=input_files["exchange_rates"],
     )
-    data_svc.insert_exchange_rates(input_files["exchange_rates"])
 
 
 def demo_accounts(container: Container) -> None:
