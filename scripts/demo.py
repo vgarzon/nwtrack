@@ -106,34 +106,44 @@ def demo_balance(container: Container) -> None:
 def demo_exchange_rate(container: Container) -> None:
     print("*** Demo retrieving exchange rates ***")
 
-    currency_codes = ["CNY", "CNY", "EUR"]
-    month_str = "2024-06"
+    currency_codes = ["CNY", "EUR"]
+    month_str = "2015-12"
 
     prn_svc: ReportService = container.resolve(ReportService)
     month = Month.parse(month_str)
 
-    prn_svc.print_exchange_rate(currency_codes[0], month)
-    prn_svc.print_exchange_rate_history(currency_codes[1])
+    rate = prn_svc.get_exchange_rate(month, currency_codes[0])
+    assert rate.rate == 6.5, "Exchange rate value mismatch"
+    prn_svc.print_exchange_rate(month, currency_codes[0])
+
+    rates = prn_svc.get_month_exchange_rates(month)
+    assert len(rates) == 2, "Month exchange rates length mismatch"
     try:
-        prn_svc.print_exchange_rate_history(currency_codes[2])
+        prn_svc.print_exchange_rate_history(currency_codes[1])
     except ValueError as e:
         print(e)
 
 
 def demo_roll_forward(container: Container) -> None:
-    month = "2025-11"
+    month_str = "2025-11"
 
     prn_svc: ReportService = container.resolve(ReportService)
     upd_svc: UpdateService = container.resolve(UpdateService)
 
-    next_month = str(Month.parse(month).increment())
+    month = Month.parse(month_str)
+    next_month = month.increment()
 
     print("Before roll forward:")
-    prn_svc.print_balances_on_month(month=month)
+    curr_bal = prn_svc.get_month_balances(month=month)
+    curr_sum = sum(b.amount for b in curr_bal)
+    assert curr_sum == 277600, "Current month balances sum mismatch"
     print(f"Copying balances from {month} to {next_month}...")
-    upd_svc.roll_balances_forward(month_str=month)
+    upd_svc.roll_balances_forward(month_str=str(month))
     print("After copying:")
-    prn_svc.print_balances_on_month(month=next_month)
+    next_bal = prn_svc.get_month_balances(month=month)
+    next_sum = sum(b.amount for b in next_bal)
+    assert next_sum == 277600, "Next month balances sum mismatch"
+    prn_svc.print_month_balances(month=next_month)
 
 
 def main():
@@ -143,8 +153,8 @@ def main():
     demo_accounts(container)
     demo_net_worth(container)
     demo_balance(container)
-    # demo_exchange_rate(container)
-    # demo_roll_forward(container)
+    demo_exchange_rate(container)
+    demo_roll_forward(container)
 
     # DB connection singleton cleanup
     container.resolve(DBConnectionManager).close_connection()

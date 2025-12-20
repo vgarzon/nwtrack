@@ -373,34 +373,76 @@ class ReportService:
         for nw in nw_hist:
             print(nw.month, nw.assets, nw.liabilities, nw.net_worth)
 
-    def print_exchange_rate(self, currency: str, month: str) -> None:
-        """Print exchange rates for a specific currency and month
+    def get_exchange_rate(
+        self, month: Month, currency_code: str
+    ) -> ExchangeRate | None:
+        """Get exchange rate for given currency and month.
 
         Args:
-            currency (str): Currency code
-            month (str): Month in "YYYY-MM" format
+            month (Month): Month objectk
+            currency_code (str): Currency code
+
+        Returns:
+            ExchangeRate | None
         """
         with self._uow() as uow:
             all_currency_codes = uow.currency.get_codes()
-            if currency not in all_currency_codes:
-                raise ValueError(f"Currency code '{currency}' not found in database.")
-            rate = uow.exchange_rate.get(month, currency)
-        if rate:
-            print(f"Exchange rate {currency} to USD on {month}: {rate}")
-        else:
-            print(f"No exchange rate found for {currency} on {month}.")
+        if currency_code not in all_currency_codes:
+            raise ValueError(f"Currency '{currency_code}' not found in database.")
+        with self._uow() as uow:
+            rate = uow.exchange_rate.get(month, currency_code)
+        return rate
 
-    def print_exchange_rate_history(self, currency: str) -> None:
+    def get_exchange_rate_history(self, currency_code: str) -> list[ExchangeRate]:
+        """Get exchange rate history for given currency.
+
+        Args:
+            currency_code (str): Currency code
+
+        Returns:
+            list[ExchangeRate]: List of ExchangeRate objects
+        """
+        with self._uow() as uow:
+            all_currency_codes = uow.currency.get_codes()
+        if currency_code not in all_currency_codes:
+            raise ValueError(f"Currency '{currency_code}' not found in database.")
+        with self._uow() as uow:
+            rates = uow.exchange_rate.get_currency(currency_code)
+        return rates
+
+    def get_month_exchange_rates(self, month: Month) -> list[ExchangeRate]:
+        """Get exchange rates for all currencies on a specific month.
+
+        Args:
+            month (Month): Month object
+
+        Returns:
+            list[ExchangeRate]: List of ExchangeRate objects
+        """
+        with self._uow() as uow:
+            rates = uow.exchange_rate.get_month(month)
+        return rates
+
+    def print_exchange_rate(self, month: Month, currency_code: str) -> None:
+        """Print exchange rates for a specific currency and month
+
+        Args:
+            month (Month): Month object
+            currency_code (str): Currency code
+        """
+        rate = self.get_exchange_rate(month, currency_code)
+        if rate:
+            print(f"Exchange rate {currency_code} to USD on {month}: {rate.rate}")
+        else:
+            print(f"No exchange rate found for {currency_code} on {str(month)}.")
+
+    def print_exchange_rate_history(self, currency_code: str) -> None:
         """Print exchange rate history.
 
         Args:
             currency (str): Currency code
         """
-        with self._uow() as uow:
-            all_currency_codes = uow.currency.get_codes()
-            if currency not in all_currency_codes:
-                raise ValueError(f"Currency code '{currency}' not found in database.")
-            rates = uow.exchange_rate.history(currency)
+        rates = self.get_exchange_rate_history(currency_code)
         print("currency, month, rate")
         for r in rates:
-            print(f"{r['currency']}, {r['month']}, {r['rate']}")
+            print(r.currency_code, str(r.month), r.rate)

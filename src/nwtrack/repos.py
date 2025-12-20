@@ -141,47 +141,74 @@ class SQLiteExchangeRateRepository:
         )
         print("Inserted", rowcount, "exchange rate rows.")
 
-    def get(self, currency: str, month: str) -> float | None:
+    def get(self, month: Month, currency_code: str) -> ExchangeRate | None:
         """Get the exchange rate for a specific currency code and month
 
         Args:
-            currency (str): Currency code
-            month (str): Month
+            month (Month): Month object
+            currency_code (str): Currency code
 
         Returns:
-            float | None: Exchange rate if found, else None
+            ExchangeRate | None: Exchange rate record if found, else None
         """
         query = """
         SELECT rate FROM exchange_rates
         WHERE currency = :currency AND month = :month;
         """
-        result = self._db.fetch_one(query, {"currency": currency, "month": month})
+        result = self._db.fetch_one(
+            query, {"currency": currency_code, "month": str(month)}
+        )
         if result:
-            return float(result[0])
+            return ExchangeRate(
+                currency_code=currency_code, month=month, rate=result["rate"]
+            )
         return None
 
-    def history(self, currency: str) -> list[dict]:
-        """Get exchange rate history for a given currency.
+    def get_currency(self, currency_code: str) -> list[ExchangeRate]:
+        """Get exchange rates for a given currency code
 
         Args:
-            currency (str): Currency code
+            currency_code (str): Currency code
 
         Returns:
-            list[dict]: List of exchange rate records over time.
+            list[ExchangeRate]: List of exchange rate records
         """
         query = """
         SELECT month, rate FROM exchange_rates
-        WHERE currency = :currency
-        ORDER BY currency, month;
+        WHERE currency = :currency;
         """
-        results = self._db.fetch_all(query, {"currency": currency})
+        results = self._db.fetch_all(query, {"currency": currency_code})
         exchange_rates = [
-            {
-                "currency": currency,
-                "month": month,
-                "rate": float(rate),
-            }
-            for month, rate in results
+            ExchangeRate(
+                currency_code=currency_code,
+                month=Month.parse(res["month"]),
+                rate=res["rate"],
+            )
+            for res in results
+        ]
+        return exchange_rates
+
+    def get_month(self, month: Month) -> list[ExchangeRate]:
+        """Get exchange rates for all currencies for a given month
+
+        Args:
+            month (Month): Month object
+
+        Returns:
+            list[ExchangeRate]: List of exchange rate records
+        """
+        query = """
+        SELECT currency, rate FROM exchange_rates
+        WHERE month = :month;
+        """
+        results = self._db.fetch_all(query, {"month": str(month)})
+        exchange_rates = [
+            ExchangeRate(
+                currency_code=res["currency"],
+                month=str(month),
+                rate=res["rate"],
+            )
+            for res in results
         ]
         return exchange_rates
 
@@ -339,7 +366,7 @@ class SQLiteBalanceRepository:
             Account: Account object
         """
         query = """
-        SELECT a.id, b.account_id, a.name, b.amount
+        SELECT b.id, b.account_id, a.name, b.amount
         FROM accounts a
         JOIN balances b ON a.id = b.account_id
         WHERE b.month = :month AND a.name = :account_name;
@@ -369,14 +396,14 @@ class SQLiteBalanceRepository:
         """
         if active_only:
             query = """
-            SELECT a.id, b.account_id, a.name, b.amount
+            SELECT b.id, b.account_id, a.name, b.amount
             FROM accounts a
             JOIN balances b ON a.id = b.account_id
             WHERE b.month = :month AND a.status = 'active';
             """
         else:
             query = """
-            SELECT a.id, b.account_id, a.name, b.amount
+            SELECT b.id, b.account_id, a.name, b.amount
             FROM accounts a
             JOIN balances b ON a.id = b.account_id
             WHERE b.month = :month;
