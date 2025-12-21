@@ -92,7 +92,17 @@ INSERT_QUERIES: dict[str, str] = {
 }
 
 
-def test_config() -> Config:
+# repo label, table name
+REPO_MAPPING = [
+    ("currency", "currencies"),
+    ("category", "categories"),
+    ("account", "accounts"),
+    ("balance", "balances"),
+    ("exchange_rate", "exchange_rates"),
+]
+
+
+def get_test_config() -> Config:
     """Test configuration with in-memory database."""
     return Config(
         db_file_path=":memory:",
@@ -110,7 +120,7 @@ def build_test_container() -> Container:
         Container()
         .register(
             Config,
-            lambda _: test_config(),
+            lambda _: get_test_config(),
             lifetime=Lifetime.SINGLETON,
         )
         .register(
@@ -143,6 +153,10 @@ def build_test_container() -> Container:
     )
 
 
+def uow_factory(container: Container) -> SQLiteUnitOfWork:
+    return container.resolve(UnitOfWork)
+
+
 def get_table_names(db: DBConnectionManager) -> list[str]:
     """Get the names of all tables in the database."""
     cur = db.execute("SELECT name FROM sqlite_master WHERE type='table';")
@@ -165,6 +179,23 @@ def table_is_empty(db: DBConnectionManager, table_name: str) -> bool:
     cur = db.execute(f"SELECT EXISTS (SELECT 1 FROM {table_name}) AS x;")
     res = cur.fetchone()
     return res["x"] == 0 if res else True
+
+
+def insert_data_with_query(db: DBConnectionManager) -> None:
+    """Populate initial data into the database."""
+    for table, data in TEST_DATA.items():
+        query = INSERT_QUERIES[table]
+        rowcnt = db.execute_many(query, data)
+        db.commit()
+        print(f"Inserted {rowcnt} into '{table}'.")
+
+
+def count_records(container: Container) -> dict[str, int]:
+    """Count records from all repos."""
+
+    prn_svc: ReportService = container.resolve(ReportService)
+
+    return prn_svc.count_records()
 
 
 def test_initialize_database(container: Container) -> None:
@@ -193,61 +224,33 @@ def test_tables_exist(container: Container) -> None:
     assert table_is_empty(uow._db, "balances"), "Table 'balances' should be empty."
 
 
-def insert_data_with_query(db: DBConnectionManager) -> None:
-    """Populate initial data into the database."""
-    for table, data in TEST_DATA.items():
-        query = INSERT_QUERIES[table]
-        rowcnt = db.execute_many(query, data)
-        db.commit()
-        print(f"Inserted {rowcnt} into '{table}'.")
-
-
 def test_insert_hydrated(container) -> None:
     """Test inserting hydrated objects."""
-    init_svc: InitDataService = container.resolve(InitDataService)
 
-    currencies = init_svc.hydrate_currency_records(TEST_DATA["currencies"])
-    categories = init_svc.hydrate_category_data(TEST_DATA["categories"])
-    accounts = init_svc.hydrate_account_records(TEST_DATA["accounts"])
-    balances = init_svc.hydrate_balance_records(TEST_DATA["balances"])
-    exchange_rates = init_svc.hydrate_exchange_rate_records(TEST_DATA["exchange_rates"])
+    with uow_factory(container) as uow:
+        for repo_name, table_name in REPO_MAPPING:
+            print(repo_name, table_name)
+            repo = getattr(uow, repo_name)
+            entities = repo.hydrate_many(TEST_DATA[table_name])
+            repo.insert_many(entities)
 
-    init_svc.insert_currencies(currencies)
-    init_svc.insert_categories(categories)
-    init_svc.insert_accounts(accounts)
-    init_svc.insert_balances(balances)
-    init_svc.insert_exchange_rates(exchange_rates)
-
-
-def count_records(container: Container) -> dict[str, int]:
-    """Count records from all repos."""
-
-    prn_svc: ReportService = container.resolve(ReportService)
-
-    return prn_svc.count_records()
+    cnts = count_records(container)
+    for repo_name, _ in REPO_MAPPING:
+        print(f"{repo_name}: {cnts[repo_name]}")
 
 
 def test_delete_records(container: Container) -> None:
     """Delete all records from all tables."""
 
-    def uow_factory() -> SQLiteUnitOfWork:
-        return container.resolve(UnitOfWork)
+    reversed_repo_names = [repo_name for repo_name, _ in REPO_MAPPING][::-1]
 
-    repo_names = [
-        "exchange_rate",
-        "balance",
-        "account",
-        "category",
-        "currency",
-    ]
-
-    with uow_factory() as uow:
-        for repo_name in repo_names:
+    with uow_factory(container) as uow:
+        for repo_name in reversed_repo_names:
             repo = getattr(uow, repo_name)
             repo.delete_all()
 
     cnts = count_records(container)
-    for repo_name in repo_names:
+    for repo_name in reversed_repo_names:
         assert cnts[repo_name] == 0, f"Expected 0 records in {repo_name} repo"
 
 

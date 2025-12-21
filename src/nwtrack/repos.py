@@ -254,6 +254,30 @@ class SQLiteCurrencyRepository:
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} currency records.")
 
+    def hydrate(self, data: dict) -> Currency:
+        """Hydrate data dictionaries to Currency objects.
+
+        Args:
+            data (ict): currency data dictionary
+
+        Returns:
+            list[Currency]: list of Currency objects.
+        """
+        currency = Currency(code=data["code"], description=data["description"])
+        return currency
+
+    def hydrate_many(self, data: list[dict]) -> list[Currency]:
+        """Hydrate list of data dictionaries to list of Currency objects.
+
+        Args:
+            currency_data (list[dict]): list of currency data dicts.
+
+        Returns:
+            list[Currency]: list of Currency objects.
+        """
+        currencies = [self.hydrate(c) for c in data]
+        return currencies
+
 
 class SQLiteCategoryRepository:
     """Repository for category SQLite database operations."""
@@ -310,121 +334,29 @@ class SQLiteCategoryRepository:
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} category records.")
 
-
-class SQLiteExchangeRateRepository:
-    """Repository for exchange rates SQLite database operations."""
-
-    def __init__(self, db: DBConnectionManager) -> None:
-        self._db: DBConnectionManager = db
-
-    def insert_many(self, data: list[ExchangeRate]) -> None:
-        """Insert list of exchange rates into the exchange_rates table.
+    def hydrate(self, data: dict[str, str]) -> Category:
+        """Hydrate category data dictionary to Category instance.
 
         Args:
-            data (list[ExchangeRate]): List of ExchangeRate objects.
-        """
-        rowcount = self._db.execute_many(
-            """
-            INSERT INTO exchange_rates (currency, month, rate)
-            VALUES (:currency, :month, :rate);
-            """,
-            [
-                {
-                    "currency": r.currency_code,
-                    "month": str(r.month),
-                    "rate": r.rate,
-                }
-                for r in data
-            ],
-        )
-        print("Inserted", rowcount, "exchange rate rows.")
+            data (dict[str, str]): Category data dictionary
 
-    def get(self, month: Month, currency_code: str) -> ExchangeRate | None:
-        """Get the exchange rate for a specific currency code and month
+        Returns:
+            Category: Category instance
+        """
+        category = Category(name=data["name"], side=Side(data["side"]))
+        return category
+
+    def hydrate_many(self, data: list[dict[str, str]]) -> list[Category]:
+        """Hydrate list of category data dictionares to objects.
 
         Args:
-            month (Month): Month object
-            currency_code (str): Currency code
+            data (list[dict[str, str]]): List of category data dictionaries.
 
         Returns:
-            ExchangeRate | None: Exchange rate record if found, else None
+            list[Category]: List of Category objects.
         """
-        query = """
-        SELECT rate FROM exchange_rates
-        WHERE currency = :currency AND month = :month;
-        """
-        result = self._db.fetch_one(
-            query, {"currency": currency_code, "month": str(month)}
-        )
-        if result:
-            return ExchangeRate(
-                currency_code=currency_code, month=month, rate=result["rate"]
-            )
-        return None
-
-    def get_currency(self, currency_code: str) -> list[ExchangeRate]:
-        """Get exchange rates for a given currency code
-
-        Args:
-            currency_code (str): Currency code
-
-        Returns:
-            list[ExchangeRate]: List of exchange rate records
-        """
-        query = """
-        SELECT month, rate FROM exchange_rates
-        WHERE currency = :currency;
-        """
-        results = self._db.fetch_all(query, {"currency": currency_code})
-        exchange_rates = [
-            ExchangeRate(
-                currency_code=currency_code,
-                month=Month.parse(res["month"]),
-                rate=res["rate"],
-            )
-            for res in results
-        ]
-        return exchange_rates
-
-    def get_month(self, month: Month) -> list[ExchangeRate]:
-        """Get exchange rates for all currencies for a given month
-
-        Args:
-            month (Month): Month object
-
-        Returns:
-            list[ExchangeRate]: List of exchange rate records
-        """
-        query = """
-        SELECT currency, rate FROM exchange_rates
-        WHERE month = :month;
-        """
-        results = self._db.fetch_all(query, {"month": str(month)})
-        exchange_rates = [
-            ExchangeRate(
-                currency_code=res["currency"],
-                month=month,
-                rate=res["rate"],
-            )
-            for res in results
-        ]
-        return exchange_rates
-
-    def count_records(self) -> int:
-        """Count the number of exchange rate records.
-
-        Returns:
-            int: Number of exchange rage records.
-        """
-        query = "SELECT COUNT(*) AS cnt FROM exchange_rates;"
-        result = self._db.fetch_one(query)
-        return result["cnt"] if result else 0
-
-    def delete_all(self) -> None:
-        """Delete all category records."""
-        query = "DELETE FROM exchange_rates;"
-        cur = self._db.execute(query)
-        print(f"Deleted {cur.rowcount} exchange rate records.")
+        categories = [self.hydrate(d) for d in data]
+        return categories
 
 
 class SQLiteAccountRepository:
@@ -537,6 +469,37 @@ class SQLiteAccountRepository:
         query = "DELETE FROM accounts;"
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} account records.")
+
+    def hydrate(self, data: dict) -> Account:
+        """Hydrate account data dictionary to Account object
+
+        Args:
+            data (dict): account data dict
+
+        Returns:
+            Account: Account objects.
+        """
+        account = Account(
+            id=data.get("id", 0),
+            name=data["name"],
+            description=data["description"],
+            category_name=data["category"],
+            currency_code=data["currency"],
+            status=Status(data["status"]),
+        )
+        return account
+
+    def hydrate_many(self, data: list[dict]) -> list[Account]:
+        """Hydrate list of account data dicts to list of Account objects.
+
+        Args:
+            data (list[dict]): list of account data as dicts.
+
+        Returns:
+            list[Account]: list of Account objects.
+        """
+        accounts = [self.hydrate(acc) for acc in data]
+        return accounts
 
 
 class SQLiteBalanceRepository:
@@ -732,6 +695,179 @@ class SQLiteBalanceRepository:
         query = "DELETE FROM balances;"
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} balance records.")
+
+    def hydrate(self, data: dict) -> Balance:
+        """Hydrate balance data dict to Balance object.
+
+        Args:
+            data (dict): balance data as dict.
+
+        Returns:
+            Balance: Balance object.
+        """
+        balance = Balance(
+            id=data.get("id", 0),
+            account_id=data["account_id"],
+            month=Month.parse(data["month"]),
+            amount=data["amount"],
+        )
+        return balance
+
+    def hydrate_many(self, data: list[dict]) -> list[Balance]:
+        """Hydrate balance data dicts to list of Balance objects.
+
+        Args:
+            data (list[dict]): list of balance data dicts.
+
+        Returns:
+            list[Balance]: list of Balance objects.
+        """
+        balances = [self.hydrate(bal) for bal in data if bal["amount"] != 0]
+        return balances
+
+
+class SQLiteExchangeRateRepository:
+    """Repository for exchange rates SQLite database operations."""
+
+    def __init__(self, db: DBConnectionManager) -> None:
+        self._db: DBConnectionManager = db
+
+    def insert_many(self, data: list[ExchangeRate]) -> None:
+        """Insert list of exchange rates into the exchange_rates table.
+
+        Args:
+            data (list[ExchangeRate]): List of ExchangeRate objects.
+        """
+        rowcount = self._db.execute_many(
+            """
+            INSERT INTO exchange_rates (currency, month, rate)
+            VALUES (:currency, :month, :rate);
+            """,
+            [
+                {
+                    "currency": r.currency_code,
+                    "month": str(r.month),
+                    "rate": r.rate,
+                }
+                for r in data
+            ],
+        )
+        print("Inserted", rowcount, "exchange rate rows.")
+
+    def get(self, month: Month, currency_code: str) -> ExchangeRate | None:
+        """Get the exchange rate for a specific currency code and month
+
+        Args:
+            month (Month): Month object
+            currency_code (str): Currency code
+
+        Returns:
+            ExchangeRate | None: Exchange rate record if found, else None
+        """
+        query = """
+        SELECT rate FROM exchange_rates
+        WHERE currency = :currency AND month = :month;
+        """
+        result = self._db.fetch_one(
+            query, {"currency": currency_code, "month": str(month)}
+        )
+        if result:
+            return ExchangeRate(
+                currency_code=currency_code, month=month, rate=result["rate"]
+            )
+        return None
+
+    def get_currency(self, currency_code: str) -> list[ExchangeRate]:
+        """Get exchange rates for a given currency code
+
+        Args:
+            currency_code (str): Currency code
+
+        Returns:
+            list[ExchangeRate]: List of exchange rate records
+        """
+        query = """
+        SELECT month, rate FROM exchange_rates
+        WHERE currency = :currency;
+        """
+        results = self._db.fetch_all(query, {"currency": currency_code})
+        exchange_rates = [
+            ExchangeRate(
+                currency_code=currency_code,
+                month=Month.parse(res["month"]),
+                rate=res["rate"],
+            )
+            for res in results
+        ]
+        return exchange_rates
+
+    def get_month(self, month: Month) -> list[ExchangeRate]:
+        """Get exchange rates for all currencies for a given month
+
+        Args:
+            month (Month): Month object
+
+        Returns:
+            list[ExchangeRate]: List of exchange rate records
+        """
+        query = """
+        SELECT currency, rate FROM exchange_rates
+        WHERE month = :month;
+        """
+        results = self._db.fetch_all(query, {"month": str(month)})
+        exchange_rates = [
+            ExchangeRate(
+                currency_code=res["currency"],
+                month=month,
+                rate=res["rate"],
+            )
+            for res in results
+        ]
+        return exchange_rates
+
+    def count_records(self) -> int:
+        """Count the number of exchange rate records.
+
+        Returns:
+            int: Number of exchange rage records.
+        """
+        query = "SELECT COUNT(*) AS cnt FROM exchange_rates;"
+        result = self._db.fetch_one(query)
+        return result["cnt"] if result else 0
+
+    def delete_all(self) -> None:
+        """Delete all category records."""
+        query = "DELETE FROM exchange_rates;"
+        cur = self._db.execute(query)
+        print(f"Deleted {cur.rowcount} exchange rate records.")
+
+    def hydrate(self, data: dict) -> ExchangeRate:
+        """Hydrate exchange rate data dict to ExchangeRate object.
+
+        Args:
+            data ([dict): exchange rate data as dict.
+
+        Returns:
+            ExchangeRate: ExchangeRate object.
+        """
+        rate = ExchangeRate(
+            currency_code=data["currency"],
+            month=Month.parse(data["month"]),
+            rate=data["rate"],
+        )
+        return rate
+
+    def hydrate_many(self, data: list[dict]) -> list[ExchangeRate]:
+        """Hydrate exchange rate data dicts to list of ExchangeRate objects.
+
+        Args:
+            exchange_rates_data (list[dict]): list of exchange rate data as dicts.
+
+        Returns:
+            list[ExchangeRate]: list of ExchangeRate objects.
+        """
+        rates = [self.hydrate(er) for er in data]
+        return rates
 
 
 class SQLiteNetWorthRepository:
