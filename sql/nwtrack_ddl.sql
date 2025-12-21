@@ -26,7 +26,7 @@ CREATE TABLE categories (
 );
 
 CREATE TABLE accounts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
     category TEXT NOT NULL REFERENCES categories(name),
@@ -37,7 +37,7 @@ CREATE TABLE accounts (
 );
 
 CREATE TABLE balances (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY,
     account_id INTEGER NOT NULL REFERENCES accounts(id),
     month TEXT NOT NULL,  -- format 'YYYY-MM'
     amount INTEGER NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE balances (
 
 -- Exchanges rates to convert from other currencies to USD
 CREATE TABLE exchange_rates (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY,
     currency TEXT NOT NULL REFERENCES currencies(code),
     month TEXT NOT NULL,  -- format 'YYYY-MM'
     rate REAL NOT NULL,
