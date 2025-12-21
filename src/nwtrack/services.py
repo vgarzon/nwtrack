@@ -13,7 +13,6 @@ from nwtrack.models import (
     ExchangeRate,
     Month,
     NetWorth,
-    Side,
     Status,
 )
 from nwtrack.unitofwork import UnitOfWork
@@ -36,11 +35,13 @@ class InitDataService:
         """
         print("Service: Inserting currency and category data.")
         currency_data = csv_file_to_list_dict(currencies_path)
-        currencies = self.hydrate_currency_records(currency_data)
+        with self._uow() as uow:
+            currencies = uow.currency.hydrate_many(currency_data)
         self.insert_currencies(currencies)
 
         category_data = csv_file_to_list_dict(categories_path)
-        categories = self.hydrate_category_data(category_data)
+        with self._uow() as uow:
+            categories = uow.category.hydrate_many(category_data)
         self.insert_categories(categories)
 
     def insert_data_csv_wide(
@@ -176,99 +177,6 @@ class InitDataService:
                     rate=float(row[key]),
                 )
                 rates.append(rate)
-        return rates
-
-    def hydrate_currency_records(self, currency_data: list[dict]) -> list[Currency]:
-        """Parse currency data from list of dicts to list of Currency objects.
-
-        Args:
-            currency_data (list[dict]): list of currency data as dicts.
-
-        Returns:
-            list[Currency]: list of Currency objects.
-        """
-        currencies: list[Currency] = [
-            Currency(code=c["code"], description=c["description"])
-            for c in currency_data
-        ]
-        return currencies
-
-    def hydrate_category_data(self, category_data: list[dict]) -> list[Category]:
-        """Parse category data from list of dicts to list of Category objects.
-
-        Args:
-            category_data (list[dict]): list of category data as dicts.
-
-        Returns:
-            list[Category]: list of Category objects.
-        """
-        categories: list[Category] = [
-            Category(name=at["name"], side=Side(at["side"])) for at in category_data
-        ]
-        return categories
-
-    def hydrate_account_records(self, accounts_data: list[dict]) -> list[Account]:
-        """Hydrate account records to list of Account objects.
-
-        Args:
-            accounts_data (list[dict]): list of account data as dicts.
-
-        Returns:
-            list[Account]: list of Account objects.
-        """
-        accounts = [
-            Account(
-                id=acc.get("id", 0),
-                name=acc["name"],
-                description=acc["description"],
-                category_name=acc["category"],
-                currency_code=acc["currency"],
-                status=Status(acc["status"]),
-            )
-            for acc in accounts_data
-        ]
-        return accounts
-
-    def hydrate_balance_records(self, balances_data: list[dict]) -> list[Balance]:
-        """Hydrate balance records to list of Balance objects.
-
-        Args:
-            balances_data (list[dict]): list of balance data as dicts.
-
-        Returns:
-            list[Balance]: list of Balance objects.
-        """
-        balances = [
-            Balance(
-                id=bal.get("id", 0),
-                account_id=bal["account_id"],
-                month=Month.parse(bal["month"]),
-                amount=bal["amount"],
-            )
-            for bal in balances_data
-            if bal["amount"] != 0
-        ]
-        return balances
-
-    def hydrate_exchange_rate_records(
-        self, exchange_rates_data: list[dict]
-    ) -> list[ExchangeRate]:
-        """Hydrate exchange rate records to list of ExchangeRate objects.
-
-        Args:
-            exchange_rates_data (list[dict]): list of exchange rate data as dicts.
-
-        Returns:
-            list[ExchangeRate]: list of ExchangeRate objects.
-        """
-        rates = [
-            ExchangeRate(
-                currency_code=er["currency"],
-                month=Month.parse(er["month"]),
-                rate=er["rate"],
-            )
-            for er in exchange_rates_data
-        ]
         return rates
 
     def insert_currencies(self, currencies: list[Currency]) -> None:

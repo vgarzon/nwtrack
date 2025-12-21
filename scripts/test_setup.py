@@ -224,19 +224,18 @@ def test_tables_exist(container: Container) -> None:
     assert table_is_empty(uow._db, "balances"), "Table 'balances' should be empty."
 
 
-def test_insert_hydrated(container) -> None:
-    """Test inserting hydrated objects."""
+def test_insert_data_with_query(container: Container) -> None:
+    """Test populating initial data into the database."""
+    uow: SQLiteUnitOfWork = container.resolve(UnitOfWork)
 
-    with uow_factory(container) as uow:
-        for repo_name, table_name in REPO_MAPPING:
-            print(repo_name, table_name)
-            repo = getattr(uow, repo_name)
-            entities = repo.hydrate_many(TEST_DATA[table_name])
-            repo.insert_many(entities)
+    insert_data_with_query(uow._db)
 
     cnts = count_records(container)
-    for repo_name, _ in REPO_MAPPING:
-        print(f"{repo_name}: {cnts[repo_name]}")
+    assert cnts["currency"] == 3, "Expected 3 currencies"
+    assert cnts["category"] == 3, "Expected 3 categories"
+    assert cnts["account"] == 3, "Expected 3 accounts"
+    assert cnts["balance"] == 9, "Expected 9 balances"
+    assert cnts["exchange_rate"] == 6, "Expected 6 exchange rates"
 
 
 def test_delete_records(container: Container) -> None:
@@ -254,18 +253,19 @@ def test_delete_records(container: Container) -> None:
         assert cnts[repo_name] == 0, f"Expected 0 records in {repo_name} repo"
 
 
-def test_insert_data_with_query(container: Container) -> None:
-    """Test populating initial data into the database."""
-    uow: SQLiteUnitOfWork = container.resolve(UnitOfWork)
+def test_insert_hydrated(container) -> None:
+    """Test inserting hydrated objects."""
 
-    insert_data_with_query(uow._db)
+    with uow_factory(container) as uow:
+        for repo_name, table_name in REPO_MAPPING:
+            print(repo_name, table_name)
+            repo = getattr(uow, repo_name)
+            entities = repo.hydrate_many(TEST_DATA[table_name])
+            repo.insert_many(entities)
 
     cnts = count_records(container)
-    assert cnts["currency"] == 3, "Expected 3 currencies"
-    assert cnts["category"] == 3, "Expected 3 categories"
-    assert cnts["account"] == 3, "Expected 3 accounts"
-    assert cnts["balance"] == 9, "Expected 9 balances"
-    assert cnts["exchange_rate"] == 6, "Expected 6 exchange rates"
+    for repo_name, _ in REPO_MAPPING:
+        print(f"{repo_name}: {cnts[repo_name]}")
 
 
 def main() -> None:
