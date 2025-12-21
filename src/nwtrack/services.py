@@ -25,28 +25,28 @@ class InitDataService:
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
 
-    def insert_reference_data(self, currencies_path: str, categories_path: str) -> None:
-        """Insert currency and category data in respective tables.
+    def insert_reference_data_csv(
+        self, currencies_path: str, categories_path: str
+    ) -> None:
+        """Insert currency and category data from CSV files.
 
         Args:
             currencies_path (str): Path to currencies CSV file.
             categories_path (str): Path to categories CSV file.
         """
-        print("Service: Initializing currency and category data.")
+        print("Service: Inserting currency and category data.")
         currency_data = csv_file_to_list_dict(currencies_path)
-        category_data = csv_file_to_list_dict(categories_path)
-
-        currencies: list[Currency] = [Currency(**c) for c in currency_data]
-        categories: list[Category] = [
-            Category(name=at["name"], side=Side(at["side"])) for at in category_data
-        ]
+        currencies = self.hydrate_currency_records(currency_data)
         self.insert_currencies(currencies)
+
+        category_data = csv_file_to_list_dict(categories_path)
+        categories = self.hydrate_category_data(category_data)
         self.insert_categories(categories)
 
-    def insert_sample_data(
+    def insert_data_csv_wide(
         self, accounts_path: str, balances_path: str, exchange_rates_path
     ) -> None:
-        """Insert sample accounts, balances, and exchange rates data from CSV files.
+        """Insert accounts, balances, and exchange rates data from CSV files.
 
         Args:
             accounts_path (str): Path to the accounts CSV file.
@@ -64,70 +64,17 @@ class InitDataService:
             positive.
         """
         print("Service: Inserting sample account, balance, and exhange rate data.")
-        accounts_data = csv_file_to_list_dict(accounts_path)
-        accounts = self.parse_account_data(accounts_data)
+        accounts = self.read_account_csv_wide(accounts_path)
         self.insert_accounts(accounts)
 
-        balances_data = csv_file_to_list_dict(balances_path)
-        balances = self.parse_balance_data(balances_data)
+        balances = self.read_balance_csv_wide(balances_path)
         self.insert_balances(balances)
 
-        exchange_rates_data = csv_file_to_list_dict(exchange_rates_path)
-        exchange_rates = self.parse_exchange_rates_data(exchange_rates_data)
+        exchange_rates = self.read_exchange_rate_csv_wide(exchange_rates_path)
         self.insert_exchange_rates(exchange_rates)
 
-    def insert_currencies(self, currencies: list[Currency]) -> None:
-        """Insert currencies into the database.
-
-        Args:
-            currencies (list[Currency]): list of Currency objects.
-        """
-        print("Service: Inserting sample currencies data.")
-        with self._uow() as uow:
-            uow.currency.insert_many(currencies)
-
-    def insert_categories(self, categories: list[Category]) -> None:
-        """Insert categories into the database.
-
-        Args:
-            categories (list[Category]): list of Category objects.
-        """
-        print("Service: Inserting sample categories data.")
-        with self._uow() as uow:
-            uow.category.insert_many(categories)
-
-    def insert_accounts(self, accounts: list[Account]) -> None:
-        """Insert accounts into the database.
-
-        Args:
-            accounts_data (list[dict]): list of Account objects.
-        """
-        print("Service: Inserting sample accounts data.")
-        with self._uow() as uow:
-            uow.account.insert_many(accounts)
-
-    def insert_balances(self, balances: list[Balance]) -> None:
-        """Insert balances into the database.
-
-        Args:
-            balances (list[Balance]): list of Balance objects.
-        """
-        print("Service: Inserting sample balances data.")
-        with self._uow() as uow:
-            uow.balance.insert_many(balances)
-
-    def insert_exchange_rates(self, exchange_rates: list[ExchangeRate]) -> None:
-        """Insert exchange rate data into database.
-
-        Args:
-            exchange_rates (list[ExchangeRate]): list of ExchangeRate objects.
-        """
-        print("Service: Inserting exchange rates.")
-        with self._uow() as uow:
-            uow.exchange_rate.insert_many(exchange_rates)
-
-    def parse_account_data(self, accounts_data: list[dict]) -> list[Account]:
-        """Parse account data from list of dicts to list of Account objects.
+    def read_account_csv_wide(self, accounts_path: str) -> list[Account]:
+        """Parse account data from csv file in wide format.
 
         Args:
             accounts_data (list[dict]): list of account data as dicts.
@@ -135,6 +82,7 @@ class InitDataService:
         Returns:
             list[Account]: list of Account objects.
         """
+        accounts_data = csv_file_to_list_dict(accounts_path)
         with self._uow() as uow:
             currency_map = uow.currency.get_dict()
             category_map = uow.category.get_dict()
@@ -161,16 +109,17 @@ class InitDataService:
             accounts.append(account)
         return accounts
 
-    def parse_balance_data(self, balances_data: list[dict]) -> list[Balance]:
-        """Parse balance data from list of dicts to list of Balance objects.
+    def read_balance_csv_wide(self, balances_path) -> list[Balance]:
+        """Read balance data from CSV file in wide format to list of Balance objects.
 
         Args:
-            balances_data (list[dict]): list of balance data as dicts.
+            balances_path (str): Path to the balances CSV file.
 
         Returns:
             list[Balance]: list of Balance objects.
         """
         skip_cols = ("date", "year", "month")
+        balances_data = csv_file_to_list_dict(balances_path)
         with self._uow() as uow:
             account_map = uow.account.get_dict_name()
         balances = []
@@ -191,19 +140,23 @@ class InitDataService:
                     balances.append(bal)
         return balances
 
-    def parse_exchange_rates_data(
-        self, exchange_rates_data: list[dict]
+    def read_exchange_rate_csv_wide(
+        self, exchange_rate_path: str
     ) -> list[ExchangeRate]:
-        """Parse exchange rate data from list of dicts to list of ExchangeRate objects.
+        """Parse exchange rate data from csv file in wide format.
 
         Args:
             exchange_rates_path (str): Path to the exchange rates CSV file.
+
+        Returns:
+            list[ExchangeRate]: list of ExchangeRate objects.
         """
         skip_cols = ("date", "year", "month")
+        exchange_rate_data = csv_file_to_list_dict(exchange_rate_path)
         # check that currency codes in the file exist in the database
         with self._uow() as uow:
             currency_codes = uow.currency.get_codes()
-        row = exchange_rates_data[0]
+        row = exchange_rate_data[0]
         for key in row:
             if key.lower() in skip_cols:
                 continue
@@ -211,7 +164,7 @@ class InitDataService:
                 raise ValueError(f"Currency code '{key}' not found in database.")
 
         rates = []
-        for row in exchange_rates_data:
+        for row in exchange_rate_data:
             for key in row:
                 if key.lower() in skip_cols:
                     continue
@@ -224,6 +177,149 @@ class InitDataService:
                 )
                 rates.append(rate)
         return rates
+
+    def hydrate_currency_records(self, currency_data: list[dict]) -> list[Currency]:
+        """Parse currency data from list of dicts to list of Currency objects.
+
+        Args:
+            currency_data (list[dict]): list of currency data as dicts.
+
+        Returns:
+            list[Currency]: list of Currency objects.
+        """
+        currencies: list[Currency] = [
+            Currency(code=c["code"], description=c["description"])
+            for c in currency_data
+        ]
+        return currencies
+
+    def hydrate_category_data(self, category_data: list[dict]) -> list[Category]:
+        """Parse category data from list of dicts to list of Category objects.
+
+        Args:
+            category_data (list[dict]): list of category data as dicts.
+
+        Returns:
+            list[Category]: list of Category objects.
+        """
+        categories: list[Category] = [
+            Category(name=at["name"], side=Side(at["side"])) for at in category_data
+        ]
+        return categories
+
+    def hydrate_account_records(self, accounts_data: list[dict]) -> list[Account]:
+        """Hydrate account records to list of Account objects.
+
+        Args:
+            accounts_data (list[dict]): list of account data as dicts.
+
+        Returns:
+            list[Account]: list of Account objects.
+        """
+        accounts = [
+            Account(
+                id=acc.get("id", 0),
+                name=acc["name"],
+                description=acc["description"],
+                category_name=acc["category"],
+                currency_code=acc["currency"],
+                status=Status(acc["status"]),
+            )
+            for acc in accounts_data
+        ]
+        return accounts
+
+    def hydrate_balance_records(self, balances_data: list[dict]) -> list[Balance]:
+        """Hydrate balance records to list of Balance objects.
+
+        Args:
+            balances_data (list[dict]): list of balance data as dicts.
+
+        Returns:
+            list[Balance]: list of Balance objects.
+        """
+        balances = [
+            Balance(
+                id=bal.get("id", 0),
+                account_id=bal["account_id"],
+                month=Month.parse(bal["month"]),
+                amount=bal["amount"],
+            )
+            for bal in balances_data
+            if bal["amount"] != 0
+        ]
+        return balances
+
+    def hydrate_exchange_rate_records(
+        self, exchange_rates_data: list[dict]
+    ) -> list[ExchangeRate]:
+        """Hydrate exchange rate records to list of ExchangeRate objects.
+
+        Args:
+            exchange_rates_data (list[dict]): list of exchange rate data as dicts.
+
+        Returns:
+            list[ExchangeRate]: list of ExchangeRate objects.
+        """
+        rates = [
+            ExchangeRate(
+                currency_code=er["currency"],
+                month=Month.parse(er["month"]),
+                rate=er["rate"],
+            )
+            for er in exchange_rates_data
+        ]
+        return rates
+
+    def insert_currencies(self, currencies: list[Currency]) -> None:
+        """Insert currencies into the database.
+
+        Args:
+            currencies (list[Currency]): list of Currency objects.
+        """
+        print("Service: Inserting currency data.")
+        with self._uow() as uow:
+            uow.currency.insert_many(currencies)
+
+    def insert_categories(self, categories: list[Category]) -> None:
+        """Insert categories into the database.
+
+        Args:
+            categories (list[Category]): list of Category objects.
+        """
+        print("Service: Inserting category data.")
+        with self._uow() as uow:
+            uow.category.insert_many(categories)
+
+    def insert_accounts(self, accounts: list[Account]) -> None:
+        """Insert accounts into the database.
+
+        Args:
+            accounts_data (list[dict]): list of Account objects.
+        """
+        print("Service: Inserting accounts data.")
+        with self._uow() as uow:
+            uow.account.insert_many(accounts)
+
+    def insert_balances(self, balances: list[Balance]) -> None:
+        """Insert balances into the database.
+
+        Args:
+            balances (list[Balance]): list of Balance objects.
+        """
+        print("Service: Inserting balances data.")
+        with self._uow() as uow:
+            uow.balance.insert_many(balances)
+
+    def insert_exchange_rates(self, exchange_rates: list[ExchangeRate]) -> None:
+        """Insert exchange rate data into database.
+
+        Args:
+            exchange_rates (list[ExchangeRate]): list of ExchangeRate objects.
+        """
+        print("Service: Inserting exchange rate data.")
+        with self._uow() as uow:
+            uow.exchange_rate.insert_many(exchange_rates)
 
 
 class UpdateService:
