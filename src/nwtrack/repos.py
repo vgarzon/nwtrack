@@ -40,6 +40,14 @@ class CurrencyRepository(Protocol):
         """Get all currencies in a dictionary indexed by code."""
         ...
 
+    def count_records(self) -> int:
+        """Count the number of currency records."""
+        ...
+
+    def delete_all(self) -> None:
+        """Delete all currency records."""
+        ...
+
 
 class CategoryRepository(Protocol):
     """Protocol for category repository operations."""
@@ -54,6 +62,14 @@ class CategoryRepository(Protocol):
 
     def get_dict(self) -> dict[str, Category]:
         """Get all categories in a dictionary indexed by name."""
+        ...
+
+    def count_records(self) -> int:
+        """Count the number of category records."""
+        ...
+
+    def delete_all(self) -> None:
+        """Delete all currency records."""
         ...
 
 
@@ -74,6 +90,14 @@ class ExchangeRateRepository(Protocol):
 
     def get_month(self, month: Month) -> list[ExchangeRate]:
         """Get exchange rates for all currencies for a given month."""
+        ...
+
+    def count_records(self) -> int:
+        """Count the number of exchange rate records."""
+        ...
+
+    def delete_all(self) -> None:
+        """Delete all currency records."""
         ...
 
 
@@ -98,6 +122,14 @@ class AccountRepository(Protocol):
 
     def get_dict_name(self) -> dict[str, Account]:
         """Get all accounts in a dictionary indexed by name."""
+        ...
+
+    def count_records(self) -> int:
+        """Count the number of account records."""
+        ...
+
+    def delete_all(self) -> None:
+        """Delete all currency records."""
         ...
 
 
@@ -130,6 +162,14 @@ class BalanceRepository(Protocol):
 
     def fetch_sample(self, limit: int = 5) -> list[Balance]:
         """Fetch sample balance records for debugging."""
+        ...
+
+    def count_records(self) -> int:
+        """Count the number of balance records."""
+        ...
+
+    def delete_all(self) -> None:
+        """Delete all currency records."""
         ...
 
 
@@ -198,6 +238,22 @@ class SQLiteCurrencyRepository:
         currencies = {result.code: result for result in results}
         return currencies
 
+    def count_records(self) -> int:
+        """Count the number of currency records.
+
+        Returns:
+            int: Number of currency records.
+        """
+        query = "SELECT COUNT(*) AS cnt FROM currencies;"
+        result = self._db.fetch_one(query)
+        return result["cnt"] if result else 0
+
+    def delete_all(self) -> None:
+        """Delete all currency records."""
+        query = "DELETE FROM currencies;"
+        cur = self._db.execute(query)
+        print(f"Deleted {cur.rowcount} currency records.")
+
 
 class SQLiteCategoryRepository:
     """Repository for category SQLite database operations."""
@@ -237,6 +293,22 @@ class SQLiteCategoryRepository:
         results = self.get_all()
         categories = {result.name: result for result in results}
         return categories
+
+    def count_records(self) -> int:
+        """Count the number of category records.
+
+        Returns:
+            int: Number of category records.
+        """
+        query = "SELECT COUNT(*) AS cnt FROM categories;"
+        result = self._db.fetch_one(query)
+        return result["cnt"] if result else 0
+
+    def delete_all(self) -> None:
+        """Delete all category records."""
+        query = "DELETE FROM categories;"
+        cur = self._db.execute(query)
+        print(f"Deleted {cur.rowcount} category records.")
 
 
 class SQLiteExchangeRateRepository:
@@ -338,6 +410,22 @@ class SQLiteExchangeRateRepository:
         ]
         return exchange_rates
 
+    def count_records(self) -> int:
+        """Count the number of exchange rate records.
+
+        Returns:
+            int: Number of exchange rage records.
+        """
+        query = "SELECT COUNT(*) AS cnt FROM exchange_rates;"
+        result = self._db.fetch_one(query)
+        return result["cnt"] if result else 0
+
+    def delete_all(self) -> None:
+        """Delete all category records."""
+        query = "DELETE FROM exchange_rates;"
+        cur = self._db.execute(query)
+        print(f"Deleted {cur.rowcount} exchange rate records.")
+
 
 class SQLiteAccountRepository:
     """Repository for account SQLite database operations."""
@@ -433,6 +521,22 @@ class SQLiteAccountRepository:
         results = self.get_all()
         accounts = {result.name: result for result in results}
         return accounts
+
+    def count_records(self) -> int:
+        """Count the number of account records.
+
+        Returns:
+            int: Number of account records.
+        """
+        query = "SELECT COUNT(*) AS cnt FROM accounts;"
+        result = self._db.fetch_one(query)
+        return result["cnt"] if result else 0
+
+    def delete_all(self) -> None:
+        """Delete all account records."""
+        query = "DELETE FROM accounts;"
+        cur = self._db.execute(query)
+        print(f"Deleted {cur.rowcount} account records.")
 
 
 class SQLiteBalanceRepository:
@@ -612,6 +716,22 @@ class SQLiteBalanceRepository:
             for res in results
         ]
         return balances
+
+    def count_records(self) -> int:
+        """Count the number of balance records.
+
+        Returns:
+            int: Number of balance records.
+        """
+        query = "SELECT COUNT(*) AS cnt FROM balances;"
+        result = self._db.fetch_one(query)
+        return result["cnt"] if result else 0
+
+    def delete_all(self) -> None:
+        """Delete all balance records."""
+        query = "DELETE FROM balances;"
+        cur = self._db.execute(query)
+        print(f"Deleted {cur.rowcount} balance records.")
 
 
 class SQLiteNetWorthRepository:

@@ -6,7 +6,7 @@ from nwtrack.config import Config
 from nwtrack.admin import DBAdminService, SQLiteAdminService
 from nwtrack.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
-from nwtrack.services import InitDataService  # , ReportService, UpdateService
+from nwtrack.services import InitDataService, ReportService  # , UpdateService
 from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
 
 
@@ -68,7 +68,7 @@ TEST_DATA: dict[str, list[dict]] = {
     ],
 }
 
-RAW_QUERIES: dict[str, str] = {
+INSERT_QUERIES: dict[str, str] = {
     "currencies": """
         INSERT INTO currencies (code, description)
         VALUES (:code, :description);
@@ -136,10 +136,10 @@ def build_test_container() -> Container:
         #     UpdateService,
         #     lambda c: UpdateService(uow=lambda: c.resolve(UnitOfWork)),
         # )
-        # .register(
-        #     ReportService,
-        #     lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),
-        # )
+        .register(
+            ReportService,
+            lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),
+        )
     )
 
 
@@ -185,7 +185,7 @@ def test_tables_exist(container: Container) -> None:
     assert row["file"] == "", "Expected in-memory database."
 
     table_names = get_table_names(uow._db)
-    assert len(table_names) == 6, "Expected 6 tables in the database."
+    assert len(table_names) == 5, "Expected 5 tables in the database."
 
     assert table_exists(uow._db, "accounts"), "Table 'accounts' should exist."
     assert "balances" in table_names, "Table 'balances' should exist."
@@ -193,21 +193,17 @@ def test_tables_exist(container: Container) -> None:
     assert table_is_empty(uow._db, "balances"), "Table 'balances' should be empty."
 
 
-def populate_initial_data(db: DBConnectionManager) -> None:
+def insert_data_with_query(db: DBConnectionManager) -> None:
     """Populate initial data into the database."""
     for table, data in TEST_DATA.items():
-        query = RAW_QUERIES[table]
+        query = INSERT_QUERIES[table]
         rowcnt = db.execute_many(query, data)
         db.commit()
         print(f"Inserted {rowcnt} into '{table}'.")
-        cur = db.execute(f"SELECT * FROM {table} LIMIT 2;")
-        res = cur.fetchall()
-        for row in res:
-            print(dict(row))
 
 
-def hydrate_test_data(container) -> None:
-    """Hydrate initial data using InitDataService."""
+def test_insert_hydrated(container) -> None:
+    """Test inserting hydrated objects."""
     init_svc: InitDataService = container.resolve(InitDataService)
 
     currencies = init_svc.hydrate_currency_records(TEST_DATA["currencies"])
@@ -216,30 +212,66 @@ def hydrate_test_data(container) -> None:
     balances = init_svc.hydrate_balance_records(TEST_DATA["balances"])
     exchange_rates = init_svc.hydrate_exchange_rate_records(TEST_DATA["exchange_rates"])
 
-    print(currencies)
-    print(categories)
-    print(accounts)
-    print(balances)
-    print(exchange_rates)
+    init_svc.insert_currencies(currencies)
+    init_svc.insert_categories(categories)
+    init_svc.insert_accounts(accounts)
+    init_svc.insert_balances(balances)
+    init_svc.insert_exchange_rates(exchange_rates)
 
 
-def test_populate_initial_data(container: Container) -> None:
+def count_records(container: Container) -> dict[str, int]:
+    """Count records from all repos."""
+
+    prn_svc: ReportService = container.resolve(ReportService)
+
+    return prn_svc.count_records()
+
+
+def test_delete_records(container: Container) -> None:
+    """Delete all records from all tables."""
+
+    def uow_factory() -> SQLiteUnitOfWork:
+        return container.resolve(UnitOfWork)
+
+    repo_names = [
+        "exchange_rate",
+        "balance",
+        "account",
+        "category",
+        "currency",
+    ]
+
+    with uow_factory() as uow:
+        for repo_name in repo_names:
+            repo = getattr(uow, repo_name)
+            repo.delete_all()
+
+    cnts = count_records(container)
+    for repo_name in repo_names:
+        assert cnts[repo_name] == 0, f"Expected 0 records in {repo_name} repo"
+
+
+def test_insert_data_with_query(container: Container) -> None:
     """Test populating initial data into the database."""
     uow: SQLiteUnitOfWork = container.resolve(UnitOfWork)
 
-    populate_initial_data(uow._db)
+    insert_data_with_query(uow._db)
 
-    # assert not table_is_empty(uow._db, "accounts"), (
-    #     "Table 'accounts' should not be empty after initialization."
-    # )
+    cnts = count_records(container)
+    assert cnts["currency"] == 3, "Expected 3 currencies"
+    assert cnts["category"] == 3, "Expected 3 categories"
+    assert cnts["account"] == 3, "Expected 3 accounts"
+    assert cnts["balance"] == 9, "Expected 9 balances"
+    assert cnts["exchange_rate"] == 6, "Expected 6 exchange rates"
 
 
 def main() -> None:
     container = build_test_container()
     test_initialize_database(container)
     test_tables_exist(container)
-    test_populate_initial_data(container)
-    hydrate_test_data(container)
+    test_insert_data_with_query(container)
+    test_delete_records(container)
+    test_insert_hydrated(container)
 
 
 if __name__ == "__main__":

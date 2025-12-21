@@ -585,3 +585,27 @@ class ReportService:
         print("currency, month, rate")
         for r in rates:
             print(r.currency_code, str(r.month), r.rate)
+
+    def count_records(self) -> dict[str, int]:
+        """Count the number of records in a table.
+
+        Args:
+            table_name (str): Name of the table.
+
+        Returns:
+            int: Number of records in the table.
+        """
+        repo_labels = [
+            "currency",
+            "category",
+            "account",
+            "balance",
+            "exchange_rate",
+        ]
+        with self._uow() as uow:
+            counts = {}
+            for label in repo_labels:
+                repo = getattr(uow, label)
+                count = repo.count_records()
+                counts[label] = count
+        return counts
