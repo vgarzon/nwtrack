@@ -48,6 +48,14 @@ class CurrencyRepository(Protocol):
         """Delete all currency records."""
         ...
 
+    def hydrate(self, data: dict) -> Currency:
+        """Hydrate data dictionary to Currency object."""
+        ...
+
+    def hydrate_many(self, data: list[dict]) -> list[Currency]:
+        """Hydrate list of data dictionaries to list of Currency objects."""
+        ...
+
 
 class CategoryRepository(Protocol):
     """Protocol for category repository operations."""
@@ -70,6 +78,14 @@ class CategoryRepository(Protocol):
 
     def delete_all(self) -> None:
         """Delete all currency records."""
+        ...
+
+    def hydrate(self, data: dict[str, str]) -> Category:
+        """Hydrate data dictionary to Category object."""
+        ...
+
+    def hydrate_many(self, data: list[dict[str, str]]) -> list[Category]:
+        """Hydrate list of data dictionaries to list of Category objects."""
         ...
 
 
@@ -98,6 +114,14 @@ class ExchangeRateRepository(Protocol):
 
     def delete_all(self) -> None:
         """Delete all currency records."""
+        ...
+
+    def hydrate(self, data: dict) -> ExchangeRate:
+        """Hydrate data dictionary to ExchangeRate object."""
+        ...
+
+    def hydrate_many(self, data: list[dict]) -> list[ExchangeRate]:
+        """Hydrate list of data dictionaries to list of ExchangeRate objects."""
         ...
 
 
@@ -130,6 +154,14 @@ class AccountRepository(Protocol):
 
     def delete_all(self) -> None:
         """Delete all currency records."""
+        ...
+
+    def hydrate(self, data: dict) -> Account:
+        """Hydrate data dictionary to Account object."""
+        ...
+
+    def hydrate_many(self, data: list[dict]) -> list[Account]:
+        """Hydrate list of data dictionaries to list of Account objects."""
         ...
 
 
@@ -170,6 +202,14 @@ class BalanceRepository(Protocol):
 
     def delete_all(self) -> None:
         """Delete all currency records."""
+        ...
+
+    def hydrate(self, data: dict) -> Balance:
+        """Hydrate data dictionary to Balance object."""
+        ...
+
+    def hydrate_many(self, data: list[dict]) -> list[Balance]:
+        """Hydrate list of data dictionaries to list of Balance objects."""
         ...
 
 
