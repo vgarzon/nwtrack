@@ -4,7 +4,7 @@ Service layer for managing user operations using unit of work pattern.
 
 from typing import Callable
 
-from nwtrack.fileio import csv_file_to_list_dict
+from nwtrack.fileio import csv_to_records
 from nwtrack.models import (
     Account,
     Balance,
@@ -34,12 +34,12 @@ class InitDataService:
             categories_path (str): Path to categories CSV file.
         """
         print("Service: Inserting currency and category data.")
-        currency_data = csv_file_to_list_dict(currencies_path)
+        currency_data = csv_to_records(currencies_path)
         with self._uow() as uow:
             currencies = uow.currency.hydrate_many(currency_data)
         self.insert_currencies(currencies)
 
-        category_data = csv_file_to_list_dict(categories_path)
+        category_data = csv_to_records(categories_path)
         with self._uow() as uow:
             categories = uow.category.hydrate_many(category_data)
         self.insert_categories(categories)
@@ -83,7 +83,7 @@ class InitDataService:
         Returns:
             list[Account]: list of Account objects.
         """
-        accounts_data = csv_file_to_list_dict(accounts_path)
+        accounts_data = csv_to_records(accounts_path)
         with self._uow() as uow:
             currency_map = uow.currency.get_dict()
             category_map = uow.category.get_dict()
@@ -120,7 +120,7 @@ class InitDataService:
             list[Balance]: list of Balance objects.
         """
         skip_cols = ("date", "year", "month")
-        balances_data = csv_file_to_list_dict(balances_path)
+        balances_data = csv_to_records(balances_path)
         with self._uow() as uow:
             account_map = uow.account.get_dict_name()
         balances = []
@@ -153,7 +153,7 @@ class InitDataService:
             list[ExchangeRate]: list of ExchangeRate objects.
         """
         skip_cols = ("date", "year", "month")
-        exchange_rate_data = csv_file_to_list_dict(exchange_rate_path)
+        exchange_rate_data = csv_to_records(exchange_rate_path)
         # check that currency codes in the file exist in the database
         with self._uow() as uow:
             currency_codes = uow.currency.get_codes()

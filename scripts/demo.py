@@ -15,8 +15,8 @@ def demo_init(container: Container) -> None:
         "currencies": "data/sample/currencies.csv",
         "categories": "data/sample/categories.csv",
         "accounts": "data/sample/accounts.csv",
-        "balances": "data/sample/balances.csv",
-        "exchange_rates": "data/sample/exchange_rates.csv",
+        "balances": "data/sample/balances_wide.csv",
+        "exchange_rates": "data/sample/exchange_rates_wide.csv",
     }
     print("*** Demo initializing database and loading sample data ***")
 
