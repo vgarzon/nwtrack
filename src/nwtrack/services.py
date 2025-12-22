@@ -23,64 +23,46 @@ class InitDataService:
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
 
-    def insert_reference_data_csv(
-        self, currencies_path: str, categories_path: str
-    ) -> None:
-        """Insert currency and category data from CSV files.
+    def insert_data_from_csv(self, file_paths: dict[str, str]) -> None:
+        """Insert data from CSV files into the database.
 
         Args:
-            currencies_path (str): Path to currencies CSV file.
-            categories_path (str): Path to categories CSV file.
-        """
-        print("Service: Inserting currency and category data.")
-        currency_data = csv_to_records(currencies_path)
-        with self._uow() as uow:
-            currencies = uow.currencies.hydrate_many(currency_data)
-        self.insert_currencies(currencies)
-
-        category_data = csv_to_records(categories_path)
-        with self._uow() as uow:
-            categories = uow.categories.hydrate_many(category_data)
-        self.insert_categories(categories)
-
-    def insert_data_csv_long(
-        self, accounts_path: str, balances_path: str, exchange_rates_path
-    ) -> None:
-        """Insert accounts, balances, and exchange rates data from CSV files.
-
-        Args:
-            accounts_path (str): Path to the accounts CSV file.
-            balances_path (str): Path to the balances CSV file.
-            exchange_rates_path (str): Path to the exchange rates CSV file.
+            file_paths (dict[str, str]): Paths to the CSV files indexed by repo name.
+                Expected keys: 'currencies', 'categories', 'accounts', 'balances',
+                    'exchange_rates'
 
         File formats:
-          - accounts.csv: name, description, category, currency, status
-          - balances.csv: date, year, month, <account_name_1>, <acct_name_2>, ...
-          - exchange_rates.csv: date, year, month, <currency_code_1>, <code_2>, ...
+          - currencies: code, description
+          - categories: name, description, side (asset, liability)
+          - accounts: name, description, category, currency, status
+          - balances: date, year, month, <account_name_1>, <acct_name_2>, ...
+          - exchange_rates: date, year, month, <currency_code_1>, <code_2>, ...
 
-        Notes:
-          - Liabilities are assumed to be in negative amounts and will be stored as
-          - Account names in the header must match those in the accounts.csv file.
-            positive.
+        Note:
+          - Liabilities are stored as positive amounts.
         """
-        print("Service: Inserting sample account, balance, and exhange rate data.")
-        account_data = csv_to_records(accounts_path)
-        with self._uow() as uow:
-            accounts = uow.accounts.hydrate_many(account_data)
-        self.insert_accounts(accounts)
+        print("Service: Inserting currency and category data.")
+        repo_names = [  # TODO: Use RepoRegistry (pending)
+            "currencies",
+            "categories",
+            "accounts",
+            "balances",
+            "exchange_rates",
+        ]
+        assert all(name in repo_names for name in file_paths), (
+            f"Missing required file paths. Expected keys: {', '.join(repo_names)}"
+        )
+        records = {name: csv_to_records(path) for name, path in file_paths.items()}
 
-        balances_data = csv_to_records(balances_path)
         # NOTE: storing liabilities as positive amounts
-        for row in balances_data:
+        for row in records["balances"]:
             row["amount"] = abs(int(row["amount"]))
-        with self._uow() as uow:
-            balances = uow.balances.hydrate_many(balances_data)
-        self.insert_balances(balances)
 
-        exchange_rate_data = csv_to_records(exchange_rates_path)
         with self._uow() as uow:
-            exchange_rates = uow.exchange_rates.hydrate_many(exchange_rate_data)
-        self.insert_exchange_rates(exchange_rates)
+            for name in repo_names:
+                repo = getattr(uow, name)
+                entities = repo.hydrate_many(records[name])
+                repo.insert_many(entities)
 
     def insert_currencies(self, currencies: list[Currency]) -> None:
         """Insert currencies into the database.

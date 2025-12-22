@@ -21,15 +21,7 @@ def init_db(container: Container) -> None:
     }
     container.resolve(DBAdminService).init_database()
     data_svc: InitDataService = container.resolve(InitDataService)
-    data_svc.insert_reference_data_csv(
-        currencies_path=input_files["currencies"],
-        categories_path=input_files["categories"],
-    )
-    data_svc.insert_data_csv_long(
-        accounts_path=input_files["accounts"],
-        balances_path=input_files["balances"],
-        exchange_rates_path=input_files["exchange_rates"],
-    )
+    data_svc.insert_data_from_csv(input_files)
 
 
 def test_init_data(test_container: Container) -> None:
