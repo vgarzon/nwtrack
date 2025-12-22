@@ -44,8 +44,8 @@ def exchange_rate_wide_csv_to_long():
     index_cols = ("date", "year", "month")
     drop_cols = ("date", "year")
     var_name = "currency"
-    value_name = "exchange_rate"
-    output_fieldnames = ("currency", "month", "exchange_rate")
+    value_name = "rate"
+    output_fieldnames = ("currency", "month", "rate")
 
     records = csv_to_records(csv_file)
     print("Read", len(records), f"exchange rate records from {csv_file}")

@@ -13,7 +13,6 @@ from nwtrack.models import (
     ExchangeRate,
     Month,
     NetWorth,
-    Status,
 )
 from nwtrack.unitofwork import UnitOfWork
 
@@ -44,7 +43,7 @@ class InitDataService:
             categories = uow.category.hydrate_many(category_data)
         self.insert_categories(categories)
 
-    def insert_data_csv_wide(
+    def insert_data_csv_long(
         self, accounts_path: str, balances_path: str, exchange_rates_path
     ) -> None:
         """Insert accounts, balances, and exchange rates data from CSV files.
@@ -65,119 +64,23 @@ class InitDataService:
             positive.
         """
         print("Service: Inserting sample account, balance, and exhange rate data.")
-        accounts = self.read_account_csv_wide(accounts_path)
+        account_data = csv_to_records(accounts_path)
+        with self._uow() as uow:
+            accounts = uow.account.hydrate_many(account_data)
         self.insert_accounts(accounts)
 
-        balances = self.read_balance_csv_wide(balances_path)
+        balances_data = csv_to_records(balances_path)
+        # NOTE: storing liabilities as positive amounts
+        for row in balances_data:
+            row["amount"] = abs(int(row["amount"]))
+        with self._uow() as uow:
+            balances = uow.balance.hydrate_many(balances_data)
         self.insert_balances(balances)
 
-        exchange_rates = self.read_exchange_rate_csv_wide(exchange_rates_path)
+        exchange_rate_data = csv_to_records(exchange_rates_path)
+        with self._uow() as uow:
+            exchange_rates = uow.exchange_rate.hydrate_many(exchange_rate_data)
         self.insert_exchange_rates(exchange_rates)
-
-    def read_account_csv_wide(self, accounts_path: str) -> list[Account]:
-        """Parse account data from csv file in wide format.
-
-        Args:
-            accounts_data (list[dict]): list of account data as dicts.
-
-        Returns:
-            list[Account]: list of Account objects.
-        """
-        accounts_data = csv_to_records(accounts_path)
-        with self._uow() as uow:
-            currency_map = uow.currency.get_dict()
-            category_map = uow.category.get_dict()
-        accounts = []
-        for row in accounts_data:
-            currency = currency_map.get(row["currency"], None)
-            if not currency:
-                raise ValueError(
-                    f"Currency code '{row['currency']}' not found in database."
-                )
-            category = category_map.get(row["category"], None)
-            if not category:
-                raise ValueError(
-                    f"Category name '{row['category']}' not found in database."
-                )
-            account = Account(
-                id=0,  # id will be set by the database
-                name=row["name"],
-                description=row["description"],
-                category_name=category.name,
-                currency_code=currency.code,
-                status=Status(row["status"]),
-            )
-            accounts.append(account)
-        return accounts
-
-    def read_balance_csv_wide(self, balances_path) -> list[Balance]:
-        """Read balance data from CSV file in wide format to list of Balance objects.
-
-        Args:
-            balances_path (str): Path to the balances CSV file.
-
-        Returns:
-            list[Balance]: list of Balance objects.
-        """
-        skip_cols = ("date", "year", "month")
-        balances_data = csv_to_records(balances_path)
-        with self._uow() as uow:
-            account_map = uow.account.get_dict_name()
-        balances = []
-        for row in balances_data:
-            for key in row:
-                if key.lower() in skip_cols:
-                    continue
-                account = account_map.get(key, None)
-                if not account:
-                    raise ValueError(f"Account name '{key}' not found in accounts.")
-                bal = Balance(
-                    id=0,  # id will be set by the database
-                    account_id=account.id,
-                    month=Month(year=int(row["year"]), month=int(row["month"])),
-                    amount=abs(int(row[key])) if row[key] else 0,
-                )
-                if bal.amount != 0:
-                    balances.append(bal)
-        return balances
-
-    def read_exchange_rate_csv_wide(
-        self, exchange_rate_path: str
-    ) -> list[ExchangeRate]:
-        """Parse exchange rate data from csv file in wide format.
-
-        Args:
-            exchange_rates_path (str): Path to the exchange rates CSV file.
-
-        Returns:
-            list[ExchangeRate]: list of ExchangeRate objects.
-        """
-        skip_cols = ("date", "year", "month")
-        exchange_rate_data = csv_to_records(exchange_rate_path)
-        # check that currency codes in the file exist in the database
-        with self._uow() as uow:
-            currency_codes = uow.currency.get_codes()
-        row = exchange_rate_data[0]
-        for key in row:
-            if key.lower() in skip_cols:
-                continue
-            if key not in currency_codes:
-                raise ValueError(f"Currency code '{key}' not found in database.")
-
-        rates = []
-        for row in exchange_rate_data:
-            for key in row:
-                if key.lower() in skip_cols:
-                    continue
-                if not row[key]:
-                    continue
-                rate = ExchangeRate(
-                    currency_code=key,
-                    month=Month(year=int(row["year"]), month=int(row["month"])),
-                    rate=float(row[key]),
-                )
-                rates.append(rate)
-        return rates
 
     def insert_currencies(self, currencies: list[Currency]) -> None:
         """Insert currencies into the database.

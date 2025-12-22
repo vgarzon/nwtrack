@@ -1,5 +1,5 @@
 """
-Demo unit of work pattern implementation.
+Demo of NWTrack functionality with data loaded from CSV files in long format.
 """
 
 from nwtrack.admin import DBAdminService
@@ -15,8 +15,8 @@ def demo_init(container: Container) -> None:
         "currencies": "data/sample/currencies.csv",
         "categories": "data/sample/categories.csv",
         "accounts": "data/sample/accounts.csv",
-        "balances": "data/sample/balances_wide.csv",
-        "exchange_rates": "data/sample/exchange_rates_wide.csv",
+        "balances": "data/sample/balances.csv",
+        "exchange_rates": "data/sample/exchange_rates.csv",
     }
     print("*** Demo initializing database and loading sample data ***")
 
@@ -27,7 +27,7 @@ def demo_init(container: Container) -> None:
         currencies_path=input_files["currencies"],
         categories_path=input_files["categories"],
     )
-    data_svc.insert_data_csv_wide(
+    data_svc.insert_data_csv_long(
         accounts_path=input_files["accounts"],
         balances_path=input_files["balances"],
         exchange_rates_path=input_files["exchange_rates"],
@@ -88,7 +88,7 @@ def demo_fetch_balance(container: Container) -> None:
     account_map = {acc.id: acc for acc in prn_svc.get_accounts()}
     single_bal = prn_svc.get_balance(month, account_name)
 
-    assert single_bal.id == 401, "Balance id mismatch"
+    assert single_bal.id == 404, "Balance id mismatch"
     assert account_map[single_bal.account_id].name == account_name, (
         "Balance account name mismatch"
     )

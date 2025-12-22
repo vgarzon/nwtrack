@@ -480,7 +480,7 @@ class SQLiteAccountRepository:
             Account: Account objects.
         """
         account = Account(
-            id=data.get("id", 0),
+            id=int(data.get("id", 0)),
             name=data["name"],
             description=data["description"],
             category_name=data["category"],
@@ -706,10 +706,10 @@ class SQLiteBalanceRepository:
             Balance: Balance object.
         """
         balance = Balance(
-            id=data.get("id", 0),
-            account_id=data["account_id"],
+            id=int(data.get("id", 0)),
+            account_id=int(data["account_id"]),
             month=Month.parse(data["month"]),
-            amount=data["amount"],
+            amount=int(data["amount"]),
         )
         return balance
 
@@ -722,7 +722,7 @@ class SQLiteBalanceRepository:
         Returns:
             list[Balance]: list of Balance objects.
         """
-        balances = [self.hydrate(bal) for bal in data if bal["amount"] != 0]
+        balances = [self.hydrate(bal) for bal in data]
         return balances
 
 
@@ -853,7 +853,7 @@ class SQLiteExchangeRateRepository:
         rate = ExchangeRate(
             currency_code=data["currency"],
             month=Month.parse(data["month"]),
-            rate=data["rate"],
+            rate=float(data["rate"]),
         )
         return rate
 
