@@ -1,0 +1,5 @@
+id,name,description,category,currency,status
+1,bank_1_checking,bank_1 checking,checking,USD,active
+2,bank_2_savings,bank_2_savings,savings,USD,active
+3,credit_cards_1,credit_cards_1,revolving_credit,USD,active
+4,mortgage_1,mortgage_1,mortgage,USD,inactive

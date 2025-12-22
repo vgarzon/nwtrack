@@ -7,7 +7,7 @@ from nwtrack.config import Config
 from nwtrack.admin import DBAdminService, SQLiteAdminService
 from nwtrack.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
-from nwtrack.services import InitDataService, ReportService  # , UpdateService
+from nwtrack.services import InitDataService, ReportService, UpdateService
 from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
 
 
@@ -52,10 +52,10 @@ def test_container() -> Container:
             InitDataService,
             lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
         )
-        # .register(
-        #     UpdateService,
-        #     lambda c: UpdateService(uow=lambda: c.resolve(UnitOfWork)),
-        # )
+        .register(
+            UpdateService,
+            lambda c: UpdateService(uow=lambda: c.resolve(UnitOfWork)),
+        )
         .register(
             ReportService,
             lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),

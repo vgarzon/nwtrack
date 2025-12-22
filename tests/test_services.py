@@ -1,17 +1,17 @@
 """
-Demo of NWTrack functionality with data loaded from CSV files in long format.
+Test services using CSV data files as input.
 """
 
+import pytest
 from nwtrack.admin import DBAdminService
-from nwtrack.compose import build_sqlite_uow_container
 from nwtrack.container import Container
-from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.models import Month
 from nwtrack.services import InitDataService, ReportService, UpdateService
+from tests.test_repos import count_records
 
 
-def demo_init(container: Container) -> None:
-    print("*** Demo initializing database and loading sample data ***")
+def init_db(container: Container) -> None:
+    """Initialize database and load sample data."""
     input_files = {
         "currencies": "tests/data/csv/currencies.csv",
         "categories": "tests/data/csv/categories.csv",
@@ -19,9 +19,7 @@ def demo_init(container: Container) -> None:
         "balances": "tests/data/csv/balances.csv",
         "exchange_rates": "tests/data/csv/exchange_rates.csv",
     }
-
     container.resolve(DBAdminService).init_database()
-
     data_svc: InitDataService = container.resolve(InitDataService)
     data_svc.insert_reference_data_csv(
         currencies_path=input_files["currencies"],
@@ -34,30 +32,40 @@ def demo_init(container: Container) -> None:
     )
 
 
-def demo_accounts(container: Container) -> None:
-    print("*** Demo retrieving accounts ***")
+def test_init_data(test_container: Container) -> None:
+    """Test initializing database and loading sample data."""
+    init_db(test_container)
+    cnts = count_records(test_container)
+    assert cnts["currencies"] == 3, "Expected 3 currencies"
+    assert cnts["categories"] == 4, "Expected 4 categories"
+    assert cnts["accounts"] == 4, "Expected 4 accounts"
+    assert cnts["balances"] == 42, "Expected 42 balances"
+    assert cnts["exchange_rates"] == 48, "Expected 48 exchange rates"
 
-    prn_svc: ReportService = container.resolve(ReportService)
+
+def test_accounts(test_container: Container) -> None:
+    """Test retrieving accounts."""
+    init_db(test_container)
+    prn_svc: ReportService = test_container.resolve(ReportService)
 
     active_accounts = prn_svc.get_accounts(active_only=True)
-    print(active_accounts)
     assert len(active_accounts) == 3, "Expecting 3 active accounts"
     assert active_accounts[-1].id == 3, "Expecting last active account ID == 3"
     assert active_accounts[-1].name == "credit_cards_1"
 
     all_accounts = prn_svc.get_accounts(active_only=False)
-    print(all_accounts)
     assert len(all_accounts) == 4, "Expecting 4 total accounts"
     assert all_accounts[-1].id == 4, "Expecting last account ID == 4"
     assert all_accounts[-1].name == "mortgage_1"
 
 
-def demo_net_worth(container: Container) -> None:
-    print("*** Demo retrieving net worth ***")
+def test_net_worth(test_container: Container) -> None:
+    """Test retrieving net worth."""
     month_str = "2025-11"
 
+    init_db(test_container)
     month = Month.parse(month_str)
-    prn_svc: ReportService = container.resolve(ReportService)
+    prn_svc: ReportService = test_container.resolve(ReportService)
 
     net_worth = prn_svc.get_net_worth(month=month)
     assert net_worth.month == month, "Net worth month mismatch"
@@ -65,25 +73,19 @@ def demo_net_worth(container: Container) -> None:
     assert net_worth.liabilities == 600, "Net worth liabilities mismatch"
     assert net_worth.net_worth == 100, "Net worth total mismatch"
 
-    prn_svc.print_net_worth(month=month)
-
     net_worth_hist = prn_svc.get_net_worth_history()
-
     assert len(net_worth_hist) == 12, "Net worth history length mismatch"
-    assert net_worth_hist[-1].month == Month(2025, 11), (
-        "Net worth history last month mismatch"
-    )
+    assert net_worth_hist[-1].month == Month(2025, 11)
     assert net_worth_hist[-1].net_worth == 100, "Net worth history last total mismatch"
 
 
-def demo_fetch_balance(container: Container) -> None:
-    print("*** Demo fetching balance data ***")
+def test_fetch_balance(test_container: Container) -> None:
+    """Test fetching balances."""
     account_name = "bank_1_checking"
     month_str = "2025-10"
 
-    print("*** Demo fetching balance data ***")
-
-    prn_svc: ReportService = container.resolve(ReportService)
+    init_db(test_container)
+    prn_svc: ReportService = test_container.resolve(ReportService)
     month = Month.parse(month_str)
 
     account_map = {acc.id: acc for acc in prn_svc.get_accounts()}
@@ -92,9 +94,7 @@ def demo_fetch_balance(container: Container) -> None:
 
     single_bal = prn_svc.get_balance(month, account_name)
     assert single_bal.id == 37, "Balance id mismatch"
-    assert account_map[single_bal.account_id].name == account_name, (
-        "Balance account name mismatch"
-    )
+    assert account_map[single_bal.account_id].name == account_name
     assert single_bal.account_id == 1, "Balance account id mismatch"
     assert single_bal.month == month, "Balance month mismatch"
     assert single_bal.amount == 200, "Balance amount mismatch"
@@ -103,17 +103,16 @@ def demo_fetch_balance(container: Container) -> None:
     assert len(month_bals) == 3, "Month balances length mismatch"
 
 
-def demo_update_balance(container: Container) -> None:
-    print("*** Demo updating existing balance ***")
+def test_update_balance(test_container: Container) -> None:
+    """Test updating a balance."""
     account_name = "bank_1_checking"
     month_str = "2024-06"
     new_amount = 500
 
-    print("*** Demo updating existing balance ***")
-
+    init_db(test_container)
     month = Month.parse(month_str)
-    upd_svc: UpdateService = container.resolve(UpdateService)
-    prn_svc: ReportService = container.resolve(ReportService)
+    upd_svc: UpdateService = test_container.resolve(UpdateService)
+    prn_svc: ReportService = test_container.resolve(ReportService)
 
     print("Before update:")
     prn_svc.print_balance(month, account_name)
@@ -131,12 +130,13 @@ def demo_update_balance(container: Container) -> None:
     prn_svc.print_month_balances(month)
 
 
-def demo_exchange_rate(container: Container) -> None:
-    print("*** Demo retrieving exchange rates ***")
+def test_exchange_rate(test_container: Container) -> None:
+    """Test fetching exchange rates."""
     currency_codes = ["CNY", "EUR"]
     month_str = "2018-12"
 
-    prn_svc: ReportService = container.resolve(ReportService)
+    init_db(test_container)
+    prn_svc: ReportService = test_container.resolve(ReportService)
     month = Month.parse(month_str)
 
     rate = prn_svc.get_exchange_rate(month, currency_codes[0])
@@ -146,18 +146,18 @@ def demo_exchange_rate(container: Container) -> None:
 
     rates = prn_svc.get_month_exchange_rates(month)
     assert len(rates) == 2, "Month exchange rates length mismatch"
-    try:
+    with pytest.raises(ValueError) as exc_info:
         prn_svc.print_exchange_rate_history(currency_codes[1])
-    except ValueError as e:
-        print(e)
+    assert f"Currency '{currency_codes[1]}'" in str(exc_info.value)
 
 
-def demo_roll_forward(container: Container) -> None:
-    print("*** Demo rolling balances forward to next month ***")
+def test_roll_forward(test_container: Container) -> None:
+    """Test rolling balances forward to next month."""
     month_str = "2025-11"
 
-    prn_svc: ReportService = container.resolve(ReportService)
-    upd_svc: UpdateService = container.resolve(UpdateService)
+    init_db(test_container)
+    prn_svc: ReportService = test_container.resolve(ReportService)
+    upd_svc: UpdateService = test_container.resolve(UpdateService)
 
     month = Month.parse(month_str)
     next_month = month.increment()
@@ -172,22 +172,3 @@ def demo_roll_forward(container: Container) -> None:
     next_bal = prn_svc.get_month_balances(month)
     next_sum = sum(b.amount for b in next_bal)
     assert next_sum == 1300, "Next month balances sum mismatch"
-    prn_svc.print_month_balances(next_month)
-
-
-def main():
-    container = build_sqlite_uow_container()
-    demo_init(container)
-    demo_accounts(container)
-    demo_net_worth(container)
-    demo_fetch_balance(container)
-    demo_update_balance(container)
-    demo_exchange_rate(container)
-    demo_roll_forward(container)
-
-    # DB connection singleton cleanup
-    container.resolve(DBConnectionManager).close_connection()
-
-
-if __name__ == "__main__":
-    main()
