@@ -5,6 +5,110 @@ Convert records from CSV files from wide to long format.
 from nwtrack.fileio import csv_to_records, records_to_csv
 
 
+def main():
+    balance_wide_csv_to_long()
+    exchange_rate_wide_csv_to_long()
+
+
+def balance_wide_csv_to_long():
+    csv_file = "data/sample/balances_wide.csv"
+    output_file = "data/sample/balances.csv"
+    index_cols = ("date", "year", "month")
+    drop_cols = ("date", "year")
+    var_name = "account_name"
+    value_name = "amount"
+    output_fieldnames = ("month", "account_id", "amount")
+    accounts_file = "data/sample/accounts.csv"
+
+    records = csv_to_records(csv_file)
+    print("Read", len(records), f"balance records from {csv_file}")
+    accounts = csv_to_records(accounts_file)
+    print("Read", len(accounts), f"records from {accounts_file}")
+
+    account_name_to_id = {acc["name"]: int(acc["id"]) for acc in accounts}
+    clean_balances = clean_balance_records(
+        records,
+        index_cols,
+        var_name,
+        value_name,
+        account_name_to_id,
+        drop_cols,
+    )
+    records_to_csv(clean_balances, output_file, output_fieldnames)
+    print("Wrote", len(clean_balances), f"records to {output_file}")
+
+
+def exchange_rate_wide_csv_to_long():
+    csv_file = "data/sample/exchange_rates_wide.csv"
+    output_file = "data/sample/exchange_rates.csv"
+    index_cols = ("date", "year", "month")
+    drop_cols = ("date", "year")
+    var_name = "currency"
+    value_name = "exchange_rate"
+    output_fieldnames = ("currency", "month", "exchange_rate")
+
+    records = csv_to_records(csv_file)
+    print("Read", len(records), f"exchange rate records from {csv_file}")
+
+    clean_exchange_rates = clean_exchange_rate_records(
+        records, index_cols, var_name, value_name, drop_cols
+    )
+    records_to_csv(clean_exchange_rates, output_file, output_fieldnames)
+    print("Wrote", len(clean_exchange_rates), f"records to {output_file}")
+
+
+def clean_balance_records(
+    records, index_cols, var_name, value_name, name_to_id, drop_cols
+):
+    """Clean exchange rate records by converting from wide to long format,
+    replacing month with year-month, and dropping specified columns.
+
+    Args:
+        records (list of dict): List of exchange rate records in wide format.
+        index_cols (tuple of str): Columns to keep as index.
+        var_name (str): Name of the variable column in long format.
+        value_name (str): Name of the value column in long format.
+        name_to_id (dict): Mapping from account name to account ID.
+        drop_cols (tuple of str): Columns to drop after processing.
+
+    Returns:
+        list of dict: Cleaned exchange rate records in long format.
+    """
+    recs = wide_to_long(records, index_cols, var_name, value_name)
+    recs = replace_field_func(recs, "month", year_month_to_month)
+    name_to_id_func = account_name_to_id_wrapper(name_to_id)
+    recs = replace_field_func(
+        recs,
+        "account_name",
+        name_to_id_func,
+        "account_id",
+    )
+    recs = drop_fields(recs, drop_cols)
+    recs = sort_records(recs, ["month", "account_id"])
+    return recs
+
+
+def clean_exchange_rate_records(records, index_cols, var_name, value_name, drop_cols):
+    """Clean exchange rate records by converting from wide to long format,
+    replacing month with year-month, and dropping specified columns.
+
+    Args:
+        records (list of dict): List of exchange rate records in wide format.
+        index_cols (tuple of str): Columns to keep as index.
+        var_name (str): Name of the variable column in long format.
+        value_name (str): Name of the value column in long format.
+        drop_cols (tuple of str): Columns to drop after processing.
+
+    Returns:
+        list of dict: Cleaned exchange rate records in long format.
+    """
+    recs = wide_to_long(records, index_cols, var_name, value_name)
+    recs = replace_field_func(recs, "month", year_month_to_month)
+    recs = drop_fields(recs, drop_cols)
+    recs = sort_records(recs, [var_name, "month"])
+    return recs
+
+
 def wide_to_long(records, index_cols, var_name, value_name):
     """Convert records from wide to long format.
 
@@ -32,7 +136,7 @@ def wide_to_long(records, index_cols, var_name, value_name):
     return long_records
 
 
-def replace_field_with_function(records, field, func, new_name=None):
+def replace_field_func(records, field, func, new_name=None):
     """Replace field values in records using a function.
 
     Args:
@@ -98,63 +202,6 @@ def drop_fields(records, fields):
     return records
 
 
-def clean_balance_records(
-    records, index_cols, var_name, value_name, name_to_id, drop_cols
-):
-    """Clean exchange rate records by converting from wide to long format,
-    replacing month with year-month, and dropping specified columns.
-
-    Args:
-        records (list of dict): List of exchange rate records in wide format.
-        index_cols (tuple of str): Columns to keep as index.
-        var_name (str): Name of the variable column in long format.
-        value_name (str): Name of the value column in long format.
-        name_to_id (dict): Mapping from account name to account ID.
-        drop_cols (tuple of str): Columns to drop after processing.
-
-    Returns:
-        list of dict: Cleaned exchange rate records in long format.
-    """
-    recs = wide_to_long(records, index_cols, var_name, value_name)
-
-    recs = replace_field_with_function(recs, "month", year_month_to_month)
-    recs = replace_field_with_function(
-        recs,
-        "account_name",
-        account_name_to_id_wrapper(name_to_id),
-        "account_id",
-    )
-    recs = drop_fields(recs, drop_cols)
-
-    recs = sort_records(recs, ["month", "account_id"])
-
-    return recs
-
-
-def clean_exchange_rate_records(records, index_cols, var_name, value_name, drop_cols):
-    """Clean exchange rate records by converting from wide to long format,
-    replacing month with year-month, and dropping specified columns.
-
-    Args:
-        records (list of dict): List of exchange rate records in wide format.
-        index_cols (tuple of str): Columns to keep as index.
-        var_name (str): Name of the variable column in long format.
-        value_name (str): Name of the value column in long format.
-        drop_cols (tuple of str): Columns to drop after processing.
-
-    Returns:
-        list of dict: Cleaned exchange rate records in long format.
-    """
-    recs = wide_to_long(records, index_cols, var_name, value_name)
-
-    recs = replace_field_with_function(recs, "month", year_month_to_month)
-    recs = drop_fields(recs, drop_cols)
-
-    recs = sort_records(recs, [var_name, "month"])
-
-    return recs
-
-
 def sort_records(records, sort_fields):
     """Sort records by specified fields.
 
@@ -168,67 +215,5 @@ def sort_records(records, sort_fields):
     return sorted(records, key=lambda rec: tuple(rec[field] for field in sort_fields))
 
 
-def balance_csv_wide_to_long():
-    csv_file = "data/sample/balances_wide.csv"
-    output_file = "data/sample/balances.csv"
-    index_cols = ("date", "year", "month")
-    drop_cols = ("date", "year")
-    var_name = "account_name"
-    value_name = "amount"
-    output_fieldnames = ("month", "account_id", "amount")
-    accounts_file = "data/sample/accounts.csv"
-
-    records = csv_to_records(csv_file)
-    accounts = csv_to_records(accounts_file)
-
-    account_name_to_id = {acc["name"]: int(acc["id"]) for acc in accounts}
-
-    print(account_name_to_id)
-
-    for rec in records[:5]:
-        print(rec)
-
-    clean_balances = clean_balance_records(
-        records,
-        index_cols,
-        var_name,
-        value_name,
-        account_name_to_id,
-        drop_cols,
-    )
-
-    for rec in clean_balances[:10]:
-        print(rec)
-
-    print(f"Writing cleaned balances to {output_file}")
-    records_to_csv(clean_balances, output_file, output_fieldnames)
-
-
-def exchange_rate_csv_wide_to_long():
-    csv_file = "data/sample/exchange_rates_wide.csv"
-    output_file = "data/sample/exchange_rates.csv"
-    index_cols = ("date", "year", "month")
-    drop_cols = ("date", "year")
-    var_name = "currency"
-    value_name = "exchange_rate"
-    output_fieldnames = ("currency", "month", "exchange_rate")
-
-    records = csv_to_records(csv_file)
-
-    for rec in records[:5]:
-        print(rec)
-
-    clean_exchange_rates = clean_exchange_rate_records(
-        records, index_cols, var_name, value_name, drop_cols
-    )
-
-    for rec in clean_exchange_rates[:10]:
-        print(rec)
-
-    print(f"Writing cleaned exchange rates to {output_file}")
-    records_to_csv(clean_exchange_rates, output_file, output_fieldnames)
-
-
 if __name__ == "__main__":
-    exchange_rate_csv_wide_to_long()
-    balance_csv_wide_to_long()
+    main()
