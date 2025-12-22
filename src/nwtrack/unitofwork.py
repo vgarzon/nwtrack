@@ -24,13 +24,13 @@ from nwtrack.repos import (
 class UnitOfWork(Protocol):
     """Unit of Work protocol for managing database transactions."""
 
-    currency: CurrencyRepository
-    category: CategoryRepository
-    account: AccountRepository
-    balance: BalanceRepository
+    currencies: CurrencyRepository
+    categories: CategoryRepository
+    accounts: AccountRepository
+    balances: BalanceRepository
+    exchange_rates: ExchangeRateRepository
     net_worth: NetWorthRepository
-    exchange_rate: ExchangeRateRepository
-    _db: DBConnectionManager
+    # _db: DBConnectionManager
 
     def __enter__(self) -> "UnitOfWork":
         """Enter the runtime context related to this object."""
@@ -52,27 +52,26 @@ class UnitOfWork(Protocol):
 class SQLiteUnitOfWork:
     """Unit of Work protocol for managing SQLite database transactions."""
 
-    currency: SQLiteCurrencyRepository
-    category: SQLiteCategoryRepository
-    account: SQLiteAccountRepository
-    balance: SQLiteBalanceRepository
-    net_worth: SQLiteNetWorthRepository
-    exchange_rate: SQLiteExchangeRateRepository
-    _db: SQLiteConnectionManager
+    # currencies: SQLiteCurrencyRepository
+    # categories: SQLiteCategoryRepository
+    # accounts: SQLiteAccountRepository
+    # balances: SQLiteBalanceRepository
+    # exchange_rates: SQLiteExchangeRateRepository
+    # net_worth: SQLiteNetWorthRepository
+    # _db: SQLiteConnectionManager
 
     def __init__(self, db: SQLiteConnectionManager) -> None:
         """Initialize the Unit of Work with repository instances."""
         self._db = db
 
-    # def __enter__(self) -> "SQLiteUnitOfWork":
     def __enter__(self) -> "SQLiteUnitOfWork":
         """Enter the runtime context related to this object."""
-        self.currency = SQLiteCurrencyRepository(self._db)
-        self.category = SQLiteCategoryRepository(self._db)
-        self.account = SQLiteAccountRepository(self._db)
-        self.balance = SQLiteBalanceRepository(self._db)
+        self.currencies = SQLiteCurrencyRepository(self._db)
+        self.categories = SQLiteCategoryRepository(self._db)
+        self.accounts = SQLiteAccountRepository(self._db)
+        self.balances = SQLiteBalanceRepository(self._db)
+        self.exchange_rates = SQLiteExchangeRateRepository(self._db)
         self.net_worth = SQLiteNetWorthRepository(self._db)
-        self.exchange_rate = SQLiteExchangeRateRepository(self._db)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:

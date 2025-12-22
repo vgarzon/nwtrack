@@ -35,12 +35,12 @@ class InitDataService:
         print("Service: Inserting currency and category data.")
         currency_data = csv_to_records(currencies_path)
         with self._uow() as uow:
-            currencies = uow.currency.hydrate_many(currency_data)
+            currencies = uow.currencies.hydrate_many(currency_data)
         self.insert_currencies(currencies)
 
         category_data = csv_to_records(categories_path)
         with self._uow() as uow:
-            categories = uow.category.hydrate_many(category_data)
+            categories = uow.categories.hydrate_many(category_data)
         self.insert_categories(categories)
 
     def insert_data_csv_long(
@@ -66,7 +66,7 @@ class InitDataService:
         print("Service: Inserting sample account, balance, and exhange rate data.")
         account_data = csv_to_records(accounts_path)
         with self._uow() as uow:
-            accounts = uow.account.hydrate_many(account_data)
+            accounts = uow.accounts.hydrate_many(account_data)
         self.insert_accounts(accounts)
 
         balances_data = csv_to_records(balances_path)
@@ -74,12 +74,12 @@ class InitDataService:
         for row in balances_data:
             row["amount"] = abs(int(row["amount"]))
         with self._uow() as uow:
-            balances = uow.balance.hydrate_many(balances_data)
+            balances = uow.balances.hydrate_many(balances_data)
         self.insert_balances(balances)
 
         exchange_rate_data = csv_to_records(exchange_rates_path)
         with self._uow() as uow:
-            exchange_rates = uow.exchange_rate.hydrate_many(exchange_rate_data)
+            exchange_rates = uow.exchange_rates.hydrate_many(exchange_rate_data)
         self.insert_exchange_rates(exchange_rates)
 
     def insert_currencies(self, currencies: list[Currency]) -> None:
@@ -90,7 +90,7 @@ class InitDataService:
         """
         print("Service: Inserting currency data.")
         with self._uow() as uow:
-            uow.currency.insert_many(currencies)
+            uow.currencies.insert_many(currencies)
 
     def insert_categories(self, categories: list[Category]) -> None:
         """Insert categories into the database.
@@ -100,7 +100,7 @@ class InitDataService:
         """
         print("Service: Inserting category data.")
         with self._uow() as uow:
-            uow.category.insert_many(categories)
+            uow.categories.insert_many(categories)
 
     def insert_accounts(self, accounts: list[Account]) -> None:
         """Insert accounts into the database.
@@ -110,7 +110,7 @@ class InitDataService:
         """
         print("Service: Inserting accounts data.")
         with self._uow() as uow:
-            uow.account.insert_many(accounts)
+            uow.accounts.insert_many(accounts)
 
     def insert_balances(self, balances: list[Balance]) -> None:
         """Insert balances into the database.
@@ -120,7 +120,7 @@ class InitDataService:
         """
         print("Service: Inserting balances data.")
         with self._uow() as uow:
-            uow.balance.insert_many(balances)
+            uow.balances.insert_many(balances)
 
     def insert_exchange_rates(self, exchange_rates: list[ExchangeRate]) -> None:
         """Insert exchange rate data into database.
@@ -130,7 +130,7 @@ class InitDataService:
         """
         print("Service: Inserting exchange rate data.")
         with self._uow() as uow:
-            uow.exchange_rate.insert_many(exchange_rates)
+            uow.exchange_rates.insert_many(exchange_rates)
 
 
 class UpdateService:
@@ -148,13 +148,13 @@ class UpdateService:
             new_ammount (int): New balance amount.
         """
         with self._uow() as uow:
-            account_map = uow.account.get_dict_name()
+            account_map = uow.accounts.get_dict_name()
         account = account_map.get(account_name, None)
         if not account:
             raise ValueError(f"Account name '{account_name}' not found.")
 
         with self._uow() as uow:
-            uow.balance.update(
+            uow.balances.update(
                 account_id=account.id, month=month, new_amount=new_amount
             )
 
@@ -166,12 +166,12 @@ class UpdateService:
         """
         # check that month is valid
         with self._uow() as uow:
-            if not uow.balance.check_month(month):
+            if not uow.balances.check_month(month):
                 raise ValueError("No balances found for month.")
         next_month = month.increment()
         print(f"Service: Copying balances from {month} to {next_month}.")
         with self._uow() as uow:
-            uow.balance.roll_forward(month)
+            uow.balances.roll_forward(month)
 
 
 class ReportService:
@@ -191,10 +191,10 @@ class ReportService:
         """
         if active_only:
             with self._uow() as uow:
-                accounts = uow.account.get_active()
+                accounts = uow.accounts.get_active()
         else:
             with self._uow() as uow:
-                accounts = uow.account.get_all()
+                accounts = uow.accounts.get_all()
         return accounts
 
     def print_accounts(self, active: bool = True) -> None:
@@ -220,7 +220,7 @@ class ReportService:
             Balance: Balance object for the specified account and month.
         """
         with self._uow() as uow:
-            balance = uow.balance.get(month, account_name)
+            balance = uow.balances.get(month, account_name)
         return balance
 
     def get_month_balances(
@@ -236,7 +236,7 @@ class ReportService:
             list[Balance]: List of Balance object for the specified account and month.
         """
         with self._uow() as uow:
-            balances = uow.balance.get_month(month, active_only)
+            balances = uow.balances.get_month(month, active_only)
         return balances
 
     def get_balances_sample(self, limit: int = 5) -> list[Balance]:
@@ -246,7 +246,7 @@ class ReportService:
             list[Balance]: List of sample Balance objects.
         """
         with self._uow() as uow:
-            balances = uow.balance.fetch_sample(limit)
+            balances = uow.balances.fetch_sample(limit)
         return balances
 
     def print_balance(self, month: Month, account_name: str) -> None:
@@ -336,11 +336,11 @@ class ReportService:
             ExchangeRate | None
         """
         with self._uow() as uow:
-            all_currency_codes = uow.currency.get_codes()
+            all_currency_codes = uow.currencies.get_codes()
         if currency_code not in all_currency_codes:
             raise ValueError(f"Currency '{currency_code}' not found in database.")
         with self._uow() as uow:
-            rate = uow.exchange_rate.get(month, currency_code)
+            rate = uow.exchange_rates.get(month, currency_code)
         return rate
 
     def get_exchange_rate_history(self, currency_code: str) -> list[ExchangeRate]:
@@ -353,11 +353,11 @@ class ReportService:
             list[ExchangeRate]: List of ExchangeRate objects
         """
         with self._uow() as uow:
-            all_currency_codes = uow.currency.get_codes()
+            all_currency_codes = uow.currencies.get_codes()
         if currency_code not in all_currency_codes:
             raise ValueError(f"Currency '{currency_code}' not found in database.")
         with self._uow() as uow:
-            rates = uow.exchange_rate.get_currency(currency_code)
+            rates = uow.exchange_rates.get_currency(currency_code)
         return rates
 
     def get_month_exchange_rates(self, month: Month) -> list[ExchangeRate]:
@@ -370,7 +370,7 @@ class ReportService:
             list[ExchangeRate]: List of ExchangeRate objects
         """
         with self._uow() as uow:
-            rates = uow.exchange_rate.get_month(month)
+            rates = uow.exchange_rates.get_month(month)
         return rates
 
     def print_exchange_rate(self, month: Month, currency_code: str) -> None:
@@ -406,12 +406,13 @@ class ReportService:
         Returns:
             int: Number of records in the table.
         """
+        # TODO: refactor to use RepoRegistry (pending)
         repo_labels = [
-            "currency",
-            "category",
-            "account",
-            "balance",
-            "exchange_rate",
+            "currencies",
+            "categories",
+            "accounts",
+            "balances",
+            "exchange_rates",
         ]
         with self._uow() as uow:
             counts = {}

@@ -11,11 +11,11 @@ from tests.data.basic import TEST_DATA
 
 # repo label, table name
 REPO_MAPPING = [
-    ("currency", "currencies"),
-    ("category", "categories"),
-    ("account", "accounts"),
-    ("balance", "balances"),
-    ("exchange_rate", "exchange_rates"),
+    ("currencies", "currencies"),
+    ("categories", "categories"),
+    ("accounts", "accounts"),
+    ("balances", "balances"),
+    ("exchange_rates", "exchange_rates"),
 ]
 
 
@@ -39,17 +39,16 @@ def test_insert_hydrated(test_container) -> None:
 
     with uow_factory(test_container) as uow:
         for repo_name, table_name in REPO_MAPPING:
-            print(repo_name, table_name)
             repo = getattr(uow, repo_name)
             entities = repo.hydrate_many(TEST_DATA[table_name])
             repo.insert_many(entities)
 
     cnts = count_records(test_container)
-    assert cnts["currency"] == 3, "Expected 3 currencies"
-    assert cnts["category"] == 3, "Expected 3 categories"
-    assert cnts["account"] == 3, "Expected 3 accounts"
-    assert cnts["balance"] == 9, "Expected 9 balances"
-    assert cnts["exchange_rate"] == 6, "Expected 6 exchange rates"
+    assert cnts["currencies"] == 3, "Expected 3 currencies"
+    assert cnts["categories"] == 3, "Expected 3 categories"
+    assert cnts["accounts"] == 3, "Expected 3 accounts"
+    assert cnts["balances"] == 9, "Expected 9 balances"
+    assert cnts["exchange_rates"] == 6, "Expected 6 exchange rates"
 
 
 def test_delete_records(test_container: Container) -> None:
