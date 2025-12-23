@@ -66,7 +66,7 @@ class CurrencyMapper:
         """
         return Currency(code=record["code"], description=record["description"])
 
-    def to_record(self, entity: Currency) -> Mapping[str, Any]:
+    def to_record(self, entity: Currency) -> dict[str, Any]:
         """
         Convert a currency entity to a currency record.
 
@@ -99,7 +99,7 @@ class CategoryMapper:
         """
         return Category(name=record["name"], side=Side(record["side"]))
 
-    def to_record(self, entity: Category) -> Mapping[str, Any]:
+    def to_record(self, entity: Category) -> dict[str, Any]:
         """
         Convert a category entity to a category record.
 
@@ -139,7 +139,7 @@ class AccountMapper:
             status=Status(record["status"]),
         )
 
-    def to_record(self, entity: Account) -> Mapping[str, Any]:
+    def to_record(self, entity: Account) -> dict[str, Any]:
         """
         Convert an account entity to an account record.
 
@@ -181,7 +181,7 @@ class BalanceMapper:
             amount=int(record["amount"]),
         )
 
-    def to_record(self, entity: Balance) -> Mapping[str, Any]:
+    def to_record(self, entity: Balance) -> dict[str, Any]:
         """
         Convert a balance entity to a balance record.
 
@@ -220,7 +220,7 @@ class ExchangeRateMapper:
             rate=float(record["rate"]),
         )
 
-    def to_record(self, entity: ExchangeRate) -> Mapping[str, Any]:
+    def to_record(self, entity: ExchangeRate) -> dict[str, Any]:
         """
         Convert an exchange rate entity to an exchange rate record.
 
@@ -260,7 +260,7 @@ class NetWorthMapper:
             currency_code=record["currency"],
         )
 
-    def to_record(self, entity: NetWorth) -> Mapping[str, Any]:
+    def to_record(self, entity: NetWorth) -> dict[str, Any]:
         """
         Convert a net worth entity to a net worth record.
 
