@@ -4,7 +4,6 @@ Repository module for nwtrack database operations.
 
 from __future__ import annotations
 
-from dataclasses import asdict
 from typing import Protocol
 
 from nwtrack.dbmanager import DBConnectionManager
@@ -18,6 +17,13 @@ from nwtrack.models import (
     NetWorth,
     Side,
     Status,
+)
+from nwtrack.mappers import (
+    CurrencyMapper,
+    CategoryMapper,
+    AccountMapper,
+    BalanceMapper,
+    ExchangeRateMapper,
 )
 
 
@@ -228,8 +234,9 @@ class NetWorthRepository(Protocol):
 class SQLiteCurrencyRepository:
     """Repository for currencies SQLite database operations."""
 
-    def __init__(self, db: DBConnectionManager) -> None:
+    def __init__(self, db: DBConnectionManager, mapper: CurrencyMapper) -> None:
         self._db: DBConnectionManager = db
+        self._mapper: CurrencyMapper = mapper
 
     def insert_many(self, data: list[Currency]) -> None:
         """Insert list of currencies into the currencies table.
@@ -239,7 +246,7 @@ class SQLiteCurrencyRepository:
         """
         rowcount = self._db.execute_many(
             "INSERT INTO currencies (code, description) VALUES (:code, :description);",
-            [asdict(currency) for currency in data],
+            [self._mapper.to_record(entity) for entity in data],
         )
         print("Inserted", rowcount, "currency rows.")
 
@@ -262,10 +269,7 @@ class SQLiteCurrencyRepository:
         """
         query = "SELECT code, description FROM currencies;"
         results = self._db.fetch_all(query)
-        currencies = [
-            Currency(code=code, description=description)
-            for code, description in results
-        ]
+        currencies = [self._mapper.to_entity(record) for record in results]
         return currencies
 
     def get_dict(self) -> dict[str, Currency]:
@@ -294,36 +298,35 @@ class SQLiteCurrencyRepository:
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} currency records.")
 
-    def hydrate(self, data: dict) -> Currency:
-        """Hydrate data dictionaries to Currency objects.
+    def hydrate(self, record: dict) -> Currency:
+        """Hydrate record dictionary to Currency object.
 
         Args:
-            data (ict): currency data dictionary
+            record (ict): currency data dictionary
 
         Returns:
             list[Currency]: list of Currency objects.
         """
-        currency = Currency(code=data["code"], description=data["description"])
-        return currency
+        return self._mapper.to_entity(record)
 
     def hydrate_many(self, data: list[dict]) -> list[Currency]:
-        """Hydrate list of data dictionaries to list of Currency objects.
+        """Hydrate list of records to list of Currency objects.
 
         Args:
-            currency_data (list[dict]): list of currency data dicts.
+            data (list[dict]): list of currency data dicts.
 
         Returns:
             list[Currency]: list of Currency objects.
         """
-        currencies = [self.hydrate(c) for c in data]
-        return currencies
+        return [self.hydrate(record) for record in data]
 
 
 class SQLiteCategoryRepository:
     """Repository for category SQLite database operations."""
 
-    def __init__(self, db: DBConnectionManager) -> None:
+    def __init__(self, db: DBConnectionManager, mapper: CategoryMapper) -> None:
         self._db: DBConnectionManager = db
+        self._mapper: CategoryMapper = mapper
 
     def insert_many(self, data: list[Category]) -> None:
         """Insert list of categories into SQLite database.
@@ -333,7 +336,7 @@ class SQLiteCategoryRepository:
         """
         rowcount = self._db.execute_many(
             "INSERT INTO categories (name, side) VALUES (:name, :side);",
-            [asdict(category) for category in data],
+            [self._mapper.to_record(record) for record in data],
         )
         print("Inserted", rowcount, "category rows.")
 
@@ -345,8 +348,7 @@ class SQLiteCategoryRepository:
         """
         query = "SELECT name, side FROM categories;"
         results = self._db.fetch_all(query)
-        categories = [Category(name=r["name"], side=Side(r["side"])) for r in results]
-        return categories
+        return [self._mapper.to_entity(record) for record in results]
 
     def get_dict(self) -> dict[str, Category]:
         """Get all categories in a dictionary indexed by code.
@@ -374,17 +376,16 @@ class SQLiteCategoryRepository:
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} category records.")
 
-    def hydrate(self, data: dict[str, str]) -> Category:
+    def hydrate(self, record: dict[str, str]) -> Category:
         """Hydrate category data dictionary to Category instance.
 
         Args:
-            data (dict[str, str]): Category data dictionary
+            record (dict[str, str]): Category data dictionary
 
         Returns:
             Category: Category instance
         """
-        category = Category(name=data["name"], side=Side(data["side"]))
-        return category
+        return self._mapper.to_entity(record)
 
     def hydrate_many(self, data: list[dict[str, str]]) -> list[Category]:
         """Hydrate list of category data dictionares to objects.
@@ -395,15 +396,15 @@ class SQLiteCategoryRepository:
         Returns:
             list[Category]: List of Category objects.
         """
-        categories = [self.hydrate(d) for d in data]
-        return categories
+        return [self.hydrate(d) for d in data]
 
 
 class SQLiteAccountRepository:
     """Repository for account SQLite database operations."""
 
-    def __init__(self, db: DBConnectionManager) -> None:
+    def __init__(self, db: DBConnectionManager, mapper: AccountMapper) -> None:
         self._db: DBConnectionManager = db
+        self._mapper: AccountMapper = mapper
 
     def insert_many(self, data: list[Account]) -> None:
         """Insert list of accounts into the accounts table.
@@ -416,16 +417,7 @@ class SQLiteAccountRepository:
             INSERT INTO accounts (name, description, category, currency, status)
             VALUES (:name, :description, :category, :currency, :status);
             """,
-            [
-                {
-                    "name": acc.name,
-                    "description": acc.description,
-                    "category": acc.category_name,
-                    "currency": acc.currency_code,
-                    "status": str(acc.status),
-                }
-                for acc in data
-            ],
+            [self._mapper.to_record(acc) for acc in data],
         )
         print("Inserted", rowcount, "account rows.")
 
@@ -438,18 +430,7 @@ class SQLiteAccountRepository:
             WHERE status = 'active';
             """
         )
-        active_accounts = [
-            Account(
-                id=account_id,
-                name=name,
-                description=description,
-                category_name=category,
-                currency_code=currency,
-                status=Status(status),
-            )
-            for account_id, name, description, category, currency, status in results
-        ]
-        return active_accounts
+        return [self._mapper.to_entity(dict(record)) for record in results]
 
     def get_all(self) -> list[Account]:
         """Get all accounts.
@@ -461,18 +442,7 @@ class SQLiteAccountRepository:
         SELECT id, name, description, category, currency, status FROM accounts;
         """
         results = self._db.fetch_all(query)
-        accounts = [
-            Account(
-                id=account_id,
-                name=name,
-                description=description,
-                category_name=category,
-                currency_code=currency,
-                status=Status(status),
-            )
-            for account_id, name, description, category, currency, status in results
-        ]
-        return accounts
+        return [self._mapper.to_entity(dict(record)) for record in results]
 
     def get_dict_id(self) -> dict[int, Account]:
         """Get all accounts in a dictionary indexed by accoun id.
@@ -481,8 +451,7 @@ class SQLiteAccountRepository:
             dict[int, Account]: Dictionary of account records indexed by id.
         """
         results = self.get_all()
-        accounts = {result.id: result for result in results}
-        return accounts
+        return {result.id: result for result in results}
 
     def get_dict_name(self) -> dict[str, Account]:
         """Get all accounts in a dictionary indexed by name.
@@ -491,8 +460,7 @@ class SQLiteAccountRepository:
             dict[str, Account]: Dictionary of account records indexed by name.
         """
         results = self.get_all()
-        accounts = {result.name: result for result in results}
-        return accounts
+        return {result.name: result for result in results}
 
     def count_records(self) -> int:
         """Count the number of account records.
@@ -510,24 +478,16 @@ class SQLiteAccountRepository:
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} account records.")
 
-    def hydrate(self, data: dict) -> Account:
-        """Hydrate account data dictionary to Account object
+    def hydrate(self, record: dict) -> Account:
+        """Hydrate account record dictionary to Account object
 
         Args:
-            data (dict): account data dict
+            record (dict): account record dict
 
         Returns:
             Account: Account objects.
         """
-        account = Account(
-            id=int(data.get("id", 0)),
-            name=data["name"],
-            description=data["description"],
-            category_name=data["category"],
-            currency_code=data["currency"],
-            status=Status(data["status"]),
-        )
-        return account
+        return self._mapper.to_entity(record)
 
     def hydrate_many(self, data: list[dict]) -> list[Account]:
         """Hydrate list of account data dicts to list of Account objects.
@@ -545,8 +505,9 @@ class SQLiteAccountRepository:
 class SQLiteBalanceRepository:
     """Repository for balances SQLite database operations."""
 
-    def __init__(self, db: DBConnectionManager) -> None:
+    def __init__(self, db: DBConnectionManager, mapper: BalanceMapper) -> None:
         self._db: DBConnectionManager = db
+        self._mapper: BalanceMapper = mapper
 
     def insert_many(self, data: list[Balance]) -> None:
         """Insert list of balances into the balances table.
@@ -560,14 +521,7 @@ class SQLiteBalanceRepository:
         """
         rowcount = self._db.execute_many(
             query,
-            [
-                {
-                    "account_id": bal.account_id,
-                    "month": str(bal.month),
-                    "amount": bal.amount,
-                }
-                for bal in data
-            ],
+            [self._mapper.to_record(bal) for bal in data],
         )
         print("Inserted", rowcount, "balance rows.")
 
@@ -582,7 +536,7 @@ class SQLiteBalanceRepository:
             Balance: Account balance record
         """
         query = """
-        SELECT b.id, b.account_id, a.name, b.amount
+        SELECT b.id, b.account_id, b.month, a.name, b.amount
         FROM accounts a
         JOIN balances b ON a.id = b.account_id
         WHERE b.month = :month AND a.name = :account_name;
@@ -591,14 +545,7 @@ class SQLiteBalanceRepository:
             query, {"month": str(month), "account_name": account_name}
         )
         assert len(results) <= 1, "Expected at most one balance record."
-        res = results[0]
-        balance = Balance(
-            id=res["id"],
-            account_id=res["account_id"],
-            month=month,
-            amount=res["amount"],
-        )
-        return balance
+        return self._mapper.to_entity(dict(results[0]))
 
     def get_month(self, month: Month, active_only: bool = True) -> list[Balance]:
         """Get all account balances on a specific month.
@@ -612,29 +559,20 @@ class SQLiteBalanceRepository:
         """
         if active_only:
             query = """
-            SELECT b.id, b.account_id, a.name, b.amount
+            SELECT b.id, b.account_id, b.month, a.name, b.amount
             FROM accounts a
             JOIN balances b ON a.id = b.account_id
             WHERE b.month = :month AND a.status = 'active';
             """
         else:
             query = """
-            SELECT b.id, b.account_id, a.name, b.amount
+            SELECT b.id, b.account_id, b.month, a.name, b.amount
             FROM accounts a
             JOIN balances b ON a.id = b.account_id
             WHERE b.month = :month;
             """
         results = self._db.fetch_all(query, {"month": str(month)})
-        balances = [
-            Balance(
-                id=res["id"],
-                account_id=res["account_id"],
-                month=month,
-                amount=res["amount"],
-            )
-            for res in results
-        ]
-        return balances
+        return [self._mapper.to_entity(dict(res)) for res in results]
 
     def update(self, account_id: int, month: Month, new_amount: int) -> None:
         """Update the balance for specific account and month.
@@ -709,16 +647,7 @@ class SQLiteBalanceRepository:
         LIMIT :limit;
         """
         results = self._db.fetch_all(query, {"limit": limit})
-        balances = [
-            Balance(
-                id=res["id"],
-                account_id=res["account_id"],
-                month=Month.parse(res["month"]),
-                amount=res["amount"],
-            )
-            for res in results
-        ]
-        return balances
+        return [self._mapper.to_entity(dict(res)) for res in results]
 
     def count_records(self) -> int:
         """Count the number of balance records.
@@ -736,22 +665,16 @@ class SQLiteBalanceRepository:
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} balance records.")
 
-    def hydrate(self, data: dict) -> Balance:
-        """Hydrate balance data dict to Balance object.
+    def hydrate(self, record: dict) -> Balance:
+        """Hydrate balance record dict to Balance object.
 
         Args:
-            data (dict): balance data as dict.
+            record (dict): balance record as dict.
 
         Returns:
             Balance: Balance object.
         """
-        balance = Balance(
-            id=int(data.get("id", 0)),
-            account_id=int(data["account_id"]),
-            month=Month.parse(data["month"]),
-            amount=int(data["amount"]),
-        )
-        return balance
+        return self._mapper.to_entity(record)
 
     def hydrate_many(self, data: list[dict]) -> list[Balance]:
         """Hydrate balance data dicts to list of Balance objects.
@@ -762,15 +685,15 @@ class SQLiteBalanceRepository:
         Returns:
             list[Balance]: list of Balance objects.
         """
-        balances = [self.hydrate(bal) for bal in data]
-        return balances
+        return [self.hydrate(bal) for bal in data]
 
 
 class SQLiteExchangeRateRepository:
     """Repository for exchange rates SQLite database operations."""
 
-    def __init__(self, db: DBConnectionManager) -> None:
+    def __init__(self, db: DBConnectionManager, mapper: ExchangeRateMapper) -> None:
         self._db: DBConnectionManager = db
+        self._mapper: ExchangeRateMapper = mapper
 
     def insert_many(self, data: list[ExchangeRate]) -> None:
         """Insert list of exchange rates into the exchange_rates table.
@@ -783,14 +706,7 @@ class SQLiteExchangeRateRepository:
             INSERT INTO exchange_rates (currency, month, rate)
             VALUES (:currency, :month, :rate);
             """,
-            [
-                {
-                    "currency": r.currency_code,
-                    "month": str(r.month),
-                    "rate": r.rate,
-                }
-                for r in data
-            ],
+            [self._mapper.to_record(record) for record in data],
         )
         print("Inserted", rowcount, "exchange rate rows.")
 
@@ -805,17 +721,16 @@ class SQLiteExchangeRateRepository:
             ExchangeRate | None: Exchange rate record if found, else None
         """
         query = """
-        SELECT rate FROM exchange_rates
+        SELECT currency, month, rate FROM exchange_rates
         WHERE currency = :currency AND month = :month;
         """
         result = self._db.fetch_one(
             query, {"currency": currency_code, "month": str(month)}
         )
         if result:
-            return ExchangeRate(
-                currency_code=currency_code, month=month, rate=result["rate"]
-            )
-        return None
+            return self._mapper.to_entity(dict(result))
+        else:
+            return None
 
     def get_currency(self, currency_code: str) -> list[ExchangeRate]:
         """Get exchange rates for a given currency code
@@ -827,19 +742,11 @@ class SQLiteExchangeRateRepository:
             list[ExchangeRate]: List of exchange rate records
         """
         query = """
-        SELECT month, rate FROM exchange_rates
+        SELECT currency, month, rate FROM exchange_rates
         WHERE currency = :currency;
         """
         results = self._db.fetch_all(query, {"currency": currency_code})
-        exchange_rates = [
-            ExchangeRate(
-                currency_code=currency_code,
-                month=Month.parse(res["month"]),
-                rate=res["rate"],
-            )
-            for res in results
-        ]
-        return exchange_rates
+        return [self._mapper.to_entity(dict(res)) for res in results]
 
     def get_month(self, month: Month) -> list[ExchangeRate]:
         """Get exchange rates for all currencies for a given month
@@ -851,19 +758,11 @@ class SQLiteExchangeRateRepository:
             list[ExchangeRate]: List of exchange rate records
         """
         query = """
-        SELECT currency, rate FROM exchange_rates
+        SELECT currency, month, rate FROM exchange_rates
         WHERE month = :month;
         """
         results = self._db.fetch_all(query, {"month": str(month)})
-        exchange_rates = [
-            ExchangeRate(
-                currency_code=res["currency"],
-                month=month,
-                rate=res["rate"],
-            )
-            for res in results
-        ]
-        return exchange_rates
+        return [self._mapper.to_entity(dict(res)) for res in results]
 
     def count_records(self) -> int:
         """Count the number of exchange rate records.
@@ -881,21 +780,16 @@ class SQLiteExchangeRateRepository:
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} exchange rate records.")
 
-    def hydrate(self, data: dict) -> ExchangeRate:
-        """Hydrate exchange rate data dict to ExchangeRate object.
+    def hydrate(self, record: dict) -> ExchangeRate:
+        """Hydrate exchange rate record dict to ExchangeRate object.
 
         Args:
-            data ([dict): exchange rate data as dict.
+            record ([dict): exchange rate record as dict.
 
         Returns:
             ExchangeRate: ExchangeRate object.
         """
-        rate = ExchangeRate(
-            currency_code=data["currency"],
-            month=Month.parse(data["month"]),
-            rate=float(data["rate"]),
-        )
-        return rate
+        return self._mapper.to_entity(record)
 
     def hydrate_many(self, data: list[dict]) -> list[ExchangeRate]:
         """Hydrate exchange rate data dicts to list of ExchangeRate objects.
@@ -906,8 +800,7 @@ class SQLiteExchangeRateRepository:
         Returns:
             list[ExchangeRate]: list of ExchangeRate objects.
         """
-        rates = [self.hydrate(er) for er in data]
-        return rates
+        return [self.hydrate(record) for record in data]
 
 
 class SQLiteNetWorthRepository:

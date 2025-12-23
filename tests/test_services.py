@@ -5,7 +5,7 @@ Test services using CSV data files as input.
 import pytest
 from nwtrack.admin import DBAdminService
 from nwtrack.container import Container
-from nwtrack.models import Month
+from nwtrack.models import Month, Balance, NetWorth
 from nwtrack.services import InitDataService, ReportService, UpdateService
 from tests.test_repos import count_records
 
@@ -80,8 +80,17 @@ def test_net_worth(test_container: Container, test_entities: dict[str, list]) ->
     assert net_worth.liabilities == 600, "Net worth liabilities mismatch"
     assert net_worth.net_worth == 100, "Net worth total mismatch"
 
+
+def test_net_worth_hist(
+    test_container: Container, test_entities: dict[str, list]
+) -> None:
+    """Test retrieving net worth."""
+    init_db_tables_w_entities(test_container, test_entities)
+    prn_svc: ReportService = test_container.resolve(ReportService)
+
     net_worth_hist = prn_svc.get_net_worth_history()
     assert len(net_worth_hist) == 12, "Net worth history length mismatch"
+    assert isinstance(net_worth_hist[0], NetWorth), "Net worth history type mismatch"
     assert net_worth_hist[-1].month == Month(2025, 11)
     assert net_worth_hist[-1].net_worth == 100, "Net worth history last total mismatch"
 
@@ -108,8 +117,25 @@ def test_fetch_balance(
     assert single_bal.month == month, "Balance month mismatch"
     assert single_bal.amount == 200, "Balance amount mismatch"
 
+
+def test_balance_month(
+    test_container: Container, test_entities: dict[str, list]
+) -> None:
+    """Test retrieving balances by month"""
+    month_str = "2025-10"
+
+    init_db_tables_w_entities(test_container, test_entities)
+    prn_svc: ReportService = test_container.resolve(ReportService)
+    month = Month.parse(month_str)
+
     month_bals = prn_svc.get_month_balances(month)
     assert len(month_bals) == 3, "Month balances length mismatch"
+    assert isinstance(month_bals[0], Balance), "Month balances type mismatch"
+    assert month_bals[0].month == month, "Month balances month mismatch"
+
+    sample = prn_svc.get_balances_sample(5)
+    assert len(sample) == 5, "Balances sample length mismatch"
+    assert isinstance(sample[0], Balance), "Balances sample type mismatch"
 
 
 def test_update_balance(
@@ -125,8 +151,6 @@ def test_update_balance(
     upd_svc: UpdateService = test_container.resolve(UpdateService)
     prn_svc: ReportService = test_container.resolve(ReportService)
 
-    print("Before update:")
-    prn_svc.print_balance(month, account_name)
     before = prn_svc.get_balance(month, account_name)
     assert before.amount == 300, "Pre-update balance amount mismatch"
     upd_svc.update_balance(
@@ -136,9 +160,6 @@ def test_update_balance(
     )
     after = prn_svc.get_balance(month, account_name)
     assert after.amount == new_amount, "Post-update balance amount mismatch"
-    print("After update:")
-    prn_svc.print_balance(month, account_name)
-    prn_svc.print_month_balances(month)
 
 
 def test_exchange_rate(
@@ -155,7 +176,18 @@ def test_exchange_rate(
     rate = prn_svc.get_exchange_rate(month, currency_codes[0])
     assert rate is not None, "Exchange rate not found"
     assert rate.rate == 6.80, "Exchange rate value mismatch"
-    prn_svc.print_exchange_rate(month, currency_codes[0])
+
+
+def test_exchange_rate_month(
+    test_container: Container, test_entities: dict[str, list]
+) -> None:
+    """Test fetching exchange rates."""
+    currency_codes = ["CNY", "EUR"]
+    month_str = "2018-12"
+
+    init_db_tables_w_entities(test_container, test_entities)
+    prn_svc: ReportService = test_container.resolve(ReportService)
+    month = Month.parse(month_str)
 
     rates = prn_svc.get_month_exchange_rates(month)
     assert len(rates) == 2, "Month exchange rates length mismatch"
@@ -177,13 +209,10 @@ def test_roll_forward(
     month = Month.parse(month_str)
     next_month = month.increment()
 
-    print("Before roll forward:")
     curr_bal = prn_svc.get_month_balances(month)
     curr_sum = sum(b.amount for b in curr_bal)
     assert curr_sum == 1300, "Current month balances sum mismatch"
-    print(f"Copying balances from {month} to {next_month}...")
     upd_svc.roll_balances_forward(month)
-    print("After copying:")
-    next_bal = prn_svc.get_month_balances(month)
+    next_bal = prn_svc.get_month_balances(next_month)
     next_sum = sum(b.amount for b in next_bal)
     assert next_sum == 1300, "Next month balances sum mismatch"

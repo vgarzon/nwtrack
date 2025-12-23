@@ -19,6 +19,14 @@ from nwtrack.repos import (
     SQLiteExchangeRateRepository,
     SQLiteNetWorthRepository,
 )
+from nwtrack.mappers import (
+    Mapper,
+    AccountMapper,
+    BalanceMapper,
+    CategoryMapper,
+    CurrencyMapper,
+    ExchangeRateMapper,
+)
 
 
 class UnitOfWork(Protocol):
@@ -57,11 +65,13 @@ class SQLiteUnitOfWork:
 
     def __enter__(self) -> "SQLiteUnitOfWork":
         """Enter the runtime context related to this object."""
-        self.currencies = SQLiteCurrencyRepository(self._db)
-        self.categories = SQLiteCategoryRepository(self._db)
-        self.accounts = SQLiteAccountRepository(self._db)
-        self.balances = SQLiteBalanceRepository(self._db)
-        self.exchange_rates = SQLiteExchangeRateRepository(self._db)
+        self.currencies = SQLiteCurrencyRepository(self._db, CurrencyMapper())
+        self.categories = SQLiteCategoryRepository(self._db, CategoryMapper())
+        self.accounts = SQLiteAccountRepository(self._db, AccountMapper())
+        self.balances = SQLiteBalanceRepository(self._db, BalanceMapper())
+        self.exchange_rates = SQLiteExchangeRateRepository(
+            self._db, ExchangeRateMapper()
+        )
         self.net_worth = SQLiteNetWorthRepository(self._db)
         return self
 

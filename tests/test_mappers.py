@@ -9,6 +9,7 @@ from nwtrack.mappers import (
     CurrencyMapper,
     BalanceMapper,
     ExchangeRateMapper,
+    NetWorthMapper,
 )
 
 from nwtrack.models import (
@@ -17,6 +18,7 @@ from nwtrack.models import (
     Account,
     Balance,
     ExchangeRate,
+    NetWorth,
     Month,
     Status,
     Side,
@@ -103,5 +105,25 @@ def test_exchange_rate_mapper() -> None:
     assert entity.month.year == 2023
     assert entity.month.month == 5
     assert entity.rate == 1.1
+    record_converted = mapper.to_record(entity)
+    assert record_converted == record
+
+
+def test_net_worth_mapper() -> None:
+    mapper: Mapper = NetWorthMapper()
+    record = {
+        "month": "2023-05",
+        "total_assets": 500,
+        "total_liabilities": 200,
+        "net_worth": 300,
+    }
+    entity = mapper.to_entity(record)
+    assert isinstance(entity, NetWorth)
+    assert isinstance(entity.month, Month)
+    assert entity.month.year == 2023
+    assert entity.month.month == 5
+    assert entity.assets == 500
+    assert entity.liabilities == 200
+    assert entity.net_worth == 300
     record_converted = mapper.to_record(entity)
     assert record_converted == record
