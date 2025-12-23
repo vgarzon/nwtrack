@@ -6,17 +6,17 @@ from typing import Protocol
 
 from nwtrack.dbmanager import SQLiteConnectionManager
 from nwtrack.repos import (
-    AccountRepository,
-    BalanceRepository,
-    CategoryRepository,
-    CurrencyRepository,
-    ExchangeRateRepository,
+    AccountsRepository,
+    BalancesRepository,
+    CategoriesRepository,
+    CurrenciesRepository,
+    ExchangeRatesRepository,
     NetWorthRepository,
-    SQLiteAccountRepository,
-    SQLiteBalanceRepository,
-    SQLiteCategoryRepository,
-    SQLiteCurrencyRepository,
-    SQLiteExchangeRateRepository,
+    SQLiteAccountsRepository,
+    SQLiteBalancesRepository,
+    SQLiteCategoriesRepository,
+    SQLiteCurrenciesRepository,
+    SQLiteExchangeRatesRepository,
     SQLiteNetWorthRepository,
 )
 from nwtrack.mappers import (
@@ -32,11 +32,11 @@ from nwtrack.mappers import (
 class UnitOfWork(Protocol):
     """Unit of Work protocol for managing database transactions."""
 
-    currencies: CurrencyRepository
-    categories: CategoryRepository
-    accounts: AccountRepository
-    balances: BalanceRepository
-    exchange_rates: ExchangeRateRepository
+    currencies: CurrenciesRepository
+    categories: CategoriesRepository
+    accounts: AccountsRepository
+    balances: BalancesRepository
+    exchange_rates: ExchangeRatesRepository
     net_worth: NetWorthRepository
 
     def __enter__(self) -> "UnitOfWork":
@@ -65,11 +65,11 @@ class SQLiteUnitOfWork:
 
     def __enter__(self) -> "SQLiteUnitOfWork":
         """Enter the runtime context related to this object."""
-        self.currencies = SQLiteCurrencyRepository(self._db, CurrencyMapper())
-        self.categories = SQLiteCategoryRepository(self._db, CategoryMapper())
-        self.accounts = SQLiteAccountRepository(self._db, AccountMapper())
-        self.balances = SQLiteBalanceRepository(self._db, BalanceMapper())
-        self.exchange_rates = SQLiteExchangeRateRepository(
+        self.currencies = SQLiteCurrenciesRepository(self._db, CurrencyMapper())
+        self.categories = SQLiteCategoriesRepository(self._db, CategoryMapper())
+        self.accounts = SQLiteAccountsRepository(self._db, AccountMapper())
+        self.balances = SQLiteBalancesRepository(self._db, BalanceMapper())
+        self.exchange_rates = SQLiteExchangeRatesRepository(
             self._db, ExchangeRateMapper()
         )
         self.net_worth = SQLiteNetWorthRepository(self._db, NetWorthMapper())

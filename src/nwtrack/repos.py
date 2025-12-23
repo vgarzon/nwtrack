@@ -15,8 +15,6 @@ from nwtrack.models import (
     ExchangeRate,
     Month,
     NetWorth,
-    Side,
-    Status,
 )
 from nwtrack.mappers import (
     CurrencyMapper,
@@ -28,7 +26,7 @@ from nwtrack.mappers import (
 )
 
 
-class CurrencyRepository(Protocol):
+class CurrenciesRepository(Protocol):
     """Protocol for currency repository operations."""
 
     def insert_many(self, data: list[Currency]) -> None:
@@ -64,7 +62,7 @@ class CurrencyRepository(Protocol):
         ...
 
 
-class CategoryRepository(Protocol):
+class CategoriesRepository(Protocol):
     """Protocol for category repository operations."""
 
     def insert_many(self, data: list[Category]) -> None:
@@ -96,7 +94,7 @@ class CategoryRepository(Protocol):
         ...
 
 
-class ExchangeRateRepository(Protocol):
+class ExchangeRatesRepository(Protocol):
     """Protocol for exchange rate repository operations."""
 
     def insert_many(self, data: list[ExchangeRate]) -> None:
@@ -132,7 +130,7 @@ class ExchangeRateRepository(Protocol):
         ...
 
 
-class AccountRepository(Protocol):
+class AccountsRepository(Protocol):
     """Protocol for account repository operations."""
 
     def insert_many(self, data: list[Account]) -> None:
@@ -172,7 +170,7 @@ class AccountRepository(Protocol):
         ...
 
 
-class BalanceRepository(Protocol):
+class BalancesRepository(Protocol):
     """Protocol for balance repository operations."""
 
     def insert_many(self, data: list[Balance]) -> None:
@@ -232,7 +230,7 @@ class NetWorthRepository(Protocol):
         ...
 
 
-class SQLiteCurrencyRepository:
+class SQLiteCurrenciesRepository:
     """Repository for currencies SQLite database operations."""
 
     def __init__(self, db: DBConnectionManager, mapper: CurrencyMapper) -> None:
@@ -322,7 +320,7 @@ class SQLiteCurrencyRepository:
         return [self.hydrate(record) for record in data]
 
 
-class SQLiteCategoryRepository:
+class SQLiteCategoriesRepository:
     """Repository for category SQLite database operations."""
 
     def __init__(self, db: DBConnectionManager, mapper: CategoryMapper) -> None:
@@ -400,7 +398,7 @@ class SQLiteCategoryRepository:
         return [self.hydrate(d) for d in data]
 
 
-class SQLiteAccountRepository:
+class SQLiteAccountsRepository:
     """Repository for account SQLite database operations."""
 
     def __init__(self, db: DBConnectionManager, mapper: AccountMapper) -> None:
@@ -503,7 +501,7 @@ class SQLiteAccountRepository:
         return accounts
 
 
-class SQLiteBalanceRepository:
+class SQLiteBalancesRepository:
     """Repository for balances SQLite database operations."""
 
     def __init__(self, db: DBConnectionManager, mapper: BalanceMapper) -> None:
@@ -689,7 +687,7 @@ class SQLiteBalanceRepository:
         return [self.hydrate(bal) for bal in data]
 
 
-class SQLiteExchangeRateRepository:
+class SQLiteExchangeRatesRepository:
     """Repository for exchange rates SQLite database operations."""
 
     def __init__(self, db: DBConnectionManager, mapper: ExchangeRateMapper) -> None:
