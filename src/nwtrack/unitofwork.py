@@ -20,12 +20,12 @@ from nwtrack.repos import (
     SQLiteNetWorthRepository,
 )
 from nwtrack.mappers import (
-    Mapper,
     AccountMapper,
     BalanceMapper,
     CategoryMapper,
     CurrencyMapper,
     ExchangeRateMapper,
+    NetWorthMapper,
 )
 
 
@@ -72,7 +72,7 @@ class SQLiteUnitOfWork:
         self.exchange_rates = SQLiteExchangeRateRepository(
             self._db, ExchangeRateMapper()
         )
-        self.net_worth = SQLiteNetWorthRepository(self._db)
+        self.net_worth = SQLiteNetWorthRepository(self._db, NetWorthMapper())
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:

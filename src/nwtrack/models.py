@@ -96,3 +96,4 @@ class NetWorth:
     assets: int
     liabilities: int
     net_worth: int
+    currency_code: str

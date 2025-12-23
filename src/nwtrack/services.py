@@ -249,17 +249,18 @@ class ReportService:
             account_name = account_map[bal.account_id].name
             print(bal.id, account_name, str(bal.month), bal.amount)
 
-    def get_net_worth(self, month: Month) -> NetWorth:
-        """Get net worth for a specific month.
+    def get_net_worth(self, month: Month, currency_code: str = "USD") -> NetWorth:
+        """Get net worth for a specific month and currency
 
         Args:
             month (Month): Month object
+            currency_code (str): Currency code (default: "USD")
 
         Returns:
             NetWorth: NetWorth object for the specified month.
         """
         with self._uow() as uow:
-            nw = uow.net_worth.get(month)
+            nw = uow.net_worth.get(month, currency_code)
         return nw
 
     def get_net_worth_history(self) -> list[NetWorth]:

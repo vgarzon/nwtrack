@@ -24,6 +24,7 @@ from nwtrack.mappers import (
     AccountMapper,
     BalanceMapper,
     ExchangeRateMapper,
+    NetWorthMapper,
 )
 
 
@@ -806,8 +807,9 @@ class SQLiteExchangeRateRepository:
 class SQLiteNetWorthRepository:
     """Repository net worth operations."""
 
-    def __init__(self, db: DBConnectionManager) -> None:
+    def __init__(self, db: DBConnectionManager, mapper: NetWorthMapper) -> None:
         self._db: DBConnectionManager = db
+        self._mapper: NetWorthMapper = mapper
 
     def get(self, month: Month, currency_code: str = "USD") -> NetWorth:
         """Get net worth value for given month and currency
@@ -820,21 +822,15 @@ class SQLiteNetWorthRepository:
             NetWorth: Net worth record.
         """
         query = """
-        SELECT total_assets, total_liabilities, net_worth FROM networth_history
+        SELECT month, total_assets, total_liabilities, net_worth, currency
+        FROM networth_history
         WHERE month = :month AND currency = :currency;
         """
         results = self._db.fetch_all(
             query, {"month": str(month), "currency": currency_code}
         )
         assert len(results) <= 1, "Expected at most one net worth record."
-        result = results[0]
-        nw = NetWorth(
-            month=month,
-            assets=result["total_assets"],
-            liabilities=result["total_liabilities"],
-            net_worth=result["net_worth"],
-        )
-        return nw
+        return self._mapper.to_entity(dict(results[0]))
 
     def history(self, currency_code: str = "USD") -> list[NetWorth]:
         """Get net worth history for a given currency.
@@ -845,19 +841,10 @@ class SQLiteNetWorthRepository:
             list[NetWorth]: List of Net Worth records.
         """
         query = """
-        SELECT month, total_assets, total_liabilities, net_worth
+        SELECT month, total_assets, total_liabilities, net_worth, currency
         FROM networth_history
         WHERE currency = :currency
         ORDER BY month;
         """
         results = self._db.fetch_all(query, {"currency": currency_code})
-        net_worths = [
-            NetWorth(
-                month=Month.parse(month),
-                assets=total_assets,
-                liabilities=total_liabilities,
-                net_worth=net_worth,
-            )
-            for month, total_assets, total_liabilities, net_worth in results
-        ]
-        return net_worths
+        return [self._mapper.to_entity(dict(record)) for record in results]

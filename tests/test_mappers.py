@@ -116,6 +116,7 @@ def test_net_worth_mapper() -> None:
         "total_assets": 500,
         "total_liabilities": 200,
         "net_worth": 300,
+        "currency": "USD",
     }
     entity = mapper.to_entity(record)
     assert isinstance(entity, NetWorth)
@@ -125,5 +126,6 @@ def test_net_worth_mapper() -> None:
     assert entity.assets == 500
     assert entity.liabilities == 200
     assert entity.net_worth == 300
+    assert entity.currency_code == "USD"
     record_converted = mapper.to_record(entity)
     assert record_converted == record

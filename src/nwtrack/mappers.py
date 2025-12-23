@@ -257,6 +257,7 @@ class NetWorthMapper:
             assets=int(record["total_assets"]),
             liabilities=int(record["total_liabilities"]),
             net_worth=int(record["net_worth"]),
+            currency_code=record["currency"],
         )
 
     def to_record(self, entity: NetWorth) -> Mapping[str, Any]:
@@ -274,4 +275,5 @@ class NetWorthMapper:
             "total_assets": entity.assets,
             "total_liabilities": entity.liabilities,
             "net_worth": entity.net_worth,
+            "currency": entity.currency_code,
         }
