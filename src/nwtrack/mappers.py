@@ -10,6 +10,7 @@ from nwtrack.models import (
     Currency,
     Category,
     ExchangeRate,
+    NetWorth,
     Month,
     Side,
     Status,
@@ -233,4 +234,44 @@ class ExchangeRateMapper:
             "currency": entity.currency_code,
             "month": str(entity.month),
             "rate": entity.rate,
+        }
+
+
+class NetWorthMapper:
+    """
+    A mapper to convert net worth records to and from net worth entities.
+    """
+
+    def to_entity(self, record: Mapping[str, Any]) -> NetWorth:
+        """
+        Convert a net worth record to a net worth entity.
+
+        Args:
+            record: The net worth record to convert.
+
+        Returns:
+            The converted net worth entity.
+        """
+        return NetWorth(
+            month=Month.parse(record["month"]),
+            assets=int(record["total_assets"]),
+            liabilities=int(record["total_liabilities"]),
+            net_worth=int(record["net_worth"]),
+        )
+
+    def to_record(self, entity: NetWorth) -> Mapping[str, Any]:
+        """
+        Convert a net worth entity to a net worth record.
+
+        Args:
+            entity: The net worth entity to convert.
+
+        Returns:
+            The converted net worth record.
+        """
+        return {
+            "month": str(entity.month),
+            "total_assets": entity.assets,
+            "total_liabilities": entity.liabilities,
+            "net_worth": entity.net_worth,
         }
