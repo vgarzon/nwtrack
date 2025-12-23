@@ -8,8 +8,6 @@ from nwtrack.fileio import csv_to_records
 from nwtrack.models import (
     Account,
     Balance,
-    Category,
-    Currency,
     ExchangeRate,
     Month,
     NetWorth,
@@ -41,7 +39,7 @@ class InitDataService:
         Note:
           - Liabilities are stored as positive amounts.
         """
-        print("Service: Inserting currency and category data.")
+        print("InitDataService: Inserting data from CSV files.")
         repo_names = [  # TODO: Use RepoRegistry (pending)
             "currencies",
             "categories",
@@ -58,61 +56,56 @@ class InitDataService:
         for row in records["balances"]:
             row["amount"] = abs(int(row["amount"]))
 
+        self._insert_records(records)
+
+    def _load_records_from_csv(self, file_paths: dict[str, str]) -> dict[str, list]:
+        """Load records from a collection of CSV files indexed by repo name.
+
+        Args:
+            file_paths (dict[str, str]): Path to the CSV files indexed by repo name.
+
+        Returns:
+            list[dict]: Collection of records indexed by repo name.
+        """
+        return {name: csv_to_records(path) for name, path in file_paths.items()}
+
+    def _insert_records(self, records: dict[str, list[dict]]) -> None:
+        """Insert records into the database using unit of work pattern.
+
+        Args:
+            records (dict[str, list[dict]]): Records indexed by repo name.
+        """
         with self._uow() as uow:
-            for name in repo_names:
+            for name in records:
                 repo = getattr(uow, name)
                 entities = repo.hydrate_many(records[name])
                 repo.insert_many(entities)
 
-    def insert_currencies(self, currencies: list[Currency]) -> None:
-        """Insert currencies into the database.
+    def _records_to_entities(self, records: dict[str, list[dict]]) -> dict[str, list]:
+        """Hydrate records into entities using unit of work pattern.
 
         Args:
-            currencies (list[Currency]): list of Currency objects.
+            records (dict[str, list[dict]]): Records indexed by repo name.
+        Returns:
+            dict[str, list]: Hydrated entities indexed by repo name.
         """
-        print("Service: Inserting currency data.")
+        entities: dict[str, list] = {}
         with self._uow() as uow:
-            uow.currencies.insert_many(currencies)
+            for name in records:
+                repo = getattr(uow, name)
+                entities[name] = repo.hydrate_many(records[name])
+        return entities
 
-    def insert_categories(self, categories: list[Category]) -> None:
-        """Insert categories into the database.
+    def _insert_entities(self, entities: dict[str, list]) -> None:
+        """Insert entities into the database using unit of work pattern.
 
         Args:
-            categories (list[Category]): list of Category objects.
+            entities (dict[str, list]): Entities indexed by repo name.
         """
-        print("Service: Inserting category data.")
         with self._uow() as uow:
-            uow.categories.insert_many(categories)
-
-    def insert_accounts(self, accounts: list[Account]) -> None:
-        """Insert accounts into the database.
-
-        Args:
-            accounts_data (list[dict]): list of Account objects.
-        """
-        print("Service: Inserting accounts data.")
-        with self._uow() as uow:
-            uow.accounts.insert_many(accounts)
-
-    def insert_balances(self, balances: list[Balance]) -> None:
-        """Insert balances into the database.
-
-        Args:
-            balances (list[Balance]): list of Balance objects.
-        """
-        print("Service: Inserting balances data.")
-        with self._uow() as uow:
-            uow.balances.insert_many(balances)
-
-    def insert_exchange_rates(self, exchange_rates: list[ExchangeRate]) -> None:
-        """Insert exchange rate data into database.
-
-        Args:
-            exchange_rates (list[ExchangeRate]): list of ExchangeRate objects.
-        """
-        print("Service: Inserting exchange rate data.")
-        with self._uow() as uow:
-            uow.exchange_rates.insert_many(exchange_rates)
+            for name in entities:
+                repo = getattr(uow, name)
+                repo.insert_many(entities[name])
 
 
 class UpdateService:

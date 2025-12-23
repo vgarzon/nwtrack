@@ -9,6 +9,7 @@ from nwtrack.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
 from nwtrack.services import InitDataService, ReportService, UpdateService
 from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
+from nwtrack.fileio import csv_to_records
 
 
 def get_test_config() -> Config:
@@ -19,7 +20,7 @@ def get_test_config() -> Config:
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def test_container() -> Container:
     """Setup test container with SQLite Unit of Work.
 
@@ -61,3 +62,44 @@ def test_container() -> Container:
             lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),
         )
     )
+
+
+@pytest.fixture(scope="module")
+def test_file_paths() -> dict[str, str]:
+    """Provide file paths for test CSV data.
+
+    Returns:
+        dict[str, str]: Mapping of table names to CSV file paths.
+    """
+    return {
+        "currencies": "tests/data/csv/currencies.csv",
+        "categories": "tests/data/csv/categories.csv",
+        "accounts": "tests/data/csv/accounts.csv",
+        "balances": "tests/data/csv/balances.csv",
+        "exchange_rates": "tests/data/csv/exchange_rates.csv",
+    }
+
+
+@pytest.fixture(scope="module")
+def test_entities(
+    test_file_paths: dict[str, str], test_container
+) -> dict[str, list[dict[str, str]]]:
+    """Load sample data from CSV files for testing.
+
+    Args:
+        file_paths (dict[str, str]): Mapping of table names to CSV file paths.
+
+    Returns:
+        dict[str, list[dict[str, str]]]: Loaded data for each table.
+    """
+    print("Loading test data from CSV files...")
+    records = {name: csv_to_records(path) for name, path in test_file_paths.items()}
+
+    # NOTE: storing liabilities as positive amounts
+    for row in records["balances"]:
+        row["amount"] = abs(int(row["amount"]))
+
+    data_svc: InitDataService = test_container.resolve(InitDataService)
+    entities = data_svc._records_to_entities(records)
+
+    return entities
