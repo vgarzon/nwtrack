@@ -3,6 +3,7 @@ Mappers to convert records to and from entities.
 """
 
 from __future__ import annotations
+from dataclasses import dataclass
 from typing import Protocol, Mapping, Any, TypeVar
 from nwtrack.models import (
     Account,
@@ -20,13 +21,10 @@ TEntity = TypeVar("TEntity")
 
 
 class Mapper(Protocol[TEntity]):
-    """
-    A mapper to convert records to and from entities.
-    """
+    """A mapper to convert records to and from entities."""
 
     def to_entity(self, record: Mapping[str, Any]) -> TEntity:
-        """
-        Convert a record to an entity.
+        """Convert a record to an entity.
 
         Args:
             record: The record to convert.
@@ -37,8 +35,7 @@ class Mapper(Protocol[TEntity]):
         ...
 
     def to_record(self, entity: TEntity) -> Mapping[str, Any]:
-        """
-        Convert an entity to a record.
+        """Convert an entity to a record.
 
         Args:
             entity: The entity to convert.
@@ -50,13 +47,10 @@ class Mapper(Protocol[TEntity]):
 
 
 class CurrencyMapper:
-    """
-    A mapper to convert currency records to and from currency entities.
-    """
+    """A mapper to convert currency records to and from currency entities."""
 
     def to_entity(self, record: Mapping[str, Any]) -> Currency:
-        """
-        Convert a currency record to a currency entity.
+        """Convert a currency record to a currency entity.
 
         Args:
             record: The currency record to convert.
@@ -67,8 +61,7 @@ class CurrencyMapper:
         return Currency(code=record["code"], description=record["description"])
 
     def to_record(self, entity: Currency) -> dict[str, Any]:
-        """
-        Convert a currency entity to a currency record.
+        """Convert a currency entity to a currency record.
 
         Args:
             entity: The currency entity to convert.
@@ -83,13 +76,10 @@ class CurrencyMapper:
 
 
 class CategoryMapper:
-    """
-    A mapper to convert category records to and from category entities.
-    """
+    """A mapper to convert category records to and from category entities."""
 
     def to_entity(self, record: Mapping[str, Any]) -> Category:
-        """
-        Convert a category record to a category entity.
+        """Convert a category record to a category entity.
 
         Args:
             record: The category record to convert.
@@ -100,8 +90,7 @@ class CategoryMapper:
         return Category(name=record["name"], side=Side(record["side"]))
 
     def to_record(self, entity: Category) -> dict[str, Any]:
-        """
-        Convert a category entity to a category record.
+        """Convert a category entity to a category record.
 
         Args:
             entity: The category entity to convert.
@@ -116,13 +105,10 @@ class CategoryMapper:
 
 
 class AccountMapper:
-    """
-    A mapper to convert account records to and from account entities.
-    """
+    """A mapper to convert account records to and from account entities."""
 
     def to_entity(self, record: Mapping[str, Any]) -> Account:
-        """
-        Convert an account record to an account entity.
+        """Convert an account record to an account entity.
 
         Args:
             record: The account record to convert.
@@ -140,8 +126,7 @@ class AccountMapper:
         )
 
     def to_record(self, entity: Account) -> dict[str, Any]:
-        """
-        Convert an account entity to an account record.
+        """Convert an account entity to an account record.
 
         Args:
             entity: The account entity to convert.
@@ -160,13 +145,10 @@ class AccountMapper:
 
 
 class BalanceMapper:
-    """
-    A mapper to convert balance records to and from balance entities.
-    """
+    """A mapper to convert balance records to and from balance entities."""
 
     def to_entity(self, record: Mapping[str, Any]) -> Balance:
-        """
-        Convert a balance record to a balance entity.
+        """Convert a balance record to a balance entity.
 
         Args:
             record: The balance record to convert.
@@ -182,8 +164,7 @@ class BalanceMapper:
         )
 
     def to_record(self, entity: Balance) -> dict[str, Any]:
-        """
-        Convert a balance entity to a balance record.
+        """Convert a balance entity to a balance record.
 
         Args:
             entity: The balance entity to convert.
@@ -200,13 +181,10 @@ class BalanceMapper:
 
 
 class ExchangeRateMapper:
-    """
-    A mapper to convert exchange rate records to and from exchange rate entities.
-    """
+    """A mapper to convert exchange rate records to and from exchange rate entities."""
 
     def to_entity(self, record: Mapping[str, Any]) -> ExchangeRate:
-        """
-        Convert an exchange rate record to an exchange rate entity.
+        """Convert an exchange rate record to an exchange rate entity.
 
         Args:
             record: The exchange rate record to convert.
@@ -221,8 +199,7 @@ class ExchangeRateMapper:
         )
 
     def to_record(self, entity: ExchangeRate) -> dict[str, Any]:
-        """
-        Convert an exchange rate entity to an exchange rate record.
+        """Convert an exchange rate entity to an exchange rate record.
 
         Args:
             entity: The exchange rate entity to convert.
@@ -238,13 +215,10 @@ class ExchangeRateMapper:
 
 
 class NetWorthMapper:
-    """
-    A mapper to convert net worth records to and from net worth entities.
-    """
+    """A mapper to convert net worth records to and from net worth entities."""
 
     def to_entity(self, record: Mapping[str, Any]) -> NetWorth:
-        """
-        Convert a net worth record to a net worth entity.
+        """Convert a net worth record to a net worth entity.
 
         Args:
             record: The net worth record to convert.
@@ -261,8 +235,7 @@ class NetWorthMapper:
         )
 
     def to_record(self, entity: NetWorth) -> dict[str, Any]:
-        """
-        Convert a net worth entity to a net worth record.
+        """Convert a net worth entity to a net worth record.
 
         Args:
             entity: The net worth entity to convert.
@@ -277,3 +250,31 @@ class NetWorthMapper:
             "net_worth": entity.net_worth,
             "currency": entity.currency_code,
         }
+
+
+@dataclass(frozen=True)
+class MapperRegistry:
+    """Registry for all mappers."""
+
+    currency: CurrencyMapper
+    category: CategoryMapper
+    account: AccountMapper
+    balance: BalanceMapper
+    exchange_rate: ExchangeRateMapper
+    net_worth: NetWorthMapper
+
+
+def build_mapper_registry() -> MapperRegistry:
+    """Build a mapper registry.
+
+    Returns:
+        The built mapper registry.
+    """
+    return MapperRegistry(
+        currency=CurrencyMapper(),
+        category=CategoryMapper(),
+        account=AccountMapper(),
+        balance=BalanceMapper(),
+        exchange_rate=ExchangeRateMapper(),
+        net_worth=NetWorthMapper(),
+    )
