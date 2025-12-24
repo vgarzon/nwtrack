@@ -4,13 +4,10 @@ Pytest fixtures and test container setup for nwtrack application.
 
 import pytest
 from nwtrack.config import Config
-from nwtrack.admin import DBAdminService, SQLiteAdminService
 from nwtrack.container import Container, Lifetime
-from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
-from nwtrack.services import InitDataService, ReportService, UpdateService
-from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
+from nwtrack.services import InitDataService
 from nwtrack.fileio import csv_to_records
-from nwtrack.mappers import MapperRegistry, build_mapper_registry
+from nwtrack.compose import build_sqlite_uow_container
 
 
 def get_test_config() -> Config:
@@ -22,42 +19,26 @@ def get_test_config() -> Config:
 
 
 @pytest.fixture(scope="module")
-def test_container() -> Container:
-    """Setup test container with SQLite Unit of Work.
+def test_config() -> Config:
+    """Test configuration with in-memory database."""
+    return Config(
+        db_file_path=":memory:",
+        db_ddl_path="sql/nwtrack_ddl.sql",
+    )
+
+
+@pytest.fixture(scope="module")
+def test_container(test_config) -> Container:
+    """Setup test container with SQLite Unit of Work and test config.
 
     Returns:
         Container: Configured DI container.
     """
-    container = Container()
+    container = build_sqlite_uow_container()
     container.register(
         Config,
-        lambda _: get_test_config(),
+        lambda _: test_config,
         lifetime=Lifetime.SINGLETON,
-    ).register(
-        DBConnectionManager,
-        lambda c: SQLiteConnectionManager(c.resolve(Config)),
-        lifetime=Lifetime.SINGLETON,
-    ).register(
-        MapperRegistry,
-        lambda _: build_mapper_registry(),
-        lifetime=Lifetime.SINGLETON,
-    ).register(
-        UnitOfWork,
-        lambda c: SQLiteUnitOfWork(
-            c.resolve(DBConnectionManager), c.resolve(MapperRegistry)
-        ),
-    ).register(
-        DBAdminService,
-        lambda c: SQLiteAdminService(c.resolve(Config), c.resolve(DBConnectionManager)),
-    ).register(
-        InitDataService,
-        lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
-    ).register(
-        UpdateService,
-        lambda c: UpdateService(uow=lambda: c.resolve(UnitOfWork)),
-    ).register(
-        ReportService,
-        lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),
     )
     return container
 

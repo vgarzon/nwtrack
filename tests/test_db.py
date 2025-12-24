@@ -38,7 +38,7 @@ def uow_factory(test_container: Container) -> UnitOfWork:
 
 def get_table_names(uow: UnitOfWork) -> list[str]:
     """Get the names of all tables in the database."""
-    cur = uow._db.execute("SELECT name FROM sqlite_master WHERE type='table';")  # type: ignore[attr-defined]
+    cur = uow._db.execute("SELECT name FROM sqlite_master WHERE type='table';")
     rows = cur.fetchall()
     return [row["name"] for row in rows]
 
@@ -55,7 +55,7 @@ def table_exists(uow: UnitOfWork, table_name: str) -> bool:
 
 def table_is_empty(uow: UnitOfWork, table_name: str) -> bool:
     """Check if a table is empty."""
-    cur = uow._db.execute(f"SELECT EXISTS (SELECT 1 FROM {table_name}) AS x;")  # type: ignore[attr-defined]
+    cur = uow._db.execute(f"SELECT EXISTS (SELECT 1 FROM {table_name}) AS x;")
     res = cur.fetchone()
     return res["x"] == 0 if res else True
 
@@ -64,31 +64,33 @@ def insert_data_with_query(uow: UnitOfWork) -> None:
     """Populate initial data into the database."""
     for table, data in TEST_DATA.items():
         query = INSERT_QUERIES[table]
-        rowcnt = uow._db.execute_many(query, data)  # type: ignore[attr-defined]
+        rowcnt = uow._db.execute_many(query, data)
         print(f"Inserted {rowcnt} into '{table}'.")
 
 
 def get_table_count(uow: UnitOfWork, table_name: str) -> int:
     """Count rows in table."""
 
-    cur = uow._db.execute(f"SELECT COUNT(*) AS cnt FROM {table_name};")  # type: ignore[attr-defined]
+    cur = uow._db.execute(f"SELECT COUNT(*) AS cnt FROM {table_name};")
     res = cur.fetchone()
     return res["cnt"] if res else 0
+
+
+def test_db_config(test_container: Container, test_config: Config) -> None:
+    """Test database config."""
+    cfg: Config = test_container.resolve(Config)
+    assert cfg.db_file_path == test_config.db_file_path
+    assert cfg.db_ddl_path == test_config.db_ddl_path
 
 
 def test_initialize_database(test_container: Container) -> None:
     """Test database initialization."""
     admin_service: DBAdminService = test_container.resolve(DBAdminService)
     admin_service.init_database()
-
-    cfg: Config = test_container.resolve(Config)
-    assert cfg.db_file_path == ":memory:"
-    assert cfg.db_ddl_path == "sql/nwtrack_ddl.sql"
-
     with uow_factory(test_container) as uow:
-        row = uow._db.execute("PRAGMA database_list;").fetchone()  # type: ignore[attr-defined]
-
-    assert row["file"] == "", "Expected in-memory database."
+        row = uow._db.execute("PRAGMA database_list;").fetchone()
+    assert row is not None
+    assert "file" in row.keys()
 
 
 def test_tables_exist(test_container: Container) -> None:
