@@ -4,7 +4,7 @@ Repository module for nwtrack database operations.
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Protocol, TypeVar, Generic
 
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.models import (
@@ -17,89 +17,122 @@ from nwtrack.models import (
     NetWorth,
 )
 from nwtrack.mappers import (
-    CurrencyMapper,
-    CategoryMapper,
-    AccountMapper,
-    BalanceMapper,
-    ExchangeRateMapper,
+    Mapper,
     NetWorthMapper,
+    SQLiteRecord,
 )
 
+TEntity = TypeVar("TEntity")
 
-class CurrenciesRepository(Protocol):
-    """Protocol for currency repository operations."""
 
-    def insert_many(self, data: list[Currency]) -> None:
-        """Insert list of currencies into the currencies table."""
+class Repository(Protocol[TEntity]):
+    """Generic repository protocol."""
+
+    def insert_many(self, data: list[TEntity]) -> None:
+        """Insert list of entities into the corresponding table."""
         ...
+
+    def get_all(self) -> list[TEntity]:
+        """Get all entities."""
+        ...
+
+    def count_records(self) -> int:
+        """Count the number of records."""
+        ...
+
+    def delete_all(self) -> None:
+        """Delete all records."""
+        ...
+
+    def hydrate(self, data: SQLiteRecord) -> TEntity:
+        """Hydrate data dictionary to entity object."""
+        ...
+
+    def hydrate_many(self, data: list[SQLiteRecord]) -> list[TEntity]:
+        """Hydrate list of data dictionaries to list of entity objects."""
+        ...
+
+
+class BaseRepository(Generic[TEntity]):
+    """Base repository class implementing common methods."""
+
+    def __init__(self, db: DBConnectionManager, mapper: Mapper[TEntity]) -> None:
+        self._db: DBConnectionManager = db
+        self._mapper: Mapper = mapper
+
+    def insert_many(self, data: list[TEntity]) -> None:
+        """Insert list of entities into the corresponding table.
+
+        Args:
+            data (list[Entity]): List of entity objects.
+        """
+        raise NotImplementedError
+
+    def get_all(self) -> list[TEntity]:
+        """Get all entities.
+
+        Returns:
+            list[Entity]: List of entity objects.
+        """
+        raise NotImplementedError
+
+    def count_records(self) -> int:
+        """Count the number of records.
+
+        Returns:
+            int: Number of records.
+        """
+        raise NotImplementedError
+
+    def delete_all(self) -> None:
+        """Delete all records."""
+        raise NotImplementedError
+
+    def hydrate(self, record: dict) -> TEntity:
+        """Hydrate record to Entity.
+
+        Args:
+            record (dict): data dictionary
+
+        Returns:
+            Entity: Entity object.
+        """
+        return self._mapper.to_entity(record)
+
+    def hydrate_many(self, data: list[dict]) -> list[TEntity]:
+        """Hydrate list of records to list of Entities.
+
+        Args:
+            data (list[dict]): list of data dictionaries.
+
+        Returns:
+            list[Entity]: list of Entity objects.
+        """
+        return [self.hydrate(record) for record in data]
+
+
+class CurrenciesRepository(Repository[Currency], Protocol):
+    """Protocol for currency repository operations."""
 
     def get_codes(self) -> list[str]:
         """Get all currency codes."""
-        ...
-
-    def get_all(self) -> list[Currency]:
-        """Get all currencies."""
         ...
 
     def get_dict(self) -> dict[str, Currency]:
         """Get all currencies in a dictionary indexed by code."""
         ...
 
-    def count_records(self) -> int:
-        """Count the number of currency records."""
-        ...
 
-    def delete_all(self) -> None:
-        """Delete all currency records."""
-        ...
-
-    def hydrate(self, data: dict) -> Currency:
-        """Hydrate data dictionary to Currency object."""
-        ...
-
-    def hydrate_many(self, data: list[dict]) -> list[Currency]:
-        """Hydrate list of data dictionaries to list of Currency objects."""
-        ...
-
-
-class CategoriesRepository(Protocol):
+class CategoriesRepository(Repository[Category], Protocol):
     """Protocol for category repository operations."""
-
-    def insert_many(self, data: list[Category]) -> None:
-        """Insert list of categories into the categories table."""
-        ...
-
-    def get_all(self) -> list[Category]:
-        """Get all categories."""
-        ...
 
     def get_dict(self) -> dict[str, Category]:
         """Get all categories in a dictionary indexed by name."""
         ...
 
-    def count_records(self) -> int:
-        """Count the number of category records."""
-        ...
 
-    def delete_all(self) -> None:
-        """Delete all currency records."""
-        ...
-
-    def hydrate(self, data: dict[str, str]) -> Category:
-        """Hydrate data dictionary to Category object."""
-        ...
-
-    def hydrate_many(self, data: list[dict[str, str]]) -> list[Category]:
-        """Hydrate list of data dictionaries to list of Category objects."""
-        ...
-
-
-class ExchangeRatesRepository(Protocol):
+class ExchangeRatesRepository(Repository[ExchangeRate], Protocol):
     """Protocol for exchange rate repository operations."""
-
-    def insert_many(self, data: list[ExchangeRate]) -> None:
-        """Insert list of exchange rates into the exchange_rates table."""
-        ...
 
     def get(self, month: Month, currency_code: str) -> ExchangeRate | None:
         """Get the exchange rate for a specific currency code and month."""
@@ -113,36 +146,12 @@ class ExchangeRatesRepository(Protocol):
         """Get exchange rates for all currencies for a given month."""
         ...
 
-    def count_records(self) -> int:
-        """Count the number of exchange rate records."""
-        ...
 
-    def delete_all(self) -> None:
-        """Delete all currency records."""
-        ...
-
-    def hydrate(self, data: dict) -> ExchangeRate:
-        """Hydrate data dictionary to ExchangeRate object."""
-        ...
-
-    def hydrate_many(self, data: list[dict]) -> list[ExchangeRate]:
-        """Hydrate list of data dictionaries to list of ExchangeRate objects."""
-        ...
-
-
-class AccountsRepository(Protocol):
+class AccountsRepository(Repository[Account], Protocol):
     """Protocol for account repository operations."""
-
-    def insert_many(self, data: list[Account]) -> None:
-        """Insert list of accounts into the accounts table."""
-        ...
 
     def get_active(self) -> list[Account]:
         """Get all active accounts."""
-        ...
-
-    def get_all(self) -> list[Account]:
-        """Get all accounts."""
         ...
 
     def get_dict_id(self) -> dict[int, Account]:
@@ -153,29 +162,9 @@ class AccountsRepository(Protocol):
         """Get all accounts in a dictionary indexed by name."""
         ...
 
-    def count_records(self) -> int:
-        """Count the number of account records."""
-        ...
 
-    def delete_all(self) -> None:
-        """Delete all currency records."""
-        ...
-
-    def hydrate(self, data: dict) -> Account:
-        """Hydrate data dictionary to Account object."""
-        ...
-
-    def hydrate_many(self, data: list[dict]) -> list[Account]:
-        """Hydrate list of data dictionaries to list of Account objects."""
-        ...
-
-
-class BalancesRepository(Protocol):
+class BalancesRepository(Repository[Balance], Protocol):
     """Protocol for balance repository operations."""
-
-    def insert_many(self, data: list[Balance]) -> None:
-        """Insert list of balances into the balances table."""
-        ...
 
     def get(self, month: Month, account_name: str) -> Balance:
         """Get all account balances on a specific month."""
@@ -201,22 +190,6 @@ class BalancesRepository(Protocol):
         """Fetch sample balance records for debugging."""
         ...
 
-    def count_records(self) -> int:
-        """Count the number of balance records."""
-        ...
-
-    def delete_all(self) -> None:
-        """Delete all currency records."""
-        ...
-
-    def hydrate(self, data: dict) -> Balance:
-        """Hydrate data dictionary to Balance object."""
-        ...
-
-    def hydrate_many(self, data: list[dict]) -> list[Balance]:
-        """Hydrate list of data dictionaries to list of Balance objects."""
-        ...
-
 
 class NetWorthRepository(Protocol):
     """Protocol for net worth repository operations."""
@@ -230,12 +203,8 @@ class NetWorthRepository(Protocol):
         ...
 
 
-class SQLiteCurrenciesRepository:
+class SQLiteCurrenciesRepository(BaseRepository[Currency]):
     """Repository for currencies SQLite database operations."""
-
-    def __init__(self, db: DBConnectionManager, mapper: CurrencyMapper) -> None:
-        self._db: DBConnectionManager = db
-        self._mapper: CurrencyMapper = mapper
 
     def insert_many(self, data: list[Currency]) -> None:
         """Insert list of currencies into the currencies table.
@@ -297,35 +266,9 @@ class SQLiteCurrenciesRepository:
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} currency records.")
 
-    def hydrate(self, record: dict) -> Currency:
-        """Hydrate record dictionary to Currency object.
 
-        Args:
-            record (ict): currency data dictionary
-
-        Returns:
-            list[Currency]: list of Currency objects.
-        """
-        return self._mapper.to_entity(record)
-
-    def hydrate_many(self, data: list[dict]) -> list[Currency]:
-        """Hydrate list of records to list of Currency objects.
-
-        Args:
-            data (list[dict]): list of currency data dicts.
-
-        Returns:
-            list[Currency]: list of Currency objects.
-        """
-        return [self.hydrate(record) for record in data]
-
-
-class SQLiteCategoriesRepository:
+class SQLiteCategoriesRepository(BaseRepository[Category]):
     """Repository for category SQLite database operations."""
-
-    def __init__(self, db: DBConnectionManager, mapper: CategoryMapper) -> None:
-        self._db: DBConnectionManager = db
-        self._mapper: CategoryMapper = mapper
 
     def insert_many(self, data: list[Category]) -> None:
         """Insert list of categories into SQLite database.
@@ -375,35 +318,9 @@ class SQLiteCategoriesRepository:
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} category records.")
 
-    def hydrate(self, record: dict[str, str]) -> Category:
-        """Hydrate category data dictionary to Category instance.
 
-        Args:
-            record (dict[str, str]): Category data dictionary
-
-        Returns:
-            Category: Category instance
-        """
-        return self._mapper.to_entity(record)
-
-    def hydrate_many(self, data: list[dict[str, str]]) -> list[Category]:
-        """Hydrate list of category data dictionares to objects.
-
-        Args:
-            data (list[dict[str, str]]): List of category data dictionaries.
-
-        Returns:
-            list[Category]: List of Category objects.
-        """
-        return [self.hydrate(d) for d in data]
-
-
-class SQLiteAccountsRepository:
+class SQLiteAccountsRepository(BaseRepository[Account]):
     """Repository for account SQLite database operations."""
-
-    def __init__(self, db: DBConnectionManager, mapper: AccountMapper) -> None:
-        self._db: DBConnectionManager = db
-        self._mapper: AccountMapper = mapper
 
     def insert_many(self, data: list[Account]) -> None:
         """Insert list of accounts into the accounts table.
@@ -477,36 +394,9 @@ class SQLiteAccountsRepository:
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} account records.")
 
-    def hydrate(self, record: dict) -> Account:
-        """Hydrate account record dictionary to Account object
 
-        Args:
-            record (dict): account record dict
-
-        Returns:
-            Account: Account objects.
-        """
-        return self._mapper.to_entity(record)
-
-    def hydrate_many(self, data: list[dict]) -> list[Account]:
-        """Hydrate list of account data dicts to list of Account objects.
-
-        Args:
-            data (list[dict]): list of account data as dicts.
-
-        Returns:
-            list[Account]: list of Account objects.
-        """
-        accounts = [self.hydrate(acc) for acc in data]
-        return accounts
-
-
-class SQLiteBalancesRepository:
+class SQLiteBalancesRepository(BaseRepository[Balance]):
     """Repository for balances SQLite database operations."""
-
-    def __init__(self, db: DBConnectionManager, mapper: BalanceMapper) -> None:
-        self._db: DBConnectionManager = db
-        self._mapper: BalanceMapper = mapper
 
     def insert_many(self, data: list[Balance]) -> None:
         """Insert list of balances into the balances table.
@@ -664,35 +554,9 @@ class SQLiteBalancesRepository:
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} balance records.")
 
-    def hydrate(self, record: dict) -> Balance:
-        """Hydrate balance record dict to Balance object.
 
-        Args:
-            record (dict): balance record as dict.
-
-        Returns:
-            Balance: Balance object.
-        """
-        return self._mapper.to_entity(record)
-
-    def hydrate_many(self, data: list[dict]) -> list[Balance]:
-        """Hydrate balance data dicts to list of Balance objects.
-
-        Args:
-            data (list[dict]): list of balance data dicts.
-
-        Returns:
-            list[Balance]: list of Balance objects.
-        """
-        return [self.hydrate(bal) for bal in data]
-
-
-class SQLiteExchangeRatesRepository:
+class SQLiteExchangeRatesRepository(BaseRepository[ExchangeRate]):
     """Repository for exchange rates SQLite database operations."""
-
-    def __init__(self, db: DBConnectionManager, mapper: ExchangeRateMapper) -> None:
-        self._db: DBConnectionManager = db
-        self._mapper: ExchangeRateMapper = mapper
 
     def insert_many(self, data: list[ExchangeRate]) -> None:
         """Insert list of exchange rates into the exchange_rates table.
@@ -778,28 +642,6 @@ class SQLiteExchangeRatesRepository:
         query = "DELETE FROM exchange_rates;"
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} exchange rate records.")
-
-    def hydrate(self, record: dict) -> ExchangeRate:
-        """Hydrate exchange rate record dict to ExchangeRate object.
-
-        Args:
-            record ([dict): exchange rate record as dict.
-
-        Returns:
-            ExchangeRate: ExchangeRate object.
-        """
-        return self._mapper.to_entity(record)
-
-    def hydrate_many(self, data: list[dict]) -> list[ExchangeRate]:
-        """Hydrate exchange rate data dicts to list of ExchangeRate objects.
-
-        Args:
-            exchange_rates_data (list[dict]): list of exchange rate data as dicts.
-
-        Returns:
-            list[ExchangeRate]: list of ExchangeRate objects.
-        """
-        return [self.hydrate(record) for record in data]
 
 
 class SQLiteNetWorthRepository:

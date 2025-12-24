@@ -35,7 +35,7 @@ def test_overwrite_config(test_config: Config):
         lambda _: test_config,
         lifetime=Lifetime.SINGLETON,
     )
-    cfg = container.resolve(Config)
+    cfg: Config = container.resolve(Config)
     assert cfg is not None
     assert isinstance(cfg, Config)
     assert cfg.db_file_path == test_config.db_file_path
