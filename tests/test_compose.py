@@ -5,7 +5,6 @@ Test container composition root
 from nwtrack.compose import build_sqlite_uow_container
 from nwtrack.container import Container
 from nwtrack.config import Config, load_config
-from tests.conftest import get_test_config
 from nwtrack.container import Lifetime
 from nwtrack.unitofwork import UnitOfWork, SQLiteUnitOfWork
 
@@ -28,20 +27,19 @@ def test_resolve_config():
     assert config.db_ddl_path == source_config.db_ddl_path
 
 
-def test_overwrite_config():
+def test_overwrite_config(test_config: Config):
     """Test re-registering Config from the container."""
     container = build_sqlite_uow_container()
-    source_config = get_test_config()
     container.register(
         Config,
-        lambda _: get_test_config(),
+        lambda _: test_config,
         lifetime=Lifetime.SINGLETON,
     )
-    test_config = container.resolve(Config)
-    assert test_config is not None
-    assert isinstance(test_config, Config)
-    assert test_config.db_file_path == source_config.db_file_path
-    assert test_config.db_ddl_path == source_config.db_ddl_path
+    cfg = container.resolve(Config)
+    assert cfg is not None
+    assert isinstance(cfg, Config)
+    assert cfg.db_file_path == test_config.db_file_path
+    assert cfg.db_ddl_path == test_config.db_ddl_path
 
 
 def test_resolve_uow():

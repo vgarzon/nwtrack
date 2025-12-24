@@ -10,14 +10,6 @@ from nwtrack.fileio import csv_to_records
 from nwtrack.compose import build_sqlite_uow_container
 
 
-def get_test_config() -> Config:
-    """Test configuration with in-memory database."""
-    return Config(
-        db_file_path=":memory:",
-        db_ddl_path="sql/nwtrack_ddl.sql",
-    )
-
-
 @pytest.fixture(scope="module")
 def test_config() -> Config:
     """Test configuration with in-memory database."""
