@@ -3,8 +3,7 @@ Unit of work pattern implementation for managing database transactions.
 """
 
 from typing import Protocol
-
-from nwtrack.dbmanager import SQLiteConnectionManager
+from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
 from nwtrack.repos import (
     AccountsRepository,
     BalancesRepository,
@@ -19,19 +18,14 @@ from nwtrack.repos import (
     SQLiteExchangeRatesRepository,
     SQLiteNetWorthRepository,
 )
-from nwtrack.mappers import (
-    AccountMapper,
-    BalanceMapper,
-    CategoryMapper,
-    CurrencyMapper,
-    ExchangeRateMapper,
-    NetWorthMapper,
-)
+from nwtrack.mappers import MapperRegistry
 
 
 class UnitOfWork(Protocol):
     """Unit of Work protocol for managing database transactions."""
 
+    _db: DBConnectionManager
+    _mappers: MapperRegistry
     currencies: CurrenciesRepository
     categories: CategoriesRepository
     accounts: AccountsRepository
@@ -59,20 +53,21 @@ class UnitOfWork(Protocol):
 class SQLiteUnitOfWork:
     """Unit of Work protocol for managing SQLite database transactions."""
 
-    def __init__(self, db: SQLiteConnectionManager) -> None:
+    def __init__(self, db: SQLiteConnectionManager, mappers: MapperRegistry) -> None:
         """Initialize the Unit of Work with repository instances."""
         self._db = db
+        self._mappers = mappers
 
     def __enter__(self) -> "SQLiteUnitOfWork":
         """Enter the runtime context related to this object."""
-        self.currencies = SQLiteCurrenciesRepository(self._db, CurrencyMapper())
-        self.categories = SQLiteCategoriesRepository(self._db, CategoryMapper())
-        self.accounts = SQLiteAccountsRepository(self._db, AccountMapper())
-        self.balances = SQLiteBalancesRepository(self._db, BalanceMapper())
+        self.currencies = SQLiteCurrenciesRepository(self._db, self._mappers.currency)
+        self.categories = SQLiteCategoriesRepository(self._db, self._mappers.category)
+        self.accounts = SQLiteAccountsRepository(self._db, self._mappers.account)
+        self.balances = SQLiteBalancesRepository(self._db, self._mappers.balance)
         self.exchange_rates = SQLiteExchangeRatesRepository(
-            self._db, ExchangeRateMapper()
+            self._db, self._mappers.exchange_rate
         )
-        self.net_worth = SQLiteNetWorthRepository(self._db, NetWorthMapper())
+        self.net_worth = SQLiteNetWorthRepository(self._db, self._mappers.net_worth)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:

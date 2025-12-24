@@ -8,6 +8,7 @@ from nwtrack.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
 from nwtrack.services import InitDataService, ReportService, UpdateService
 from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
+from nwtrack.mappers import MapperRegistry, build_mapper_registry
 
 
 def build_sqlite_uow_container() -> Container:
@@ -27,8 +28,14 @@ def build_sqlite_uow_container() -> Container:
         lambda c: SQLiteConnectionManager(c.resolve(Config)),
         lifetime=Lifetime.SINGLETON,
     ).register(
+        MapperRegistry,
+        lambda _: build_mapper_registry(),
+        lifetime=Lifetime.SINGLETON,
+    ).register(
         UnitOfWork,
-        lambda c: SQLiteUnitOfWork(c.resolve(DBConnectionManager)),
+        lambda c: SQLiteUnitOfWork(
+            c.resolve(DBConnectionManager), c.resolve(MapperRegistry)
+        ),
     ).register(
         DBAdminService,
         lambda c: SQLiteAdminService(c.resolve(Config), c.resolve(DBConnectionManager)),
