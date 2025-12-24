@@ -49,15 +49,15 @@ def test_resolve_uow():
     assert uow is not None
     assert isinstance(uow, SQLiteUnitOfWork)
     assert hasattr(uow, "_db")
-    assert hasattr(uow, "_mappers")
+    assert hasattr(uow, "_repos")
 
 
-def test_mapper_registry_in_uow():
-    """Test that MapperRegistry is correctly set in SQLiteUnitOfWork."""
-    container = build_sqlite_uow_container()
-    uow = container.resolve(UnitOfWork)
-    assert uow is not None
-    assert hasattr(uow, "_mappers")
-    assert uow._mappers is not None
-    assert hasattr(uow._mappers, "currency")
-    assert hasattr(uow._mappers, "category")
+# def test_mapper_registry_in_uow():
+#     """Test that MapperRegistry is correctly set in SQLiteUnitOfWork."""
+#     container = build_sqlite_uow_container()
+#     uow = container.resolve(UnitOfWork)
+#     assert uow is not None
+#     assert hasattr(uow, "_mappers")
+#     assert uow._mappers is not None
+#     assert hasattr(uow._mappers, "currency")
+#     assert hasattr(uow._mappers, "category")
