@@ -5,8 +5,8 @@ Test cases for database connection and unit of work functionalities.
 from nwtrack.config import Config
 from nwtrack.container import Container
 from nwtrack.admin import DBAdminService
-from nwtrack.unitofwork import UnitOfWork
 from tests.data.basic import TEST_DATA
+from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
 
 INSERT_QUERIES: dict[str, str] = {
     "currencies": """
@@ -32,20 +32,16 @@ INSERT_QUERIES: dict[str, str] = {
 }
 
 
-def uow_factory(test_container: Container) -> UnitOfWork:
-    return test_container.resolve(UnitOfWork)
-
-
-def get_table_names(uow: UnitOfWork) -> list[str]:
+def get_table_names(db_manager: DBConnectionManager) -> list[str]:
     """Get the names of all tables in the database."""
-    cur = uow._db.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    cur = db_manager.execute("SELECT name FROM sqlite_master WHERE type='table';")
     rows = cur.fetchall()
     return [row["name"] for row in rows]
 
 
-def table_exists(uow: UnitOfWork, table_name: str) -> bool:
+def table_exists(db_manager: DBConnectionManager, table_name: str) -> bool:
     """Check if a table exists in the database."""
-    cur = uow._db.execute(  # type: ignore[attr-defined]
+    cur = db_manager.execute(
         "SELECT name FROM sqlite_master WHERE type='table' AND name=?;",
         (table_name,),
     )
@@ -53,25 +49,25 @@ def table_exists(uow: UnitOfWork, table_name: str) -> bool:
     return res["name"] == table_name if res else False
 
 
-def table_is_empty(uow: UnitOfWork, table_name: str) -> bool:
+def table_is_empty(db_manager: DBConnectionManager, table_name: str) -> bool:
     """Check if a table is empty."""
-    cur = uow._db.execute(f"SELECT EXISTS (SELECT 1 FROM {table_name}) AS x;")
+    cur = db_manager.execute(f"SELECT EXISTS (SELECT 1 FROM {table_name}) AS x;")
     res = cur.fetchone()
     return res["x"] == 0 if res else True
 
 
-def insert_data_with_query(uow: UnitOfWork) -> None:
+def insert_data_with_query(db_manager: DBConnectionManager) -> None:
     """Populate initial data into the database."""
     for table, data in TEST_DATA.items():
         query = INSERT_QUERIES[table]
-        rowcnt = uow._db.execute_many(query, data)
+        rowcnt = db_manager.execute_many(query, data)
         print(f"Inserted {rowcnt} into '{table}'.")
 
 
-def get_table_count(uow: UnitOfWork, table_name: str) -> int:
+def get_table_count(db_manager: DBConnectionManager, table_name: str) -> int:
     """Count rows in table."""
 
-    cur = uow._db.execute(f"SELECT COUNT(*) AS cnt FROM {table_name};")
+    cur = db_manager.execute(f"SELECT COUNT(*) AS cnt FROM {table_name};")
     res = cur.fetchone()
     return res["cnt"] if res else 0
 
@@ -87,8 +83,8 @@ def test_initialize_database(test_container: Container) -> None:
     """Test database initialization."""
     admin_service: DBAdminService = test_container.resolve(DBAdminService)
     admin_service.init_database()
-    with uow_factory(test_container) as uow:
-        row = uow._db.execute("PRAGMA database_list;").fetchone()
+    db_manager: SQLiteConnectionManager = test_container.resolve(DBConnectionManager)
+    row = db_manager.execute("PRAGMA database_list;").fetchone()
     assert row is not None
     assert "file" in row.keys()
 
@@ -98,17 +94,14 @@ def test_tables_exist(test_container: Container) -> None:
 
     admin_service: DBAdminService = test_container.resolve(DBAdminService)
     admin_service.init_database()
-
-    with uow_factory(test_container) as uow:
-        table_names = get_table_names(uow)
+    db_manager: SQLiteConnectionManager = test_container.resolve(DBConnectionManager)
+    table_names = get_table_names(db_manager)
 
     assert len(table_names) == 5, "Expected 5 tables in the database."
     assert "balances" in table_names, "Table 'balances' should exist."
     assert "transactions" not in table_names, "Table 'transactions' should not exist"
-
-    with uow_factory(test_container) as uow:
-        assert table_exists(uow, "accounts"), "Table 'accounts' should exist."
-        assert table_is_empty(uow, "balances"), "Table 'balances' should be empty."
+    assert table_exists(db_manager, "accounts"), "Table 'accounts' should exist."
+    assert table_is_empty(db_manager, "balances"), "Table 'balances' should be empty."
 
 
 def test_insert_data_with_query(test_container: Container) -> None:
@@ -117,12 +110,13 @@ def test_insert_data_with_query(test_container: Container) -> None:
     admin_service: DBAdminService = test_container.resolve(DBAdminService)
     admin_service.init_database()
 
-    with uow_factory(test_container) as uow:
-        insert_data_with_query(uow)
+    db_manager: SQLiteConnectionManager = test_container.resolve(DBConnectionManager)
+    insert_data_with_query(db_manager)
 
-    with uow_factory(test_container) as uow:
-        assert get_table_count(uow, "currencies") == 3, "Expected 3 currencies"
-        assert get_table_count(uow, "categories") == 3, "Expected 3 categories"
-        assert get_table_count(uow, "accounts") == 3, "Expected 3 accounts"
-        assert get_table_count(uow, "balances") == 9, "Expected 9 balances"
-        assert get_table_count(uow, "exchange_rates") == 6, "Expected 6 exchange rates"
+    assert get_table_count(db_manager, "currencies") == 3, "Expected 3 currencies"
+    assert get_table_count(db_manager, "categories") == 3, "Expected 3 categories"
+    assert get_table_count(db_manager, "accounts") == 3, "Expected 3 accounts"
+    assert get_table_count(db_manager, "balances") == 9, "Expected 9 balances"
+    assert get_table_count(db_manager, "exchange_rates") == 6, (
+        "Expected 6 exchange rates"
+    )
