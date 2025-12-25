@@ -10,6 +10,22 @@ from nwtrack.services import InitDataService, ReportService, UpdateService
 from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
 from nwtrack.mappers import MapperRegistry, build_mapper_registry
 from nwtrack.repo_registry import RepositoryRegistry, SQLiteRepositoryRegistry
+from nwtrack.models import (
+    Currency,
+    Category,
+    Account,
+    Balance,
+    ExchangeRate,
+    NetWorth,
+)
+from nwtrack.repos import (
+    SQLiteCurrenciesRepository,
+    SQLiteCategoriesRepository,
+    SQLiteAccountsRepository,
+    SQLiteBalancesRepository,
+    SQLiteExchangeRatesRepository,
+    SQLiteNetWorthRepository,
+)
 
 
 def build_sqlite_uow_container() -> Container:
@@ -19,6 +35,15 @@ def build_sqlite_uow_container() -> Container:
         Container: Configured DI container.
     """
     print("Setting up dependency container with Unit of Work.")
+
+    repo_specs = {
+        "currencies": (Currency, SQLiteCurrenciesRepository),
+        "categories": (Category, SQLiteCategoriesRepository),
+        "accounts": (Account, SQLiteAccountsRepository),
+        "balances": (Balance, SQLiteBalancesRepository),
+        "exchange_rates": (ExchangeRate, SQLiteExchangeRatesRepository),
+        "net_worth": (NetWorth, SQLiteNetWorthRepository),
+    }
     container = Container()
     container.register(
         Config,
@@ -35,13 +60,15 @@ def build_sqlite_uow_container() -> Container:
     ).register(
         RepositoryRegistry,
         lambda c: SQLiteRepositoryRegistry(
-            c.resolve(DBConnectionManager), c.resolve(MapperRegistry)
+            c.resolve(DBConnectionManager), c.resolve(MapperRegistry), repo_specs
         ),
         lifetime=Lifetime.SINGLETON,
     ).register(
         UnitOfWork,
         lambda c: SQLiteUnitOfWork(
-            c.resolve(DBConnectionManager), c.resolve(RepositoryRegistry)
+            c.resolve(DBConnectionManager),
+            c.resolve(MapperRegistry),
+            c.resolve(RepositoryRegistry),
         ),
     ).register(
         DBAdminService,

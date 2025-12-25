@@ -4,7 +4,7 @@ Mappers to convert records to and from entities.
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Protocol, Any, TypeVar, Type
+from typing import Protocol, Any, TypeVar
 from nwtrack.models import (
     Account,
     Balance,
@@ -265,9 +265,9 @@ class MapperRegistry:
     exchange_rate: ExchangeRateMapper
     net_worth: NetWorthMapper
 
-    def get_mapper_for(self, entity_cls: Type[TEntity]) -> Mapper[TEntity]:
+    def get_mapper_for(self, entity_cls: type[TEntity]) -> Mapper[TEntity]:
         """Programmatic lookup for the RepositoryRegistry."""
-        _mapping: dict[Type[Any], Mapper[Any]] = {
+        _mapping: dict[type[Any], Mapper[Any]] = {
             Currency: self.currency,
             Category: self.category,
             Account: self.account,

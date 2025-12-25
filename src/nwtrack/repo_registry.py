@@ -4,7 +4,7 @@ Repository Registry.
 Collects repositories and mappers.  Passsed to Unit of Work in composition root.
 """
 
-from typing import Protocol
+from typing import Protocol, Any
 from nwtrack.repos import (
     CurrenciesRepository,
     CategoriesRepository,
@@ -12,12 +12,6 @@ from nwtrack.repos import (
     BalancesRepository,
     ExchangeRatesRepository,
     NetWorthRepository,
-    SQLiteCurrenciesRepository,
-    SQLiteCategoriesRepository,
-    SQLiteAccountsRepository,
-    SQLiteBalancesRepository,
-    SQLiteExchangeRatesRepository,
-    SQLiteNetWorthRepository,
 )
 from nwtrack.mappers import MapperRegistry
 from nwtrack.dbmanager import DBConnectionManager
@@ -26,8 +20,6 @@ from nwtrack.dbmanager import DBConnectionManager
 class RepositoryRegistry(Protocol):
     """Repository Registry protocol for accessing repositories."""
 
-    _db: DBConnectionManager
-    _mappers: MapperRegistry
     currencies: CurrenciesRepository
     categories: CategoriesRepository
     accounts: AccountsRepository
@@ -37,24 +29,28 @@ class RepositoryRegistry(Protocol):
 
 
 class SQLiteRepositoryRegistry:
-    """Registry for all repositories."""
+    """Generic repository registry based on specified repositories and mappers."""
 
-    _db: DBConnectionManager
-    _mappers: MapperRegistry
-    currencies: SQLiteCurrenciesRepository
-    categories: SQLiteCategoriesRepository
-    accounts: SQLiteAccountsRepository
-    balances: SQLiteBalancesRepository
-    exchange_rates: SQLiteExchangeRatesRepository
-    net_worth: SQLiteNetWorthRepository
-
-    def __init__(self, db: DBConnectionManager, mappers: MapperRegistry):
+    def __init__(
+        self,
+        db: DBConnectionManager,
+        mappers: MapperRegistry,
+        specs: dict[str, tuple[type[Any], type[Any]]],
+    ) -> None:
         """Initialize the Repository Registry with repository instances."""
         self._db = db
         self._mappers = mappers
-        self.currencies = SQLiteCurrenciesRepository(db, mappers.currency)
-        self.categories = SQLiteCategoriesRepository(db, mappers.category)
-        self.accounts = SQLiteAccountsRepository(db, mappers.account)
-        self.balances = SQLiteBalancesRepository(db, mappers.balance)
-        self.exchange_rates = SQLiteExchangeRatesRepository(db, mappers.exchange_rate)
-        self.net_worth = SQLiteNetWorthRepository(db, mappers.net_worth)
+        self._specs = specs
+        self._instances: dict[str, Any] = {}
+
+    def __getattr__(self, name: str) -> Any:
+        """Dynamically get repository instances based on specs."""
+        if name not in self._specs:
+            raise AttributeError(f"No repository registered with name: {name}")
+
+        if name not in self._instances:
+            entity_cls, repo_cls = self._specs[name]
+            mapper = self._mappers.get_mapper_for(entity_cls)
+            self._instances[name] = repo_cls(self._db, mapper)
+
+        return self._instances[name]

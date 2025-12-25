@@ -3,7 +3,7 @@ Unit of work pattern implementation for managing database transactions.
 """
 
 from typing import Protocol
-from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
+from nwtrack.dbmanager import SQLiteConnectionManager
 from nwtrack.repos import (
     AccountsRepository,
     BalancesRepository,
@@ -13,13 +13,12 @@ from nwtrack.repos import (
     NetWorthRepository,
 )
 from nwtrack.repo_registry import RepositoryRegistry
+from nwtrack.mappers import MapperRegistry
 
 
 class UnitOfWork(Protocol):
     """Unit of Work protocol for managing database transactions."""
 
-    _db: DBConnectionManager
-    _repos: RepositoryRegistry
     currencies: CurrenciesRepository
     categories: CategoriesRepository
     accounts: AccountsRepository
@@ -27,33 +26,32 @@ class UnitOfWork(Protocol):
     exchange_rates: ExchangeRatesRepository
     net_worth: NetWorthRepository
 
-    def __enter__(self) -> "UnitOfWork":
-        """Enter the runtime context related to this object."""
-        ...
+    def __enter__(self) -> "UnitOfWork": ...
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
-        """Exit the runtime context related to this object."""
-        ...
+    def __exit__(self, exc_type, exc_value, traceback) -> None: ...
 
-    def commit(self) -> None:
-        """Commit the transaction."""
-        ...
+    def commit(self) -> None: ...
 
-    def rollback(self) -> None:
-        """Rollback the transaction."""
-        ...
+    def rollback(self) -> None: ...
 
 
 class SQLiteUnitOfWork:
     """Unit of Work protocol for managing SQLite database transactions."""
 
-    def __init__(self, db: SQLiteConnectionManager, repos: RepositoryRegistry) -> None:
+    def __init__(
+        self,
+        db: SQLiteConnectionManager,
+        mappers: MapperRegistry,
+        repo_registry: RepositoryRegistry,
+    ) -> None:
         """Initialize the Unit of Work with repository instances."""
         self._db = db
-        self._repos = repos
+        self._mappers = mappers
+        self._repos = repo_registry
 
     def __enter__(self) -> "SQLiteUnitOfWork":
         """Enter the runtime context related to this object."""
+        # NOTE: Exposing repositories directly for ease of use
         self.currencies = self._repos.currencies
         self.categories = self._repos.categories
         self.accounts = self._repos.accounts
