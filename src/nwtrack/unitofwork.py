@@ -13,7 +13,7 @@ from nwtrack.repos import (
     NetWorthRepository,
 )
 from nwtrack.repo_registry import RepositoryRegistry
-from nwtrack.mappers import MapperRegistry
+from nwtrack.mapper_registry import MapperRegistry
 
 
 class UnitOfWork(Protocol):

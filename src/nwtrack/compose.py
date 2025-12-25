@@ -6,26 +6,43 @@ from nwtrack.admin import DBAdminService, SQLiteAdminService
 from nwtrack.config import Config, load_config
 from nwtrack.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
-from nwtrack.services import InitDataService, ReportService, UpdateService
-from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
-from nwtrack.mappers import MapperRegistry, build_mapper_registry
-from nwtrack.repo_registry import RepositoryRegistry, SQLiteRepositoryRegistry
-from nwtrack.models import (
-    Currency,
-    Category,
-    Account,
-    Balance,
-    ExchangeRate,
-    NetWorth,
+from nwtrack.mapper_registry import MapperRegistry
+from nwtrack.mappers import (
+    AccountMapper,
+    BalanceMapper,
+    CategoryMapper,
+    CurrencyMapper,
+    ExchangeRateMapper,
+    NetWorthMapper,
 )
+from nwtrack.models import Account, Balance, Category, Currency, ExchangeRate, NetWorth
+from nwtrack.repo_registry import RepositoryRegistry, SQLiteRepositoryRegistry
 from nwtrack.repos import (
-    SQLiteCurrenciesRepository,
-    SQLiteCategoriesRepository,
     SQLiteAccountsRepository,
     SQLiteBalancesRepository,
+    SQLiteCategoriesRepository,
+    SQLiteCurrenciesRepository,
     SQLiteExchangeRatesRepository,
     SQLiteNetWorthRepository,
 )
+from nwtrack.services import InitDataService, ReportService, UpdateService
+from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
+
+
+def build_mapper_registry() -> MapperRegistry:
+    """Build a mapper registry.
+
+    Returns:
+        The built mapper registry.
+    """
+    registry = MapperRegistry()
+    registry.register(Currency, CurrencyMapper())
+    registry.register(Category, CategoryMapper())
+    registry.register(Account, AccountMapper())
+    registry.register(Balance, BalanceMapper())
+    registry.register(ExchangeRate, ExchangeRateMapper())
+    registry.register(NetWorth, NetWorthMapper())
+    return registry
 
 
 def build_sqlite_uow_container() -> Container:

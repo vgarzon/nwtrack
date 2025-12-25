@@ -13,7 +13,7 @@ from nwtrack.repos import (
     ExchangeRatesRepository,
     NetWorthRepository,
 )
-from nwtrack.mappers import MapperRegistry
+from nwtrack.mapper_registry import MapperRegistry
 from nwtrack.dbmanager import DBConnectionManager
 
 
