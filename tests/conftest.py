@@ -3,9 +3,14 @@ Pytest fixtures and test container setup for nwtrack application.
 """
 
 import pytest
+from typing import Any
+from tests.fakes import FakeEntityA, FakeEntityB
+from unittest.mock import Mock
 from nwtrack.config import Config
+from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.container import Container, Lifetime
 from nwtrack.services import InitDataService
+from nwtrack.mapper_registry import MapperRegistry
 from nwtrack.fileio import csv_to_records
 from nwtrack.compose import build_sqlite_uow_container
 
@@ -74,3 +79,31 @@ def test_entities(
     entities = data_svc._records_to_entities(records)
 
     return entities
+
+
+@pytest.fixture(scope="function")
+def test_db_manager() -> Mock:
+    return Mock(spec=DBConnectionManager)
+
+
+@pytest.fixture(scope="function")
+def test_mapper_registry() -> MapperRegistry:
+    class MapperA:
+        def to_entity(self, data: dict[str, Any]) -> FakeEntityA:
+            return FakeEntityA()
+
+        def to_record(self, entity: FakeEntityA) -> dict[str, Any]:
+            return {}
+
+    class MapperB:
+        def to_entity(self, data: dict[str, Any]) -> FakeEntityB:
+            return FakeEntityB()
+
+        def to_record(self, entity: FakeEntityB) -> dict[str, Any]:
+            return {}
+
+    mapper_registry = MapperRegistry()
+    mapper_registry.register(FakeEntityA, MapperA())
+    mapper_registry.register(FakeEntityB, MapperB())
+
+    return mapper_registry

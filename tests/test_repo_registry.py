@@ -4,28 +4,17 @@ Test repo registry functionality.
 
 import pytest
 from typing import Any
-from unittest.mock import Mock
+from tests.fakes import FakeEntityA, FakeEntityB
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.mapper_registry import MapperRegistry
 from nwtrack.repo_registry import SQLiteRepositoryRegistry
 from nwtrack.repos import Repository
 
 
-def test_repository_registry():
+def test_repository_registry(
+    test_db_manager: DBConnectionManager, test_mapper_registry: MapperRegistry
+) -> None:
     """Test RepositoryRegistry initializes repositories correctly."""
-    db_mock = Mock(spec=DBConnectionManager)
-
-    class EntityA:
-        pass
-
-    class EntityB:
-        pass
-
-    class MapperA:
-        pass
-
-    class MapperB:
-        pass
 
     class RepoA(Repository):
         def __init__(self, db: DBConnectionManager, mapper: Any) -> None:
@@ -35,15 +24,11 @@ def test_repository_registry():
         def __init__(self, db: DBConnectionManager, mapper: Any) -> None:
             pass
 
-    mapper_registry = MapperRegistry()
-    mapper_registry.register(EntityA, MapperA())
-    mapper_registry.register(EntityB, MapperB())
-
     specs = {
-        "repo_a": (EntityA, RepoA),
-        "repo_b": (EntityB, RepoB),
+        "repo_a": (FakeEntityA, RepoA),
+        "repo_b": (FakeEntityB, RepoB),
     }
-    registry = SQLiteRepositoryRegistry(db_mock, mapper_registry, specs)
+    registry = SQLiteRepositoryRegistry(test_db_manager, test_mapper_registry, specs)
 
     assert hasattr(registry, "repo_a")
     assert hasattr(registry, "repo_b")
