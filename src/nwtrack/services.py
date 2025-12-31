@@ -562,13 +562,19 @@ class AccountService:
         with self._uow() as uow:
             currency = uow.currencies.get(currency_code)
         if not currency:
-            raise ValueError(f"Currency '{currency_code}' does not exist.")
+            raise ValueError(f"Currency not found: '{currency_code}'.")
 
         # validate category exists
         with self._uow() as uow:
             category = uow.categories.get(category_name)
         if not category:
-            raise ValueError(f"Category '{category_name}' does not exist.")
+            raise ValueError(f"Category not found: '{category_name}'.")
+
+        # check for duplicate account name
+        with self._uow() as uow:
+            response = uow.accounts.get_by_name(name)
+        if response:
+            raise ValueError(f"Account with name '{name}' already exists.")
 
         account = Account(
             id=0,  # Placeholder, will be set by the repository

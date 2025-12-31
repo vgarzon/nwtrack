@@ -2,8 +2,8 @@
 Test account service methods.
 """
 
+import pytest
 from nwtrack.container import Container
-
 from nwtrack.services import AccountService
 from tests.test_services import init_db_tables_w_entities
 
@@ -85,3 +85,75 @@ def test_create_account(
     assert new_account.name == "bank_3_checking"
     assert new_account.category_name == "checking"
     assert str(new_account.status) == "active"
+
+
+def test_create_account_invalid_category(
+    test_container: Container, test_entities: dict[str, list]
+) -> None:
+    """Test inserting a new account with an invalid category."""
+    init_db_tables_w_entities(test_container, test_entities)
+    svc: AccountService = test_container.resolve(AccountService)
+
+    with pytest.raises(ValueError) as exc_info:
+        svc.create(
+            name="invalid_category_account",
+            description="Test account with invalid category",
+            category_name="invalid_category",
+            currency_code="USD",
+            status_str="active",
+        )
+    assert "Category not found" in str(exc_info.value)
+
+
+def test_create_account_invalid_status(
+    test_container: Container, test_entities: dict[str, list]
+) -> None:
+    """Test inserting a new account with an invalid status."""
+    init_db_tables_w_entities(test_container, test_entities)
+    svc: AccountService = test_container.resolve(AccountService)
+
+    with pytest.raises(ValueError) as exc_info:
+        svc.create(
+            name="invalid_status_account",
+            description="Test account with invalid status",
+            category_name="checking",
+            currency_code="USD",
+            status_str="invalid_status",
+        )
+    assert "Status must be 'active'" in str(exc_info.value)
+
+
+def test_create_account_invalid_currency(
+    test_container: Container, test_entities: dict[str, list]
+) -> None:
+    """Test inserting a new account with an invalid currency."""
+    init_db_tables_w_entities(test_container, test_entities)
+    svc: AccountService = test_container.resolve(AccountService)
+
+    with pytest.raises(ValueError) as exc_info:
+        svc.create(
+            name="invalid_currency_account",
+            description="Test account with invalid currency",
+            category_name="checking",
+            currency_code="INVALID",
+            status_str="active",
+        )
+    assert "Currency not found" in str(exc_info.value)
+
+
+def test_create_duplicate_account(
+    test_container: Container, test_entities: dict[str, list]
+) -> None:
+    """Test inserting a duplicate account."""
+    init_db_tables_w_entities(test_container, test_entities)
+    svc: AccountService = test_container.resolve(AccountService)
+
+    with pytest.raises(ValueError) as exc_info:
+        svc.create(
+            name="bank_1_checking",
+            description="Duplicate account",
+            category_name="checking",
+            currency_code="USD",
+            status_str="active",
+        )
+    assert "Account with name 'bank_1_checking' already exists" in str(exc_info.value)
