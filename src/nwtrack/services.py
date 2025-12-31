@@ -541,7 +541,7 @@ class AccountService:
         category_name: str,
         status_str: str = "active",
         currency_code: str = "USD",
-    ) -> Account:
+    ) -> Account | None:
         """Create a new account.
 
         Args:
@@ -552,7 +552,7 @@ class AccountService:
             currency_code (str): Currency code of the account, defaults to "USD".
 
         Returns:
-            Account: Account object of the newly created account.
+            Account | None: Account object of the newly created account.
         """
         # validate status
         if status_str not in [Status.ACTIVE.value, Status.INACTIVE.value]:
@@ -589,7 +589,70 @@ class AccountService:
         assert rowcount == 1, "Failed to insert new account."
 
         with self._uow() as uow:
-            account = uow.accounts.get_by_name(name)
+            response = uow.accounts.get_by_name(name)
+        if not response:
+            raise ValueError("Failed to retrieve newly created account.")
+        account = response
         print(f"Created account '{account.name}' with ID {account.id}.")
 
         return account
+
+    # def update(
+    #     self,
+    #     name: str,
+    #     description: str | None,
+    #     category_name: str | None,
+    #     status_str: str | None,
+    #     currency_code: str | None,
+    # ) -> Account:
+    #     """Update existing account.
+    #
+    #     Args:
+    #         name (str | None): Name of the account.
+    #         description (str | None): Optional description of the account.
+    #         category_name (str |  None): Optional category name of the account.
+    #         status_str (st | None): Optional new status, "active" or "inactive".
+    #         currency_code (str | None): Optional new currency code of the account.
+    #
+    #     Returns:
+    #         Account: Account object of the newly created account.
+    #     """
+    #     # validate status
+    #     if status_str not in [Status.ACTIVE.value, Status.INACTIVE.value]:
+    #         raise ValueError("Status must be 'active' or 'inactive'.")
+    #
+    #     # validate currency exists
+    #     with self._uow() as uow:
+    #         currency = uow.currencies.get(currency_code)
+    #     if not currency:
+    #         raise ValueError(f"Currency not found: '{currency_code}'.")
+    #
+    #     # validate category exists
+    #     with self._uow() as uow:
+    #         category = uow.categories.get(category_name)
+    #     if not category:
+    #         raise ValueError(f"Category not found: '{category_name}'.")
+    #
+    #     # check for duplicate account name
+    #     with self._uow() as uow:
+    #         response = uow.accounts.get_by_name(name)
+    #     if response:
+    #         raise ValueError(f"Account with name '{name}' already exists.")
+    #
+    #     account = Account(
+    #         id=0,  # Placeholder, will be set by the repository
+    #         name=name,
+    #         description=description,
+    #         category_name=category_name,
+    #         currency_code=currency_code,
+    #         status=Status(status_str),
+    #     )
+    #     with self._uow() as uow:
+    #         rowcount = uow.accounts.insert(account)
+    #     assert rowcount == 1, "Failed to insert new account."
+    #
+    #     with self._uow() as uow:
+    #         account = uow.accounts.get_by_name(name)
+    #     print(f"Created account '{account.name}' with ID {account.id}.")
+    #
+    #     return account

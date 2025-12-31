@@ -28,29 +28,17 @@ TEntity = TypeVar("TEntity")
 class Repository(Protocol[TEntity]):
     """Generic repository protocol."""
 
-    def insert_many(self, data: list[TEntity]) -> None:
-        """Insert list of entities into the corresponding table."""
-        ...
+    def insert_many(self, data: list[TEntity]) -> None: ...
 
-    def get_all(self) -> list[TEntity]:
-        """Get all entities."""
-        ...
+    def get_all(self) -> list[TEntity]: ...
 
-    def count(self) -> int:
-        """Count the number of records."""
-        ...
+    def count(self) -> int: ...
 
-    def delete_all(self) -> None:
-        """Delete all records."""
-        ...
+    def delete_all(self) -> None: ...
 
-    def hydrate(self, data: SQLiteRecord) -> TEntity:
-        """Hydrate data dictionary to entity object."""
-        ...
+    def hydrate(self, data: SQLiteRecord) -> TEntity: ...
 
-    def hydrate_many(self, data: list[SQLiteRecord]) -> list[TEntity]:
-        """Hydrate list of data dictionaries to list of entity objects."""
-        ...
+    def hydrate_many(self, data: list[SQLiteRecord]) -> list[TEntity]: ...
 
 
 class BaseRepository(Generic[TEntity]):
@@ -114,6 +102,10 @@ class BaseRepository(Generic[TEntity]):
 class CurrenciesRepository(Repository[Currency], Protocol):
     """Protocol for currency repository operations."""
 
+    def get(self, code: str) -> Currency | None:
+        """Get currency by code."""
+        ...
+
     def get_codes(self) -> list[str]:
         """Get all currency codes."""
         ...
@@ -125,6 +117,10 @@ class CurrenciesRepository(Repository[Currency], Protocol):
 
 class CategoriesRepository(Repository[Category], Protocol):
     """Protocol for category repository operations."""
+
+    def get(self, name: str) -> Category | None:
+        """Get category by name."""
+        ...
 
     def get_dict(self) -> dict[str, Category]:
         """Get all categories in a dictionary indexed by name."""
@@ -150,6 +146,14 @@ class ExchangeRatesRepository(Repository[ExchangeRate], Protocol):
 class AccountsRepository(Repository[Account], Protocol):
     """Protocol for account repository operations."""
 
+    def get_by_id(self, account_id: int) -> Account | None:
+        """Get account by ID."""
+        ...
+
+    def get_by_name(self, account_name: str) -> Account | None:
+        """Get account by name."""
+        ...
+
     def get_active(self) -> list[Account]:
         """Get all active accounts."""
         ...
@@ -162,12 +166,20 @@ class AccountsRepository(Repository[Account], Protocol):
         """Get all accounts in a dictionary indexed by name."""
         ...
 
+    def insert(self, data: Account) -> Account:
+        """Insert account object in respective table."""
+        ...
+
 
 class BalancesRepository(Repository[Balance], Protocol):
     """Protocol for balance repository operations."""
 
     def get(self, month: Month, account_name: str) -> Balance:
         """Get all account balances on a specific month."""
+        ...
+
+    def get_by_account_id(self, month: Month, account_id: int) -> Balance:
+        """Get all balances given account id and month."""
         ...
 
     def get_month(self, month: Month, active_only: bool = True) -> list[Balance]:

@@ -81,6 +81,7 @@ def test_create_account(
         status_str="active",
     )
 
+    assert new_account is not None
     assert new_account.id == 5
     assert new_account.name == "bank_3_checking"
     assert new_account.category_name == "checking"
