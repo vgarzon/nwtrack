@@ -7,7 +7,7 @@ from nwtrack.admin import DBAdminService
 from nwtrack.container import Container
 from nwtrack.models import Month, Balance, NetWorth
 from nwtrack.services import InitDataService, ReportService, UpdateService
-from tests.test_repos import count_records
+from tests.test_repos import count_entries
 
 
 def init_db_tables_w_entities(container: Container, entities: dict[str, list]) -> None:
@@ -29,7 +29,7 @@ def test_init_data_from_csv(
 ) -> None:
     """Test initializing database and loading sample data from CSV files"""
     init_db_tables_from_csv(test_container, test_file_paths)
-    cnts = count_records(test_container)
+    cnts = count_entries(test_container)
     assert cnts["currencies"] == 3, "Expected 3 currencies"
     assert cnts["categories"] == 4, "Expected 4 categories"
     assert cnts["accounts"] == 4, "Expected 4 accounts"
@@ -42,7 +42,7 @@ def test_init_data_entities(
 ) -> None:
     """Test initializing database and loading sample data."""
     init_db_tables_w_entities(test_container, test_entities)
-    cnts = count_records(test_container)
+    cnts = count_entries(test_container)
     assert cnts["currencies"] == 3, "Expected 3 currencies"
     assert cnts["categories"] == 4, "Expected 4 categories"
     assert cnts["accounts"] == 4, "Expected 4 accounts"
@@ -138,10 +138,10 @@ def test_balance_month(
     assert isinstance(sample[0], Balance), "Balances sample type mismatch"
 
 
-def test_update_balance(
+def test_update_balance_account_name(
     test_container: Container, test_entities: dict[str, list]
 ) -> None:
-    """Test updating a balance."""
+    """Test updating a balance for a given account name."""
     account_name = "bank_1_checking"
     month_str = "2024-06"
     new_amount = 500
@@ -153,7 +153,7 @@ def test_update_balance(
 
     before = prn_svc.get_balance(month, account_name)
     assert before.amount == 300, "Pre-update balance amount mismatch"
-    upd_svc.update_balance(
+    upd_svc.update_balance_account_name(
         account_name=account_name,
         month=month,
         new_amount=new_amount,

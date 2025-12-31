@@ -3,6 +3,7 @@ Service layer for managing user operations using unit of work pattern.
 """
 
 from typing import Callable
+from functools import cache
 
 from nwtrack.fileio import csv_to_records
 from nwtrack.models import (
@@ -11,6 +12,7 @@ from nwtrack.models import (
     ExchangeRate,
     Month,
     NetWorth,
+    Status,
 )
 from nwtrack.unitofwork import UnitOfWork
 
@@ -114,7 +116,22 @@ class UpdateService:
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
 
-    def update_balance(self, account_name: str, month: Month, new_amount: int) -> None:
+    def update_balance(self, account_id: int, month: Month, new_amount: int) -> None:
+        """Update the balance for a specific account on a given month.
+
+        Args:
+            account_id (int): ID of the account.
+            month (Month): Month of the balance to update.
+            new_ammount (int): New balance amount.
+        """
+        with self._uow() as uow:
+            uow.balances.update(
+                account_id=account_id, month=month, new_amount=new_amount
+            )
+
+    def update_balance_account_name(
+        self, account_name: str, month: Month, new_amount: int
+    ) -> None:
         """Update the balance for a specific account on a given month.
 
         Args:
@@ -128,10 +145,7 @@ class UpdateService:
         if not account:
             raise ValueError(f"Account name '{account_name}' not found.")
 
-        with self._uow() as uow:
-            uow.balances.update(
-                account_id=account.id, month=month, new_amount=new_amount
-            )
+        self.update_balance(account_id=account.id, month=month, new_amount=new_amount)
 
     def roll_balances_forward(self, month: Month) -> None:
         """Copy all active account balances from one month to the next.
@@ -155,6 +169,7 @@ class ReportService:
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
 
+    @cache
     def get_accounts(self, active_only: bool = True) -> list[Account]:
         """Get a list of all active accounts.
 
@@ -171,6 +186,34 @@ class ReportService:
             with self._uow() as uow:
                 accounts = uow.accounts.get_all()
         return accounts
+
+    @cache
+    def get_map_name_to_account(self, active_only: bool = True) -> dict[str, Account]:
+        """Get a map of account names to Account objects.
+
+        Args:
+            active_only (bool): Whether to include only active accounts.
+
+        Returns:
+            dict[str, Account]: Map of account names to Account objects.
+        """
+        accounts = self.get_accounts(active_only)
+        account_map = {acc.name: acc for acc in accounts}
+        return account_map
+
+    @cache
+    def get_map_id_to_account(self, active_only: bool = True) -> dict[int, Account]:
+        """Get a map of account id to Account objects.
+
+        Args:
+            active_only (bool): Whether to include only active accounts.
+
+        Returns:
+            dict[int, Account]: Map of account id to Account objects.
+        """
+        accounts = self.get_accounts(active_only)
+        account_map = {acc.id: acc for acc in accounts}
+        return account_map
 
     def print_accounts(self, active: bool = True) -> None:
         """Print a table of all active accounts.
@@ -196,6 +239,20 @@ class ReportService:
         """
         with self._uow() as uow:
             balance = uow.balances.get(month, account_name)
+        return balance
+
+    def get_balance_for_account_id(self, month: Month, account_id: int) -> Balance:
+        """Get balance for an account on a specific month.
+
+        Args:
+            month (Month): Month object
+            account_id (int): Account id
+
+        Return:
+            Balance: Balance object for the specified account and month.
+        """
+        with self._uow() as uow:
+            balance = uow.balances.get_by_account_id(month, account_id)
         return balance
 
     def get_month_balances(
@@ -260,7 +317,7 @@ class ReportService:
             NetWorth: NetWorth object for the specified month.
         """
         with self._uow() as uow:
-            nw = uow.net_worth.get(month, currency_code)
+            nw = uow.net_worth.get(month)
         return nw
 
     def get_net_worth_history(self) -> list[NetWorth]:
@@ -373,14 +430,11 @@ class ReportService:
         for r in rates:
             print(r.currency_code, str(r.month), r.rate)
 
-    def count_records(self) -> dict[str, int]:
-        """Count the number of records in a table.
-
-        Args:
-            table_name (str): Name of the table.
+    def count_entries(self) -> dict[str, int]:
+        """Count the number of repository entries.
 
         Returns:
-            int: Number of records in the table.
+            int: Number of records in each repository.
         """
         # TODO: refactor to use RepoRegistry (pending)
         repo_labels = [
@@ -394,6 +448,142 @@ class ReportService:
             counts = {}
             for label in repo_labels:
                 repo = getattr(uow, label)
-                count = repo.count_records()
+                count = repo.count()
                 counts[label] = count
         return counts
+
+
+class AccountService:
+    """Account operations."""
+
+    def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
+        self._uow = uow
+
+    @cache
+    def get_all(self, active_only: bool = True) -> list[Account]:
+        """Get a list of all accounts.
+
+        Args:
+            active_only (bool): Whether to include only active accounts.
+
+        Returns:
+            list[Account]: List of active Account objects.
+        """
+        if active_only:
+            with self._uow() as uow:
+                accounts = uow.accounts.get_active()
+        else:
+            with self._uow() as uow:
+                accounts = uow.accounts.get_all()
+        return accounts
+
+    @cache
+    def get_map_name(self) -> dict[str, Account]:
+        """Get a map of account names to Account instances.
+
+        Returns:
+            dict[str, Account]: Map of account names to instances.
+        """
+        with self._uow() as uow:
+            accounts = uow.accounts.get_dict_name()
+        return accounts
+
+    @cache
+    def get_map_id(self, active_only: bool = True) -> dict[int, Account]:
+        """Get a map of account id to Account instances.
+
+        Args:
+            active_only (bool): Whether to include only active accounts.
+
+        Returns:
+            dict[int, Account]: Map of account id to Account objects.
+        """
+        with self._uow() as uow:
+            accounts = uow.accounts.get_dict_id()
+        return accounts
+
+    @cache
+    def get_by_name(self, account_name: str) -> Account | None:
+        """Get account by name.
+
+        Args:
+            account_name (str): Name of the account.
+
+        Returns:
+            Account | None: Account object if found, else None.
+        """
+        with self._uow() as uow:
+            result = uow.accounts.get_by_name(account_name)
+        if result:
+            return result
+        return None
+
+    @cache
+    def get_by_id(self, account_id: int) -> Account | None:
+        """Get account by id.
+
+        Args:
+            account_id (int): ID of the account.
+
+        Returns:
+            Account | None: Account object if found, else None.
+        """
+        with self._uow() as uow:
+            result = uow.accounts.get_by_id(account_id)
+        if result:
+            return result
+        return None
+
+    def create(
+        self,
+        name: str,
+        description: str,
+        category_name: str,
+        status_str: str = "active",
+        currency_code: str = "USD",
+    ) -> Account:
+        """Create a new account.
+
+        Args:
+            name (str): Name of the account.
+            description (str): Description of the account.
+            category_name (str): Category name of the account.
+            status_str (str): "active" or "inactive", defaults to "active".
+            currency_code (str): Currency code of the account, defaults to "USD".
+
+        Returns:
+            Account: Account object of the newly created account.
+        """
+        # validate status
+        if status_str not in [Status.ACTIVE.value, Status.INACTIVE.value]:
+            raise ValueError("Status must be 'active' or 'inactive'.")
+
+        # validate currency exists
+        with self._uow() as uow:
+            currency = uow.currencies.get(currency_code)
+        if not currency:
+            raise ValueError(f"Currency '{currency_code}' does not exist.")
+
+        # validate category exists
+        with self._uow() as uow:
+            category = uow.categories.get(category_name)
+        if not category:
+            raise ValueError(f"Category '{category_name}' does not exist.")
+
+        account = Account(
+            id=0,  # Placeholder, will be set by the repository
+            name=name,
+            description=description,
+            category_name=category_name,
+            currency_code=currency_code,
+            status=Status(status_str),
+        )
+        with self._uow() as uow:
+            rowcount = uow.accounts.insert(account)
+        assert rowcount == 1, "Failed to insert new account."
+
+        with self._uow() as uow:
+            account = uow.accounts.get_by_name(name)
+        print(f"Created account '{account.name}' with ID {account.id}.")
+
+        return account

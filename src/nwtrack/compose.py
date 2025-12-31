@@ -25,7 +25,12 @@ from nwtrack.repos import (
     SQLiteExchangeRatesRepository,
     SQLiteNetWorthRepository,
 )
-from nwtrack.services import InitDataService, ReportService, UpdateService
+from nwtrack.services import (
+    InitDataService,
+    ReportService,
+    UpdateService,
+    AccountService,
+)
 from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
 
 
@@ -99,5 +104,8 @@ def build_sqlite_uow_container() -> Container:
     ).register(
         ReportService,
         lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),
+    ).register(
+        AccountService,
+        lambda c: AccountService(uow=lambda: c.resolve(UnitOfWork)),
     )
     return container

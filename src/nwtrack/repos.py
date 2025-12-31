@@ -36,7 +36,7 @@ class Repository(Protocol[TEntity]):
         """Get all entities."""
         ...
 
-    def count_records(self) -> int:
+    def count(self) -> int:
         """Count the number of records."""
         ...
 
@@ -76,7 +76,7 @@ class BaseRepository(Generic[TEntity]):
         """
         raise NotImplementedError
 
-    def count_records(self) -> int:
+    def count(self) -> int:
         """Count the number of records.
 
         Returns:
@@ -218,6 +218,22 @@ class SQLiteCurrenciesRepository(BaseRepository[Currency]):
         )
         print("Inserted", rowcount, "currency rows.")
 
+    def get(self, code: str) -> Currency | None:
+        """Get currency by code.
+
+        Args:
+            code (str): Currency code.
+
+        Returns:
+            Currency | None: Currency record if found, else None.
+        """
+        query = "SELECT code, description FROM currencies WHERE code = :code;"
+        result = self._db.fetch_one(query, {"code": code})
+        if result:
+            return self._mapper.to_entity(result)
+        else:
+            return None
+
     def get_codes(self) -> list[str]:
         """Get all currency codes.
 
@@ -250,7 +266,7 @@ class SQLiteCurrenciesRepository(BaseRepository[Currency]):
         currencies = {result.code: result for result in results}
         return currencies
 
-    def count_records(self) -> int:
+    def count(self) -> int:
         """Count the number of currency records.
 
         Returns:
@@ -282,6 +298,22 @@ class SQLiteCategoriesRepository(BaseRepository[Category]):
         )
         print("Inserted", rowcount, "category rows.")
 
+    def get(self, name: str) -> Category | None:
+        """Get category by name.
+
+        Args:
+            name (str): Category name.
+
+        Returns:
+            Category | None: Category object if found, else None.
+        """
+        query = "SELECT name, side FROM categories WHERE name = :name;"
+        result = self._db.fetch_one(query, {"name": name})
+        if result:
+            return self._mapper.to_entity(result)
+        else:
+            return None
+
     def get_all(self) -> list[Category]:
         """Get all Categories.
 
@@ -302,7 +334,7 @@ class SQLiteCategoriesRepository(BaseRepository[Category]):
         categories = {result.name: result for result in results}
         return categories
 
-    def count_records(self) -> int:
+    def count(self) -> int:
         """Count the number of category records.
 
         Returns:
@@ -322,30 +354,84 @@ class SQLiteCategoriesRepository(BaseRepository[Category]):
 class SQLiteAccountsRepository(BaseRepository[Account]):
     """Repository for account SQLite database operations."""
 
+    def insert(self, data: Account) -> None:
+        """Insert account object in respective table.
+
+        Args:
+            data (Account): Account objects
+        """
+        query = """
+        INSERT INTO accounts (name, description, category, currency, status)
+        VALUES (:name, :description, :category, :currency, :status);
+        """
+        cur = self._db.execute(query, self._mapper.to_record(data))
+        print("Inserted", cur.rowcount, "account")
+        return cur.rowcount
+
     def insert_many(self, data: list[Account]) -> None:
         """Insert list of accounts into the accounts table.
 
         Args:
             data (list[Account]): List of Account objects
         """
+        query = """
+        INSERT INTO accounts (name, description, category, currency, status)
+        VALUES (:name, :description, :category, :currency, :status);
+        """
         rowcount = self._db.execute_many(
-            """
-            INSERT INTO accounts (name, description, category, currency, status)
-            VALUES (:name, :description, :category, :currency, :status);
-            """,
+            query,
             [self._mapper.to_record(acc) for acc in data],
         )
         print("Inserted", rowcount, "account rows.")
 
+    def get_by_id(self, account_id: int) -> Account | None:
+        """Get account by ID.
+
+        Args:
+            account_id (int): Account ID
+
+        Returns:
+            Account | None: Account object if found, else None
+        """
+        query = """
+        SELECT id, name, description, category, currency, status
+        FROM accounts
+        WHERE id = :account_id;
+        """
+        result = self._db.fetch_one(query, {"account_id": account_id})
+        if result:
+            return self._mapper.to_entity(dict(result))
+        else:
+            return None
+
+    def get_by_name(self, account_name: str) -> Account | None:
+        """Get account by name.
+
+        Args:
+            account_name (str): Account name
+
+        Returns:
+            Account | None: Account object if found, else None
+        """
+        query = """
+        SELECT id, name, description, category, currency, status
+        FROM accounts
+        WHERE name = :account_name;
+        """
+        result = self._db.fetch_one(query, {"account_name": account_name})
+        if result:
+            return self._mapper.to_entity(dict(result))
+        else:
+            return None
+
     def get_active(self) -> list[Account]:
         """Get all active accounts."""
-        results = self._db.fetch_all(
-            """
-            SELECT id, name, description, category, currency, status
-            FROM accounts
-            WHERE status = 'active';
-            """
-        )
+        query = """
+        SELECT id, name, description, category, currency, status
+        FROM accounts
+        WHERE status = 'active';
+        """
+        results = self._db.fetch_all(query)
         return [self._mapper.to_entity(dict(record)) for record in results]
 
     def get_all(self) -> list[Account]:
@@ -355,7 +441,8 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
             list[Account]: List of account objects.
         """
         query = """
-        SELECT id, name, description, category, currency, status FROM accounts;
+        SELECT id, name, description, category, currency, status
+        FROM accounts;
         """
         results = self._db.fetch_all(query)
         return [self._mapper.to_entity(dict(record)) for record in results]
@@ -378,7 +465,7 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         results = self.get_all()
         return {result.name: result for result in results}
 
-    def count_records(self) -> int:
+    def count(self) -> int:
         """Count the number of account records.
 
         Returns:
@@ -424,6 +511,7 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         Returns:
             Balance: Account balance record
         """
+        # TODO: Rename to get_by_account_name
         query = """
         SELECT b.id, b.account_id, b.month, a.name, b.amount
         FROM accounts a
@@ -432,6 +520,27 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         """
         results = self._db.fetch_all(
             query, {"month": str(month), "account_name": account_name}
+        )
+        assert len(results) <= 1, "Expected at most one balance record."
+        return self._mapper.to_entity(dict(results[0]))
+
+    def get_by_account_id(self, month: Month, account_id: int) -> Balance:
+        """Get all balances given account id and month.
+
+        Args:
+            month (Month): Month object
+            account_d (int): Account int
+
+        Returns:
+            Balance: Account balance record
+        """
+        query = """
+        SELECT id, account_id, month, amount
+        FROM balances
+        WHERE month = :month AND account_id = :account_id;
+        """
+        results = self._db.fetch_all(
+            query, {"month": str(month), "account_id": account_id}
         )
         assert len(results) <= 1, "Expected at most one balance record."
         return self._mapper.to_entity(dict(results[0]))
@@ -538,7 +647,7 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         results = self._db.fetch_all(query, {"limit": limit})
         return [self._mapper.to_entity(dict(res)) for res in results]
 
-    def count_records(self) -> int:
+    def count(self) -> int:
         """Count the number of balance records.
 
         Returns:
@@ -627,7 +736,7 @@ class SQLiteExchangeRatesRepository(BaseRepository[ExchangeRate]):
         results = self._db.fetch_all(query, {"month": str(month)})
         return [self._mapper.to_entity(dict(res)) for res in results]
 
-    def count_records(self) -> int:
+    def count(self) -> int:
         """Count the number of exchange rate records.
 
         Returns:

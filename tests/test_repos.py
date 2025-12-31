@@ -19,12 +19,12 @@ REPO_MAPPING = [
 ]
 
 
-def count_records(test_container: Container) -> dict[str, int]:
-    """Count records from all repos."""
+def count_entries(test_container: Container) -> dict[str, int]:
+    """Count entries from all repos."""
 
     prn_svc: ReportService = test_container.resolve(ReportService)
 
-    return prn_svc.count_records()
+    return prn_svc.count_entries()
 
 
 def uow_factory(test_container: Container) -> UnitOfWork:
@@ -43,12 +43,12 @@ def test_insert_hydrated(test_container) -> None:
             entities = repo.hydrate_many(TEST_DATA[table_name])
             repo.insert_many(entities)
 
-    cnts = count_records(test_container)
-    assert cnts["currencies"] == 3, "Expected 3 currencies"
-    assert cnts["categories"] == 3, "Expected 3 categories"
-    assert cnts["accounts"] == 3, "Expected 3 accounts"
-    assert cnts["balances"] == 9, "Expected 9 balances"
-    assert cnts["exchange_rates"] == 6, "Expected 6 exchange rates"
+    cnts = count_entries(test_container)
+    assert cnts["currencies"] == 3
+    assert cnts["categories"] == 3
+    assert cnts["accounts"] == 3
+    assert cnts["balances"] == 9
+    assert cnts["exchange_rates"] == 6
 
 
 def test_delete_records(test_container: Container) -> None:
@@ -64,6 +64,6 @@ def test_delete_records(test_container: Container) -> None:
             repo = getattr(uow, repo_name)
             repo.delete_all()
 
-    cnts = count_records(test_container)
+    cnts = count_entries(test_container)
     for repo_name in reversed_repo_names:
         assert cnts[repo_name] == 0, f"Expected 0 records in {repo_name} repo"
