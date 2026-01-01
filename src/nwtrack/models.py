@@ -25,6 +25,18 @@ class Month:
     def __repr__(self) -> str:
         return f"{self.year:04d}-{self.month:02d}"
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Month):
+            return NotImplemented
+        return self.year == other.year and self.month == other.month
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, Month):
+            return NotImplemented
+        if self.year != other.year:
+            return self.year < other.year
+        return self.month < other.month
+
     @staticmethod
     def parse(s: str) -> "Month":
         year, month = map(int, s.split("-"))
