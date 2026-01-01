@@ -3,7 +3,6 @@ Service layer for managing user operations using unit of work pattern.
 """
 
 from typing import Callable
-from functools import cache
 
 from nwtrack.fileio import csv_to_records
 from nwtrack.models import (
@@ -169,7 +168,6 @@ class ReportService:
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
 
-    @cache
     def get_accounts(self, active_only: bool = True) -> list[Account]:
         """Get a list of all active accounts.
 
@@ -187,7 +185,6 @@ class ReportService:
                 accounts = uow.accounts.get_all()
         return accounts
 
-    @cache
     def get_map_name_to_account(self, active_only: bool = True) -> dict[str, Account]:
         """Get a map of account names to Account objects.
 
@@ -201,7 +198,6 @@ class ReportService:
         account_map = {acc.name: acc for acc in accounts}
         return account_map
 
-    @cache
     def get_map_id_to_account(self, active_only: bool = True) -> dict[int, Account]:
         """Get a map of account id to Account objects.
 
@@ -254,6 +250,18 @@ class ReportService:
         with self._uow() as uow:
             balance = uow.balances.get_by_account_id(month, account_id)
         return balance
+
+    def get_balances_by_account_id(self, account_id: int) -> list[Balance]:
+        """Get all balances for an account.
+
+        Args:
+            account_id (int): Account id
+        Return:
+            list[Balance]: List of Balance object for the specified account.
+        """
+        with self._uow() as uow:
+            balances = uow.balances.get_all_by_account_id(account_id)
+        return balances
 
     def get_month_balances(
         self, month: Month, active_only: bool = True
@@ -459,7 +467,6 @@ class AccountService:
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
 
-    @cache
     def get_all(self, active_only: bool = True) -> list[Account]:
         """Get a list of all accounts.
 
@@ -477,7 +484,6 @@ class AccountService:
                 accounts = uow.accounts.get_all()
         return accounts
 
-    @cache
     def get_map_name(self) -> dict[str, Account]:
         """Get a map of account names to Account instances.
 
@@ -488,7 +494,6 @@ class AccountService:
             accounts = uow.accounts.get_dict_name()
         return accounts
 
-    @cache
     def get_map_id(self, active_only: bool = True) -> dict[int, Account]:
         """Get a map of account id to Account instances.
 
@@ -502,7 +507,6 @@ class AccountService:
             accounts = uow.accounts.get_dict_id()
         return accounts
 
-    @cache
     def get_by_name(self, account_name: str) -> Account | None:
         """Get account by name.
 
@@ -516,9 +520,9 @@ class AccountService:
             result = uow.accounts.get_by_name(account_name)
         if result:
             return result
-        return None
+        else:
+            return None
 
-    @cache
     def get_by_id(self, account_id: int) -> Account | None:
         """Get account by id.
 
@@ -554,6 +558,12 @@ class AccountService:
         Returns:
             Account | None: Account object of the newly created account.
         """
+        # check for duplicate account name
+        with self._uow() as uow:
+            response = uow.accounts.get_by_name(name)
+        if response:
+            raise ValueError(f"Account with name '{name}' already exists.")
+
         # validate status
         if status_str not in [Status.ACTIVE.value, Status.INACTIVE.value]:
             raise ValueError("Status must be 'active' or 'inactive'.")
@@ -569,12 +579,6 @@ class AccountService:
             category = uow.categories.get(category_name)
         if not category:
             raise ValueError(f"Category not found: '{category_name}'.")
-
-        # check for duplicate account name
-        with self._uow() as uow:
-            response = uow.accounts.get_by_name(name)
-        if response:
-            raise ValueError(f"Account with name '{name}' already exists.")
 
         account = Account(
             id=0,  # Placeholder, will be set by the repository
@@ -597,62 +601,101 @@ class AccountService:
 
         return account
 
-    # def update(
-    #     self,
-    #     name: str,
-    #     description: str | None,
-    #     category_name: str | None,
-    #     status_str: str | None,
-    #     currency_code: str | None,
-    # ) -> Account:
-    #     """Update existing account.
-    #
-    #     Args:
-    #         name (str | None): Name of the account.
-    #         description (str | None): Optional description of the account.
-    #         category_name (str |  None): Optional category name of the account.
-    #         status_str (st | None): Optional new status, "active" or "inactive".
-    #         currency_code (str | None): Optional new currency code of the account.
-    #
-    #     Returns:
-    #         Account: Account object of the newly created account.
-    #     """
-    #     # validate status
-    #     if status_str not in [Status.ACTIVE.value, Status.INACTIVE.value]:
-    #         raise ValueError("Status must be 'active' or 'inactive'.")
-    #
-    #     # validate currency exists
-    #     with self._uow() as uow:
-    #         currency = uow.currencies.get(currency_code)
-    #     if not currency:
-    #         raise ValueError(f"Currency not found: '{currency_code}'.")
-    #
-    #     # validate category exists
-    #     with self._uow() as uow:
-    #         category = uow.categories.get(category_name)
-    #     if not category:
-    #         raise ValueError(f"Category not found: '{category_name}'.")
-    #
-    #     # check for duplicate account name
-    #     with self._uow() as uow:
-    #         response = uow.accounts.get_by_name(name)
-    #     if response:
-    #         raise ValueError(f"Account with name '{name}' already exists.")
-    #
-    #     account = Account(
-    #         id=0,  # Placeholder, will be set by the repository
-    #         name=name,
-    #         description=description,
-    #         category_name=category_name,
-    #         currency_code=currency_code,
-    #         status=Status(status_str),
-    #     )
-    #     with self._uow() as uow:
-    #         rowcount = uow.accounts.insert(account)
-    #     assert rowcount == 1, "Failed to insert new account."
-    #
-    #     with self._uow() as uow:
-    #         account = uow.accounts.get_by_name(name)
-    #     print(f"Created account '{account.name}' with ID {account.id}.")
-    #
-    #     return account
+    def delete(self, name: str) -> None:
+        """Delete an account by name.
+
+        Args:
+            name (str): Name of the account to delete.
+        """
+        with self._uow() as uow:
+            account = uow.accounts.get_by_name(name)
+        if account is None:
+            raise ValueError(f"Account not found: '{name}'.")
+
+        with self._uow() as uow:
+            balance_count = uow.balances.delete_by_account_id(account.id)
+            account_count = uow.accounts.delete_by_id(account.id)
+        assert account_count == 1, "Failed to delete account."
+        print(f"Deleted {balance_count} balance entries for account '{name}'.")
+        print(f"Deleted account '{name}' with ID {account.id}.")
+
+    def update(
+        self,
+        name: str,
+        new_name: str | None = None,
+        new_description: str | None = None,
+        new_category_name: str | None = None,
+        new_status_str: str | None = None,
+        new_currency_code: str | None = None,
+    ) -> Account:
+        """Update existing account.
+
+        Args:
+            name (str | None): Name of the account.
+            new_name (str | None): Optional new name of the account.
+            new_description (str | None): Optional description of the account.
+            new_category_name (str |  None): Optional category name of the account.
+            new_status_str (st | None): Optional new status, "active" or "inactive".
+            new_currency_code (str | None): Optional new currency code of the account.
+
+        Returns:
+            Account: Account object of the newly created account.
+        """
+        with self._uow() as uow:
+            account = uow.accounts.get_by_name(name)
+        if account is None:
+            raise ValueError(f"Account not found: '{name}'.")
+        account_id = account.id
+
+        if new_name is not None:
+            with self._uow() as uow:
+                existing_account = uow.accounts.get_by_name(new_name)
+            if existing_account:
+                raise ValueError(f"Account with name '{new_name}' already exists.")
+            with self._uow() as uow:
+                rowcount = uow.accounts.update_name(account_id, new_name)
+            assert rowcount == 1, "Failed to update account name."
+
+        if new_description is not None:
+            if new_description.lower() == "":
+                raise ValueError("Description cannot be empty.")
+            with self._uow() as uow:
+                rowcount = uow.accounts.update_description(account_id, new_description)
+            assert rowcount == 1, "Failed to update account description."
+
+        if new_currency_code is not None:
+            with self._uow() as uow:
+                currency = uow.currencies.get(new_currency_code)
+            if not currency:
+                raise ValueError(f"Currency not found: '{new_currency_code}'.")
+            with self._uow() as uow:
+                rowcount = uow.accounts.update_currency(account_id, new_currency_code)
+            assert rowcount == 1, "Failed to update account description."
+
+        if new_category_name is not None:
+            with self._uow() as uow:
+                category = uow.categories.get(new_category_name)
+            if not category:
+                raise ValueError(f"Category not found: '{new_category_name}'.")
+            with self._uow() as uow:
+                rowcount = uow.accounts.update_category(account_id, new_category_name)
+            assert rowcount == 1, "Failed to update account category."
+
+        if new_status_str is not None:
+            if new_status_str not in [
+                Status.ACTIVE.value,
+                Status.INACTIVE.value,
+            ]:
+                raise ValueError("Status must be 'active' or 'inactive'.")
+            with self._uow() as uow:
+                rowcount = uow.accounts.update_status(
+                    account_id, Status(new_status_str)
+                )
+            assert rowcount == 1, "Failed to update account status."
+
+        with self._uow() as uow:
+            account = uow.accounts.get_by_id(account_id)
+        assert account is not None, "Failed to retrieve updated account."
+        print(f"Updated account with ID {account.id}.")
+
+        return account

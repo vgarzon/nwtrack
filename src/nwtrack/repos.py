@@ -170,6 +170,30 @@ class AccountsRepository(Repository[Account], Protocol):
         """Insert account object in respective table."""
         ...
 
+    def delete_by_id(self, account_id: int) -> int:
+        """Delete account by ID."""
+        ...
+
+    def update_name(self, account_id: int, new_name: str) -> int:
+        """Update account name."""
+        ...
+
+    def update_status(self, account_id: int, new_status: str) -> int:
+        """Update account status."""
+        ...
+
+    def update_currency(self, account_id: int, new_currency_code: str) -> int:
+        """Update account currency."""
+        ...
+
+    def update_category(self, account_id: int, new_category_name: str) -> int:
+        """Update account category."""
+        ...
+
+    def update_description(self, account_id: int, new_description: str) -> int:
+        """Update account description."""
+        ...
+
 
 class BalancesRepository(Repository[Balance], Protocol):
     """Protocol for balance repository operations."""
@@ -180,6 +204,10 @@ class BalancesRepository(Repository[Balance], Protocol):
 
     def get_by_account_id(self, month: Month, account_id: int) -> Balance:
         """Get all balances given account id and month."""
+        ...
+
+    def get_all_by_account_id(self, account_id: int) -> list[Balance]:
+        """Get all balances given account id."""
         ...
 
     def get_month(self, month: Month, active_only: bool = True) -> list[Balance]:
@@ -200,6 +228,10 @@ class BalancesRepository(Repository[Balance], Protocol):
 
     def fetch_sample(self, limit: int = 5) -> list[Balance]:
         """Fetch sample balance records for debugging."""
+        ...
+
+    def delete_by_account_id(self, account_id: int) -> int:
+        """Delete balance records by account ID."""
         ...
 
 
@@ -493,6 +525,145 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} account records.")
 
+    def delete_by_id(self, account_id: int) -> int:
+        """Delete account by ID.
+
+        Args:
+            account_id (int): Account ID
+        Returns:
+            int: Number of deleted account entries.
+        """
+        query = "DELETE FROM accounts WHERE id = :account_id;"
+        cur = self._db.execute(query, {"account_id": account_id})
+        rowcount = cur.rowcount
+        print(f"Deleted {rowcount} account entry with ID {account_id}.")
+        return rowcount
+
+    def update_name(self, account_id: int, new_name: str) -> int:
+        """Update account name.
+
+        Args:
+            account_id (int): The account ID.
+            new_name (str): The new name value.
+
+        Returns:
+            int: Number of updated account entries.
+        """
+        update_query = """
+        UPDATE accounts
+        SET name = :name
+        WHERE id = :account_id;
+        """
+        params: dict[str, str | int] = {
+            "name": new_name,
+            "account_id": account_id,
+        }
+        cur = self._db.execute(update_query, params)
+        rowcount = cur.rowcount
+        assert rowcount == 1, "Expected exactly one row to be updated."
+        print(f"Updated account {account_id} to name '{new_name}'.")
+        return rowcount
+
+    def update_status(self, account_id: int, new_status: str) -> int:
+        """Update account status.
+
+        Args:
+            account_id (int): The account ID.
+            new_status (str): The new status value.
+
+        Returns:
+            int: Number of updated account entries.
+        """
+        update_query = """
+        UPDATE accounts
+        SET status = :status
+        WHERE id = :account_id;
+        """
+        params: dict[str, str | int] = {
+            "status": new_status,
+            "account_id": account_id,
+        }
+        cur = self._db.execute(update_query, params)
+        rowcount = cur.rowcount
+        assert rowcount == 1, "Expected exactly one row to be updated."
+        print(f"Updated account {account_id} to status '{new_status}'.")
+        return rowcount
+
+    def update_currency(self, account_id: int, new_currency_code: str) -> int:
+        """Update account currency.
+
+        Args:
+            account_id (int): The account ID.
+            new_currency_code (str): The new currency code.
+
+        Returns:
+            int: Number of updated account entries.
+        """
+        update_query = """
+        UPDATE accounts
+        SET currency = :currency
+        WHERE id = :account_id;
+        """
+        params: dict[str, str | int] = {
+            "currency": new_currency_code,
+            "account_id": account_id,
+        }
+        cur = self._db.execute(update_query, params)
+        rowcount = cur.rowcount
+        assert rowcount == 1, "Expected exactly one row to be updated."
+        print(f"Updated account {account_id} to currency '{new_currency_code}'.")
+        return rowcount
+
+    def update_category(self, account_id: int, new_category_name: str) -> int:
+        """Update account category.
+
+        Args:
+            account_id (int): The account ID.
+            new_category_name (str): The new category name.
+
+        Returns:
+            int: Number of updated account entries.
+        """
+        update_query = """
+        UPDATE accounts
+        SET category = :category
+        WHERE id = :account_id;
+        """
+        params: dict[str, str | int] = {
+            "category": new_category_name,
+            "account_id": account_id,
+        }
+        cur = self._db.execute(update_query, params)
+        rowcount = cur.rowcount
+        assert rowcount == 1, "Expected exactly one row to be updated."
+        print(f"Updated account {account_id} to category '{new_category_name}'.")
+        return rowcount
+
+    def update_description(self, account_id: int, new_description: str) -> int:
+        """Update account description.
+
+        Args:
+            account_id (int): The account ID.
+            new_description (str): The new description.
+
+        Returns:
+            int: Number of updated account entries.
+        """
+        update_query = """
+        UPDATE accounts
+        SET description = :description
+        WHERE id = :account_id;
+        """
+        params: dict[str, str | int] = {
+            "description": new_description,
+            "account_id": account_id,
+        }
+        cur = self._db.execute(update_query, params)
+        rowcount = cur.rowcount
+        assert rowcount == 1, "Expected exactly one row to be updated."
+        print(f"Updated account {account_id} description.")
+        return rowcount
+
 
 class SQLiteBalancesRepository(BaseRepository[Balance]):
     """Repository for balances SQLite database operations."""
@@ -556,6 +727,24 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         )
         assert len(results) <= 1, "Expected at most one balance record."
         return self._mapper.to_entity(dict(results[0]))
+
+    def get_all_by_account_id(self, account_id: int) -> list[Balance]:
+        """Get all balances given account id.
+
+        Args:
+            account_id (int): Account int
+
+        Returns:
+            list[Balance]: List of account balance records
+        """
+        query = """
+        SELECT id, account_id, month, amount
+        FROM balances
+        WHERE account_id = :account_id
+        ORDER BY month;
+        """
+        results = self._db.fetch_all(query, {"account_id": account_id})
+        return [self._mapper.to_entity(dict(res)) for res in results]
 
     def get_month(self, month: Month, active_only: bool = True) -> list[Balance]:
         """Get all account balances on a specific month.
@@ -674,6 +863,20 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         query = "DELETE FROM balances;"
         cur = self._db.execute(query)
         print(f"Deleted {cur.rowcount} balance records.")
+
+    def delete_by_account_id(self, account_id: int) -> int:
+        """Delete balance records by account ID.
+
+        Args:
+            account_id (int): Account ID
+        Returns:
+            int: Number of deleted balance records.
+        """
+        query = "DELETE FROM balances WHERE account_id = :account_id;"
+        cur = self._db.execute(query, {"account_id": account_id})
+        rowcount = cur.rowcount
+        print(f"Deleted {rowcount} balance records for account ID {account_id}.")
+        return rowcount
 
 
 class SQLiteExchangeRatesRepository(BaseRepository[ExchangeRate]):

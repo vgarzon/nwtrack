@@ -4,8 +4,9 @@ Test account service methods.
 
 import pytest
 from nwtrack.container import Container
-from nwtrack.services import AccountService
+from nwtrack.services import AccountService, ReportService
 from tests.test_services import init_db_tables_w_entities
+from nwtrack.models import Account
 
 
 def test_get_all(test_container: Container, test_entities: dict[str, list]) -> None:
@@ -158,3 +159,160 @@ def test_create_duplicate_account(
             status_str="active",
         )
     assert "Account with name 'bank_1_checking' already exists" in str(exc_info.value)
+
+
+def test_delete_account_with_balance(
+    test_container: Container, test_entities: dict[str, list]
+) -> None:
+    """Test deleting an account."""
+    init_db_tables_w_entities(test_container, test_entities)
+    svc: AccountService = test_container.resolve(AccountService)
+    rpt_svc: ReportService = test_container.resolve(ReportService)
+
+    account_name = "credit_cards_1"
+    account = svc.get_by_name(account_name)
+    assert account is not None
+    account_id = account.id
+    svc.delete(account_name)
+    result = svc.get_by_name(account_name)
+    assert result is None
+    assert len(rpt_svc.get_balances_by_account_id(account_id)) == 0
+
+    with pytest.raises(ValueError) as exc_info:
+        svc.delete("non_existent_account")
+    assert "Account not found" in str(exc_info.value)
+
+
+def test_update_account_name(
+    test_container: Container, test_entities: dict[str, list]
+) -> None:
+    """Test updating an account name."""
+    init_db_tables_w_entities(test_container, test_entities)
+    svc: AccountService = test_container.resolve(AccountService)
+
+    old_name = "bank_2_savings"
+    new_name = "bank_2_emergency_fund"
+    account = svc.get_by_name(old_name)
+    assert account is not None
+    account_id = account.id
+
+    updated_account = svc.update(name=old_name, new_name=new_name)
+    assert updated_account.id == account_id
+    assert updated_account.name == new_name
+
+    result = svc.get_by_name(new_name)
+    assert result is not None
+    assert result.id == account_id
+    assert result.name == new_name
+    assert result.category_name == account.category_name
+    assert result.status == account.status
+    assert result.description == account.description
+    assert result.currency_code == account.currency_code
+
+
+def test_update_account_status(
+    test_container: Container, test_entities: dict[str, list]
+) -> None:
+    """Test updating an account status."""
+    init_db_tables_w_entities(test_container, test_entities)
+    svc: AccountService = test_container.resolve(AccountService)
+
+    name = "bank_1_checking"
+    new_status = "inactive"
+    account = svc.get_by_name(name)
+    assert account is not None
+    account_id = account.id
+
+    updated_account = svc.update(name=name, new_status_str=new_status)
+    assert updated_account.id == account_id
+    assert str(updated_account.status) == new_status
+
+    result = svc.get_by_name(name)
+    assert result is not None
+    assert result.id == account_id
+    assert str(result.status) == new_status
+    assert result.name == account.name
+    assert result.category_name == account.category_name
+    assert result.description == account.description
+    assert result.currency_code == account.currency_code
+
+
+def test_update_account_description(
+    test_container, test_entities: dict[str, list]
+) -> None:
+    """Test updating an account description."""
+    init_db_tables_w_entities(test_container, test_entities)
+    svc: AccountService = test_container.resolve(AccountService)
+
+    name = "bank_1_checking"
+    new_description = "Updated description for checking account"
+    account = svc.get_by_name(name)
+    assert account is not None
+    account_id = account.id
+
+    updated_account = svc.update(name=name, new_description=new_description)
+    assert updated_account.id == account_id
+    assert updated_account.description == new_description
+
+    result = svc.get_by_name(name)
+    assert result is not None
+    assert result.id == account_id
+    assert result.description == new_description
+    assert result.name == account.name
+    assert result.category_name == account.category_name
+    assert result.status == account.status
+    assert result.currency_code == account.currency_code
+
+
+def test_update_account_currency(
+    test_container, test_entities: dict[str, list]
+) -> None:
+    """Test updating an account currency."""
+    init_db_tables_w_entities(test_container, test_entities)
+    svc: AccountService = test_container.resolve(AccountService)
+
+    name = "bank_1_checking"
+    new_currency = "CHF"
+    account = svc.get_by_name(name)
+    assert account is not None
+    account_id = account.id
+
+    updated_account = svc.update(name=name, new_currency_code=new_currency)
+    assert updated_account.id == account_id
+    assert updated_account.currency_code == new_currency
+
+    result = svc.get_by_name(name)
+    assert result is not None
+    assert result.id == account_id
+    assert result.currency_code == new_currency
+    assert result.name == account.name
+    assert result.category_name == account.category_name
+    assert result.status == account.status
+    assert result.description == account.description
+
+
+def test_update_account_category(
+    test_container, test_entities: dict[str, list]
+) -> None:
+    """Test updating an account category."""
+    init_db_tables_w_entities(test_container, test_entities)
+    svc: AccountService = test_container.resolve(AccountService)
+
+    name = "bank_1_checking"
+    new_category = "savings"
+    account = svc.get_by_name(name)
+    assert account is not None
+    account_id = account.id
+
+    updated_account = svc.update(name=name, new_category_name=new_category)
+    assert updated_account.id == account_id
+    assert updated_account.category_name == new_category
+
+    result = svc.get_by_name(name)
+    assert result is not None
+    assert result.id == account_id
+    assert result.category_name == new_category
+    assert result.name == account.name
+    assert result.status == account.status
+    assert result.description == account.description
+    assert result.currency_code == account.currency_code
