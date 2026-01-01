@@ -17,6 +17,8 @@ from nwtrack.services import (
 
 
 class DBInitializerCSV:
+    """Initialize the database from CSV files."""
+
     def __init__(self, container: Container) -> None:
         self._container = container
         self._config: Config = self._container.resolve(Config)
@@ -67,6 +69,8 @@ class DBInitializerCSV:
 
 
 class BalanceUpdater:
+    """Update account balances interactively."""
+
     def __init__(self, container: Container) -> None:
         self._container = container
         self._account_svc: AccountService = self._container.resolve(AccountService)
@@ -75,6 +79,7 @@ class BalanceUpdater:
 
     def run(self) -> None:
         self.print_active_accounts()
+        self.print_recent_months()
         month = self.input_month()
         if month is None:
             return
@@ -83,6 +88,14 @@ class BalanceUpdater:
         self.print_balances(month)
         print("Net Worth:")
         self.print_net_worth(month)
+
+    def print_recent_months(self) -> None:
+        balance_counts = self._report_svc.get_balance_count_per_month()
+        balance_counts.sort(key=lambda x: x[0], reverse=True)
+        print("Recent month balance counts:")
+        for month, count in balance_counts[:3]:
+            print(f" {month}: {count} balances")
+        print()
 
     def input_month(self) -> Month | None:
         while True:

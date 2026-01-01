@@ -858,6 +858,21 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         result = self._db.fetch_one(query)
         return result["cnt"] if result else 0
 
+    def count_per_month(self) -> list[tuple[Month, int]]:
+        """Count the number balance entries per month.
+
+        Returns:
+            tuple(Month, int): Month and number of balance entries for that month.
+        """
+        query = """
+        SELECT month, COUNT(*) AS cnt
+        FROM balances
+        GROUP BY month
+        ORDER BY month;
+        """
+        results = self._db.fetch_all(query)
+        return [(Month.parse(record["month"]), record["cnt"]) for record in results]
+
     def delete_all(self) -> None:
         """Delete all balance records."""
         query = "DELETE FROM balances;"

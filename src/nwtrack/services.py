@@ -290,6 +290,16 @@ class ReportService:
             balances = uow.balances.fetch_sample(limit)
         return balances
 
+    def get_balance_count_per_month(self) -> list[tuple[Month, int]]:
+        """Get count of balance entries per month.
+
+        Returns:
+            list[tuple[Month, int]]: list of tuples Month count of balance entries.
+        """
+        with self._uow() as uow:
+            counts = uow.balances.count_per_month()
+        return counts
+
     def print_balance(self, month: Month, account_name: str) -> None:
         """Print account balance for a specific month.
 
