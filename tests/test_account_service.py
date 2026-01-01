@@ -316,3 +316,17 @@ def test_update_account_category(
     assert result.status == account.status
     assert result.description == account.description
     assert result.currency_code == account.currency_code
+
+
+def test_get_account_category_by_id(
+    test_container: Container, test_entities: dict[str, list]
+) -> None:
+    """Test retrieving account category by account id."""
+    init_db_tables_w_entities(test_container, test_entities)
+    svc: AccountService = test_container.resolve(AccountService)
+
+    category = svc.get_category_by_account_id(3)
+    print(category)
+    assert category is not None
+    assert category.name == "revolving_credit"
+    assert str(category.side) == "liability"

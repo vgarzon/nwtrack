@@ -353,8 +353,8 @@ class ReportService:
         if not nw:
             raise ValueError(f"No net worth data found for {month} in {currency_code}")
         print(
-            f"Month: {month}, Currency: {currency_code}, Assets: {nw.assets}, "
-            f"Liabilities: {nw.liabilities}, Net Worth: {nw.net_worth}"
+            f"Month: {month} Currency: {currency_code} Assets: {nw.assets:,} "
+            f"Liabilities: {nw.liabilities:,} Net Worth: {nw.net_worth:,}"
         )
 
     def print_net_worth_history(self) -> None:
@@ -537,6 +537,23 @@ class AccountService:
         if result:
             return result
         return None
+
+    def get_category_by_account_id(self, account_id: int) -> str | None:
+        """Get category side for a given account ID.
+
+        Args:
+            account_id (int): Account ID
+
+        Returns:
+            Category | None: Category instance if found, else None.
+        """
+        with self._uow() as uow:
+            account = uow.accounts.get_by_id(account_id)
+        if not account:
+            return None
+        with self._uow() as uow:
+            category = uow.categories.get(account.category_name)
+        return category
 
     def create(
         self,
