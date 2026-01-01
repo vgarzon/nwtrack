@@ -3,10 +3,10 @@ Test account service methods.
 """
 
 import pytest
+
 from nwtrack.container import Container
 from nwtrack.services import AccountService, ReportService
 from tests.test_services import init_db_tables_w_entities
-from nwtrack.models import Account
 
 
 def test_get_all(test_container: Container, test_entities: dict[str, list]) -> None:

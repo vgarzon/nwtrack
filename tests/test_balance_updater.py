@@ -2,10 +2,11 @@
 Test suite for the balance updater use case
 """
 
-from tests.test_services import init_db_tables_w_entities
-from nwtrack.use_cases import BalanceUpdater
-from nwtrack.container import Container
 import re
+
+from nwtrack.container import Container
+from nwtrack.use_cases import BalanceUpdater
+from tests.test_services import init_db_tables_w_entities
 
 
 def test_update_balances_loop(

@@ -2,17 +2,19 @@
 Pytest fixtures and test container setup for nwtrack application.
 """
 
-import pytest
 from typing import Any
-from tests.fakes import FakeEntityA, FakeEntityB
 from unittest.mock import Mock
-from nwtrack.config import Config
-from nwtrack.dbmanager import DBConnectionManager
-from nwtrack.container import Container, Lifetime
-from nwtrack.services import InitDataService
-from nwtrack.mapper_registry import MapperRegistry
-from nwtrack.fileio import csv_to_records
+
+import pytest
+
 from nwtrack.compose import build_sqlite_uow_container
+from nwtrack.config import Config
+from nwtrack.container import Container, Lifetime
+from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.fileio import csv_to_records
+from nwtrack.mapper_registry import MapperRegistry
+from nwtrack.services import InitDataService
+from tests.fakes import FakeEntityA, FakeEntityB
 
 
 @pytest.fixture(scope="module")
@@ -47,6 +49,7 @@ def test_file_paths() -> dict[str, str]:
     Returns:
         dict[str, str]: Mapping of table names to CSV file paths.
     """
+    # NOTE: The order of keys may matters for foreign key constraints
     return {
         "currencies": "tests/data/csv/currencies.csv",
         "categories": "tests/data/csv/categories.csv",
