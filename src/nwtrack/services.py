@@ -8,6 +8,7 @@ from nwtrack.fileio import csv_to_records
 from nwtrack.models import (
     Account,
     Balance,
+    Category,
     ExchangeRate,
     Month,
     NetWorth,
@@ -538,7 +539,7 @@ class AccountService:
             return result
         return None
 
-    def get_category_by_account_id(self, account_id: int) -> str | None:
+    def get_category_by_account_id(self, account_id: int) -> Category | None:
         """Get category side for a given account ID.
 
         Args:
