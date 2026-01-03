@@ -7,7 +7,10 @@ from unittest.mock import Mock
 
 import pytest
 
-from nwtrack.compose import build_sqlite_uow_container
+from nwtrack.compose import (
+    build_base_sqlite_uow_container,
+    build_data_services_container,
+)
 from nwtrack.config import Config
 from nwtrack.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager
@@ -33,7 +36,8 @@ def test_container(test_config) -> Container:
     Returns:
         Container: Configured DI container.
     """
-    container = build_sqlite_uow_container()
+    container = build_base_sqlite_uow_container()
+    container = build_data_services_container(container)
     container.register(
         Config,
         lambda _: test_config,
