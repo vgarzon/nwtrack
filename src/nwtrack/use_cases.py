@@ -22,8 +22,8 @@ class DBInitializerCSV:
     def __init__(self, container: Container) -> None:
         self._container = container
         self._config: Config = self._container.resolve(Config)
-        self._data_svc: InitDataService = self._container.resolve(InitDataService)
         self._admin_svc: DBAdminService = self._container.resolve(DBAdminService)
+        self._data_svc: InitDataService = self._container.resolve(InitDataService)
 
     def run(self, file_paths: dict[str, str]) -> None:
         print(f"Database file path: {self._config.db_file_path}")
@@ -31,7 +31,7 @@ class DBInitializerCSV:
         print("Specified CSVfile paths:")
         for key, path in file_paths.items():
             print(f"  {key}: {path}")
-        # TODO: Use RepoRegistry to specifi required keys
+        # TODO: Use RepoRegistry to specify required keys
         required_keys = {
             "accounts",
             "balances",
@@ -79,7 +79,6 @@ class BalanceUpdater:
 
     def run(self) -> None:
         self.print_active_accounts()
-        self.print_recent_months()
         month = self.input_month()
         if month is None:
             return

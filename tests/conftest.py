@@ -7,16 +7,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from nwtrack.compose import (
-    build_base_sqlite_uow_container,
-    build_data_services_container,
-)
+from nwtrack.compose import build_base_sqlite_uow_container
 from nwtrack.config import Config
 from nwtrack.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.fileio import csv_to_records
 from nwtrack.mapper_registry import MapperRegistry
 from nwtrack.services import InitDataService
+from nwtrack.unitofwork import UnitOfWork
 from tests.fakes import FakeEntityA, FakeEntityB
 
 
@@ -31,13 +29,19 @@ def test_config() -> Config:
 
 @pytest.fixture(scope="module")
 def test_container(test_config) -> Container:
-    """Setup test container with SQLite Unit of Work and test config.
+    """Setup base test container with config, repo registry, and unit of work.
+
+    Registered components:
+        - Config
+        - DBConnectionManager
+        - MapperRegistry
+        - RepositoryRegistry
+        - UnitOfWork,
 
     Returns:
         Container: Configured DI container.
     """
     container = build_base_sqlite_uow_container()
-    container = build_data_services_container(container)
     container.register(
         Config,
         lambda _: test_config,
@@ -82,6 +86,10 @@ def test_entities(
     for row in records["balances"]:
         row["amount"] = abs(int(row["amount"]))
 
+    test_container.register(
+        InitDataService,
+        lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
+    )
     data_svc: InitDataService = test_container.resolve(InitDataService)
     entities = data_svc._records_to_entities(records)
 

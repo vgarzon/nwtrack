@@ -94,21 +94,6 @@ def build_base_sqlite_uow_container() -> Container:
             c.resolve(MapperRegistry),
             c.resolve(RepositoryRegistry),
         ),
-    ).register(
-        DBAdminService,
-        lambda c: SQLiteAdminService(c.resolve(Config), c.resolve(DBConnectionManager)),
-    ).register(
-        InitDataService,
-        lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
-    ).register(
-        UpdateService,
-        lambda c: UpdateService(uow=lambda: c.resolve(UnitOfWork)),
-    ).register(
-        ReportService,
-        lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),
-    ).register(
-        AccountService,
-        lambda c: AccountService(uow=lambda: c.resolve(UnitOfWork)),
     )
     return container
 

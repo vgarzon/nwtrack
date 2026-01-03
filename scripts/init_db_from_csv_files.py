@@ -2,11 +2,29 @@
 Initialize database and insert seed data from CSV files.
 """
 
-from nwtrack.compose import build_sqlite_uow_container
+from nwtrack.admin import DBAdminService, SQLiteAdminService
+from nwtrack.compose import build_base_sqlite_uow_container
+from nwtrack.config import Config
+from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.services import InitDataService
+from nwtrack.unitofwork import UnitOfWork
 from nwtrack.use_cases import DBInitializerCSV
 
 
-def main() -> None:
+def main(file_paths: dict[str, str]) -> None:
+    container = build_base_sqlite_uow_container()
+    container.register(
+        DBAdminService,
+        lambda c: SQLiteAdminService(c.resolve(Config), c.resolve(DBConnectionManager)),
+    ).register(
+        InitDataService,
+        lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
+    )
+    db_initializer = DBInitializerCSV(container)
+    db_initializer.run(file_paths)
+
+
+if __name__ == "__main__":
     file_paths = {
         "currencies": "tests/data/csv/currencies.csv",
         "categories": "tests/data/csv/categories.csv",
@@ -14,10 +32,4 @@ def main() -> None:
         "balances": "tests/data/csv/balances.csv",
         "exchange_rates": "tests/data/csv/exchange_rates.csv",
     }
-    container = build_sqlite_uow_container()
-    db_initializer = DBInitializerCSV(container)
-    db_initializer.run(file_paths)
-
-
-if __name__ == "__main__":
-    main()
+    main(file_paths)
