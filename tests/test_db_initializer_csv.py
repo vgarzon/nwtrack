@@ -10,7 +10,7 @@ from nwtrack.container import Container
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.services import InitDataService
 from nwtrack.unitofwork import UnitOfWork
-from nwtrack.use_cases import DBInitializerCSV
+from nwtrack.use_cases.db_initializer import DBInitializerCSV
 
 
 def register_services(test_container: Container) -> Container:

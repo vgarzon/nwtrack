@@ -8,7 +8,7 @@ from nwtrack.config import Config
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.services import InitDataService
 from nwtrack.unitofwork import UnitOfWork
-from nwtrack.use_cases import DBInitializerCSV
+from nwtrack.use_cases.db_initializer import DBInitializerCSV
 
 
 def main(file_paths: dict[str, str]) -> None:
