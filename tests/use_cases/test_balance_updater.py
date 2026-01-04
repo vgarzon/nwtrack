@@ -3,6 +3,7 @@ Test suite for the balance updater use case
 """
 
 import re
+import pytest
 
 from nwtrack.admin import DBAdminService, SQLiteAdminService
 from nwtrack.config import Config
@@ -14,28 +15,36 @@ from nwtrack.use_cases.balance_updater import BalanceUpdater
 from tests.test_services import init_db_tables_w_entities
 
 
-def register_services(container: Container) -> Container:
-    """Register services in the container."""
-    container.register(
-        DBAdminService,
-        lambda c: SQLiteAdminService(c.resolve(Config), c.resolve(DBConnectionManager)),
-    ).register(
-        InitDataService,
-        lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
-    ).register(
-        BalanceUpdater,
-        lambda c: BalanceUpdater(uow=lambda: c.resolve(UnitOfWork)),
+@pytest.fixture
+def configured_container(base_container: Container) -> Container:
+    """Configure container."""
+    return (
+        base_container.register(
+            DBAdminService,
+            lambda c: SQLiteAdminService(
+                c.resolve(Config), c.resolve(DBConnectionManager)
+            ),
+        )
+        .register(
+            InitDataService,
+            lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
+        )
+        .register(
+            BalanceUpdater,
+            lambda c: BalanceUpdater(uow=lambda: c.resolve(UnitOfWork)),
+        )
     )
-    return container
 
 
 def test_update_balances_run(
-    base_container: Container, sample_entities: dict[str, list], monkeypatch, capsys
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+    capsys,
 ) -> None:
     """Test initializing database and loading sample data."""
-    container = register_services(base_container)
     # TODO: Use common fixture to init DB with entities
-    init_db_tables_w_entities(container, sample_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     inputs = iter(
         [
             "2025 11",  # Input month
@@ -46,7 +55,7 @@ def test_update_balances_run(
             "q",  # Quit
         ]
     )
-    updater: BalanceUpdater = container.resolve(BalanceUpdater)
+    updater: BalanceUpdater = configured_container.resolve(BalanceUpdater)
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
     updater.run()
     captured = capsys.readouterr()

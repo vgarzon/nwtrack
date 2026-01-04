@@ -116,37 +116,6 @@ class UpdateService:
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
 
-    def update_balance(self, account_id: int, month: Month, new_amount: int) -> None:
-        """Update the balance for a specific account on a given month.
-
-        Args:
-            account_id (int): ID of the account.
-            month (Month): Month of the balance to update.
-            new_ammount (int): New balance amount.
-        """
-        with self._uow() as uow:
-            uow.balances.update(
-                account_id=account_id, month=month, new_amount=new_amount
-            )
-
-    def update_balance_account_name(
-        self, account_name: str, month: Month, new_amount: int
-    ) -> None:
-        """Update the balance for a specific account on a given month.
-
-        Args:
-            account_name (str): Name of the account.
-            month (Month): Month of the balance to update.
-            new_ammount (int): New balance amount.
-        """
-        with self._uow() as uow:
-            account_map = uow.accounts.get_dict_name()
-        account = account_map.get(account_name, None)
-        if not account:
-            raise ValueError(f"Account name '{account_name}' not found.")
-
-        self.update_balance(account_id=account.id, month=month, new_amount=new_amount)
-
     def roll_balances_forward(self, month: Month) -> None:
         """Copy all active account balances from one month to the next.
 

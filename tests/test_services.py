@@ -172,31 +172,6 @@ def test_balance_month(
     assert isinstance(sample[0], Balance), "Balances sample type mismatch"
 
 
-def test_update_balance_account_name(
-    configured_container: Container, sample_entities: dict[str, list]
-) -> None:
-    """Test updating a balance for a given account name."""
-    account_name = "bank_1_checking"
-    month_str = "2024-06"
-    new_amount = 500
-
-    init_db_tables_w_entities(configured_container, sample_entities)
-
-    upd_svc: UpdateService = configured_container.resolve(UpdateService)
-    prn_svc: ReportService = configured_container.resolve(ReportService)
-    month = Month.parse(month_str)
-
-    before = prn_svc.get_balance(month, account_name)
-    assert before.amount == 300, "Pre-update balance amount mismatch"
-    upd_svc.update_balance_account_name(
-        account_name=account_name,
-        month=month,
-        new_amount=new_amount,
-    )
-    after = prn_svc.get_balance(month, account_name)
-    assert after.amount == new_amount, "Post-update balance amount mismatch"
-
-
 def test_exchange_rate(
     configured_container: Container, sample_entities: dict[str, list]
 ) -> None:

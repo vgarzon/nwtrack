@@ -878,6 +878,31 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         cur = self._db.execute(insert_query, params)
         print(f"Rolled {cur.rowcount} balances forward to {next_month}.")
 
+    def copy_by_month(self, source_month: Month, target_month: Month) -> int:
+        """Copy balances from one month to another.
+
+        Args:
+            source_month (Month): Source Month object
+            target_month (Month): Target Month object
+
+        Returns:
+            int: Number of copied balance records.
+        """
+        insert_query = """
+        INSERT OR IGNORE INTO balances (account_id, month, amount)
+        SELECT account_id, :target_month, amount
+        FROM balances
+        WHERE month = :source_month;
+        """
+        params = {
+            "source_month": str(source_month),
+            "target_month": str(target_month),
+        }
+        cur = self._db.execute(insert_query, params)
+        row_count = cur.rowcount
+        print(f"Copied {row_count} balances from {source_month} to {target_month}.")
+        return row_count
+
     def fetch_sample(self, limit: int = 5) -> list[Balance]:
         """Fetch sample balance records for debugging.
 
