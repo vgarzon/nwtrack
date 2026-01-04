@@ -15,12 +15,23 @@ from nwtrack.use_cases.db_initializer import DBInitializerCSV
 
 def register_services(test_container: Container) -> Container:
     """Register additional services required for tests."""
-    return test_container.register(
-        DBAdminService,
-        lambda c: SQLiteAdminService(c.resolve(Config), c.resolve(DBConnectionManager)),
-    ).register(
-        InitDataService,
-        lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
+    return (
+        test_container.register(
+            DBAdminService,
+            lambda c: SQLiteAdminService(
+                c.resolve(Config), c.resolve(DBConnectionManager)
+            ),
+        )
+        .register(
+            InitDataService,
+            lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
+        )
+        .register(
+            DBInitializerCSV,
+            lambda c: DBInitializerCSV(
+                c.resolve(Config), c.resolve(DBAdminService), c.resolve(InitDataService)
+            ),
+        )
     )
 
 
@@ -33,7 +44,7 @@ def test_db_initializer_csv_yes(
     test_container, test_file_paths, monkeypatch, capsys
 ) -> None:
     container = register_services(test_container)
-    db_initializer = DBInitializerCSV(container)
+    db_initializer = container.resolve(DBInitializerCSV)
     inputs = iter(["YES"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
     db_initializer.run(test_file_paths)
@@ -49,7 +60,7 @@ def test_db_initializer_csv_quit(
     test_container, test_file_paths, monkeypatch, capsys
 ) -> None:
     container = register_services(test_container)
-    db_initializer = DBInitializerCSV(container)
+    db_initializer = container.resolve(DBInitializerCSV)
     inputs = iter(["no"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
     db_initializer.run(test_file_paths)
@@ -59,7 +70,7 @@ def test_db_initializer_csv_quit(
 
 def test_db_initializer_csv_missing_key(test_container, test_file_paths) -> None:
     container = register_services(test_container)
-    db_initializer = DBInitializerCSV(container)
+    db_initializer = container.resolve(DBInitializerCSV)
     incomplete_file_paths = test_file_paths.copy()
     del incomplete_file_paths["accounts"]
 
@@ -71,7 +82,7 @@ def test_db_initializer_csv_missing_key(test_container, test_file_paths) -> None
 
 def test_db_initializer_csv_invalid_path(test_container, test_file_paths) -> None:
     container = register_services(test_container)
-    db_initializer = DBInitializerCSV(container)
+    db_initializer = container.resolve(DBInitializerCSV)
     invalid_file_paths = test_file_paths.copy()
     invalid_file_paths["accounts"] = "invalid/path/accounts.csv"
 

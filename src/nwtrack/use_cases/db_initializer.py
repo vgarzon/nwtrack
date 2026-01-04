@@ -6,18 +6,21 @@ from pathlib import Path
 
 from nwtrack.admin import DBAdminService
 from nwtrack.config import Config
-from nwtrack.container import Container
 from nwtrack.services import InitDataService
 
 
 class DBInitializerCSV:
     """Initialize the database from CSV files."""
 
-    def __init__(self, container: Container) -> None:
-        self._container = container
-        self._config: Config = self._container.resolve(Config)
-        self._admin_svc: DBAdminService = self._container.resolve(DBAdminService)
-        self._data_svc: InitDataService = self._container.resolve(InitDataService)
+    def __init__(
+        self,
+        config: Config,
+        admin_svc: DBAdminService,
+        data_svc: InitDataService,
+    ) -> None:
+        self._config = config
+        self._admin_svc = admin_svc
+        self._data_svc = data_svc
 
     def run(self, file_paths: dict[str, str]) -> None:
         print(f"Database file path: {self._config.db_file_path}")

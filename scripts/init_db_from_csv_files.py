@@ -19,8 +19,14 @@ def main(file_paths: dict[str, str]) -> None:
     ).register(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
+    ).register(
+        DBInitializerCSV,
+        lambda c: DBInitializerCSV(
+            c.resolve(Config), c.resolve(DBAdminService), c.resolve(InitDataService)
+        ),
     )
-    db_initializer = DBInitializerCSV(container)
+
+    db_initializer = container.resolve(DBInitializerCSV)
     db_initializer.run(file_paths)
 
 
