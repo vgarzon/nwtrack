@@ -10,7 +10,7 @@ from nwtrack.container import Container
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.services import InitDataService
 from nwtrack.unitofwork import UnitOfWork
-from nwtrack.use_cases.db_initializer import DBInitializerCSV
+from nwtrack.use_cases.db_initializer_csv import DBInitializerCSV
 
 
 @pytest.fixture
@@ -41,13 +41,20 @@ def _uow_factory(container: Container) -> UnitOfWork:
     return container.resolve(UnitOfWork)
 
 
-def test_db_initializer_csv_yes(
-    configured_container, sample_data_file_paths, monkeypatch, capsys
-) -> None:
+def test_db_initializer_csv_yes(configured_container, monkeypatch, capsys) -> None:
+    inputs = iter(
+        [
+            "tests/data/csv/currencies.csv",
+            "tests/data/csv/categories.csv",
+            "tests/data/csv/accounts.csv",
+            "tests/data/csv/balances.csv",
+            "tests/data/csv/exchange_rates.csv",
+            "YES",
+        ]
+    )
     db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
-    inputs = iter(["YES"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
-    db_initializer.run(sample_data_file_paths)
+    db_initializer.run()
     captured = capsys.readouterr()
     assert "Database initialization complete." in captured.out
     with _uow_factory(configured_container) as uow:
@@ -56,38 +63,32 @@ def test_db_initializer_csv_yes(
     assert balances[11].amount == 200
 
 
-def test_db_initializer_csv_quit(
-    configured_container, sample_data_file_paths, monkeypatch, capsys
+def test_db_initializer_csv_file_path_quit(
+    configured_container, monkeypatch, capsys
 ) -> None:
     db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
-    inputs = iter(["no"])
+    inputs = iter(["q"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
-    db_initializer.run(sample_data_file_paths)
+    db_initializer.run()
     captured = capsys.readouterr()
     assert "Quitting." in captured.out
 
 
-def test_db_initializer_csv_missing_key(
-    configured_container, sample_data_file_paths
-) -> None:
-    db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
-    incomplete_file_paths = sample_data_file_paths.copy()
-    del incomplete_file_paths["accounts"]
-
-    with pytest.raises(KeyError) as exc_info:
-        db_initializer.run(incomplete_file_paths)
-    assert "Missing required file paths for keys" in str(exc_info.value)
-    assert "accounts" in str(exc_info.value)
-
-
 def test_db_initializer_csv_invalid_path(
-    configured_container, sample_data_file_paths
+    configured_container, monkeypatch, capsys
 ) -> None:
+    invalid_path = "invalid/path/accounts.csv"
+    inputs = iter(
+        [
+            invalid_path,
+            "q",
+        ]
+    )
     db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
-    invalid_file_paths = sample_data_file_paths.copy()
-    invalid_file_paths["accounts"] = "invalid/path/accounts.csv"
 
-    with pytest.raises(FileNotFoundError) as exc_info:
-        db_initializer.run(invalid_file_paths)
-    assert "Path for 'accounts' is not a file" in str(exc_info.value)
-    assert "invalid/path/accounts.csv" in str(exc_info.value)
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+    db_initializer.run()
+    captured = capsys.readouterr()
+
+    assert f"Error: File not found at {invalid_path}" in captured.out
+    assert "Quitting." in captured.out
