@@ -627,8 +627,8 @@ class AccountService:
             status=Status(status_str),
         )
         with self._uow() as uow:
-            rowcount = uow.accounts.insert(account)
-        assert rowcount == 1, "Failed to insert new account."
+            last_id = uow.accounts.insert(account)
+        assert last_id > 0, "Failed to insert new account."
 
         with self._uow() as uow:
             response = uow.accounts.get_by_name(name)

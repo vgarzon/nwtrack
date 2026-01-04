@@ -398,20 +398,23 @@ class SQLiteCategoriesRepository(BaseRepository[Category]):
 class SQLiteAccountsRepository(BaseRepository[Account]):
     """Repository for account SQLite database operations."""
 
-    def insert(self, data: Account) -> None:
+    def insert(self, data: Account) -> int:
         """Insert account object in respective table.
 
         Args:
             data (Account): Account objects
+
+        Returns:
+            int: last row id of inserted account
         """
         query = """
         INSERT INTO accounts (name, description, category, currency, status)
         VALUES (:name, :description, :category, :currency, :status);
         """
         cur = self._db.execute(query, self._mapper.to_record(data))
-        # TODO: Return cur.lastrowid instead of row count. Need to adjust interface and tests.
-        print("Inserted", cur.rowcount, "account")
-        return cur.rowcount
+        last_id = cur.lastrowid
+        print("Inserted account with ID", last_id)
+        return last_id
 
     def insert_many(self, data: list[Account]) -> None:
         """Insert list of accounts into the accounts table.
