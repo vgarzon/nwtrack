@@ -5,20 +5,14 @@ Use cases for updating account balances and generating reports.
 from typing import Callable
 from nwtrack.models import Month, Category
 from nwtrack.unitofwork import UnitOfWork
-from nwtrack.services import UpdateService
 from nwtrack.models import Account, Balance
 
 
 class BalanceUpdater:
     """Update account balances interactively."""
 
-    def __init__(
-        self,
-        uow: Callable[[], UnitOfWork],
-        update_svc: UpdateService,
-    ) -> None:
+    def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
-        self._update_svc = update_svc
 
     def run(self) -> None:
         self.print_active_accounts()
@@ -93,7 +87,7 @@ class BalanceUpdater:
                 print("Invalid amount. Please enter a valid integer amount.")
                 continue
             break
-        self._update_svc.update_balance(account_id, month, new_amount)
+        self.update_balance(account_id, month, new_amount)
 
     def print_active_accounts(self):
         active_accounts = self._get_active_accounts()
@@ -218,3 +212,16 @@ class BalanceUpdater:
         with self._uow() as uow:
             balances = uow.balances.get_month(month, active_only)
         return balances
+
+    def update_balance(self, account_id: int, month: Month, new_amount: int) -> None:
+        """Update the balance for a specific account on a given month.
+
+        Args:
+            account_id (int): ID of the account.
+            month (Month): Month of the balance to update.
+            new_ammount (int): New balance amount.
+        """
+        with self._uow() as uow:
+            uow.balances.update(
+                account_id=account_id, month=month, new_amount=new_amount
+            )
