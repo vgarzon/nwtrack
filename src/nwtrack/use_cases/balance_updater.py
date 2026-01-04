@@ -1,5 +1,5 @@
 """
-Use cases for updating account balances and generating reports.
+Update active account balances interactively
 """
 
 from typing import Callable
@@ -225,3 +225,19 @@ class BalanceUpdater:
             uow.balances.update(
                 account_id=account_id, month=month, new_amount=new_amount
             )
+
+
+def main() -> None:
+    from nwtrack.compose import build_base_sqlite_uow_container
+
+    container = build_base_sqlite_uow_container()
+    container.register(
+        BalanceUpdater,
+        lambda c: BalanceUpdater(uow=lambda: c.resolve(UnitOfWork)),
+    )
+    updater: BalanceUpdater = container.resolve(BalanceUpdater)
+    updater.run()
+
+
+if __name__ == "__main__":
+    main()
