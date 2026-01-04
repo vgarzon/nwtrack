@@ -523,6 +523,18 @@ class AccountService:
             category = uow.categories.get(account.category_name)
         return category
 
+    def get_balances_by_account_id(self, account_id: int) -> list[Balance]:
+        """Get all balances for an account.
+
+        Args:
+            account_id (int): Account id
+        Return:
+            list[Balance]: List of Balance object for the specified account.
+        """
+        with self._uow() as uow:
+            balances = uow.balances.get_all_by_account_id(account_id)
+        return balances
+
     def create(
         self,
         name: str,

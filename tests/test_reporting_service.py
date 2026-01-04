@@ -1,6 +1,5 @@
 """
-Test services using CSV data files as input.test_servicee
-lve
+Test services using CSV data files as input.test_service
 """
 
 import pytest
@@ -12,7 +11,7 @@ from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.models import Balance, Month, NetWorth
 from nwtrack.services import InitDataService, ReportService
 from nwtrack.unitofwork import UnitOfWork
-from tests.test_repos import count_entries
+from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture
@@ -36,47 +35,7 @@ def configured_container(base_container: Container) -> None:
     )
 
 
-def init_db_tables_w_entities(container: Container, entities: dict[str, list]) -> None:
-    """Initialize database and load sample data."""
-    container.resolve(DBAdminService).init_database()
-    data_svc: InitDataService = container.resolve(InitDataService)
-    data_svc._insert_entities(entities)
-
-
-def init_db_tables_from_csv(container: Container, file_paths: dict[str, str]) -> None:
-    """Initialize database and load sample data."""
-    container.resolve(DBAdminService).init_database()
-    data_svc: InitDataService = container.resolve(InitDataService)
-    data_svc.insert_data_from_csv(file_paths)
-
-
-def test_init_data_from_csv(
-    configured_container: Container, sample_data_file_paths: dict[str, str]
-) -> None:
-    """Test initializing database and loading sample data from CSV files"""
-    init_db_tables_from_csv(configured_container, sample_data_file_paths)
-    cnts = count_entries(configured_container)
-    assert cnts["currencies"] == 3, "Expected 3 currencies"
-    assert cnts["categories"] == 4, "Expected 4 categories"
-    assert cnts["accounts"] == 4, "Expected 4 accounts"
-    assert cnts["balances"] == 42, "Expected 42 balances"
-    assert cnts["exchange_rates"] == 48, "Expected 48 exchange rates"
-
-
-def test_init_data_entities(
-    configured_container: Container, sample_entities: dict[str, list]
-) -> None:
-    """Test initializing database and loading sample data."""
-    init_db_tables_w_entities(configured_container, sample_entities)
-    cnts = count_entries(configured_container)
-    assert cnts["currencies"] == 3, "Expected 3 currencies"
-    assert cnts["categories"] == 4, "Expected 4 categories"
-    assert cnts["accounts"] == 4, "Expected 4 accounts"
-    assert cnts["balances"] == 42, "Expected 42 balances"
-    assert cnts["exchange_rates"] == 48, "Expected 48 exchange rates"
-
-
-def test_accounts(
+def test_get_accounts(
     configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test retrieving accounts."""
@@ -94,7 +53,7 @@ def test_accounts(
     assert all_accounts[-1].name == "mortgage_1"
 
 
-def test_net_worth(
+def test_get_net_worth(
     configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test retrieving net worth."""
@@ -111,7 +70,7 @@ def test_net_worth(
     assert net_worth.net_worth == 100, "Net worth total mismatch"
 
 
-def test_net_worth_hist(
+def test_get_net_worth_hist(
     configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test retrieving net worth."""
@@ -125,7 +84,7 @@ def test_net_worth_hist(
     assert net_worth_hist[-1].net_worth == 100, "Net worth history last total mismatch"
 
 
-def test_fetch_balance(
+def test_get_balance_for_account_and_month(
     configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test fetching balances."""
@@ -148,7 +107,7 @@ def test_fetch_balance(
     assert single_bal.amount == 200, "Balance amount mismatch"
 
 
-def test_balance_month(
+def test_get_monthly_balances(
     configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test retrieving balances by month"""

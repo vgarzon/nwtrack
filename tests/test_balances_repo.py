@@ -6,13 +6,9 @@ from nwtrack.compose import build_data_services_container
 from nwtrack.container import Container
 from nwtrack.models import Month
 from nwtrack.unitofwork import UnitOfWork
-from tests.test_services import init_db_tables_w_entities
+from tests.helpers import init_db_tables_w_entities, _uow_factory
 
 # TODO: add tests for other balance repo methods
-
-
-def uow_factory(container: Container) -> UnitOfWork:
-    return container.resolve(UnitOfWork)
 
 
 def test_insert_single_balance(base_container, sample_entities) -> None:
@@ -28,7 +24,7 @@ def test_insert_single_balance(base_container, sample_entities) -> None:
         "month": month_str,
         "amount": 300,
     }
-    with uow_factory(container) as uow:
+    with _uow_factory(container) as uow:
         new_balance = uow.balances.hydrate(new_balance_data)
         last_id = uow.balances.insert(new_balance)
         inserted_balance = uow.balances.get_by_account_id(
@@ -46,7 +42,7 @@ def test_count_balances_entries(base_container, sample_entities) -> None:
     container = build_data_services_container(base_container)
     init_db_tables_w_entities(container, sample_entities)
 
-    with uow_factory(container) as uow:
+    with _uow_factory(container) as uow:
         cnt = uow.balances.count()
 
     assert cnt == 42
@@ -57,7 +53,7 @@ def test_count_balances_per_month(base_container, sample_entities) -> None:
     container = build_data_services_container(base_container)
     init_db_tables_w_entities(container, sample_entities)
 
-    with uow_factory(container) as uow:
+    with _uow_factory(container) as uow:
         cnts = uow.balances.count_per_month()
 
     assert len(cnts) == 12

@@ -10,6 +10,7 @@ from nwtrack.container import Container
 from nwtrack.services import ReportService
 from nwtrack.unitofwork import UnitOfWork
 from tests.data.basic import TEST_DATA
+from tests.helpers import _uow_factory, count_entries
 
 # repo label, table name
 REPO_MAPPING = [
@@ -31,16 +32,6 @@ def configured_container(base_container: Container) -> None:
         ReportService,
         lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),
     )
-
-
-def count_entries(configured_container: Container) -> dict[str, int]:
-    """Count entries from all repos."""
-    prn_svc: ReportService = configured_container.resolve(ReportService)
-    return prn_svc.count_entries()
-
-
-def _uow_factory(container: Container) -> UnitOfWork:
-    return container.resolve(UnitOfWork)
 
 
 def test_insert_hydrated(configured_container) -> None:

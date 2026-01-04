@@ -12,7 +12,7 @@ from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.services import InitDataService
 from nwtrack.unitofwork import UnitOfWork
 from nwtrack.use_cases.balance_updater import BalanceUpdater
-from tests.test_services import init_db_tables_w_entities
+from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture

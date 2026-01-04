@@ -8,9 +8,9 @@ from nwtrack.admin import DBAdminService, SQLiteAdminService
 from nwtrack.config import Config
 from nwtrack.container import Container
 from nwtrack.dbmanager import DBConnectionManager
-from nwtrack.services import AccountService, InitDataService, ReportService
+from nwtrack.services import AccountService, InitDataService
 from nwtrack.unitofwork import UnitOfWork
-from tests.test_services import init_db_tables_w_entities
+from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture
@@ -26,10 +26,6 @@ def configured_container(base_container: Container) -> None:
         .register(
             InitDataService,
             lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
-        )
-        .register(
-            ReportService,
-            lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),
         )
         .register(
             AccountService,
@@ -202,7 +198,6 @@ def test_delete_account_with_balance(
     """Test deleting an account."""
     init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
-    rpt_svc: ReportService = configured_container.resolve(ReportService)
 
     account_name = "credit_cards_1"
     account = svc.get_by_name(account_name)
@@ -211,7 +206,7 @@ def test_delete_account_with_balance(
     svc.delete(account_name)
     result = svc.get_by_name(account_name)
     assert result is None
-    assert len(rpt_svc.get_balances_by_account_id(account_id)) == 0
+    assert len(svc.get_balances_by_account_id(account_id)) == 0
 
     with pytest.raises(ValueError) as exc_info:
         svc.delete("non_existent_account")
