@@ -4,19 +4,48 @@ Test suite for the balance updater use case
 
 import re
 
-from nwtrack.compose import build_data_services_container
+from nwtrack.admin import DBAdminService, SQLiteAdminService
+from nwtrack.config import Config
 from nwtrack.container import Container
+from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.services import InitDataService, ReportService, UpdateService
+from nwtrack.unitofwork import UnitOfWork
 from nwtrack.use_cases.balance_updater import BalanceUpdater
 from tests.test_services import init_db_tables_w_entities
 
 
-def test_update_balances_loop(
+def register_services(container: Container) -> Container:
+    """Register services in the container."""
+    container.register(
+        DBAdminService,
+        lambda c: SQLiteAdminService(c.resolve(Config), c.resolve(DBConnectionManager)),
+    ).register(
+        InitDataService,
+        lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
+    ).register(
+        UpdateService,
+        lambda c: UpdateService(uow=lambda: c.resolve(UnitOfWork)),
+    ).register(
+        ReportService,
+        lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),
+    ).register(
+        BalanceUpdater,
+        lambda c: BalanceUpdater(
+            uow=lambda: c.resolve(UnitOfWork),
+            report_svc=c.resolve(ReportService),
+            update_svc=c.resolve(UpdateService),
+        ),
+    )
+    return container
+
+
+def test_update_balances_run(
     test_container: Container, test_entities: dict[str, list], monkeypatch, capsys
 ) -> None:
     """Test initializing database and loading sample data."""
-    container = build_data_services_container(test_container)
+    container = register_services(test_container)
+    # TODO: Use common fixture to init DB with entities
     init_db_tables_w_entities(container, test_entities)
-
     inputs = iter(
         [
             "2025 11",  # Input month
@@ -27,11 +56,8 @@ def test_update_balances_loop(
             "q",  # Quit
         ]
     )
-
-    updater = BalanceUpdater(test_container)
-
+    updater = container.resolve(BalanceUpdater)
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
     updater.run()
     captured = capsys.readouterr()
-
     assert re.search(r"Net Worth: 300", captured.out)

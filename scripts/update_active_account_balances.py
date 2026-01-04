@@ -5,11 +5,7 @@ Update active account balances interactively
 from nwtrack.compose import build_base_sqlite_uow_container
 from nwtrack.use_cases.balance_updater import BalanceUpdater
 from nwtrack.unitofwork import UnitOfWork
-from nwtrack.services import (
-    AccountService,
-    ReportService,
-    UpdateService,
-)
+from nwtrack.services import ReportService, UpdateService
 
 
 def main() -> None:
@@ -21,10 +17,14 @@ def main() -> None:
         ReportService,
         lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),
     ).register(
-        AccountService,
-        lambda c: AccountService(uow=lambda: c.resolve(UnitOfWork)),
+        BalanceUpdater,
+        lambda c: BalanceUpdater(
+            uow=lambda: c.resolve(UnitOfWork),
+            report_svc=c.resolve(ReportService),
+            update_svc=c.resolve(UpdateService),
+        ),
     )
-    updater = BalanceUpdater(container)
+    updater = container.resolve(BalanceUpdater)
     updater.run()
 
 

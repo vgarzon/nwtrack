@@ -2,26 +2,28 @@
 Use cases for updating account balances and generating reports.
 """
 
-from nwtrack.container import Container
-from nwtrack.models import Month
-from nwtrack.services import (
-    AccountService,
-    ReportService,
-    UpdateService,
-)
+from typing import Callable
+from nwtrack.models import Month, Category
+from nwtrack.unitofwork import UnitOfWork
+from nwtrack.services import ReportService, UpdateService
 
 
 class BalanceUpdater:
     """Update account balances interactively."""
 
-    def __init__(self, container: Container) -> None:
-        self._container = container
-        self._account_svc: AccountService = self._container.resolve(AccountService)
-        self._report_svc: ReportService = self._container.resolve(ReportService)
-        self._update_svc: UpdateService = self._container.resolve(UpdateService)
+    def __init__(
+        self,
+        uow: Callable[[], UnitOfWork],
+        report_svc: ReportService,
+        update_svc: UpdateService,
+    ) -> None:
+        self._uow = uow
+        self._report_svc = report_svc
+        self._update_svc = update_svc
 
     def run(self) -> None:
         self.print_active_accounts()
+        self.print_recent_months()
         month = self.input_month()
         if month is None:
             return
@@ -102,7 +104,7 @@ class BalanceUpdater:
         print("Active accounts:")
         for account in active_accounts:
             _id, _name = account.id, account.name
-            _category = self._account_svc.get_category_by_account_id(_id)
+            _category = self._get_category_by_account_id(_id)
             _side = _category.side.value
             print(f"Account {_id:2}: {_name:20} {_category.name:16} ({_side})")
         print()
@@ -114,7 +116,7 @@ class BalanceUpdater:
         for balance in balances:
             account_id = balance.account_id
             account_name = account_map[account_id].name
-            account_category = self._account_svc.get_category_by_account_id(account_id)
+            account_category = self._get_category_by_account_id(account_id)
             assert account_category is not None, (
                 f"Category not found for account ID {account_id}"
             )
@@ -124,3 +126,20 @@ class BalanceUpdater:
                 f"{balance.amount:10,}"
             )
         print()
+
+    def _get_category_by_account_id(self, account_id: int) -> Category | None:
+        """Get category side for a given account ID.
+
+        Args:
+            account_id (int): Account ID
+
+        Returns:
+            Category | None: Category instance if found, else None.
+        """
+        with self._uow() as uow:
+            account = uow.accounts.get_by_id(account_id)
+        if not account:
+            return None
+        with self._uow() as uow:
+            category = uow.categories.get(account.category_name)
+        return category
