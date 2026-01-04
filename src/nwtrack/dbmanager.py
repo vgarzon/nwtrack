@@ -54,7 +54,7 @@ class SQLiteConnectionManager:
         return self._connection
 
     def _create_connection(self) -> DBAPIConnection:
-        print("Creating new SQLite connection.")
+        print(f"Creating new SQLite connection with path '{self._db_file_path}'.")
         conn = sqlite3.connect(self._db_file_path)
         conn.execute("PRAGMA foreign_keys = ON;")  # NOTE: Enabled in DDL script too
         conn.row_factory = sqlite3.Row
