@@ -8,7 +8,7 @@ from nwtrack.admin import DBAdminService, SQLiteAdminService
 from nwtrack.config import Config
 from nwtrack.container import Container
 from nwtrack.dbmanager import DBConnectionManager
-from nwtrack.services import InitDataService, ReportService, UpdateService
+from nwtrack.services import InitDataService, UpdateService
 from nwtrack.unitofwork import UnitOfWork
 from nwtrack.use_cases.balance_updater import BalanceUpdater
 from tests.test_services import init_db_tables_w_entities
@@ -26,13 +26,9 @@ def register_services(container: Container) -> Container:
         UpdateService,
         lambda c: UpdateService(uow=lambda: c.resolve(UnitOfWork)),
     ).register(
-        ReportService,
-        lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),
-    ).register(
         BalanceUpdater,
         lambda c: BalanceUpdater(
             uow=lambda: c.resolve(UnitOfWork),
-            report_svc=c.resolve(ReportService),
             update_svc=c.resolve(UpdateService),
         ),
     )

@@ -5,7 +5,8 @@ Use cases for updating account balances and generating reports.
 from typing import Callable
 from nwtrack.models import Month, Category
 from nwtrack.unitofwork import UnitOfWork
-from nwtrack.services import ReportService, UpdateService
+from nwtrack.services import UpdateService
+from nwtrack.models import Account, Balance
 
 
 class BalanceUpdater:
@@ -14,11 +15,9 @@ class BalanceUpdater:
     def __init__(
         self,
         uow: Callable[[], UnitOfWork],
-        report_svc: ReportService,
         update_svc: UpdateService,
     ) -> None:
         self._uow = uow
-        self._report_svc = report_svc
         self._update_svc = update_svc
 
     def run(self) -> None:
@@ -34,7 +33,7 @@ class BalanceUpdater:
         self.print_net_worth(month)
 
     def print_recent_months(self) -> None:
-        balance_counts = self._report_svc.get_balance_count_per_month()
+        balance_counts = self._get_balance_count_per_month()
         balance_counts.sort(key=lambda x: x[0], reverse=True)
         print("Recent month balance counts:")
         for month, count in balance_counts[:3]:
@@ -74,12 +73,9 @@ class BalanceUpdater:
                 continue
             self.update_account_balance(account_id, month)
 
-    def print_net_worth(self, month: Month) -> None:
-        self._report_svc.print_net_worth(month)
-
     def update_account_balance(self, account_id: int, month: Month) -> None:
-        accounts_map_id = self._report_svc.get_map_id_to_account()
-        balance = self._report_svc.get_balance_for_account_id(month, account_id)
+        accounts_map_id = self._get_map_id_to_account()
+        balance = self._get_balance_for_account_id(month, account_id)
         current_balance = balance.amount if balance else 0
 
         while True:
@@ -100,7 +96,7 @@ class BalanceUpdater:
         self._update_svc.update_balance(account_id, month, new_amount)
 
     def print_active_accounts(self):
-        active_accounts = self._report_svc.get_accounts(active_only=True)
+        active_accounts = self._get_active_accounts()
         print("Active accounts:")
         for account in active_accounts:
             _id, _name = account.id, account.name
@@ -110,8 +106,8 @@ class BalanceUpdater:
         print()
 
     def print_balances(self, month: Month):
-        balances = self._report_svc.get_month_balances(month, active_only=True)
-        account_map = self._report_svc.get_map_id_to_account()
+        balances = self._get_month_balances(month, active_only=True)
+        account_map = self._get_map_id_to_account()
         print("Balances for", month)
         for balance in balances:
             account_id = balance.account_id
@@ -126,6 +122,25 @@ class BalanceUpdater:
                 f"{balance.amount:10,}"
             )
         print()
+
+    def print_net_worth(self, month: Month, currency_code: str = "USD") -> None:
+        """Print net worth on a specific month.
+
+        Args:
+            month (Month): Month object
+            currency (str): Currency code (default: "USD")
+
+        Returns:
+            None
+        """
+        with self._uow() as uow:
+            nw = uow.net_worth.get(month, currency_code)
+        if not nw:
+            raise ValueError(f"No net worth data found for {month} in {currency_code}")
+        print(
+            f"Month: {month} Currency: {currency_code} Assets: {nw.assets:,} "
+            f"Liabilities: {nw.liabilities:,} Net Worth: {nw.net_worth:,}"
+        )
 
     def _get_category_by_account_id(self, account_id: int) -> Category | None:
         """Get category side for a given account ID.
@@ -143,3 +158,63 @@ class BalanceUpdater:
         with self._uow() as uow:
             category = uow.categories.get(account.category_name)
         return category
+
+    def _get_map_id_to_account(self) -> dict[int, Account]:
+        """Get a map of account id to Account objects.
+
+        Returns:
+            dict[int, Account]: Map of account id to Account objects.
+        """
+        with self._uow() as uow:
+            accounts = uow.accounts.get_all()
+        return {acc.id: acc for acc in accounts}
+
+    def _get_balance_count_per_month(self) -> list[tuple[Month, int]]:
+        """Get count of balance entries per month.
+
+        Returns:
+            list[tuple[Month, int]]: list of tuples Month count of balance entries.
+        """
+        with self._uow() as uow:
+            counts = uow.balances.count_per_month()
+        return counts
+
+    def _get_active_accounts(self) -> list[Account]:
+        """Get list of active accounts.
+
+        Returns:
+            list[Account]: List of active Account objects.
+        """
+        with self._uow() as uow:
+            accounts = uow.accounts.get_active()
+        return accounts
+
+    def _get_balance_for_account_id(self, month: Month, account_id: int) -> Balance:
+        """Get balance for an account on a specific month.
+
+        Args:
+            month (Month): Month object
+            account_id (int): Account id
+
+        Return:
+            Balance: Balance object for the specified account and month.
+        """
+        with self._uow() as uow:
+            balance = uow.balances.get_by_account_id(month, account_id)
+        return balance
+
+    def _get_month_balances(
+        self, month: Month, active_only: bool = True
+    ) -> list[Balance]:
+        """Get balance all accounts on a specific month.
+
+        Args:
+            month (Month): Month object
+            active_only (bool): Whether to include only active accounts
+
+        Return:
+            list[Balance]: List of Balance object for the specified account and month.
+        """
+        with self._uow() as uow:
+            balances = uow.balances.get_month(month, active_only)
+        return balances
