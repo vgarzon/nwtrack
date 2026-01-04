@@ -13,7 +13,8 @@ from nwtrack.unitofwork import UnitOfWork
 from nwtrack.use_cases.db_initializer import DBInitializerCSV
 
 
-def register_services(test_container: Container) -> Container:
+@pytest.fixture
+def configured_container(test_container: Container) -> Container:
     """Register additional services required for tests."""
     return (
         test_container.register(
@@ -35,32 +36,30 @@ def register_services(test_container: Container) -> Container:
     )
 
 
-def uow_factory(test_container: Container) -> UnitOfWork:
+def _uow_factory(container: Container) -> UnitOfWork:
     """Factory to create UnitOfWork instances for tests."""
-    return test_container.resolve(UnitOfWork)
+    return container.resolve(UnitOfWork)
 
 
 def test_db_initializer_csv_yes(
-    test_container, test_file_paths, monkeypatch, capsys
+    configured_container, test_file_paths, monkeypatch, capsys
 ) -> None:
-    container = register_services(test_container)
-    db_initializer: DBInitializerCSV = container.resolve(DBInitializerCSV)
+    db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
     inputs = iter(["YES"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
     db_initializer.run(test_file_paths)
     captured = capsys.readouterr()
     assert "Database initialization complete." in captured.out
-    with uow_factory(container) as uow:
+    with _uow_factory(configured_container) as uow:
         balances = uow.balances.get_all_by_account_id(1)
     assert len(balances) == 12
     assert balances[11].amount == 200
 
 
 def test_db_initializer_csv_quit(
-    test_container, test_file_paths, monkeypatch, capsys
+    configured_container, test_file_paths, monkeypatch, capsys
 ) -> None:
-    container = register_services(test_container)
-    db_initializer: DBInitializerCSV = container.resolve(DBInitializerCSV)
+    db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
     inputs = iter(["no"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
     db_initializer.run(test_file_paths)
@@ -68,9 +67,8 @@ def test_db_initializer_csv_quit(
     assert "Quitting." in captured.out
 
 
-def test_db_initializer_csv_missing_key(test_container, test_file_paths) -> None:
-    container = register_services(test_container)
-    db_initializer: DBInitializerCSV = container.resolve(DBInitializerCSV)
+def test_db_initializer_csv_missing_key(configured_container, test_file_paths) -> None:
+    db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
     incomplete_file_paths = test_file_paths.copy()
     del incomplete_file_paths["accounts"]
 
@@ -80,9 +78,8 @@ def test_db_initializer_csv_missing_key(test_container, test_file_paths) -> None
     assert "accounts" in str(exc_info.value)
 
 
-def test_db_initializer_csv_invalid_path(test_container, test_file_paths) -> None:
-    container = register_services(test_container)
-    db_initializer: DBInitializerCSV = container.resolve(DBInitializerCSV)
+def test_db_initializer_csv_invalid_path(configured_container, test_file_paths) -> None:
+    db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
     invalid_file_paths = test_file_paths.copy()
     invalid_file_paths["accounts"] = "invalid/path/accounts.csv"
 
