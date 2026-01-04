@@ -471,6 +471,16 @@ class ReportService:
                 counts[label] = count
         return counts
 
+    def get_all_categories(self) -> list[Category]:
+        """Get a list of all categories.
+
+        Returns:
+            list[Category]: List of Category objects.
+        """
+        with self._uow() as uow:
+            categories = uow.categories.get_all()
+        return categories
+
 
 class AccountService:
     """Account operations."""

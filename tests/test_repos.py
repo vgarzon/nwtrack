@@ -2,12 +2,12 @@
 Test cases for repository management functionalities.
 """
 
-from nwtrack.container import Container
-from nwtrack.unitofwork import UnitOfWork
 from nwtrack.admin import DBAdminService
+from nwtrack.compose import build_data_services_container
+from nwtrack.container import Container
 from nwtrack.services import ReportService
+from nwtrack.unitofwork import UnitOfWork
 from tests.data.basic import TEST_DATA
-
 
 # repo label, table name
 REPO_MAPPING = [
@@ -21,23 +21,23 @@ REPO_MAPPING = [
 
 def count_entries(test_container: Container) -> dict[str, int]:
     """Count entries from all repos."""
-
-    prn_svc: ReportService = test_container.resolve(ReportService)
+    container = build_data_services_container(test_container)
+    prn_svc: ReportService = container.resolve(ReportService)
 
     return prn_svc.count_entries()
 
 
-def uow_factory(test_container: Container) -> UnitOfWork:
-    return test_container.resolve(UnitOfWork)
+def uow_factory(container: Container) -> UnitOfWork:
+    return container.resolve(UnitOfWork)
 
 
 def test_insert_hydrated(test_container) -> None:
     """Test inserting hydrated objects."""
-
-    admin_service: DBAdminService = test_container.resolve(DBAdminService)
+    container = build_data_services_container(test_container)
+    admin_service: DBAdminService = container.resolve(DBAdminService)
     admin_service.init_database()
 
-    with uow_factory(test_container) as uow:
+    with uow_factory(container) as uow:
         for repo_name, table_name in REPO_MAPPING:
             repo = getattr(uow, repo_name)
             entities = repo.hydrate_many(TEST_DATA[table_name])
@@ -53,13 +53,13 @@ def test_insert_hydrated(test_container) -> None:
 
 def test_delete_records(test_container: Container) -> None:
     """Delete all records from all tables."""
-
-    admin_service: DBAdminService = test_container.resolve(DBAdminService)
+    container = build_data_services_container(test_container)
+    admin_service: DBAdminService = container.resolve(DBAdminService)
     admin_service.init_database()
 
     reversed_repo_names = [repo_name for repo_name, _ in REPO_MAPPING][::-1]
 
-    with uow_factory(test_container) as uow:
+    with uow_factory(container) as uow:
         for repo_name in reversed_repo_names:
             repo = getattr(uow, repo_name)
             repo.delete_all()

@@ -2,11 +2,13 @@
 Test cases for database connection and unit of work functionalities.
 """
 
+from nwtrack.compose import build_data_services_container
+
+from nwtrack.admin import DBAdminService
 from nwtrack.config import Config
 from nwtrack.container import Container
-from nwtrack.admin import DBAdminService
-from tests.data.basic import TEST_DATA
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
+from tests.data.basic import TEST_DATA
 
 INSERT_QUERIES: dict[str, str] = {
     "currencies": """
@@ -74,16 +76,18 @@ def get_table_count(db_manager: DBConnectionManager, table_name: str) -> int:
 
 def test_db_config(test_container: Container, test_config: Config) -> None:
     """Test database config."""
-    cfg: Config = test_container.resolve(Config)
+    container = build_data_services_container(test_container)
+    cfg: Config = container.resolve(Config)
     assert cfg.db_file_path == test_config.db_file_path
     assert cfg.db_ddl_path == test_config.db_ddl_path
 
 
 def test_initialize_database(test_container: Container) -> None:
     """Test database initialization."""
-    admin_service: DBAdminService = test_container.resolve(DBAdminService)
+    container = build_data_services_container(test_container)
+    admin_service: DBAdminService = container.resolve(DBAdminService)
+    db_manager: SQLiteConnectionManager = container.resolve(DBConnectionManager)
     admin_service.init_database()
-    db_manager: SQLiteConnectionManager = test_container.resolve(DBConnectionManager)
     row = db_manager.execute("PRAGMA database_list;").fetchone()
     assert row is not None
     assert "file" in row.keys()
@@ -91,10 +95,10 @@ def test_initialize_database(test_container: Container) -> None:
 
 def test_tables_exist(test_container: Container) -> None:
     """Test that expected tables exist in the database."""
-
-    admin_service: DBAdminService = test_container.resolve(DBAdminService)
+    container = build_data_services_container(test_container)
+    admin_service: DBAdminService = container.resolve(DBAdminService)
+    db_manager: SQLiteConnectionManager = container.resolve(DBConnectionManager)
     admin_service.init_database()
-    db_manager: SQLiteConnectionManager = test_container.resolve(DBConnectionManager)
     table_names = get_table_names(db_manager)
 
     assert len(table_names) == 5, "Expected 5 tables in the database."
@@ -106,11 +110,10 @@ def test_tables_exist(test_container: Container) -> None:
 
 def test_insert_data_with_query(test_container: Container) -> None:
     """Test populating initial data into the database."""
-
-    admin_service: DBAdminService = test_container.resolve(DBAdminService)
+    container = build_data_services_container(test_container)
+    admin_service: DBAdminService = container.resolve(DBAdminService)
+    db_manager: SQLiteConnectionManager = container.resolve(DBConnectionManager)
     admin_service.init_database()
-
-    db_manager: SQLiteConnectionManager = test_container.resolve(DBConnectionManager)
     insert_data_with_query(db_manager)
 
     assert get_table_count(db_manager, "currencies") == 3, "Expected 3 currencies"

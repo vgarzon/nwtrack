@@ -409,6 +409,7 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         VALUES (:name, :description, :category, :currency, :status);
         """
         cur = self._db.execute(query, self._mapper.to_record(data))
+        # TODO: Return cur.lastrowid instead of row count. Need to adjust interface and tests.
         print("Inserted", cur.rowcount, "account")
         return cur.rowcount
 
@@ -667,6 +668,21 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
 
 class SQLiteBalancesRepository(BaseRepository[Balance]):
     """Repository for balances SQLite database operations."""
+
+    def insert(self, data: Balance) -> None:
+        """Insert balance object in respective table.
+
+        Args:
+            data (Balance): Balance object
+        """
+        query = """
+        INSERT INTO balances (account_id, month, amount)
+        VALUES (:account_id, :month, :amount);
+        """
+        cur = self._db.execute(query, self._mapper.to_record(data))
+        last_id = cur.lastrowid
+        print("Inserted one balance with id", last_id)
+        return last_id
 
     def insert_many(self, data: list[Balance]) -> None:
         """Insert list of balances into the balances table.
