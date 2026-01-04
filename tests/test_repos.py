@@ -22,9 +22,9 @@ REPO_MAPPING = [
 
 
 @pytest.fixture
-def configured_container(test_container: Container) -> None:
+def configured_container(base_container: Container) -> None:
     """Register services for testing."""
-    return test_container.register(
+    return base_container.register(
         DBAdminService,
         lambda c: SQLiteAdminService(c.resolve(Config), c.resolve(DBConnectionManager)),
     ).register(

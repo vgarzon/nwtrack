@@ -16,10 +16,10 @@ from tests.test_repos import count_entries
 
 
 @pytest.fixture
-def configured_container(test_container: Container) -> None:
+def configured_container(base_container: Container) -> None:
     """Configure container for tests."""
     return (
-        test_container.register(
+        base_container.register(
             DBAdminService,
             lambda c: SQLiteAdminService(
                 c.resolve(Config), c.resolve(DBConnectionManager)
@@ -55,10 +55,10 @@ def init_db_tables_from_csv(container: Container, file_paths: dict[str, str]) ->
 
 
 def test_init_data_from_csv(
-    configured_container: Container, test_file_paths: dict[str, str]
+    configured_container: Container, sample_data_file_paths: dict[str, str]
 ) -> None:
     """Test initializing database and loading sample data from CSV files"""
-    init_db_tables_from_csv(configured_container, test_file_paths)
+    init_db_tables_from_csv(configured_container, sample_data_file_paths)
     cnts = count_entries(configured_container)
     assert cnts["currencies"] == 3, "Expected 3 currencies"
     assert cnts["categories"] == 4, "Expected 4 categories"
@@ -68,10 +68,10 @@ def test_init_data_from_csv(
 
 
 def test_init_data_entities(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test initializing database and loading sample data."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     cnts = count_entries(configured_container)
     assert cnts["currencies"] == 3, "Expected 3 currencies"
     assert cnts["categories"] == 4, "Expected 4 categories"
@@ -81,10 +81,10 @@ def test_init_data_entities(
 
 
 def test_accounts(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test retrieving accounts."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     prn_svc: ReportService = configured_container.resolve(ReportService)
 
     active_accounts = prn_svc.get_accounts(active_only=True)
@@ -99,12 +99,12 @@ def test_accounts(
 
 
 def test_net_worth(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test retrieving net worth."""
     month_str = "2025-11"
 
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     prn_svc: ReportService = configured_container.resolve(ReportService)
     month = Month.parse(month_str)
 
@@ -116,10 +116,10 @@ def test_net_worth(
 
 
 def test_net_worth_hist(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test retrieving net worth."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     prn_svc: ReportService = configured_container.resolve(ReportService)
 
     net_worth_hist = prn_svc.get_net_worth_history()
@@ -130,13 +130,13 @@ def test_net_worth_hist(
 
 
 def test_fetch_balance(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test fetching balances."""
     account_name = "bank_1_checking"
     month_str = "2025-10"
 
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     prn_svc: ReportService = configured_container.resolve(ReportService)
     month = Month.parse(month_str)
 
@@ -153,12 +153,12 @@ def test_fetch_balance(
 
 
 def test_balance_month(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test retrieving balances by month"""
     month_str = "2025-10"
 
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     prn_svc: ReportService = configured_container.resolve(ReportService)
     month = Month.parse(month_str)
 
@@ -173,14 +173,14 @@ def test_balance_month(
 
 
 def test_update_balance_account_name(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test updating a balance for a given account name."""
     account_name = "bank_1_checking"
     month_str = "2024-06"
     new_amount = 500
 
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
 
     upd_svc: UpdateService = configured_container.resolve(UpdateService)
     prn_svc: ReportService = configured_container.resolve(ReportService)
@@ -198,13 +198,13 @@ def test_update_balance_account_name(
 
 
 def test_exchange_rate(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test fetching exchange rates."""
     currency_codes = ["CNY", "EUR"]
     month_str = "2018-12"
 
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     prn_svc: ReportService = configured_container.resolve(ReportService)
     month = Month.parse(month_str)
 
@@ -214,13 +214,13 @@ def test_exchange_rate(
 
 
 def test_exchange_rate_month(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test fetching exchange rates."""
     currency_codes = ["CNY", "EUR"]
     month_str = "2018-12"
 
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     prn_svc: ReportService = configured_container.resolve(ReportService)
     month = Month.parse(month_str)
 
@@ -232,12 +232,12 @@ def test_exchange_rate_month(
 
 
 def test_roll_forward(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test rolling balances forward to next month."""
     month_str = "2025-11"
 
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     prn_svc: ReportService = configured_container.resolve(ReportService)
     upd_svc: UpdateService = configured_container.resolve(UpdateService)
 

@@ -11,9 +11,9 @@ from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
 
 
 @pytest.fixture
-def configured_container(test_container: Container) -> Container:
+def configured_container(base_container: Container) -> Container:
     """Configure container for test suite."""
-    return test_container
+    return base_container
 
 
 def test_build_basic_services_container(configured_container):
@@ -22,27 +22,27 @@ def test_build_basic_services_container(configured_container):
     assert isinstance(configured_container, Container)
 
 
-def test_resolve_config(configured_container, test_config):
+def test_resolve_config(configured_container, base_config):
     """Test resolving Config from the configured_container."""
     config = configured_container.resolve(Config)
     assert config is not None
     assert isinstance(config, Config)
-    assert config.db_file_path == test_config.db_file_path
-    assert config.db_ddl_path == test_config.db_ddl_path
+    assert config.db_file_path == base_config.db_file_path
+    assert config.db_ddl_path == base_config.db_ddl_path
 
 
-def test_overwrite_config(configured_container, test_config: Config):
+def test_overwrite_config(configured_container, base_config: Config):
     """Test re-registering Config from the configured_container."""
     configured_container.register(
         Config,
-        lambda _: test_config,
+        lambda _: base_config,
         lifetime=Lifetime.SINGLETON,
     )
     cfg: Config = configured_container.resolve(Config)
     assert cfg is not None
     assert isinstance(cfg, Config)
-    assert cfg.db_file_path == test_config.db_file_path
-    assert cfg.db_ddl_path == test_config.db_ddl_path
+    assert cfg.db_file_path == base_config.db_file_path
+    assert cfg.db_ddl_path == base_config.db_ddl_path
 
 
 def test_resolve_uow(configured_container):

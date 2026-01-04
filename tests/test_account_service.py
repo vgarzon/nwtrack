@@ -14,10 +14,10 @@ from tests.test_services import init_db_tables_w_entities
 
 
 @pytest.fixture
-def configured_container(test_container: Container) -> None:
+def configured_container(base_container: Container) -> None:
     """Configure container for tests."""
     return (
-        test_container.register(
+        base_container.register(
             DBAdminService,
             lambda c: SQLiteAdminService(
                 c.resolve(Config), c.resolve(DBConnectionManager)
@@ -39,10 +39,10 @@ def configured_container(test_container: Container) -> None:
 
 
 def test_get_all(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test retrieving accounts."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     active_accounts = svc.get_all(active_only=True)
@@ -57,10 +57,10 @@ def test_get_all(
 
 
 def test_get_by_id(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test retrieving account by ID."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     account = svc.get_by_id(2)
@@ -80,10 +80,10 @@ def test_get_by_id(
 
 
 def test_get_by_name(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test retrieving account by name."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     account = svc.get_by_name("credit_cards_1")
@@ -103,10 +103,10 @@ def test_get_by_name(
 
 
 def test_create_account(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test inserting a new account."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     new_account = svc.create(
@@ -125,10 +125,10 @@ def test_create_account(
 
 
 def test_create_account_invalid_category(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test inserting a new account with an invalid category."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     with pytest.raises(ValueError) as exc_info:
@@ -143,10 +143,10 @@ def test_create_account_invalid_category(
 
 
 def test_create_account_invalid_status(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test inserting a new account with an invalid status."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     with pytest.raises(ValueError) as exc_info:
@@ -161,10 +161,10 @@ def test_create_account_invalid_status(
 
 
 def test_create_account_invalid_currency(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test inserting a new account with an invalid currency."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     with pytest.raises(ValueError) as exc_info:
@@ -179,10 +179,10 @@ def test_create_account_invalid_currency(
 
 
 def test_create_duplicate_account(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test inserting a duplicate account."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     with pytest.raises(ValueError) as exc_info:
@@ -197,10 +197,10 @@ def test_create_duplicate_account(
 
 
 def test_delete_account_with_balance(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test deleting an account."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
     rpt_svc: ReportService = configured_container.resolve(ReportService)
 
@@ -219,10 +219,10 @@ def test_delete_account_with_balance(
 
 
 def test_update_account_name(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test updating an account name."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     old_name = "bank_2_savings"
@@ -246,10 +246,10 @@ def test_update_account_name(
 
 
 def test_update_account_status(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test updating an account status."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     name = "bank_1_checking"
@@ -273,10 +273,10 @@ def test_update_account_status(
 
 
 def test_update_account_description(
-    configured_container, test_entities: dict[str, list]
+    configured_container, sample_entities: dict[str, list]
 ) -> None:
     """Test updating an account description."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     name = "bank_1_checking"
@@ -300,10 +300,10 @@ def test_update_account_description(
 
 
 def test_update_account_currency(
-    configured_container, test_entities: dict[str, list]
+    configured_container, sample_entities: dict[str, list]
 ) -> None:
     """Test updating an account currency."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     name = "bank_1_checking"
@@ -327,10 +327,10 @@ def test_update_account_currency(
 
 
 def test_update_account_category(
-    configured_container, test_entities: dict[str, list]
+    configured_container, sample_entities: dict[str, list]
 ) -> None:
     """Test updating an account category."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     name = "bank_1_checking"
@@ -354,10 +354,10 @@ def test_update_account_category(
 
 
 def test_get_account_category_by_id(
-    configured_container: Container, test_entities: dict[str, list]
+    configured_container: Container, sample_entities: dict[str, list]
 ) -> None:
     """Test retrieving account category by account id."""
-    init_db_tables_w_entities(configured_container, test_entities)
+    init_db_tables_w_entities(configured_container, sample_entities)
     svc: AccountService = configured_container.resolve(AccountService)
 
     category = svc.get_category_by_account_id(3)

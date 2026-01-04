@@ -30,12 +30,12 @@ def register_services(container: Container) -> Container:
 
 
 def test_update_balances_run(
-    test_container: Container, test_entities: dict[str, list], monkeypatch, capsys
+    base_container: Container, sample_entities: dict[str, list], monkeypatch, capsys
 ) -> None:
     """Test initializing database and loading sample data."""
-    container = register_services(test_container)
+    container = register_services(base_container)
     # TODO: Use common fixture to init DB with entities
-    init_db_tables_w_entities(container, test_entities)
+    init_db_tables_w_entities(container, sample_entities)
     inputs = iter(
         [
             "2025 11",  # Input month

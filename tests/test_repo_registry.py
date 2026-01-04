@@ -12,7 +12,7 @@ from nwtrack.repos import Repository
 
 
 def test_repository_registry(
-    test_db_manager: DBConnectionManager, test_mapper_registry: MapperRegistry
+    mock_db_manager: DBConnectionManager, sample_mapper_registry: MapperRegistry
 ) -> None:
     """Test RepositoryRegistry initializes repositories correctly."""
 
@@ -28,7 +28,7 @@ def test_repository_registry(
         "repo_a": (FakeEntityA, RepoA),
         "repo_b": (FakeEntityB, RepoB),
     }
-    registry = SQLiteRepositoryRegistry(test_db_manager, test_mapper_registry, specs)
+    registry = SQLiteRepositoryRegistry(mock_db_manager, sample_mapper_registry, specs)
 
     assert hasattr(registry, "repo_a")
     assert hasattr(registry, "repo_b")

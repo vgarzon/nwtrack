@@ -74,17 +74,17 @@ def get_table_count(db_manager: DBConnectionManager, table_name: str) -> int:
     return res["cnt"] if res else 0
 
 
-def test_db_config(test_container: Container, test_config: Config) -> None:
+def test_db_config(base_container: Container, base_config: Config) -> None:
     """Test database config."""
-    container = build_data_services_container(test_container)
+    container = build_data_services_container(base_container)
     cfg: Config = container.resolve(Config)
-    assert cfg.db_file_path == test_config.db_file_path
-    assert cfg.db_ddl_path == test_config.db_ddl_path
+    assert cfg.db_file_path == base_config.db_file_path
+    assert cfg.db_ddl_path == base_config.db_ddl_path
 
 
-def test_initialize_database(test_container: Container) -> None:
+def test_initialize_database(base_container: Container) -> None:
     """Test database initialization."""
-    container = build_data_services_container(test_container)
+    container = build_data_services_container(base_container)
     admin_service: DBAdminService = container.resolve(DBAdminService)
     db_manager: SQLiteConnectionManager = container.resolve(DBConnectionManager)
     admin_service.init_database()
@@ -93,9 +93,9 @@ def test_initialize_database(test_container: Container) -> None:
     assert "file" in row.keys()
 
 
-def test_tables_exist(test_container: Container) -> None:
+def test_tables_exist(base_container: Container) -> None:
     """Test that expected tables exist in the database."""
-    container = build_data_services_container(test_container)
+    container = build_data_services_container(base_container)
     admin_service: DBAdminService = container.resolve(DBAdminService)
     db_manager: SQLiteConnectionManager = container.resolve(DBConnectionManager)
     admin_service.init_database()
@@ -108,9 +108,9 @@ def test_tables_exist(test_container: Container) -> None:
     assert table_is_empty(db_manager, "balances"), "Table 'balances' should be empty."
 
 
-def test_insert_data_with_query(test_container: Container) -> None:
+def test_insert_data_with_query(base_container: Container) -> None:
     """Test populating initial data into the database."""
-    container = build_data_services_container(test_container)
+    container = build_data_services_container(base_container)
     admin_service: DBAdminService = container.resolve(DBAdminService)
     db_manager: SQLiteConnectionManager = container.resolve(DBConnectionManager)
     admin_service.init_database()

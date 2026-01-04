@@ -14,10 +14,10 @@ from nwtrack.use_cases.db_initializer import DBInitializerCSV
 
 
 @pytest.fixture
-def configured_container(test_container: Container) -> Container:
+def configured_container(base_container: Container) -> Container:
     """Register additional services required for tests."""
     return (
-        test_container.register(
+        base_container.register(
             DBAdminService,
             lambda c: SQLiteAdminService(
                 c.resolve(Config), c.resolve(DBConnectionManager)
@@ -42,12 +42,12 @@ def _uow_factory(container: Container) -> UnitOfWork:
 
 
 def test_db_initializer_csv_yes(
-    configured_container, test_file_paths, monkeypatch, capsys
+    configured_container, sample_data_file_paths, monkeypatch, capsys
 ) -> None:
     db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
     inputs = iter(["YES"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
-    db_initializer.run(test_file_paths)
+    db_initializer.run(sample_data_file_paths)
     captured = capsys.readouterr()
     assert "Database initialization complete." in captured.out
     with _uow_factory(configured_container) as uow:
@@ -57,19 +57,21 @@ def test_db_initializer_csv_yes(
 
 
 def test_db_initializer_csv_quit(
-    configured_container, test_file_paths, monkeypatch, capsys
+    configured_container, sample_data_file_paths, monkeypatch, capsys
 ) -> None:
     db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
     inputs = iter(["no"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
-    db_initializer.run(test_file_paths)
+    db_initializer.run(sample_data_file_paths)
     captured = capsys.readouterr()
     assert "Quitting." in captured.out
 
 
-def test_db_initializer_csv_missing_key(configured_container, test_file_paths) -> None:
+def test_db_initializer_csv_missing_key(
+    configured_container, sample_data_file_paths
+) -> None:
     db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
-    incomplete_file_paths = test_file_paths.copy()
+    incomplete_file_paths = sample_data_file_paths.copy()
     del incomplete_file_paths["accounts"]
 
     with pytest.raises(KeyError) as exc_info:
@@ -78,9 +80,11 @@ def test_db_initializer_csv_missing_key(configured_container, test_file_paths) -
     assert "accounts" in str(exc_info.value)
 
 
-def test_db_initializer_csv_invalid_path(configured_container, test_file_paths) -> None:
+def test_db_initializer_csv_invalid_path(
+    configured_container, sample_data_file_paths
+) -> None:
     db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
-    invalid_file_paths = test_file_paths.copy()
+    invalid_file_paths = sample_data_file_paths.copy()
     invalid_file_paths["accounts"] = "invalid/path/accounts.csv"
 
     with pytest.raises(FileNotFoundError) as exc_info:

@@ -19,7 +19,7 @@ from tests.fakes import FakeEntityA, FakeEntityB
 
 
 @pytest.fixture(scope="module")
-def test_config() -> Config:
+def base_config() -> Config:
     """Test configuration with in-memory database."""
     return Config(
         db_file_path=":memory:",
@@ -28,8 +28,8 @@ def test_config() -> Config:
 
 
 @pytest.fixture(scope="function")
-def test_container(test_config) -> Container:
-    """Setup base test container with config, repo registry, and unit of work.
+def base_container(base_config) -> Container:
+    """Base container with config, repo registry, and unit of work.
 
     Registered components:
         - Config
@@ -44,14 +44,14 @@ def test_container(test_config) -> Container:
     container = build_base_sqlite_uow_container()
     container.register(
         Config,
-        lambda _: test_config,
+        lambda _: base_config,
         lifetime=Lifetime.SINGLETON,
     )
     return container
 
 
 @pytest.fixture(scope="module")
-def test_file_paths() -> dict[str, str]:
+def sample_data_file_paths() -> dict[str, str]:
     """Provide file paths for test CSV data.
 
     Returns:
@@ -68,8 +68,8 @@ def test_file_paths() -> dict[str, str]:
 
 
 @pytest.fixture(scope="function")
-def test_entities(
-    test_file_paths: dict[str, str], test_container
+def sample_entities(
+    sample_data_file_paths: dict[str, str], base_container
 ) -> dict[str, list[dict[str, str]]]:
     """Load sample data from CSV files for testing.
 
@@ -79,30 +79,32 @@ def test_entities(
     Returns:
         dict[str, list[dict[str, str]]]: Loaded data for each table.
     """
-    print("Loading test data from CSV files...")
-    records = {name: csv_to_records(path) for name, path in test_file_paths.items()}
+    print("Loading sample data from CSV files...")
+    records = {
+        name: csv_to_records(path) for name, path in sample_data_file_paths.items()
+    }
 
     # NOTE: storing liabilities as positive amounts
     for row in records["balances"]:
         row["amount"] = abs(int(row["amount"]))
 
-    test_container.register(
+    base_container.register(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
     )
-    data_svc: InitDataService = test_container.resolve(InitDataService)
+    data_svc: InitDataService = base_container.resolve(InitDataService)
     entities = data_svc._records_to_entities(records)
 
     return entities
 
 
 @pytest.fixture(scope="module")
-def test_db_manager() -> Mock:
+def mock_db_manager() -> Mock:
     return Mock(spec=DBConnectionManager)
 
 
 @pytest.fixture(scope="module")
-def test_mapper_registry() -> MapperRegistry:
+def sample_mapper_registry() -> MapperRegistry:
     class MapperA:
         def to_entity(self, data: dict[str, Any]) -> FakeEntityA:
             return FakeEntityA()

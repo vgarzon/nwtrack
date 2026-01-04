@@ -15,10 +15,10 @@ def uow_factory(container: Container) -> UnitOfWork:
     return container.resolve(UnitOfWork)
 
 
-def test_insert_single_balance(test_container, test_entities) -> None:
+def test_insert_single_balance(base_container, sample_entities) -> None:
     """Test inserting a single balance entry."""
-    container = build_data_services_container(test_container)
-    init_db_tables_w_entities(container, test_entities)
+    container = build_data_services_container(base_container)
+    init_db_tables_w_entities(container, sample_entities)
     account_id = 1
     month_str = "2025-12"
     month = Month.parse(month_str)
@@ -41,10 +41,10 @@ def test_insert_single_balance(test_container, test_entities) -> None:
     assert inserted_balance.amount == new_balance_data["amount"]
 
 
-def test_count_balances_entries(test_container, test_entities) -> None:
+def test_count_balances_entries(base_container, sample_entities) -> None:
     """Test counting entries in the balances repository."""
-    container = build_data_services_container(test_container)
-    init_db_tables_w_entities(container, test_entities)
+    container = build_data_services_container(base_container)
+    init_db_tables_w_entities(container, sample_entities)
 
     with uow_factory(container) as uow:
         cnt = uow.balances.count()
@@ -52,10 +52,10 @@ def test_count_balances_entries(test_container, test_entities) -> None:
     assert cnt == 42
 
 
-def test_count_balances_per_month(test_container, test_entities) -> None:
+def test_count_balances_per_month(base_container, sample_entities) -> None:
     """Test counting balances entries per month."""
-    container = build_data_services_container(test_container)
-    init_db_tables_w_entities(container, test_entities)
+    container = build_data_services_container(base_container)
+    init_db_tables_w_entities(container, sample_entities)
 
     with uow_factory(container) as uow:
         cnts = uow.balances.count_per_month()
