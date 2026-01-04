@@ -10,7 +10,7 @@ from nwtrack.config import Config
 from nwtrack.container import Container
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.models import Balance, Month, NetWorth
-from nwtrack.services import InitDataService, ReportService, UpdateService
+from nwtrack.services import InitDataService, ReportService
 from nwtrack.unitofwork import UnitOfWork
 from tests.test_repos import count_entries
 
@@ -32,10 +32,6 @@ def configured_container(base_container: Container) -> None:
         .register(
             ReportService,
             lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),
-        )
-        .register(
-            UpdateService,
-            lambda c: UpdateService(uow=lambda: c.resolve(UnitOfWork)),
         )
     )
 
@@ -204,25 +200,3 @@ def test_exchange_rate_month(
     with pytest.raises(ValueError) as exc_info:
         prn_svc.print_exchange_rate_history(currency_codes[1])
     assert f"Currency '{currency_codes[1]}'" in str(exc_info.value)
-
-
-def test_roll_forward(
-    configured_container: Container, sample_entities: dict[str, list]
-) -> None:
-    """Test rolling balances forward to next month."""
-    month_str = "2025-11"
-
-    init_db_tables_w_entities(configured_container, sample_entities)
-    prn_svc: ReportService = configured_container.resolve(ReportService)
-    upd_svc: UpdateService = configured_container.resolve(UpdateService)
-
-    month = Month.parse(month_str)
-    next_month = month.increment()
-
-    curr_bal = prn_svc.get_month_balances(month)
-    curr_sum = sum(b.amount for b in curr_bal)
-    assert curr_sum == 1300, "Current month balances sum mismatch"
-    upd_svc.roll_balances_forward(month)
-    next_bal = prn_svc.get_month_balances(next_month)
-    next_sum = sum(b.amount for b in next_bal)
-    assert next_sum == 1300, "Next month balances sum mismatch"

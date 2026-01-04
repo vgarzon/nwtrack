@@ -28,7 +28,6 @@ from nwtrack.repos import (
 from nwtrack.services import (
     InitDataService,
     ReportService,
-    UpdateService,
     AccountService,
 )
 from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
@@ -104,7 +103,6 @@ def build_data_services_container(container: Container) -> Container:
     Adds:
         - DBAdminService
         - InitDataService
-        - UpdateService
         - ReportService
         - AccountService
 
@@ -121,9 +119,6 @@ def build_data_services_container(container: Container) -> Container:
     ).register(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
-    ).register(
-        UpdateService,
-        lambda c: UpdateService(uow=lambda: c.resolve(UnitOfWork)),
     ).register(
         ReportService,
         lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),

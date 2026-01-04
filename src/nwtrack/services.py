@@ -110,28 +110,6 @@ class InitDataService:
                 repo.insert_many(entities[name])
 
 
-class UpdateService:
-    """Service layer to update balance and other data using unit of work pattern."""
-
-    def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
-        self._uow = uow
-
-    def roll_balances_forward(self, month: Month) -> None:
-        """Copy all active account balances from one month to the next.
-
-        Args:
-            month (Month): Month of the source month.
-        """
-        # check that month is valid
-        with self._uow() as uow:
-            if not uow.balances.check_month(month):
-                raise ValueError("No balances found for month.")
-        next_month = month.increment()
-        print(f"Service: Copying balances from {month} to {next_month}.")
-        with self._uow() as uow:
-            uow.balances.roll_forward(month)
-
-
 class ReportService:
     """Printing and reporting service using unit of work pattern."""
 
