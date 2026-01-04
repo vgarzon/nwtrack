@@ -13,7 +13,7 @@ def main() -> None:
         BalanceUpdater,
         lambda c: BalanceUpdater(uow=lambda: c.resolve(UnitOfWork)),
     )
-    updater = container.resolve(BalanceUpdater)
+    updater: BalanceUpdater = container.resolve(BalanceUpdater)
     updater.run()
 
 

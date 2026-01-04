@@ -46,7 +46,7 @@ def test_update_balances_run(
             "q",  # Quit
         ]
     )
-    updater = container.resolve(BalanceUpdater)
+    updater: BalanceUpdater = container.resolve(BalanceUpdater)
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
     updater.run()
     captured = capsys.readouterr()

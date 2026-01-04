@@ -27,7 +27,7 @@ def test_config() -> Config:
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def test_container(test_config) -> Container:
     """Setup base test container with config, repo registry, and unit of work.
 
@@ -67,7 +67,7 @@ def test_file_paths() -> dict[str, str]:
     }
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def test_entities(
     test_file_paths: dict[str, str], test_container
 ) -> dict[str, list[dict[str, str]]]:
@@ -96,12 +96,12 @@ def test_entities(
     return entities
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def test_db_manager() -> Mock:
     return Mock(spec=DBConnectionManager)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def test_mapper_registry() -> MapperRegistry:
     class MapperA:
         def to_entity(self, data: dict[str, Any]) -> FakeEntityA:

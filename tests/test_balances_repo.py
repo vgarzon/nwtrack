@@ -19,15 +19,15 @@ def test_insert_single_balance(test_container, test_entities) -> None:
     """Test inserting a single balance entry."""
     container = build_data_services_container(test_container)
     init_db_tables_w_entities(container, test_entities)
+    account_id = 1
+    month_str = "2025-12"
+    month = Month.parse(month_str)
     new_balance_data = {
         "id": 0,  # will be set by the database
-        "account_id": 1,
-        "month": "2025-12",
+        "account_id": account_id,
+        "month": month_str,
         "amount": 300,
     }
-    month = new_balance_data["month"]
-    account_id = new_balance_data["account_id"]
-
     with uow_factory(container) as uow:
         new_balance = uow.balances.hydrate(new_balance_data)
         last_id = uow.balances.insert(new_balance)

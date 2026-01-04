@@ -26,7 +26,7 @@ def main(file_paths: dict[str, str]) -> None:
         ),
     )
 
-    db_initializer = container.resolve(DBInitializerCSV)
+    db_initializer: DBInitializerCSV = container.resolve(DBInitializerCSV)
     db_initializer.run(file_paths)
 
 

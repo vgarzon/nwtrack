@@ -4,6 +4,8 @@ Repository module for nwtrack database operations.
 
 from __future__ import annotations
 
+import sqlite3
+
 from typing import Protocol, TypeVar, Generic
 
 from nwtrack.dbmanager import DBConnectionManager
@@ -166,7 +168,7 @@ class AccountsRepository(Repository[Account], Protocol):
         """Get all accounts in a dictionary indexed by name."""
         ...
 
-    def insert(self, data: Account) -> Account:
+    def insert(self, data: Account) -> int:
         """Insert account object in respective table."""
         ...
 
@@ -197,6 +199,10 @@ class AccountsRepository(Repository[Account], Protocol):
 
 class BalancesRepository(Repository[Balance], Protocol):
     """Protocol for balance repository operations."""
+
+    def insert(self, data: Balance) -> int:
+        """Insert balance object in respective table."""
+        ...
 
     def get(self, month: Month, account_name: str) -> Balance:
         """Get all account balances on a specific month."""
@@ -232,6 +238,10 @@ class BalancesRepository(Repository[Balance], Protocol):
 
     def delete_by_account_id(self, account_id: int) -> int:
         """Delete balance records by account ID."""
+        ...
+
+    def count_per_month(self) -> list[tuple[Month, int]]:
+        """Count the number balance entries per month."""
         ...
 
 
@@ -411,7 +421,11 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         INSERT INTO accounts (name, description, category, currency, status)
         VALUES (:name, :description, :category, :currency, :status);
         """
-        cur = self._db.execute(query, self._mapper.to_record(data))
+        try:
+            cur = self._db.execute(query, self._mapper.to_record(data))
+        except sqlite3.IntegrityError as e:
+            print(f"Account insertion failed for '{data.name}': {e}")
+            raise ValueError(f"Integrity Error for '{data.name}': {e}") from e
         last_id = cur.lastrowid
         print("Inserted account with ID", last_id)
         return last_id
@@ -672,17 +686,30 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
 class SQLiteBalancesRepository(BaseRepository[Balance]):
     """Repository for balances SQLite database operations."""
 
-    def insert(self, data: Balance) -> None:
+    def insert(self, data: Balance) -> int:
         """Insert balance object in respective table.
 
         Args:
             data (Balance): Balance object
+
+        Returns:
+            int: last row id of inserted balance
         """
         query = """
         INSERT INTO balances (account_id, month, amount)
         VALUES (:account_id, :month, :amount);
         """
-        cur = self._db.execute(query, self._mapper.to_record(data))
+        try:
+            cur = self._db.execute(query, self._mapper.to_record(data))
+        except sqlite3.IntegrityError as e:
+            print(
+                f"Balance insertion failed for account_id '{data.account_id}' "
+                f"on month '{data.month}': {e}"
+            )
+            raise ValueError(
+                f"Integrity error for account_id '{data.account_id}' "
+                f"on month '{data.month}': {e}"
+            ) from e
         last_id = cur.lastrowid
         print("Inserted one balance with id", last_id)
         return last_id

@@ -627,7 +627,7 @@ class AccountService:
             status=Status(status_str),
         )
         with self._uow() as uow:
-            last_id = uow.accounts.insert(account)
+            last_id: int = uow.accounts.insert(account)
         assert last_id > 0, "Failed to insert new account."
 
         with self._uow() as uow:
