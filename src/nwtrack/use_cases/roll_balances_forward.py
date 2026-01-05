@@ -89,17 +89,13 @@ class RollBalancesUpdater:
             if response.lower().strip() == "q":
                 return None
             if response.lower().strip() == "y":
-                month = latest_month
-                break
+                return latest_month
             elif response.lower().strip() == "n":
-                month = self.input_month()
-                if month is None:
-                    return None
-                break
+                return self.input_month()
             else:
                 print("Invalid input. Please enter 'Y', 'N', or 'q'.")
                 continue
-        return month
+        return None
 
     def input_month(self) -> Month | None:
         while True:

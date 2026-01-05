@@ -208,6 +208,10 @@ class BalancesRepository(Repository[Balance], Protocol):
         """Get all account balances on a specific month."""
         ...
 
+    def get_by_id(self, balance_id: int) -> Balance | None:
+        """Get balance by ID."""
+        ...
+
     def get_by_account_id(self, month: Month, account_id: int) -> Balance:
         """Get all balances given account id and month."""
         ...
@@ -242,6 +246,10 @@ class BalancesRepository(Repository[Balance], Protocol):
 
     def count_per_month(self) -> list[tuple[Month, int]]:
         """Count the number balance entries per month."""
+        ...
+
+    def copy_by_month(self, from_month: Month, to_month: Month) -> int:
+        """Copy balance entries from one month to another."""
         ...
 
 
@@ -711,7 +719,7 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
                 f"on month '{data.month}': {e}"
             ) from e
         last_id = cur.lastrowid
-        print("Inserted one balance with id", last_id)
+        print("Inserted one balance with ID", last_id)
         return last_id
 
     def insert_many(self, data: list[Balance]) -> None:

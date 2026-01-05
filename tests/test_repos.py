@@ -23,7 +23,7 @@ REPO_MAPPING = [
 
 
 @pytest.fixture
-def configured_container(base_container: Container) -> None:
+def configured_container(base_container: Container) -> Container:
     """Register services for testing."""
     return base_container.register(
         DBAdminService,

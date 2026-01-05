@@ -15,7 +15,7 @@ from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture
-def configured_container(base_container: Container) -> None:
+def configured_container(base_container: Container) -> Container:
     """Configure container for tests."""
     return (
         base_container.register(

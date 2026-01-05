@@ -18,7 +18,7 @@ from tests.helpers import (
 
 
 @pytest.fixture
-def configured_container(base_container: Container) -> None:
+def configured_container(base_container: Container) -> Container:
     """Configure container for tests."""
     return base_container.register(
         DBAdminService,

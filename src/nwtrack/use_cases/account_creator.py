@@ -59,10 +59,10 @@ class AccountCreator:
             raise ValueError("New account validation failed.")
             return
 
+        print(f"Account '{data['account_name']}' created successfully.")
         print(
-            f"Created account '{data['account_name']}' with id {account_id}, "
-            f"initial balance of {data['initial_amount']}, and initial month "
-            f"{data['initial_month']}."
+            f"  Account ID: {account_id}, initial balance: {data['initial_amount']}, "
+            f"initial month: {data['initial_month']}."
         )
         self.print_all_accounts()
 
