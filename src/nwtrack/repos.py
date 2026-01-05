@@ -753,6 +753,26 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         assert len(results) <= 1, "Expected at most one balance record."
         return self._mapper.to_entity(dict(results[0]))
 
+    def get_by_id(self, balance_id: int) -> Balance | None:
+        """Get balance by ID.
+
+        Args:
+            balance_id (int): Balance ID
+
+        Returns:
+            Balance | None: Balance object if found, else None
+        """
+        query = """
+        SELECT id, account_id, month, amount
+        FROM balances
+        WHERE id = :balance_id;
+        """
+        result = self._db.fetch_one(query, {"balance_id": balance_id})
+        if result:
+            return self._mapper.to_entity(dict(result))
+        else:
+            return None
+
     def get_by_account_id(self, month: Month, account_id: int) -> Balance:
         """Get all balances given account id and month.
 
