@@ -32,7 +32,7 @@ from nwtrack.infra.sqlite.mappers import (
     ExchangeRateMapper,
     NetWorthMapper,
 )
-from nwtrack.repo_registry import RepositoryRegistry, SQLiteRepositoryRegistry
+from nwtrack.repo_registry import RepositoryRegistry
 from nwtrack.services import (
     AccountService,
     InitDataService,
@@ -60,7 +60,7 @@ def build_mapper_registry() -> MapperRegistry:
 
 def build_sqlite_repo_registry(
     db: DBConnectionManager, mappers: MapperRegistry
-) -> SQLiteRepositoryRegistry:
+) -> RepositoryRegistry:
     """Build a SQLite repository registry.
 
     Args:
@@ -79,7 +79,7 @@ def build_sqlite_repo_registry(
         "exchange_rates": (ExchangeRate, SQLiteExchangeRatesRepository),
         "net_worth": (NetWorth, SQLiteNetWorthRepository),
     }
-    return SQLiteRepositoryRegistry(
+    return RepositoryRegistry(
         db=db,
         mappers=mappers,
         specs=repo_specs,
