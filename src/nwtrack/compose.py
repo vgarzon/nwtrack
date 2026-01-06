@@ -24,7 +24,7 @@ from nwtrack.mappers import (
     NetWorthMapper,
 )
 from nwtrack.repo_registry import RepositoryRegistry, SQLiteRepositoryRegistry
-from nwtrack.repos import (
+from nwtrack.infra.sqlite.repos import (
     SQLiteAccountsRepository,
     SQLiteBalancesRepository,
     SQLiteCategoriesRepository,
