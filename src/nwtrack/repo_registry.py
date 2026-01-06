@@ -4,17 +4,18 @@ Repository Registry.
 Collects repositories and mappers.  Passsed to Unit of Work in composition root.
 """
 
-from typing import Protocol, Any
-from nwtrack.repos import (
-    CurrenciesRepository,
-    CategoriesRepository,
+from typing import Any, Protocol
+
+from nwtrack.application.ports.repositories import (
     AccountsRepository,
     BalancesRepository,
+    CategoriesRepository,
+    CurrenciesRepository,
     ExchangeRatesRepository,
     NetWorthRepository,
 )
-from nwtrack.mapper_registry import MapperRegistry
 from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.mapper_registry import MapperRegistry
 
 
 class RepositoryRegistry(Protocol):

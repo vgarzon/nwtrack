@@ -6,6 +6,14 @@ from nwtrack.admin import DBAdminService, SQLiteAdminService
 from nwtrack.config import Config, load_config
 from nwtrack.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
+from nwtrack.domain.models import (
+    Account,
+    Balance,
+    Category,
+    Currency,
+    ExchangeRate,
+    NetWorth,
+)
 from nwtrack.mapper_registry import MapperRegistry
 from nwtrack.mappers import (
     AccountMapper,
@@ -14,14 +22,6 @@ from nwtrack.mappers import (
     CurrencyMapper,
     ExchangeRateMapper,
     NetWorthMapper,
-)
-from nwtrack.domain.models import (
-    Account,
-    Balance,
-    Category,
-    Currency,
-    ExchangeRate,
-    NetWorth,
 )
 from nwtrack.repo_registry import RepositoryRegistry, SQLiteRepositoryRegistry
 from nwtrack.repos import (
@@ -33,9 +33,9 @@ from nwtrack.repos import (
     SQLiteNetWorthRepository,
 )
 from nwtrack.services import (
+    AccountService,
     InitDataService,
     ReportService,
-    AccountService,
 )
 from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
 
