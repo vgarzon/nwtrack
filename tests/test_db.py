@@ -6,7 +6,7 @@ from nwtrack.compose import build_data_services_container
 
 from nwtrack.admin import DBAdminService
 from nwtrack.infra.config.settings import Settings
-from nwtrack.container import Container
+from nwtrack.bootstrap.container import Container
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
 from tests.data.basic import TEST_DATA
 

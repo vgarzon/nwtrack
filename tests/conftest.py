@@ -10,7 +10,7 @@ import pytest
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.compose import build_base_sqlite_uow_container
 from nwtrack.infra.config.settings import Settings
-from nwtrack.container import Container, Lifetime
+from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.infra.fileio.csv_io import csv_to_records
 from nwtrack.mapper_registry import MapperRegistry

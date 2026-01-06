@@ -2,7 +2,7 @@
 Test DI container
 """
 
-from nwtrack.container import Container, Lifetime
+from nwtrack.bootstrap.container import Container, Lifetime
 
 
 def test_container_register() -> None:
