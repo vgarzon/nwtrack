@@ -5,7 +5,7 @@ SQLite implementation of the Categories repository.
 from __future__ import annotations
 
 from nwtrack.domain.models import Category
-from nwtrack.application.ports.repositories import BaseRepository
+from nwtrack.application.ports.repos import BaseRepository
 
 
 class SQLiteCategoriesRepository(BaseRepository[Category]):

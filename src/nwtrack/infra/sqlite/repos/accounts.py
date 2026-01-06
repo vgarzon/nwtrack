@@ -7,7 +7,7 @@ from __future__ import annotations
 import sqlite3
 
 from nwtrack.domain.models import Account
-from nwtrack.application.ports.repositories import BaseRepository
+from nwtrack.application.ports.repos import BaseRepository
 
 
 class SQLiteAccountsRepository(BaseRepository[Account]):

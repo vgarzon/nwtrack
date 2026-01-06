@@ -4,7 +4,7 @@ Unit of work pattern implementation for managing database transactions.
 
 from typing import Protocol
 from nwtrack.dbmanager import SQLiteConnectionManager
-from nwtrack.application.ports.repositories import (
+from nwtrack.application.ports.repos import (
     AccountsRepository,
     BalancesRepository,
     CategoriesRepository,

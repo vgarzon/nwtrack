@@ -17,7 +17,7 @@ from nwtrack.domain.models import (
 )
 from nwtrack.domain.value_objects import Month
 from nwtrack.mappers import NetWorthMapper
-from nwtrack.application.ports.repositories import BaseRepository
+from nwtrack.application.ports.repos import BaseRepository
 
 
 class SQLiteCurrenciesRepository(BaseRepository[Currency]):

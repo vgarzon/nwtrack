@@ -6,7 +6,7 @@ Collects repositories and mappers.  Passsed to Unit of Work in composition root.
 
 from typing import Any, Protocol
 
-from nwtrack.application.ports.repositories import (
+from nwtrack.application.ports.repos import (
     AccountsRepository,
     BalancesRepository,
     CategoriesRepository,

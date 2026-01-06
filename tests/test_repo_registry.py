@@ -8,7 +8,7 @@ from tests.fakes import FakeEntityA, FakeEntityB
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.mapper_registry import MapperRegistry
 from nwtrack.repo_registry import SQLiteRepositoryRegistry
-from nwtrack.application.ports.repositories import Repository
+from nwtrack.application.ports.repos import Repository
 
 
 def test_repository_registry(
