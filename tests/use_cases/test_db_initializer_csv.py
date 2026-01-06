@@ -5,7 +5,7 @@ Test DBInitializerCSV class methods.
 import pytest
 
 from nwtrack.admin import DBAdminService, SQLiteAdminService
-from nwtrack.config import Config
+from nwtrack.infra.config.settings import Settings
 from nwtrack.container import Container
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.services import InitDataService
@@ -20,7 +20,7 @@ def configured_container(base_container: Container) -> Container:
         base_container.register(
             DBAdminService,
             lambda c: SQLiteAdminService(
-                c.resolve(Config), c.resolve(DBConnectionManager)
+                c.resolve(Settings), c.resolve(DBConnectionManager)
             ),
         )
         .register(
@@ -30,7 +30,9 @@ def configured_container(base_container: Container) -> Container:
         .register(
             DBInitializerCSV,
             lambda c: DBInitializerCSV(
-                c.resolve(Config), c.resolve(DBAdminService), c.resolve(InitDataService)
+                c.resolve(Settings),
+                c.resolve(DBAdminService),
+                c.resolve(InitDataService),
             ),
         )
     )

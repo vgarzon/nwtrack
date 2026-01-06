@@ -8,7 +8,7 @@ import sqlite3
 from typing import Protocol, TypeAlias, Any
 from collections.abc import Sequence, Mapping
 
-from nwtrack.config import Config
+from nwtrack.infra.config.settings import Settings
 
 DBAPIConnection: TypeAlias = sqlite3.Connection
 SQLiteValue: TypeAlias = str | int | float | bytes | None
@@ -43,7 +43,7 @@ class DBConnectionManager(Protocol):
 class SQLiteConnectionManager:
     """SQLite database connection manager."""
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Settings) -> None:
         self._db_file_path: str = config.db_file_path
         self._connection: DBAPIConnection | None = None
 

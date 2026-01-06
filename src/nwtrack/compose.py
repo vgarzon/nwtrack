@@ -4,7 +4,8 @@ Common dependency injection container setup for NWTrack application.
 
 from nwtrack.admin import DBAdminService, SQLiteAdminService
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.config import Config, load_config
+from nwtrack.infra.config.settings import Settings
+from nwtrack.infra.config.load import load_settings
 from nwtrack.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
 from nwtrack.domain.models import (
@@ -75,12 +76,12 @@ def build_base_sqlite_uow_container() -> Container:
     }
     container = Container()
     container.register(
-        Config,
-        lambda _: load_config(),
+        Settings,
+        lambda _: load_settings(),
         lifetime=Lifetime.SINGLETON,
     ).register(
         DBConnectionManager,
-        lambda c: SQLiteConnectionManager(c.resolve(Config)),
+        lambda c: SQLiteConnectionManager(c.resolve(Settings)),
         lifetime=Lifetime.SINGLETON,
     ).register(
         MapperRegistry,
@@ -121,7 +122,9 @@ def build_data_services_container(container: Container) -> Container:
     print("Setting up container with basic data and use case services.")
     container.register(
         DBAdminService,
-        lambda c: SQLiteAdminService(c.resolve(Config), c.resolve(DBConnectionManager)),
+        lambda c: SQLiteAdminService(
+            c.resolve(Settings), c.resolve(DBConnectionManager)
+        ),
     ).register(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),

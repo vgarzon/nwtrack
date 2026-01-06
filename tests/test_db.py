@@ -5,7 +5,7 @@ Test cases for database connection and unit of work functionalities.
 from nwtrack.compose import build_data_services_container
 
 from nwtrack.admin import DBAdminService
-from nwtrack.config import Config
+from nwtrack.infra.config.settings import Settings
 from nwtrack.container import Container
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
 from tests.data.basic import TEST_DATA
@@ -74,12 +74,12 @@ def get_table_count(db_manager: DBConnectionManager, table_name: str) -> int:
     return res["cnt"] if res else 0
 
 
-def test_db_config(base_container: Container, base_config: Config) -> None:
+def test_db_config(base_container: Container, base_config: Settings) -> None:
     """Test database config."""
     container = build_data_services_container(base_container)
-    cfg: Config = container.resolve(Config)
-    assert cfg.db_file_path == base_config.db_file_path
-    assert cfg.db_ddl_path == base_config.db_ddl_path
+    settings: Settings = container.resolve(Settings)
+    assert settings.db_file_path == base_config.db_file_path
+    assert settings.db_ddl_path == base_config.db_ddl_path
 
 
 def test_initialize_database(base_container: Container) -> None:

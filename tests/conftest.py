@@ -9,7 +9,7 @@ import pytest
 
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.compose import build_base_sqlite_uow_container
-from nwtrack.config import Config
+from nwtrack.infra.config.settings import Settings
 from nwtrack.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.infra.fileio.csv_io import csv_to_records
@@ -19,9 +19,9 @@ from tests.fakes import FakeEntityA, FakeEntityB
 
 
 @pytest.fixture(scope="module")
-def base_config() -> Config:
+def base_config() -> Settings:
     """Test configuration with in-memory database."""
-    return Config(
+    return Settings(
         db_file_path=":memory:",
         db_ddl_path="sql/nwtrack_ddl.sql",
     )
@@ -32,7 +32,7 @@ def base_container(base_config) -> Container:
     """Base container with config, repo registry, and unit of work.
 
     Registered components:
-        - Config
+        - Settings
         - DBConnectionManager
         - MapperRegistry
         - RepositoryRegistry
@@ -43,7 +43,7 @@ def base_container(base_config) -> Container:
     """
     container = build_base_sqlite_uow_container()
     container.register(
-        Config,
+        Settings,
         lambda _: base_config,
         lifetime=Lifetime.SINGLETON,
     )

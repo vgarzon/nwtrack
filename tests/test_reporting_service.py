@@ -5,7 +5,7 @@ Test services using CSV data files as input.test_service
 import pytest
 
 from nwtrack.admin import DBAdminService, SQLiteAdminService
-from nwtrack.config import Config
+from nwtrack.infra.config.settings import Settings
 from nwtrack.container import Container
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.domain.models import Balance, NetWorth
@@ -22,7 +22,7 @@ def configured_container(base_container: Container) -> Container:
         base_container.register(
             DBAdminService,
             lambda c: SQLiteAdminService(
-                c.resolve(Config), c.resolve(DBConnectionManager)
+                c.resolve(Settings), c.resolve(DBConnectionManager)
             ),
         )
         .register(

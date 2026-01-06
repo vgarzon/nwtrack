@@ -1,22 +1,16 @@
 """
-Load and manage configuration settings.
+Load configuration settings.
 """
 
 import os
-from dataclasses import dataclass
 
 from dotenv import load_dotenv
+from nwtrack.infra.config.settings import Settings
 
 load_dotenv()
 
 
-@dataclass(frozen=True)
-class Config:
-    db_file_path: str
-    db_ddl_path: str
-
-
-def load_config() -> Config:
+def load_settings() -> Settings:
     """
     Load settings from environment variables or use default values.
 
@@ -25,4 +19,4 @@ def load_config() -> Config:
     """
     db_file_path = os.getenv("NWTRACK_DB_FILE_PATH", ":memory:")
     db_ddl_path = os.getenv("NWTRACK_DB_DDL_PATH", "sql/nwtrack_ddl.sql")
-    return Config(db_file_path=db_file_path, db_ddl_path=db_ddl_path)
+    return Settings(db_file_path=db_file_path, db_ddl_path=db_ddl_path)

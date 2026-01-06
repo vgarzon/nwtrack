@@ -5,7 +5,7 @@ Test container composition root
 import pytest
 
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.config import Config
+from nwtrack.infra.config.settings import Settings
 from nwtrack.container import Container, Lifetime
 from nwtrack.infra.sqlite.uow import SQLiteUnitOfWork
 from nwtrack.repo_registry import RepositoryRegistry
@@ -24,26 +24,26 @@ def test_build_basic_services_container(configured_container):
 
 
 def test_resolve_config(configured_container, base_config):
-    """Test resolving Config from the configured_container."""
-    config = configured_container.resolve(Config)
+    """Test resolving Settings from the configured_container."""
+    config = configured_container.resolve(Settings)
     assert config is not None
-    assert isinstance(config, Config)
+    assert isinstance(config, Settings)
     assert config.db_file_path == base_config.db_file_path
     assert config.db_ddl_path == base_config.db_ddl_path
 
 
-def test_overwrite_config(configured_container, base_config: Config):
-    """Test re-registering Config from the configured_container."""
+def test_overwrite_config(configured_container, base_config: Settings):
+    """Test re-registering Settings from the configured_container."""
     configured_container.register(
-        Config,
+        Settings,
         lambda _: base_config,
         lifetime=Lifetime.SINGLETON,
     )
-    cfg: Config = configured_container.resolve(Config)
-    assert cfg is not None
-    assert isinstance(cfg, Config)
-    assert cfg.db_file_path == base_config.db_file_path
-    assert cfg.db_ddl_path == base_config.db_ddl_path
+    settings: Settings = configured_container.resolve(Settings)
+    assert settings is not None
+    assert isinstance(settings, Settings)
+    assert settings.db_file_path == base_config.db_file_path
+    assert settings.db_ddl_path == base_config.db_ddl_path
 
 
 def test_resolve_uow(configured_container):

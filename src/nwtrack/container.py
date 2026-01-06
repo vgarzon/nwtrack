@@ -33,7 +33,7 @@ class Container:
 
         Example:
 
-            container.register(Config, lambda c: Config(...))  # T = Config
+            container.register(Settings, lambda c: Settings(...))  # T = Settings
         """
         # Provider[T] is safely storable as Provider[Any] at runtime
         self._providers[token] = (cast(Provider[Any], provider), lifetime)
@@ -44,7 +44,7 @@ class Container:
         Resolve a token to its instance of type T.
 
         Example:
-            cfg = container.resolve(Config)  # inferred type: Config
+            settings = container.resolve(Settings)  # inferred type: Settings
         """
         if token in self._singletons:
             return cast(T, self._singletons[token])
