@@ -14,6 +14,14 @@ from nwtrack.domain.models import (
     ExchangeRate,
     NetWorth,
 )
+from nwtrack.infra.sqlite.repositories.accounts import SQLiteAccountsRepository
+from nwtrack.infra.sqlite.repositories.balances import SQLiteBalancesRepository
+from nwtrack.infra.sqlite.repositories.categories import SQLiteCategoriesRepository
+from nwtrack.infra.sqlite.repositories.currencies import SQLiteCurrenciesRepository
+from nwtrack.infra.sqlite.repositories.exchange_rates import (
+    SQLiteExchangeRatesRepository,
+)
+from nwtrack.infra.sqlite.repositories.networth import SQLiteNetWorthRepository
 from nwtrack.mapper_registry import MapperRegistry
 from nwtrack.mappers import (
     AccountMapper,
@@ -24,14 +32,6 @@ from nwtrack.mappers import (
     NetWorthMapper,
 )
 from nwtrack.repo_registry import RepositoryRegistry, SQLiteRepositoryRegistry
-from nwtrack.infra.sqlite.repos import (
-    SQLiteAccountsRepository,
-    SQLiteBalancesRepository,
-    SQLiteCategoriesRepository,
-    SQLiteCurrenciesRepository,
-    SQLiteExchangeRatesRepository,
-    SQLiteNetWorthRepository,
-)
 from nwtrack.services import (
     AccountService,
     InitDataService,

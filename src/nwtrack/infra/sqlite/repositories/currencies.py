@@ -1,5 +1,5 @@
 """
-Repository module for nwtrack database operations.
+SQLite implementation of Currencies repository.
 """
 
 from __future__ import annotations
