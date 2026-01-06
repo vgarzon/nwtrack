@@ -32,7 +32,7 @@ from nwtrack.infra.sqlite.mappers import (
     ExchangeRateMapper,
     NetWorthMapper,
 )
-from nwtrack.repo_registry import RepositoryRegistry
+from nwtrack.application.registries.repos import RepositoryRegistry
 from nwtrack.services import (
     AccountService,
     InitDataService,

@@ -7,7 +7,7 @@ from typing import Any
 from tests.fakes import FakeEntityA, FakeEntityB
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.application.registries.mappers import MapperRegistry
-from nwtrack.repo_registry import RepositoryRegistry
+from nwtrack.application.registries.repos import RepositoryRegistry
 from nwtrack.application.ports.repos import Repository
 
 

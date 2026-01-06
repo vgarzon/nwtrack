@@ -8,7 +8,7 @@ from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.infra.config.settings import Settings
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.infra.sqlite.uow import SQLiteUnitOfWork
-from nwtrack.repo_registry import RepositoryRegistry
+from nwtrack.application.registries.repos import RepositoryRegistry
 
 
 @pytest.fixture
