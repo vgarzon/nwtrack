@@ -81,7 +81,7 @@ def main() -> None:
     from nwtrack.admin import SQLiteAdminService
     from nwtrack.compose import build_base_sqlite_uow_container
     from nwtrack.dbmanager import DBConnectionManager
-    from nwtrack.unitofwork import UnitOfWork
+    from nwtrack.application.ports.uow import UnitOfWork
 
     container = build_base_sqlite_uow_container()
     container.register(

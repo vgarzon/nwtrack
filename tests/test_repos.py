@@ -8,7 +8,7 @@ from nwtrack.config import Config
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.container import Container
 from nwtrack.services import ReportService
-from nwtrack.unitofwork import UnitOfWork
+from nwtrack.application.ports.uow import UnitOfWork
 from tests.data.basic import TEST_DATA
 from tests.helpers import _uow_factory, count_entries
 

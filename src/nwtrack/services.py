@@ -14,7 +14,7 @@ from nwtrack.domain.models import (
     Status,
 )
 from nwtrack.domain.value_objects import Month
-from nwtrack.unitofwork import UnitOfWork
+from nwtrack.application.ports.uow import UnitOfWork
 
 
 class InitDataService:

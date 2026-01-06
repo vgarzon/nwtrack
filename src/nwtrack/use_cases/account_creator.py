@@ -7,7 +7,7 @@ from nwtrack.domain.models import Category, Currency, Status
 from nwtrack.domain.value_objects import Month
 from nwtrack.services import AccountService
 from nwtrack.compose import build_base_sqlite_uow_container
-from nwtrack.unitofwork import UnitOfWork
+from nwtrack.application.ports.uow import UnitOfWork
 
 
 class AccountCreator:

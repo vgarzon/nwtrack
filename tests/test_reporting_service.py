@@ -11,7 +11,7 @@ from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.domain.models import Balance, NetWorth
 from nwtrack.domain.value_objects import Month
 from nwtrack.services import InitDataService, ReportService
-from nwtrack.unitofwork import UnitOfWork
+from nwtrack.application.ports.uow import UnitOfWork
 from tests.helpers import init_db_tables_w_entities
 
 

@@ -9,7 +9,7 @@ from nwtrack.config import Config
 from nwtrack.container import Container
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.services import AccountService
-from nwtrack.unitofwork import UnitOfWork
+from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.use_cases.account_creator import AccountCreator
 from tests.helpers import init_db_tables_w_entities
 

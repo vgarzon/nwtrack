@@ -6,7 +6,7 @@ from typing import Callable
 
 from nwtrack.domain.models import Balance
 from nwtrack.domain.value_objects import Month
-from nwtrack.unitofwork import UnitOfWork
+from nwtrack.application.ports.uow import UnitOfWork
 
 
 class RollBalancesUpdater:

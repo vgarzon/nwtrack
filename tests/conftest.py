@@ -14,7 +14,7 @@ from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.fileio import csv_to_records
 from nwtrack.mapper_registry import MapperRegistry
 from nwtrack.services import InitDataService
-from nwtrack.unitofwork import UnitOfWork
+from nwtrack.application.ports.uow import UnitOfWork
 from tests.fakes import FakeEntityA, FakeEntityB
 
 

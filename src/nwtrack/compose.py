@@ -3,6 +3,7 @@ Common dependency injection container setup for NWTrack application.
 """
 
 from nwtrack.admin import DBAdminService, SQLiteAdminService
+from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.config import Config, load_config
 from nwtrack.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
@@ -20,6 +21,7 @@ from nwtrack.infra.sqlite.repos.categories import SQLiteCategoriesRepository
 from nwtrack.infra.sqlite.repos.currencies import SQLiteCurrenciesRepository
 from nwtrack.infra.sqlite.repos.exchange_rates import SQLiteExchangeRatesRepository
 from nwtrack.infra.sqlite.repos.networth import SQLiteNetWorthRepository
+from nwtrack.infra.sqlite.uow import SQLiteUnitOfWork
 from nwtrack.mapper_registry import MapperRegistry
 from nwtrack.mappers import (
     AccountMapper,
@@ -35,7 +37,6 @@ from nwtrack.services import (
     InitDataService,
     ReportService,
 )
-from nwtrack.unitofwork import SQLiteUnitOfWork, UnitOfWork
 
 # TODO: Separate generic build functions from concrete repo implementations.
 
