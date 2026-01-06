@@ -79,7 +79,7 @@ class DBInitializerCSV:
 
 def main() -> None:
     from nwtrack.admin import SQLiteAdminService
-    from nwtrack.compose import build_base_sqlite_uow_container
+    from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
     from nwtrack.dbmanager import DBConnectionManager
     from nwtrack.application.ports.uow import UnitOfWork
 

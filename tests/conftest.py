@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import pytest
 
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.compose import build_base_sqlite_uow_container
+from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
 from nwtrack.infra.config.settings import Settings
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager
