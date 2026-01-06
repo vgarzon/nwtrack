@@ -24,7 +24,7 @@ from nwtrack.infra.sqlite.repos.exchange_rates import SQLiteExchangeRatesReposit
 from nwtrack.infra.sqlite.repos.networth import SQLiteNetWorthRepository
 from nwtrack.infra.sqlite.uow import SQLiteUnitOfWork
 from nwtrack.mapper_registry import MapperRegistry
-from nwtrack.mappers import (
+from nwtrack.infra.sqlite.mappers import (
     AccountMapper,
     BalanceMapper,
     CategoryMapper,

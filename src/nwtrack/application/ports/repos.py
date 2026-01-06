@@ -16,10 +16,7 @@ from nwtrack.domain.models import (
     NetWorth,
 )
 from nwtrack.domain.value_objects import Month
-from nwtrack.mappers import (
-    Mapper,
-    SQLiteRecord,
-)
+from nwtrack.application.ports.mappers import Mapper, SQLiteRecord
 
 TEntity = TypeVar("TEntity")
 

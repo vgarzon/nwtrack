@@ -7,7 +7,7 @@ from __future__ import annotations
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.domain.models import NetWorth
 from nwtrack.domain.value_objects import Month
-from nwtrack.mappers import NetWorthMapper
+from nwtrack.infra.sqlite.mappers import NetWorthMapper
 
 
 class SQLiteNetWorthRepository:

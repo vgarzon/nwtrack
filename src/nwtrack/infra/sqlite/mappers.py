@@ -3,7 +3,6 @@ Mappers to convert records to and from entities.
 """
 
 from __future__ import annotations
-from typing import Protocol, Any, TypeVar
 from nwtrack.domain.models import (
     Account,
     Balance,
@@ -15,36 +14,7 @@ from nwtrack.domain.models import (
     Status,
 )
 from nwtrack.domain.value_objects import Month
-
-TEntity = TypeVar("TEntity")
-
-SQLiteRecord = dict[str, Any]
-
-
-class Mapper(Protocol[TEntity]):
-    """A mapper to convert records to and from entities."""
-
-    def to_entity(self, record: SQLiteRecord) -> TEntity:
-        """Convert a record to an entity.
-
-        Args:
-            record: The record to convert.
-
-        Returns:
-            The converted entity.
-        """
-        ...
-
-    def to_record(self, entity: TEntity) -> SQLiteRecord:
-        """Convert an entity to a record.
-
-        Args:
-            entity: The entity to convert.
-
-        Returns:
-            The converted record.
-        """
-        ...
+from nwtrack.application.ports.mappers import Mapper, SQLiteRecord
 
 
 class CurrencyMapper(Mapper[Currency]):

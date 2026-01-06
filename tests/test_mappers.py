@@ -2,8 +2,8 @@
 Test record to entity mappers.
 """
 
-from nwtrack.mappers import (
-    Mapper,
+from nwtrack.application.ports.mappers import Mapper
+from nwtrack.infra.sqlite.mappers import (
     AccountMapper,
     CategoryMapper,
     CurrencyMapper,

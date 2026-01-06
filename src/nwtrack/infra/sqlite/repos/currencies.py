@@ -16,7 +16,7 @@ from nwtrack.domain.models import (
     NetWorth,
 )
 from nwtrack.domain.value_objects import Month
-from nwtrack.mappers import NetWorthMapper
+from nwtrack.infra.sqlite.mappers import NetWorthMapper
 from nwtrack.application.ports.repos import BaseRepository
 
 

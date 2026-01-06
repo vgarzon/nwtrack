@@ -1,11 +1,9 @@
 """
-Mapper Registry Module
+Mapper Registry definition.
 """
 
-from typing import Any, TypeVar
-from nwtrack.mappers import Mapper
-
-TEntity = TypeVar("TEntity")
+from typing import Any
+from nwtrack.application.ports.mappers import Mapper, TEntity
 
 
 class MapperRegistry:
