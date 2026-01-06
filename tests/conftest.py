@@ -11,7 +11,7 @@ from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
 from nwtrack.infra.config.settings import Settings
 from nwtrack.bootstrap.container import Container, Lifetime
-from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.infra.fileio.csv_io import csv_to_records
 from nwtrack.application.registries.mappers import MapperRegistry
 from nwtrack.services import InitDataService

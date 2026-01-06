@@ -4,7 +4,7 @@ SQLite implementation of NetWorth repository.
 
 from __future__ import annotations
 
-from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.domain.models import NetWorth
 from nwtrack.domain.value_objects import Month
 from nwtrack.infra.sqlite.mappers import NetWorthMapper

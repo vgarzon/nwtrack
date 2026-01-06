@@ -5,7 +5,7 @@ Admin Serviced to manage initialization and setup
 from typing import Protocol
 
 from nwtrack.infra.config.settings import Settings
-from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.application.ports.db import DBConnectionManager
 
 
 class DBAdminService(Protocol):

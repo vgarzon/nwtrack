@@ -7,7 +7,8 @@ from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.infra.config.settings import Settings
 from nwtrack.infra.config.load import load_settings
 from nwtrack.bootstrap.container import Container, Lifetime
-from nwtrack.dbmanager import DBConnectionManager, SQLiteConnectionManager
+from nwtrack.application.ports.db import DBConnectionManager
+from nwtrack.infra.sqlite.db_manager import SQLiteConnectionManager
 from nwtrack.domain.models import (
     Account,
     Balance,

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.domain.models import (
     Account,
     Balance,

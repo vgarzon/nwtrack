@@ -7,7 +7,7 @@ import pytest
 from nwtrack.admin import DBAdminService, SQLiteAdminService
 from nwtrack.infra.config.settings import Settings
 from nwtrack.bootstrap.container import Container
-from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.services import InitDataService
 from nwtrack.application.ports.uow import UnitOfWork
 from tests.helpers import (

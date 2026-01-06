@@ -6,7 +6,7 @@ Collects repositories and mappers.  Passsed to Unit of Work in composition root.
 
 from typing import Any
 
-from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.application.registries.mappers import MapperRegistry
 
 

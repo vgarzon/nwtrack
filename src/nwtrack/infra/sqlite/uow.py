@@ -2,7 +2,7 @@
 SQLite implementation of Unit of work to manage database transactions.
 """
 
-from nwtrack.dbmanager import SQLiteConnectionManager
+from nwtrack.infra.sqlite.db_manager import SQLiteConnectionManager
 from nwtrack.application.registries.repos import RepositoryRegistry
 from nwtrack.application.registries.mappers import MapperRegistry
 

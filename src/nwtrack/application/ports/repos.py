@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Protocol, TypeVar, Generic
 
-from nwtrack.dbmanager import DBConnectionManager
+from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.domain.models import (
     Account,
     Balance,
