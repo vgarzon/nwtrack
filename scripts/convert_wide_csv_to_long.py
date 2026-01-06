@@ -10,6 +10,7 @@ def main():
     exchange_rate_wide_csv_to_long()
 
 
+# TODO: parametrize script by passsing file paths as args
 def balance_wide_csv_to_long():
     csv_file = "data/sample/balances_wide.csv"
     output_file = "data/sample/balances.csv"
