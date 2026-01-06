@@ -58,13 +58,18 @@ def build_mapper_registry() -> MapperRegistry:
     return registry
 
 
-def build_base_sqlite_uow_container() -> Container:
-    """Build base container with SQLite Unit of Work excluding services.
+def build_sqlite_repo_registry(
+    db: DBConnectionManager, mappers: MapperRegistry
+) -> SQLiteRepositoryRegistry:
+    """Build a SQLite repository registry.
+
+    Args:
+        db_manager: Database connection manager.
+        mappers: Mappers registry.
 
     Returns:
-        Container: Configured DI container.
+        The built SQLite repository registry.
     """
-    print("Setting dependency container with SQLite repos and Unit of Work.")
     # NOTE: Repo specs can be injected as an argument at composition time
     repo_specs = {
         "currencies": (Currency, SQLiteCurrenciesRepository),
@@ -74,6 +79,20 @@ def build_base_sqlite_uow_container() -> Container:
         "exchange_rates": (ExchangeRate, SQLiteExchangeRatesRepository),
         "net_worth": (NetWorth, SQLiteNetWorthRepository),
     }
+    return SQLiteRepositoryRegistry(
+        db=db,
+        mappers=mappers,
+        specs=repo_specs,
+    )
+
+
+def build_base_sqlite_uow_container() -> Container:
+    """Build base container with SQLite Unit of Work excluding services.
+
+    Returns:
+        Container: Configured DI container.
+    """
+    print("Setting dependency container with SQLite repos and Unit of Work.")
     container = Container()
     container.register(
         Settings,
@@ -89,8 +108,9 @@ def build_base_sqlite_uow_container() -> Container:
         lifetime=Lifetime.SINGLETON,
     ).register(
         RepositoryRegistry,
-        lambda c: SQLiteRepositoryRegistry(
-            c.resolve(DBConnectionManager), c.resolve(MapperRegistry), repo_specs
+        lambda c: build_sqlite_repo_registry(
+            db=c.resolve(DBConnectionManager),
+            mappers=c.resolve(MapperRegistry),
         ),
         lifetime=Lifetime.SINGLETON,
     ).register(
