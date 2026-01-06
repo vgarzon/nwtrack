@@ -3,9 +3,10 @@ Roll balances forward to next available month.
 """
 
 from typing import Callable
-from nwtrack.models import Month
+
+from nwtrack.domain.models import Balance
+from nwtrack.domain.value_objects import Month
 from nwtrack.unitofwork import UnitOfWork
-from nwtrack.models import Balance
 
 
 class RollBalancesUpdater:

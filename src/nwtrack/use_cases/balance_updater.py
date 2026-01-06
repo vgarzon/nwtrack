@@ -3,9 +3,10 @@ Update active account balances interactively
 """
 
 from typing import Callable
-from nwtrack.models import Month, Category
+
+from nwtrack.domain.models import Account, Balance, Category
+from nwtrack.domain.value_objects import Month
 from nwtrack.unitofwork import UnitOfWork
-from nwtrack.models import Account, Balance
 
 
 class BalanceUpdater:

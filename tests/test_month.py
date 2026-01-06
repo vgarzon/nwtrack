@@ -2,7 +2,7 @@
 Test Month class methods
 """
 
-from nwtrack.models import Month
+from nwtrack.domain.value_objects import Month
 
 
 def test_month_str_repr() -> None:

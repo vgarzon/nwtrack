@@ -9,15 +9,15 @@ import sqlite3
 from typing import Protocol, TypeVar, Generic
 
 from nwtrack.dbmanager import DBConnectionManager
-from nwtrack.models import (
+from nwtrack.domain.models import (
     Account,
     Balance,
     Category,
     Currency,
     ExchangeRate,
-    Month,
     NetWorth,
 )
+from nwtrack.domain.value_objects import Month
 from nwtrack.mappers import (
     Mapper,
     NetWorthMapper,

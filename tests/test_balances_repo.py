@@ -3,9 +3,7 @@ Test suite for Balances repository operations
 """
 
 from nwtrack.compose import build_data_services_container
-from nwtrack.container import Container
-from nwtrack.models import Month
-from nwtrack.unitofwork import UnitOfWork
+from nwtrack.domain.value_objects import Month
 from tests.helpers import init_db_tables_w_entities, _uow_factory
 
 # TODO: add tests for other balance repo methods

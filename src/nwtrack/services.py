@@ -5,15 +5,15 @@ Service layer for managing user operations using unit of work pattern.
 from typing import Callable
 
 from nwtrack.fileio import csv_to_records
-from nwtrack.models import (
+from nwtrack.domain.models import (
     Account,
     Balance,
     Category,
     ExchangeRate,
-    Month,
     NetWorth,
     Status,
 )
+from nwtrack.domain.value_objects import Month
 from nwtrack.unitofwork import UnitOfWork
 
 

@@ -15,7 +15,14 @@ from nwtrack.mappers import (
     ExchangeRateMapper,
     NetWorthMapper,
 )
-from nwtrack.models import Account, Balance, Category, Currency, ExchangeRate, NetWorth
+from nwtrack.domain.models import (
+    Account,
+    Balance,
+    Category,
+    Currency,
+    ExchangeRate,
+    NetWorth,
+)
 from nwtrack.repo_registry import RepositoryRegistry, SQLiteRepositoryRegistry
 from nwtrack.repos import (
     SQLiteAccountsRepository,

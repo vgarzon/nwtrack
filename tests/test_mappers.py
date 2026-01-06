@@ -12,17 +12,17 @@ from nwtrack.mappers import (
     NetWorthMapper,
 )
 
-from nwtrack.models import (
+from nwtrack.domain.models import (
     Currency,
     Category,
     Account,
     Balance,
     ExchangeRate,
     NetWorth,
-    Month,
     Status,
     Side,
 )
+from nwtrack.domain.value_objects import Month
 
 
 def test_currency_mapper() -> None:

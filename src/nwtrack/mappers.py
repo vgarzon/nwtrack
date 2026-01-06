@@ -4,17 +4,17 @@ Mappers to convert records to and from entities.
 
 from __future__ import annotations
 from typing import Protocol, Any, TypeVar
-from nwtrack.models import (
+from nwtrack.domain.models import (
     Account,
     Balance,
     Currency,
     Category,
     ExchangeRate,
     NetWorth,
-    Month,
     Side,
     Status,
 )
+from nwtrack.domain.value_objects import Month
 
 TEntity = TypeVar("TEntity")
 

@@ -8,7 +8,8 @@ from nwtrack.admin import DBAdminService, SQLiteAdminService
 from nwtrack.config import Config
 from nwtrack.container import Container
 from nwtrack.dbmanager import DBConnectionManager
-from nwtrack.models import Balance, Month, NetWorth
+from nwtrack.domain.models import Balance, NetWorth
+from nwtrack.domain.value_objects import Month
 from nwtrack.services import InitDataService, ReportService
 from nwtrack.unitofwork import UnitOfWork
 from tests.helpers import init_db_tables_w_entities
