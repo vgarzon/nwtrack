@@ -7,14 +7,14 @@ from unittest.mock import Mock
 
 import pytest
 
+from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.compose import build_base_sqlite_uow_container
 from nwtrack.config import Config
 from nwtrack.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager
-from nwtrack.fileio import csv_to_records
+from nwtrack.infra.fileio.csv_io import csv_to_records
 from nwtrack.mapper_registry import MapperRegistry
 from nwtrack.services import InitDataService
-from nwtrack.application.ports.uow import UnitOfWork
 from tests.fakes import FakeEntityA, FakeEntityB
 
 

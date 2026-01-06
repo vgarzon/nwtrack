@@ -2,7 +2,7 @@
 Convert records from CSV files from wide to long format.
 """
 
-from nwtrack.fileio import csv_to_records, records_to_csv
+from nwtrack.infra.fileio.csv_io import csv_to_records, records_to_csv
 
 
 def main():

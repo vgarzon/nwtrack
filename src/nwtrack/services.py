@@ -4,7 +4,7 @@ Service layer for managing user operations using unit of work pattern.
 
 from typing import Callable
 
-from nwtrack.fileio import csv_to_records
+from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.domain.models import (
     Account,
     Balance,
@@ -14,7 +14,7 @@ from nwtrack.domain.models import (
     Status,
 )
 from nwtrack.domain.value_objects import Month
-from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.infra.fileio.csv_io import csv_to_records
 
 
 class InitDataService:
