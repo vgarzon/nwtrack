@@ -13,7 +13,7 @@ from nwtrack.infra.config.settings import Settings
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.dbmanager import DBConnectionManager
 from nwtrack.infra.fileio.csv_io import csv_to_records
-from nwtrack.mapper_registry import MapperRegistry
+from nwtrack.application.registries.mappers import MapperRegistry
 from nwtrack.services import InitDataService
 from tests.fakes import FakeEntityA, FakeEntityB
 

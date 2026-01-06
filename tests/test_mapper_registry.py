@@ -2,7 +2,7 @@
 Test Mapper Registry functionality.
 """
 
-from nwtrack.mapper_registry import MapperRegistry
+from nwtrack.application.registries.mappers import MapperRegistry
 
 
 def test_mapper_registry_get_mapper_for():
