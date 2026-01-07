@@ -2,7 +2,7 @@
 Halper functions to initialize the database with sample data.
 """
 
-from nwtrack.admin import DBAdminService
+from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.bootstrap.container import Container
 from nwtrack.services import InitDataService
 from nwtrack.application.ports.uow import UnitOfWork

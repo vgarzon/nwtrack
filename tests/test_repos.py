@@ -3,7 +3,7 @@ Test cases for repository management functionalities.
 """
 
 import pytest
-from nwtrack.admin import DBAdminService, SQLiteAdminService
+from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.infra.config.settings import Settings
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.bootstrap.container import Container
@@ -27,9 +27,7 @@ def configured_container(base_container: Container) -> Container:
     """Register services for testing."""
     return base_container.register(
         DBAdminService,
-        lambda c: SQLiteAdminService(
-            c.resolve(Settings), c.resolve(DBConnectionManager)
-        ),
+        lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),
     ).register(
         ReportService,
         lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),

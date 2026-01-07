@@ -4,7 +4,7 @@ Test initial data service
 
 import pytest
 
-from nwtrack.admin import DBAdminService, SQLiteAdminService
+from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.infra.config.settings import Settings
 from nwtrack.bootstrap.container import Container
 from nwtrack.application.ports.db import DBConnectionManager
@@ -22,9 +22,7 @@ def configured_container(base_container: Container) -> Container:
     """Configure container for tests."""
     return base_container.register(
         DBAdminService,
-        lambda c: SQLiteAdminService(
-            c.resolve(Settings), c.resolve(DBConnectionManager)
-        ),
+        lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),
     ).register(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),

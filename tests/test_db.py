@@ -4,7 +4,7 @@ Test cases for database connection and unit of work functionalities.
 
 from nwtrack.bootstrap.composition import build_data_services_container
 
-from nwtrack.admin import DBAdminService
+from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.infra.config.settings import Settings
 from nwtrack.bootstrap.container import Container
 from nwtrack.application.ports.db import DBConnectionManager

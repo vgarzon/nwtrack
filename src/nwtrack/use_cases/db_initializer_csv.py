@@ -4,7 +4,7 @@ Database initializer services
 
 from pathlib import Path
 
-from nwtrack.admin import DBAdminService
+from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.infra.config.settings import Settings
 from nwtrack.services import InitDataService
 
@@ -78,7 +78,7 @@ class DBInitializerCSV:
 
 
 def main() -> None:
-    from nwtrack.admin import SQLiteAdminService
+    from nwtrack.application.services.db_admin import DBAdminService
     from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
     from nwtrack.application.ports.db import DBConnectionManager
     from nwtrack.application.ports.uow import UnitOfWork
@@ -86,9 +86,7 @@ def main() -> None:
     container = build_base_sqlite_uow_container()
     container.register(
         DBAdminService,
-        lambda c: SQLiteAdminService(
-            c.resolve(Settings), c.resolve(DBConnectionManager)
-        ),
+        lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),
     ).register(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),

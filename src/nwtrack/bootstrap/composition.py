@@ -2,7 +2,7 @@
 Common dependency injection container setup for NWTrack application.
 """
 
-from nwtrack.admin import DBAdminService, SQLiteAdminService
+from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.infra.config.settings import Settings
 from nwtrack.infra.config.load import load_settings
@@ -143,9 +143,7 @@ def build_data_services_container(container: Container) -> Container:
     print("Setting up container with basic data and use case services.")
     container.register(
         DBAdminService,
-        lambda c: SQLiteAdminService(
-            c.resolve(Settings), c.resolve(DBConnectionManager)
-        ),
+        lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),
     ).register(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
