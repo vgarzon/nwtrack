@@ -290,7 +290,14 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         ORDER BY month;
         """
         results = self._db.fetch_all(query)
-        return [(Month.parse(record["month"]), record["cnt"]) for record in results]
+        counts: list[tuple[Month, int]] = []
+        for record in results:
+            assert record["month"] is not None, "Month value should not be None."
+            assert record["cnt"] is not None, "Count value should not be None."
+            month = Month.parse(str(record["month"]))
+            cnt = int(record["cnt"])
+            counts.append((month, cnt))
+        return counts
 
     def delete_all(self) -> None:
         """Delete all balance records."""

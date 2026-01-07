@@ -9,6 +9,30 @@ from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.application.registries.mappers import MapperRegistry
 from nwtrack.application.registries.repos import RepositoryRegistry
 from nwtrack.application.ports.repos import Repository
+from nwtrack.application.ports.mappers import DBRecord
+
+
+@pytest.fixture(scope="module")
+def sample_mapper_registry() -> MapperRegistry:
+    class MapperA:
+        def to_entity(self, data: DBRecord) -> FakeEntityA:
+            return FakeEntityA()
+
+        def to_record(self, entity: FakeEntityA) -> DBRecord:
+            return {}
+
+    class MapperB:
+        def to_entity(self, data: DBRecord) -> FakeEntityB:
+            return FakeEntityB()
+
+        def to_record(self, entity: FakeEntityB) -> DBRecord:
+            return {}
+
+    mapper_registry = MapperRegistry()
+    mapper_registry.register(FakeEntityA, MapperA())
+    mapper_registry.register(FakeEntityB, MapperB())
+
+    return mapper_registry
 
 
 def test_repository_registry(

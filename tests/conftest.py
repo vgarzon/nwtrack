@@ -101,26 +101,3 @@ def sample_entities(
 @pytest.fixture(scope="module")
 def mock_db_manager() -> Mock:
     return Mock(spec=DBConnectionManager)
-
-
-@pytest.fixture(scope="module")
-def sample_mapper_registry() -> MapperRegistry:
-    class MapperA:
-        def to_entity(self, data: dict[str, Any]) -> FakeEntityA:
-            return FakeEntityA()
-
-        def to_record(self, entity: FakeEntityA) -> dict[str, Any]:
-            return {}
-
-    class MapperB:
-        def to_entity(self, data: dict[str, Any]) -> FakeEntityB:
-            return FakeEntityB()
-
-        def to_record(self, entity: FakeEntityB) -> dict[str, Any]:
-            return {}
-
-    mapper_registry = MapperRegistry()
-    mapper_registry.register(FakeEntityA, MapperA())
-    mapper_registry.register(FakeEntityB, MapperB())
-
-    return mapper_registry

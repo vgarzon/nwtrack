@@ -4,32 +4,34 @@ Database protocols.
 
 from __future__ import annotations
 
-import sqlite3
-from typing import Protocol, TypeAlias, Any
-from collections.abc import Sequence, Mapping
+from typing import Any, Protocol, TypeAlias
+from collections.abc import Iterable, Mapping, Sequence
 
-DBAPIConnection: TypeAlias = sqlite3.Connection
-SQLiteValue: TypeAlias = str | int | float | bytes | None
-ParamMapping: TypeAlias = Mapping[str, SQLiteValue]
-ParamSequence: TypeAlias = Sequence[SQLiteValue]
+ParamValue: TypeAlias = str | int | float | bool | bytes | None
+ParamMapping: TypeAlias = Mapping[str, ParamValue]
+ParamSequence: TypeAlias = Sequence[ParamValue]
+ParamSet: TypeAlias = ParamMapping | ParamSequence
+ManyParams: TypeAlias = Iterable[ParamSet]
 
 
 class DBConnectionManager(Protocol):
     """Database connection manager protocol."""
 
-    def get_connection(self) -> DBAPIConnection: ...
+    def get_connection(self) -> Any: ...
 
-    def execute(
-        self, sql: str, params: ParamMapping | ParamSequence | None = None
-    ) -> Any: ...
+    def execute(self, sql: str, params: ParamSet | None = None) -> Any: ...
 
     def script(self, sql: str) -> None: ...
 
-    def execute_many(self, query: str, params: list[dict] = []) -> int: ...
+    def execute_many(self, query: str, params: ManyParams) -> int: ...
 
-    def fetch_all(self, query: str, params: dict = {}) -> list[dict]: ...
+    def fetch_all(
+        self, query: str, params: ParamSet | None = None
+    ) -> list[Mapping[str, ParamValue]]: ...
 
-    def fetch_one(self, query: str, params: dict = {}) -> dict | None: ...
+    def fetch_one(
+        self, query: str, params: ParamSet | None = None
+    ) -> Mapping[str, Any] | None: ...
 
     def commit(self) -> None: ...
 

@@ -4,17 +4,19 @@ Mapper protocol for converting between databaes ecords and entities.
 
 from __future__ import annotations
 
-from typing import Protocol, Any, TypeVar
+from typing import Protocol, Any, TypeVar, Mapping, TypeAlias
+
 
 TEntity = TypeVar("TEntity")
 
-SQLiteRecord = dict[str, Any]
+# DBRecord = dict[str, Any]
+DBRecord: TypeAlias = Mapping[str, Any]
 
 
 class Mapper(Protocol[TEntity]):
     """A mapper to convert records to and from entities."""
 
-    def to_entity(self, record: SQLiteRecord) -> TEntity:
+    def to_entity(self, record: DBRecord) -> TEntity:
         """Convert a record to an entity.
 
         Args:
@@ -25,7 +27,7 @@ class Mapper(Protocol[TEntity]):
         """
         ...
 
-    def to_record(self, entity: TEntity) -> SQLiteRecord:
+    def to_record(self, entity: TEntity) -> DBRecord:
         """Convert an entity to a record.
 
         Args:

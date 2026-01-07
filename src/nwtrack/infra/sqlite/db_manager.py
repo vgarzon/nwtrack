@@ -5,15 +5,16 @@ Relational database manager module.
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterable, Mapping, Sequence
 from typing import TypeAlias
-from collections.abc import Sequence, Mapping
 
 from nwtrack.infra.config.settings import Settings
 
-DBAPIConnection: TypeAlias = sqlite3.Connection
-SQLiteValue: TypeAlias = str | int | float | bytes | None
-ParamMapping: TypeAlias = Mapping[str, SQLiteValue]
-ParamSequence: TypeAlias = Sequence[SQLiteValue]
+SQLiteValue: TypeAlias = str | int | float | bool | bytes | None
+SQLiteParamMapping: TypeAlias = Mapping[str, SQLiteValue]
+SQLiteParamSequence: TypeAlias = Sequence[SQLiteValue]
+SQLiteParamSet: TypeAlias = SQLiteParamMapping | SQLiteParamSequence
+SQLiteManyParams: TypeAlias = Iterable[SQLiteParamSet]
 
 
 class SQLiteConnectionManager:
@@ -21,15 +22,15 @@ class SQLiteConnectionManager:
 
     def __init__(self, config: Settings) -> None:
         self._db_file_path: str = config.db_file_path
-        self._connection: DBAPIConnection | None = None
+        self._connection: sqlite3.Connection | None = None
 
-    def get_connection(self) -> DBAPIConnection:
+    def get_connection(self) -> sqlite3.Connection:
         if self._connection is None:
             self._create_connection()
         assert self._connection is not None, "Database connection unavailable."
         return self._connection
 
-    def _create_connection(self) -> DBAPIConnection:
+    def _create_connection(self) -> sqlite3.Connection:
         print(f"Creating new SQLite connection with path '{self._db_file_path}'.")
         conn = sqlite3.connect(self._db_file_path)
         conn.execute("PRAGMA foreign_keys = ON;")  # NOTE: Enabled in DDL script too
@@ -37,16 +38,12 @@ class SQLiteConnectionManager:
         self._connection = conn
         return conn
 
-    def execute(
-        self, sql: str, params: ParamMapping | ParamSequence | None = None
-    ) -> sqlite3.Cursor:
+    def execute(self, sql: str, params: SQLiteParamSet | None = None) -> sqlite3.Cursor:
         conn = self.get_connection()
-
         if params is None:
             cursor = conn.execute(sql)
         else:
             cursor = conn.execute(sql, params)
-
         conn.commit()
         return cursor
 
@@ -55,21 +52,31 @@ class SQLiteConnectionManager:
             conn.executescript(sql)
             conn.commit()
 
-    def execute_many(self, query: str, params: list[dict] = []) -> int:
+    def execute_many(self, query: str, params: SQLiteManyParams) -> int:
         with self.get_connection() as conn:
             cursor = conn.executemany(query, params)
             rowcount = cursor.rowcount
         return rowcount
 
-    def fetch_all(self, query: str, params: dict = {}) -> list[dict]:
+    def fetch_all(
+        self, query: str, params: SQLiteParamSet | None = None
+    ) -> list[Mapping[str, SQLiteValue]]:
         with self.get_connection() as conn:
-            cursor = conn.execute(query, params)
+            if params is None:
+                cursor = conn.execute(query)
+            else:
+                cursor = conn.execute(query, params)
             results = cursor.fetchall()
         return results
 
-    def fetch_one(self, query: str, params: dict = {}) -> dict | None:
+    def fetch_one(
+        self, query: str, params: SQLiteParamSet | None = None
+    ) -> Mapping[str, SQLiteValue] | None:
         with self.get_connection() as conn:
-            cursor = conn.execute(query, params)
+            if params is None:
+                cursor = conn.execute(query)
+            else:
+                cursor = conn.execute(query, params)
             result = cursor.fetchone()
         return result
 

@@ -14,13 +14,13 @@ from nwtrack.domain.models import (
     Status,
 )
 from nwtrack.domain.value_objects import Month
-from nwtrack.application.ports.mappers import Mapper, SQLiteRecord
+from nwtrack.application.ports.mappers import Mapper, DBRecord
 
 
 class CurrencyMapper(Mapper[Currency]):
     """A mapper to convert currency records to and from currency entities."""
 
-    def to_entity(self, record: SQLiteRecord) -> Currency:
+    def to_entity(self, record: DBRecord) -> Currency:
         """Convert a currency record to a currency entity.
 
         Args:
@@ -31,7 +31,7 @@ class CurrencyMapper(Mapper[Currency]):
         """
         return Currency(code=record["code"], description=record["description"])
 
-    def to_record(self, entity: Currency) -> SQLiteRecord:
+    def to_record(self, entity: Currency) -> DBRecord:
         """Convert a currency entity to a currency record.
 
         Args:
@@ -49,7 +49,7 @@ class CurrencyMapper(Mapper[Currency]):
 class CategoryMapper(Mapper[Category]):
     """A mapper to convert category records to and from category entities."""
 
-    def to_entity(self, record: SQLiteRecord) -> Category:
+    def to_entity(self, record: DBRecord) -> Category:
         """Convert a category record to a category entity.
 
         Args:
@@ -60,7 +60,7 @@ class CategoryMapper(Mapper[Category]):
         """
         return Category(name=record["name"], side=Side(record["side"]))
 
-    def to_record(self, entity: Category) -> SQLiteRecord:
+    def to_record(self, entity: Category) -> DBRecord:
         """Convert a category entity to a category record.
 
         Args:
@@ -78,7 +78,7 @@ class CategoryMapper(Mapper[Category]):
 class AccountMapper(Mapper[Account]):
     """A mapper to convert account records to and from account entities."""
 
-    def to_entity(self, record: SQLiteRecord) -> Account:
+    def to_entity(self, record: DBRecord) -> Account:
         """Convert an account record to an account entity.
 
         Args:
@@ -96,7 +96,7 @@ class AccountMapper(Mapper[Account]):
             status=Status(record["status"]),
         )
 
-    def to_record(self, entity: Account) -> SQLiteRecord:
+    def to_record(self, entity: Account) -> DBRecord:
         """Convert an account entity to an account record.
 
         Args:
@@ -118,7 +118,7 @@ class AccountMapper(Mapper[Account]):
 class BalanceMapper(Mapper[Balance]):
     """A mapper to convert balance records to and from balance entities."""
 
-    def to_entity(self, record: SQLiteRecord) -> Balance:
+    def to_entity(self, record: DBRecord) -> Balance:
         """Convert a balance record to a balance entity.
 
         Args:
@@ -134,7 +134,7 @@ class BalanceMapper(Mapper[Balance]):
             amount=int(record["amount"]),
         )
 
-    def to_record(self, entity: Balance) -> SQLiteRecord:
+    def to_record(self, entity: Balance) -> DBRecord:
         """Convert a balance entity to a balance record.
 
         Args:
@@ -154,7 +154,7 @@ class BalanceMapper(Mapper[Balance]):
 class ExchangeRateMapper(Mapper[ExchangeRate]):
     """A mapper to convert exchange rate records to and from exchange rate entities."""
 
-    def to_entity(self, record: SQLiteRecord) -> ExchangeRate:
+    def to_entity(self, record: DBRecord) -> ExchangeRate:
         """Convert an exchange rate record to an exchange rate entity.
 
         Args:
@@ -169,7 +169,7 @@ class ExchangeRateMapper(Mapper[ExchangeRate]):
             rate=float(record["rate"]),
         )
 
-    def to_record(self, entity: ExchangeRate) -> SQLiteRecord:
+    def to_record(self, entity: ExchangeRate) -> DBRecord:
         """Convert an exchange rate entity to an exchange rate record.
 
         Args:
@@ -188,7 +188,7 @@ class ExchangeRateMapper(Mapper[ExchangeRate]):
 class NetWorthMapper(Mapper[NetWorth]):
     """A mapper to convert net worth records to and from net worth entities."""
 
-    def to_entity(self, record: SQLiteRecord) -> NetWorth:
+    def to_entity(self, record: DBRecord) -> NetWorth:
         """Convert a net worth record to a net worth entity.
 
         Args:
@@ -205,7 +205,7 @@ class NetWorthMapper(Mapper[NetWorth]):
             currency_code=record["currency"],
         )
 
-    def to_record(self, entity: NetWorth) -> SQLiteRecord:
+    def to_record(self, entity: NetWorth) -> DBRecord:
         """Convert a net worth entity to a net worth record.
 
         Args:

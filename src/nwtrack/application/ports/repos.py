@@ -16,7 +16,7 @@ from nwtrack.domain.models import (
     NetWorth,
 )
 from nwtrack.domain.value_objects import Month
-from nwtrack.application.ports.mappers import Mapper, SQLiteRecord
+from nwtrack.application.ports.mappers import Mapper, DBRecord
 
 TEntity = TypeVar("TEntity")
 
@@ -32,9 +32,9 @@ class Repository(Protocol[TEntity]):
 
     def delete_all(self) -> None: ...
 
-    def hydrate(self, data: SQLiteRecord) -> TEntity: ...
+    def hydrate(self, data: DBRecord) -> TEntity: ...
 
-    def hydrate_many(self, data: list[SQLiteRecord]) -> list[TEntity]: ...
+    def hydrate_many(self, data: list[DBRecord]) -> list[TEntity]: ...
 
 
 class BaseRepository(Generic[TEntity]):
