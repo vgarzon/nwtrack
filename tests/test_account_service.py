@@ -9,7 +9,7 @@ from nwtrack.infra.config.settings import Settings
 from nwtrack.bootstrap.container import Container
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.application.services.data_loader import InitDataService
-from nwtrack.services import AccountService
+from nwtrack.application.services.account import AccountService
 from nwtrack.application.ports.uow import UnitOfWork
 from tests.helpers import init_db_tables_w_entities
 
@@ -47,10 +47,10 @@ def test_get_all(
     assert active_accounts[-1].id == 3
     assert active_accounts[-1].name == "credit_cards_1"
 
-    # all_accounts = svc.get_all(active_only=False)
-    # assert len(all_accounts) == 4
-    # assert all_accounts[-1].id == 4
-    # assert all_accounts[-1].name == "mortgage_1"
+    all_accounts = svc.get_all(active_only=False)
+    assert len(all_accounts) == 4
+    assert all_accounts[-1].id == 4
+    assert all_accounts[-1].name == "mortgage_1"
 
 
 def test_get_by_id(

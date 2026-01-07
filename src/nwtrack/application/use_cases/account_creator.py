@@ -5,7 +5,7 @@ Demo interactive account creation use case.
 from typing import Callable
 from nwtrack.domain.models import Category, Currency, Status
 from nwtrack.domain.value_objects import Month
-from nwtrack.services import AccountService
+from nwtrack.application.services.account import AccountService
 from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
 from nwtrack.application.ports.uow import UnitOfWork
 

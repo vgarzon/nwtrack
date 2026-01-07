@@ -35,7 +35,7 @@ from nwtrack.infra.sqlite.mappers import (
 )
 from nwtrack.application.registries.repos import RepositoryRegistry
 from nwtrack.application.services.data_loader import InitDataService
-from nwtrack.services import AccountService
+from nwtrack.application.services.account import AccountService
 from nwtrack.application.services.reporting import ReportService
 
 # TODO: Separate generic build functions from concrete repo implementations.
