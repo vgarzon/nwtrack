@@ -2,7 +2,6 @@
 Pytest fixtures and test container setup for nwtrack application.
 """
 
-from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -13,9 +12,7 @@ from nwtrack.infra.config.settings import Settings
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.infra.fileio.csv_io import csv_to_records
-from nwtrack.application.registries.mappers import MapperRegistry
-from nwtrack.services import InitDataService
-from tests.fakes import FakeEntityA, FakeEntityB
+from nwtrack.application.services.data_loader import InitDataService
 
 
 @pytest.fixture(scope="module")

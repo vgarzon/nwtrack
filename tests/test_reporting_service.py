@@ -10,7 +10,8 @@ from nwtrack.bootstrap.container import Container
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.domain.models import Balance, NetWorth
 from nwtrack.domain.value_objects import Month
-from nwtrack.services import InitDataService, ReportService
+from nwtrack.application.services.data_loader import InitDataService
+from nwtrack.services import ReportService
 from nwtrack.application.ports.uow import UnitOfWork
 from tests.helpers import init_db_tables_w_entities
 

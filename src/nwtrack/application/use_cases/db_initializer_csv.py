@@ -6,7 +6,7 @@ from pathlib import Path
 
 from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.infra.config.settings import Settings
-from nwtrack.services import InitDataService
+from nwtrack.application.services.data_loader import InitDataService
 
 
 class DBInitializerCSV:

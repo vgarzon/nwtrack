@@ -34,9 +34,9 @@ from nwtrack.infra.sqlite.mappers import (
     NetWorthMapper,
 )
 from nwtrack.application.registries.repos import RepositoryRegistry
+from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.services import (
     AccountService,
-    InitDataService,
     ReportService,
 )
 

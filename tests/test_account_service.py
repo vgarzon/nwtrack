@@ -8,7 +8,8 @@ from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.infra.config.settings import Settings
 from nwtrack.bootstrap.container import Container
 from nwtrack.application.ports.db import DBConnectionManager
-from nwtrack.services import AccountService, InitDataService
+from nwtrack.application.services.data_loader import InitDataService
+from nwtrack.services import AccountService
 from nwtrack.application.ports.uow import UnitOfWork
 from tests.helpers import init_db_tables_w_entities
 
