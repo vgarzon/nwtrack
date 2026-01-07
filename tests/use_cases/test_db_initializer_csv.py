@@ -10,7 +10,7 @@ from nwtrack.bootstrap.container import Container
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.services import InitDataService
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.use_cases.db_initializer_csv import DBInitializerCSV
+from nwtrack.application.use_cases.db_initializer_csv import DBInitializerCSV
 
 
 @pytest.fixture
