@@ -23,4 +23,5 @@ dev = [
 
 [tool.mypy]
 mypy_path = "src"
+exclude_gitignore = true
 
