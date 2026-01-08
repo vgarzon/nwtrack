@@ -7,8 +7,6 @@ from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.infra.config.settings import Settings
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.bootstrap.container import Container
-from nwtrack.application.services.reporting import ReportService
-from nwtrack.application.ports.uow import UnitOfWork
 from tests.data.basic import TEST_DATA
 from tests.helpers import _uow_factory, count_entries
 
@@ -28,9 +26,6 @@ def configured_container(base_container: Container) -> Container:
     return base_container.register(
         DBAdminService,
         lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),
-    ).register(
-        ReportService,
-        lambda c: ReportService(uow=lambda: c.resolve(UnitOfWork)),
     )
 
 
