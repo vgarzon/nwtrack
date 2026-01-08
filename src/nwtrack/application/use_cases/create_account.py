@@ -3,9 +3,8 @@ Demo interactive account creation use case.
 """
 
 from typing import Callable
-from nwtrack.domain.models import Category, Currency, Status
+from nwtrack.domain.models import Account, Category, Currency, Status
 from nwtrack.domain.value_objects import Month
-from nwtrack.application.services.account import AccountService
 from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
 from nwtrack.application.ports.uow import UnitOfWork
 
@@ -13,13 +12,8 @@ from nwtrack.application.ports.uow import UnitOfWork
 class AccountCreator:
     """Create account interactively."""
 
-    def __init__(
-        self,
-        uow: Callable[[], UnitOfWork],
-        account_svc: AccountService,
-    ) -> None:
+    def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
-        self._account_svc = account_svc
 
     def run(self) -> None:
         self.print_active_accounts()
@@ -202,6 +196,23 @@ class AccountCreator:
             break
         return str(month)
 
+    def _get_all_accounts(self, active_only: bool = True) -> list[Account]:
+        """Get a list of all accounts.
+
+        Args:
+            active_only (bool): Whether to include only active accounts.
+
+        Returns:
+            list[Account]: List of active Account objects.
+        """
+        if active_only:
+            with self._uow() as uow:
+                accounts = uow.accounts.get_active()
+        else:
+            with self._uow() as uow:
+                accounts = uow.accounts.get_all()
+        return accounts
+
     def _get_all_categories(self) -> list[Category]:
         """Get a list of all categories.
 
@@ -222,22 +233,39 @@ class AccountCreator:
             currencies = uow.currencies.get_all()
         return currencies
 
+    def _get_category_by_account_id(self, account_id: int) -> Category | None:
+        """Get category side for a given account ID.
+
+        Args:
+            account_id (int): Account ID
+
+        Returns:
+            Category | None: Category instance if found, else None.
+        """
+        with self._uow() as uow:
+            account = uow.accounts.get_by_id(account_id)
+        if not account:
+            return None
+        with self._uow() as uow:
+            category = uow.categories.get(account.category_name)
+        return category
+
     def print_active_accounts(self):
-        active_accounts = self._account_svc.get_all(active_only=True)
+        active_accounts = self._get_all_accounts(active_only=True)
         print("Active accounts:")
         for account in active_accounts:
             _id, _name = account.id, account.name
-            _category = self._account_svc.get_category_by_account_id(_id)
+            _category = self._get_category_by_account_id(_id)
             _side = _category.side.value
             print(f"Account {_id:2}: {_name:20} {_category.name:16} ({_side})")
         print()
 
     def print_all_accounts(self):
-        all_accounts = self._account_svc.get_all(active_only=False)
+        all_accounts = self._get_all_accounts(active_only=False)
         print("All accounts:")
         for account in all_accounts:
             _id, _name = account.id, account.name
-            _category = self._account_svc.get_category_by_account_id(_id)
+            _category = self._get_category_by_account_id(_id)
             _side = _category.side.value
             print(f"Account {_id:2}: {_name:20} {_category.name:16} ({_side})")
         print()
@@ -297,14 +325,8 @@ def main() -> None:
     """Main function to run the account creator."""
     container = build_base_sqlite_uow_container()
     container.register(
-        AccountService,
-        lambda c: AccountService(uow=lambda: c.resolve(UnitOfWork)),
-    ).register(
         AccountCreator,
-        lambda c: AccountCreator(
-            uow=lambda: c.resolve(UnitOfWork),
-            account_svc=c.resolve(AccountService),
-        ),
+        lambda c: AccountCreator(uow=lambda: c.resolve(UnitOfWork)),
     )
     account_creator: AccountCreator = container.resolve(AccountCreator)
     account_creator.run()

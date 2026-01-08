@@ -35,7 +35,6 @@ from nwtrack.infra.sqlite.mappers import (
 )
 from nwtrack.application.registries.repos import RepositoryRegistry
 from nwtrack.application.services.data_loader import InitDataService
-from nwtrack.application.services.account import AccountService
 from nwtrack.application.ports.reporting import ReportingQueries
 from nwtrack.infra.sqlite.reporting import SQLiteReportingQueries
 
@@ -135,7 +134,6 @@ def build_data_services_container(container: Container) -> Container:
     Adds:
         - DBAdminService
         - InitDataService
-        - AccountService
 
     Args:
         container (Container): Base DI container.
@@ -150,8 +148,5 @@ def build_data_services_container(container: Container) -> Container:
     ).register(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
-    ).register(
-        AccountService,
-        lambda c: AccountService(uow=lambda: c.resolve(UnitOfWork)),
     )
     return container

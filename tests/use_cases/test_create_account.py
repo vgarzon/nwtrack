@@ -8,7 +8,6 @@ from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.infra.config.settings import Settings
 from nwtrack.bootstrap.container import Container
 from nwtrack.application.ports.db import DBConnectionManager
-from nwtrack.application.services.account import AccountService
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.use_cases.create_account import AccountCreator
 from tests.helpers import init_db_tables_w_entities
@@ -17,23 +16,12 @@ from tests.helpers import init_db_tables_w_entities
 @pytest.fixture
 def configured_container(base_container: Container) -> Container:
     """Register services in the container."""
-    return (
-        base_container.register(
-            DBAdminService,
-            lambda c: DBAdminService(
-                c.resolve(Settings), c.resolve(DBConnectionManager)
-            ),
-        )
-        .register(
-            AccountService,
-            lambda c: AccountService(uow=lambda: c.resolve(UnitOfWork)),
-        )
-        .register(
-            AccountCreator,
-            lambda c: AccountCreator(
-                uow=lambda: c.resolve(UnitOfWork), account_svc=c.resolve(AccountService)
-            ),
-        )
+    return base_container.register(
+        DBAdminService,
+        lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),
+    ).register(
+        AccountCreator,
+        lambda c: AccountCreator(uow=lambda: c.resolve(UnitOfWork)),
     )
 
 
