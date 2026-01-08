@@ -318,3 +318,33 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         rowcount = cur.rowcount
         print(f"Deleted {rowcount} balance records for account ID {account_id}.")
         return rowcount
+
+    def get_monthly_total_by_category(self, month: Month) -> list[sqlite3.Row]:
+        """Get total balance amount by category name for a given moth.
+
+        Args:
+            month (Month): Month object
+
+        Returns:
+            list[sqlite3.Row]: List of rows with category side, name, and total amount.
+        """
+        query = """
+        SELECT 
+          c.side as category_side,
+          c.name as category_name,
+          sum(b.amount) as total_amount
+        FROM 
+          balances b
+        JOIN 
+          accounts a on b.account_id = a.id
+        JOIN 
+          categories c on a.category = c.name
+        WHERE 
+          b.month = :month
+        GROUP by 
+          c.name, c.side
+        ORDER by 
+          c.side, c.name;
+        """
+        result = self._db.fetch_all(query, {"month": str(month)})
+        return result

@@ -2,10 +2,11 @@
 File input / output utility functions.
 """
 
+from pathlib import Path
 import csv
 
 
-def csv_to_records(csv_file_path: str) -> list[dict]:
+def csv_to_records(csv_file_path: str | Path) -> list[dict]:
     """Read records from a CSV file
 
     Args:
@@ -21,7 +22,7 @@ def csv_to_records(csv_file_path: str) -> list[dict]:
     return data
 
 
-def records_to_csv(records, csv_file_path, fieldnames=None):
+def records_to_csv(records, csv_file_path: str | Path, fieldnames=None):
     """Write records to a CSV file.
 
     Args:

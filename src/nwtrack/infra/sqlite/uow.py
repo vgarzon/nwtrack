@@ -5,6 +5,7 @@ SQLite implementation of Unit of work to manage database transactions.
 from nwtrack.application.registries.mappers import MapperRegistry
 from nwtrack.application.registries.repos import RepositoryRegistry
 from nwtrack.infra.sqlite.db_manager import SQLiteConnectionManager
+from nwtrack.infra.sqlite.reporting import SQLiteReportingQueries
 
 
 class SQLiteUnitOfWork:
@@ -15,11 +16,13 @@ class SQLiteUnitOfWork:
         db: SQLiteConnectionManager,
         mappers: MapperRegistry,
         repo_registry: RepositoryRegistry,
+        reporting: SQLiteReportingQueries,
     ) -> None:
         """Initialize the Unit of Work with repository instances."""
         self._db = db
         self._mappers = mappers
         self._repos = repo_registry
+        self._reporting = reporting
 
     def __enter__(self) -> "SQLiteUnitOfWork":
         """Enter the runtime context related to this object."""

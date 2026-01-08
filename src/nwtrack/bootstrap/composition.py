@@ -37,6 +37,8 @@ from nwtrack.application.registries.repos import RepositoryRegistry
 from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.application.services.account import AccountService
 from nwtrack.application.services.reporting import ReportService
+from nwtrack.application.ports.reporting import ReportingQueries
+from nwtrack.infra.sqlite.reporting import SQLiteReportingQueries
 
 # TODO: Separate generic build functions from concrete repo implementations.
 
@@ -113,11 +115,16 @@ def build_base_sqlite_uow_container() -> Container:
         ),
         lifetime=Lifetime.SINGLETON,
     ).register(
+        ReportingQueries,
+        lambda c: SQLiteReportingQueries(c.resolve(DBConnectionManager)),
+        lifetime=Lifetime.SINGLETON,
+    ).register(
         UnitOfWork,
         lambda c: SQLiteUnitOfWork(
             c.resolve(DBConnectionManager),
             c.resolve(MapperRegistry),
             c.resolve(RepositoryRegistry),
+            c.resolve(ReportingQueries),
         ),
     )
     return container
