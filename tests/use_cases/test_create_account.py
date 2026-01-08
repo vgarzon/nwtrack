@@ -10,7 +10,7 @@ from nwtrack.bootstrap.container import Container
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.application.services.account import AccountService
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.application.use_cases.account_creator import AccountCreator
+from nwtrack.application.use_cases.create_account import AccountCreator
 from tests.helpers import init_db_tables_w_entities
 
 

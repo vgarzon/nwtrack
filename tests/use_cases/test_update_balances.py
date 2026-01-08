@@ -11,7 +11,7 @@ from nwtrack.bootstrap.container import Container
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.application.use_cases.balance_updater import BalanceUpdater
+from nwtrack.application.use_cases.update_balances import BalanceUpdater
 from tests.helpers import init_db_tables_w_entities
 
 
