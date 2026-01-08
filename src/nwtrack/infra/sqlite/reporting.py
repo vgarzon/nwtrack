@@ -42,14 +42,14 @@ class SQLiteReportingQueries:
           c.side, c.name;
         """
         rows = self._db.fetch_all(query, {"month": str(month)})
-        results = [
-            MonthlyCategoryBalance(
-                month=month,
-                category=Category(
-                    name=row["category_name"], side=Side(row["category_side"])
-                ),
-                amount=int(row["total_amount"]),
+        results = []
+        for row in rows:
+            category_name = str(row["category_name"])
+            category_side = str(row["category_side"])
+            amount = int(row["total_amount"]) if row["total_amount"] is not None else 0
+            assert row["category_name"] is not None
+            category = Category(name=category_name, side=Side(category_side))
+            results.append(
+                MonthlyCategoryBalance(month=month, category=category, amount=amount)
             )
-            for row in rows
-        ]
         return results

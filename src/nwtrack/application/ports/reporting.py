@@ -10,8 +10,7 @@ from nwtrack.domain.value_objects import Month
 
 
 class ReportingQueries(Protocol):
-    def __init__(self, db: DBConnectionManager) -> None:
-        self._db: DBConnectionManager = db
+    _db: DBConnectionManager
 
     def monthly_balance_total_by_category(
         self, month: Month

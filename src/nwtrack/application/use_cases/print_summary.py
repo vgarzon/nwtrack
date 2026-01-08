@@ -21,11 +21,8 @@ class SummaryService:
         month = self.input_month()
         if month is None:
             return
-        if month not in [m for m, _ in self._get_balance_count_per_month()]:
-            print(f"No balance data found for {month}. Exiting.")
-            return
-
-        print("Net Worth:")
+        self.print_balances(month)
+        self.print_summary_by_category(month)
         self.print_net_worth(month)
 
     def print_recent_months(self) -> None:
@@ -87,6 +84,23 @@ class SummaryService:
             )
         print()
 
+    def print_summary_by_category(self, month: Month) -> None:
+        """Print summary by category for a specific month.
+        Args:
+            month (Month): Month object
+        Returns:
+            None
+        """
+        with self._uow() as uow:
+            monthly_balances = uow._reporting.monthly_balance_total_by_category(month)
+        print(f"Summary by category for {month}:")
+        for mb in monthly_balances:
+            category_name = mb.category.name
+            category_side = mb.category.side.value
+            amount = mb.amount
+            print(f"{category_name:16} ({category_side:9}) Total: {amount:10,}")
+        print()
+
     def print_net_worth(self, month: Month, currency_code: str = "USD") -> None:
         """Print net worth on a specific month.
 
@@ -101,9 +115,11 @@ class SummaryService:
             nw = uow.net_worth.get(month, currency_code)
         if not nw:
             raise ValueError(f"No net worth data found for {month} in {currency_code}")
+        print(f"Net Worth Summary for {month} ({currency_code}):")
         print(
-            f"Month: {month} Currency: {currency_code} Assets: {nw.assets:,} "
-            f"Liabilities: {nw.liabilities:,} Net Worth: {nw.net_worth:,}"
+            f"Assets: {nw.assets:,}\n"
+            f"Liabilities: {nw.liabilities:,}\n"
+            f"Net Worth: {nw.net_worth:,}"
         )
 
     def _get_category_by_account_id(self, account_id: int) -> Category | None:
@@ -153,20 +169,6 @@ class SummaryService:
             accounts = uow.accounts.get_active()
         return accounts
 
-    def _get_balance_for_account_id(self, month: Month, account_id: int) -> Balance:
-        """Get balance for an account on a specific month.
-
-        Args:
-            month (Month): Month object
-            account_id (int): Account id
-
-        Return:
-            Balance: Balance object for the specified account and month.
-        """
-        with self._uow() as uow:
-            balance = uow.balances.get_by_account_id(month, account_id)
-        return balance
-
     def _get_month_balances(
         self, month: Month, active_only: bool = True
     ) -> list[Balance]:
@@ -182,19 +184,6 @@ class SummaryService:
         with self._uow() as uow:
             balances = uow.balances.get_month(month, active_only)
         return balances
-
-    def update_balance(self, account_id: int, month: Month, new_amount: int) -> None:
-        """Update the balance for a specific account on a given month.
-
-        Args:
-            account_id (int): ID of the account.
-            month (Month): Month of the balance to update.
-            new_ammount (int): New balance amount.
-        """
-        with self._uow() as uow:
-            uow.balances.update(
-                account_id=account_id, month=month, new_amount=new_amount
-            )
 
 
 def main() -> None:

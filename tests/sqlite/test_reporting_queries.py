@@ -16,8 +16,11 @@ def test_get_monthly_total_by_category(base_container, sample_entities) -> None:
 
     with _uow_factory(container) as uow:
         rows = uow._reporting.monthly_balance_total_by_category(month)
+    assert len(rows) == 3
 
-    for row in rows:
-        print(type(row), row)
-
-    assert isinstance(rows[0], MonthlyCategoryBalance)
+    checking = next((row for row in rows if "checking" in row.category.name), None)
+    assert checking is not None
+    assert isinstance(checking, MonthlyCategoryBalance)
+    assert checking.month == month
+    assert checking.category.name == "checking"
+    assert checking.amount == 200

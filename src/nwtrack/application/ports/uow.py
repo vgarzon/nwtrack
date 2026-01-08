@@ -11,6 +11,7 @@ from nwtrack.application.ports.repos import (
     ExchangeRatesRepository,
     NetWorthRepository,
 )
+from nwtrack.application.ports.reporting import ReportingQueries
 
 
 class UnitOfWork(Protocol):
@@ -22,6 +23,7 @@ class UnitOfWork(Protocol):
     balances: BalancesRepository
     exchange_rates: ExchangeRatesRepository
     net_worth: NetWorthRepository
+    _reporting: ReportingQueries
 
     def __enter__(self) -> "UnitOfWork": ...
 
