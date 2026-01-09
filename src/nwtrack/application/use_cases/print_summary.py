@@ -17,21 +17,37 @@ class SummaryService:
 
     def run(self) -> None:
         self.print_active_accounts()
-        self.print_recent_months()
-        month = self.input_month()
+        month = self.select_month()
         if month is None:
+            print("No month selected. Exiting.")
             return
         self.print_balances(month)
         self.print_summary_by_category(month)
         self.print_net_worth(month)
 
-    def print_recent_months(self) -> None:
+    def select_month(self, n_months: int = 5) -> Month | None:
         balance_counts = self._get_balance_count_per_month()
         balance_counts.sort(key=lambda x: x[0], reverse=True)
-        print("Recent month balance counts:")
-        for month, count in balance_counts[:3]:
-            print(f" {month}: {count} balances")
-        print()
+        recent_months = [month for month, _ in balance_counts[:n_months]]
+        print("Select a month:")
+        for idx, month in enumerate(recent_months):
+            print(f"{idx}. {month} ({balance_counts[idx][1]} entries)")
+        print("A. Enter year and month")
+        print("Q. Quit")
+        while True:
+            choice = input(f"Enter choice (0-{n_months - 1}, A, Q): ")
+            if choice.lower().strip() == "q":
+                return None
+            if choice.lower().strip() == "a":
+                return self.input_month()
+            try:
+                choice_idx = int(choice)
+                if 0 <= choice_idx < n_months:
+                    return recent_months[choice_idx]
+                else:
+                    print("Invalid choice. Please try again.")
+            except ValueError:
+                print("Invalid input. Please enter a number.")
 
     def input_month(self) -> Month | None:
         while True:

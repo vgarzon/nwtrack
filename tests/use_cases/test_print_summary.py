@@ -36,7 +36,7 @@ def configured_container(base_container: Container) -> Container:
     )
 
 
-def test_print_summary_run(
+def test_print_summary_run_select_month(
     configured_container: Container,
     sample_entities: dict[str, list],
     monkeypatch,
@@ -45,11 +45,28 @@ def test_print_summary_run(
     """Test print summary service."""
     # TODO: Use common fixture to init DB with entities
     init_db_tables_w_entities(configured_container, sample_entities)
-    inputs = iter(
-        [
-            "2025 11",  # Input month
-        ]
-    )
+    inputs = iter(["0"])  # Select first month in the list
+    service: SummaryService = configured_container.resolve(SummaryService)
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+    service.run()
+    captured = capsys.readouterr()
+    print(captured.out)
+    assert re.search(r"Balances for 2025-11", captured.out)
+    assert re.search(r"revolving_credit.+liability.+600", captured.out)
+    assert re.search(r"Net Worth Summary for 2025-11", captured.out)
+    assert re.search(r"Assets: 700", captured.out)
+
+
+def test_print_summary_run_input_month(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+    capsys,
+) -> None:
+    """Test print summary service."""
+    # TODO: Use common fixture to init DB with entities
+    init_db_tables_w_entities(configured_container, sample_entities)
+    inputs = iter(["A", "2025 11"])  # Input month directly
     service: SummaryService = configured_container.resolve(SummaryService)
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
     service.run()
