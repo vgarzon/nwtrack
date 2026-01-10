@@ -4,10 +4,7 @@ Load configuration settings.
 
 import os
 
-from dotenv import load_dotenv
 from nwtrack.infra.config.settings import Settings
-
-load_dotenv()
 
 
 def load_settings() -> Settings:

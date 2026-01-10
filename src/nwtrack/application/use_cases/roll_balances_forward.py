@@ -165,7 +165,10 @@ class RollBalancesUpdater:
 
 
 def main() -> None:
+    from dotenv import load_dotenv
     from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
+
+    load_dotenv()
 
     container = build_base_sqlite_uow_container()
     container.register(

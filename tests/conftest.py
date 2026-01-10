@@ -6,13 +6,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
-from nwtrack.infra.config.settings import Settings
-from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.application.ports.db import DBConnectionManager
-from nwtrack.infra.fileio.csv_io import csv_to_records
+from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.data_loader import InitDataService
+from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
+from nwtrack.bootstrap.container import Container, Lifetime
+from nwtrack.infra.config.settings import Settings
+from nwtrack.infra.fileio.csv_io import csv_to_records
 
 
 @pytest.fixture(scope="module")

@@ -322,7 +322,10 @@ class AccountCreator:
 
 
 def main() -> None:
-    """Main function to run the account creator."""
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
     container = build_base_sqlite_uow_container()
     container.register(
         AccountCreator,
