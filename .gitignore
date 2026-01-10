@@ -10,7 +10,7 @@ wheels/
 .venv
 
 # project files
-/data
 .env
+/data
 /tmp
-
+/logs
