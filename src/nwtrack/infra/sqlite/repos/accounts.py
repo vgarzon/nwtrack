@@ -4,10 +4,13 @@ SQLite implementation of Accounts repository.
 
 from __future__ import annotations
 
+import logging
 import sqlite3
 
-from nwtrack.domain.models import Account
 from nwtrack.application.ports.repos import BaseRepository
+from nwtrack.domain.models import Account
+
+logger = logging.getLogger(__name__)
 
 
 class SQLiteAccountsRepository(BaseRepository[Account]):
@@ -29,10 +32,10 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         try:
             cur = self._db.execute(query, self._mapper.to_record(data))
         except sqlite3.IntegrityError as e:
-            print(f"Account insertion failed for '{data.name}': {e}")
+            logger.exception(f"Account insertion failed for '{data.name}': {e}")
             raise ValueError(f"Integrity Error for '{data.name}': {e}") from e
         last_id = cur.lastrowid
-        print("Inserted account with ID", last_id)
+        logger.info("Inserted account with ID %d", last_id)
         return last_id
 
     def insert_many(self, data: list[Account]) -> None:
@@ -49,7 +52,7 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
             query,
             [self._mapper.to_record(acc) for acc in data],
         )
-        print("Inserted", rowcount, "account rows.")
+        logger.info("Inserted %d account rows.", rowcount)
 
     def get_by_id(self, account_id: int) -> Account | None:
         """Get account by ID.
@@ -146,7 +149,7 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         """Delete all account records."""
         query = "DELETE FROM accounts;"
         cur = self._db.execute(query)
-        print(f"Deleted {cur.rowcount} account records.")
+        logger.info("Deleted %d account records.", cur.rowcount)
 
     def delete_by_id(self, account_id: int) -> int:
         """Delete account by ID.
@@ -159,7 +162,12 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         query = "DELETE FROM accounts WHERE id = :account_id;"
         cur = self._db.execute(query, {"account_id": account_id})
         rowcount = cur.rowcount
-        print(f"Deleted {rowcount} account entry with ID {account_id}.")
+        if rowcount != 1:
+            logger.warning(
+                f"Expected to delete 1 account with ID {account_id}, but deleted {rowcount}."
+            )
+        else:
+            logger.info(f"Deleted account with ID {account_id}.")
         return rowcount
 
     def update_name(self, account_id: int, new_name: str) -> int:
@@ -183,8 +191,12 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         }
         cur = self._db.execute(update_query, params)
         rowcount = cur.rowcount
-        assert rowcount == 1, "Expected exactly one row to be updated."
-        print(f"Updated account {account_id} to name '{new_name}'.")
+        if rowcount != 1:
+            logger.warning(
+                f"Expected to update 1 account with ID {account_id}, but updated {rowcount}."
+            )
+        else:
+            logger.info(f"Updated account {account_id} to name '{new_name}'.")
         return rowcount
 
     def update_status(self, account_id: int, new_status: str) -> int:
@@ -208,8 +220,12 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         }
         cur = self._db.execute(update_query, params)
         rowcount = cur.rowcount
-        assert rowcount == 1, "Expected exactly one row to be updated."
-        print(f"Updated account {account_id} to status '{new_status}'.")
+        if rowcount != 1:
+            logger.warning(
+                f"Expected to update 1 account with ID {account_id}, but updated {rowcount}."
+            )
+        else:
+            logger.info(f"Updated account {account_id} to status '{new_status}'.")
         return rowcount
 
     def update_currency(self, account_id: int, new_currency_code: str) -> int:
@@ -233,8 +249,14 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         }
         cur = self._db.execute(update_query, params)
         rowcount = cur.rowcount
-        assert rowcount == 1, "Expected exactly one row to be updated."
-        print(f"Updated account {account_id} to currency '{new_currency_code}'.")
+        if rowcount != 1:
+            logger.warning(
+                f"Expected to update 1 account with ID {account_id}, but updated {rowcount}."
+            )
+        else:
+            logger.info(
+                f"Updated account {account_id} to currency '{new_currency_code}'."
+            )
         return rowcount
 
     def update_category(self, account_id: int, new_category_name: str) -> int:
@@ -258,8 +280,16 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         }
         cur = self._db.execute(update_query, params)
         rowcount = cur.rowcount
-        assert rowcount == 1, "Expected exactly one row to be updated."
-        print(f"Updated account {account_id} to category '{new_category_name}'.")
+        if rowcount != 1:
+            logger.warning(
+                "Expected to update 1 account with ID %d, but updated %d.",
+                account_id,
+                rowcount,
+            )
+        else:
+            logger.info(
+                "Updated account %d to category '%s'.", account_id, new_category_name
+            )
         return rowcount
 
     def update_description(self, account_id: int, new_description: str) -> int:
@@ -283,6 +313,12 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         }
         cur = self._db.execute(update_query, params)
         rowcount = cur.rowcount
-        assert rowcount == 1, "Expected exactly one row to be updated."
-        print(f"Updated account {account_id} description.")
+        if rowcount != 1:
+            logger.warning(
+                "Expected to update 1 account with ID %d, but updated %d.",
+                account_id,
+                rowcount,
+            )
+        else:
+            logger.info("Updated account %d description.", account_id)
         return rowcount

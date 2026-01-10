@@ -4,8 +4,12 @@ SQLite implementation of the Categories repository.
 
 from __future__ import annotations
 
-from nwtrack.domain.models import Category
+import logging
+
 from nwtrack.application.ports.repos import BaseRepository
+from nwtrack.domain.models import Category
+
+logger = logging.getLogger(__name__)
 
 
 class SQLiteCategoriesRepository(BaseRepository[Category]):
@@ -21,7 +25,7 @@ class SQLiteCategoriesRepository(BaseRepository[Category]):
             "INSERT INTO categories (name, side) VALUES (:name, :side);",
             [self._mapper.to_record(record) for record in data],
         )
-        print("Inserted", rowcount, "category rows.")
+        logger.info("Inserted %d category rows.", rowcount)
 
     def get(self, name: str) -> Category | None:
         """Get category by name.
@@ -73,4 +77,4 @@ class SQLiteCategoriesRepository(BaseRepository[Category]):
         """Delete all category records."""
         query = "DELETE FROM categories;"
         cur = self._db.execute(query)
-        print(f"Deleted {cur.rowcount} category records.")
+        logger.info("Deleted %d category records.", cur.rowcount)
