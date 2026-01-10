@@ -50,11 +50,10 @@ def test_print_summary_run_select_month(
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
     service.run()
     captured = capsys.readouterr()
-    print(captured.out)
     assert re.search(r"Balances for 2025-11", captured.out)
     assert re.search(r"revolving_credit.+liability.+600", captured.out)
     assert re.search(r"Net Worth Summary for 2025-11", captured.out)
-    assert re.search(r"Assets: 700", captured.out)
+    assert re.search(r"Assets:\s+700", captured.out)
 
 
 def test_print_summary_run_input_month(
@@ -71,8 +70,7 @@ def test_print_summary_run_input_month(
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
     service.run()
     captured = capsys.readouterr()
-    print(captured.out)
     assert re.search(r"Balances for 2025-11", captured.out)
     assert re.search(r"revolving_credit.+liability.+600", captured.out)
     assert re.search(r"Net Worth Summary for 2025-11", captured.out)
-    assert re.search(r"Assets: 700", captured.out)
+    assert re.search(r"Assets:\s+700", captured.out)

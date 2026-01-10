@@ -24,34 +24,26 @@ def _level(name: str | None, default: int) -> int:
     return _LEVELS.get(name.upper(), default)
 
 
-def setup_logging(app_name: str = "nwtrack") -> None:
+def setup_logging() -> None:
     # ---- env ----
-    log_dir = os.getenv("NWTRACK_LOG_DIR", "./logs/")
+    log_file = os.getenv("NWTRACK_LOG_FILE", "./logs/nwtrack.log")
     file_level = _level(os.getenv("NWTRACK_LOG_FILE_LEVEL"), logging.INFO)
-    console_level = _level(os.getenv("NWTRACK_LOG_CONSOLE_LEVEL"), logging.WARNING)
-    rotation_bytes = int(os.getenv("NWTRACK_LOG_ROTATION_BYTES", 10 * 1024 * 1024))
+    rotation_bytes = int(os.getenv("NWTRACK_LOG_ROTATION_MB", 10)) * 1024 * 1024
     backup_count = int(os.getenv("NWTRACK_LOG_BACKUP_COUNT", 7))
 
-    Path(log_dir).mkdir(parents=True, exist_ok=True)
-    log_file = Path(log_dir) / f"{app_name}.log"
+    Path(log_file).parent.mkdir(parents=True, exist_ok=True)
 
     # ---- app root logger ----
-    app_logger = logging.getLogger(app_name)
-    app_logger.setLevel(logging.DEBUG)  # handlers decide
-    app_logger.propagate = False  # prevent double logs
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
 
     # Idempotency (important!)
-    app_logger.handlers.clear()
+    root_logger.handlers.clear()
 
-    formatter = logging.Formatter(
-        fmt="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
+    file_formatter = logging.Formatter(
+        fmt="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-
-    # ---- console ----
-    console = logging.StreamHandler()
-    console.setLevel(console_level)
-    console.setFormatter(formatter)
 
     # ---- rotating file ----
     file_handler = RotatingFileHandler(
@@ -61,7 +53,6 @@ def setup_logging(app_name: str = "nwtrack") -> None:
         encoding="utf-8",
     )
     file_handler.setLevel(file_level)
-    file_handler.setFormatter(formatter)
+    file_handler.setFormatter(file_formatter)
 
-    app_logger.addHandler(console)
-    app_logger.addHandler(file_handler)
+    root_logger.addHandler(file_handler)

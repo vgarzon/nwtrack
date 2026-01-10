@@ -4,11 +4,14 @@ Relational database manager module.
 
 from __future__ import annotations
 
+import logging
 import sqlite3
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TypeAlias
 
 from nwtrack.infra.config.settings import Settings
+
+logger = logging.getLogger(__name__)
 
 SQLiteValue: TypeAlias = str | int | float | bool | bytes | None
 SQLiteParamMapping: TypeAlias = Mapping[str, SQLiteValue]
@@ -31,9 +34,9 @@ class SQLiteConnectionManager:
         return self._connection
 
     def _create_connection(self) -> sqlite3.Connection:
-        print(f"Creating new SQLite connection with path '{self._db_file_path}'.")
+        logger.info("Creating SQLite connection to '%s'", self._db_file_path)
         conn = sqlite3.connect(self._db_file_path)
-        conn.execute("PRAGMA foreign_keys = ON;")  # NOTE: Enabled in DDL script too
+        conn.execute("PRAGMA foreign_keys = ON;")  # TODO: Enable in DDL script
         conn.row_factory = sqlite3.Row
         self._connection = conn
         return conn
@@ -89,7 +92,7 @@ class SQLiteConnectionManager:
             conn.rollback()
 
     def close_connection(self) -> None:
-        print("Closing SQLite connection.")
+        logger.info("Closing SQLite connection.")
         if self._connection:
             self._connection.close()
             self._connection = None

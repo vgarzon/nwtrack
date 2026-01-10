@@ -2,11 +2,14 @@
 Print network summary by category
 """
 
+import logging
 from typing import Callable
 
+from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.domain.models import Account, Balance, Category
 from nwtrack.domain.value_objects import Month
-from nwtrack.application.ports.uow import UnitOfWork
+
+logger = logging.getLogger(__name__)
 
 
 class SummaryService:
@@ -16,6 +19,7 @@ class SummaryService:
         self._uow = uow
 
     def run(self) -> None:
+        logger.info("Starting SummaryService.run")
         self.print_active_accounts()
         month = self.select_month()
         if month is None:
@@ -31,9 +35,9 @@ class SummaryService:
         recent_months = [month for month, _ in balance_counts[:n_months]]
         print("Select a month:")
         for idx, month in enumerate(recent_months):
-            print(f"{idx}. {month} ({balance_counts[idx][1]} entries)")
-        print("A. Enter year and month")
-        print("Q. Quit")
+            print(f"  {idx:2}. {month} ({balance_counts[idx][1]} entries)")
+        print("   A. Enter year and month")
+        print("   Q. Quit")
         while True:
             choice = input(f"Enter choice (0-{n_months - 1}, A, Q): ")
             if choice.lower().strip() == "q":
@@ -45,9 +49,9 @@ class SummaryService:
                 if 0 <= choice_idx < n_months:
                     return recent_months[choice_idx]
                 else:
-                    print("Invalid choice. Please try again.")
-            except ValueError:
-                print("Invalid input. Please enter a number.")
+                    print(f"Choice {choice_idx} out of range. Please try again.")
+            except ValueError as e:
+                print(f"Invalid input {e}.  Please try again.")
 
     def input_month(self) -> Month | None:
         while True:
@@ -67,7 +71,7 @@ class SummaryService:
                 continue
             with self._uow() as uow:
                 if not uow.balances.check_month(month):
-                    print(f"No balance data found for {month}. Please try again.")
+                    print(f"No balance entries found for {month}.")
                     continue
             break
         return month
@@ -79,7 +83,7 @@ class SummaryService:
             _id, _name = account.id, account.name
             _category = self._get_category_by_account_id(_id)
             _side = _category.side.value
-            print(f"Account {_id:2}: {_name:20} {_category.name:16} ({_side})")
+            print(f"  {_id:2}. {_name:20} {_category.name:16} ({_side})")
         print()
 
     def print_balances(self, month: Month):
@@ -90,12 +94,13 @@ class SummaryService:
             account_id = balance.account_id
             account_name = account_map[account_id].name
             account_category = self._get_category_by_account_id(account_id)
-            assert account_category is not None, (
-                f"Category not found for account ID {account_id}"
-            )
-            account_side = account_category.side.value
+            if account_category is None:
+                logger.error("Category not found for account ID {%}", account_id)
+                account_side = "Unknown"
+            else:
+                account_side = account_category.side.value
             print(
-                f"{account_id:2} {account_name:20} ({account_side:9}) "
+                f"  {account_id:2}. {account_name:20} ({account_side:9}) "
                 f"{balance.amount:10,}"
             )
         print()
@@ -114,7 +119,7 @@ class SummaryService:
             category_name = mb.category.name
             category_side = mb.category.side.value
             amount = mb.amount
-            print(f"{category_name:16} ({category_side:9}) Total: {amount:10,}")
+            print(f"  {category_name:16} ({category_side:9}) Total: {amount:8,}")
         print()
 
     def print_net_worth(self, month: Month, currency_code: str = "USD") -> None:
@@ -133,9 +138,9 @@ class SummaryService:
             raise ValueError(f"No net worth data found for {month} in {currency_code}")
         print(f"Net Worth Summary for {month} ({currency_code}):")
         print(
-            f"Assets: {nw.assets:,}\n"
-            f"Liabilities: {nw.liabilities:,}\n"
-            f"Net Worth: {nw.net_worth:,}"
+            f"  Assets:      {nw.assets:9,}\n"
+            f"  Liabilities: {nw.liabilities:9,}\n"
+            f"  Net Worth:   {nw.net_worth:9,}"
         )
 
     def _get_category_by_account_id(self, account_id: int) -> Category | None:
@@ -204,9 +209,12 @@ class SummaryService:
 
 def main() -> None:
     from dotenv import load_dotenv
+
     from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
+    from nwtrack.bootstrap.logging_config import setup_logging
 
     load_dotenv()
+    setup_logging()
 
     container = build_base_sqlite_uow_container()
     container.register(

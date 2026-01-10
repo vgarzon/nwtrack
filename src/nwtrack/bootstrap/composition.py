@@ -2,13 +2,16 @@
 Common dependency injection container setup for NWTrack application.
 """
 
-from nwtrack.application.services.db_admin import DBAdminService
-from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.infra.config.settings import Settings
-from nwtrack.infra.config.load import load_settings
-from nwtrack.bootstrap.container import Container, Lifetime
+import logging
+
 from nwtrack.application.ports.db import DBConnectionManager
-from nwtrack.infra.sqlite.db_manager import SQLiteConnectionManager
+from nwtrack.application.ports.reporting import ReportingQueries
+from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.application.registries.mappers import MapperRegistry
+from nwtrack.application.registries.repos import RepositoryRegistry
+from nwtrack.application.services.data_loader import InitDataService
+from nwtrack.application.services.db_admin import DBAdminService
+from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.domain.models import (
     Account,
     Balance,
@@ -17,14 +20,9 @@ from nwtrack.domain.models import (
     ExchangeRate,
     NetWorth,
 )
-from nwtrack.infra.sqlite.repos.accounts import SQLiteAccountsRepository
-from nwtrack.infra.sqlite.repos.balances import SQLiteBalancesRepository
-from nwtrack.infra.sqlite.repos.categories import SQLiteCategoriesRepository
-from nwtrack.infra.sqlite.repos.currencies import SQLiteCurrenciesRepository
-from nwtrack.infra.sqlite.repos.exchange_rates import SQLiteExchangeRatesRepository
-from nwtrack.infra.sqlite.repos.networth import SQLiteNetWorthRepository
-from nwtrack.infra.sqlite.uow import SQLiteUnitOfWork
-from nwtrack.application.registries.mappers import MapperRegistry
+from nwtrack.infra.config.load import load_settings
+from nwtrack.infra.config.settings import Settings
+from nwtrack.infra.sqlite.db_manager import SQLiteConnectionManager
 from nwtrack.infra.sqlite.mappers import (
     AccountMapper,
     BalanceMapper,
@@ -33,10 +31,16 @@ from nwtrack.infra.sqlite.mappers import (
     ExchangeRateMapper,
     NetWorthMapper,
 )
-from nwtrack.application.registries.repos import RepositoryRegistry
-from nwtrack.application.services.data_loader import InitDataService
-from nwtrack.application.ports.reporting import ReportingQueries
 from nwtrack.infra.sqlite.reporting import SQLiteReportingQueries
+from nwtrack.infra.sqlite.repos.accounts import SQLiteAccountsRepository
+from nwtrack.infra.sqlite.repos.balances import SQLiteBalancesRepository
+from nwtrack.infra.sqlite.repos.categories import SQLiteCategoriesRepository
+from nwtrack.infra.sqlite.repos.currencies import SQLiteCurrenciesRepository
+from nwtrack.infra.sqlite.repos.exchange_rates import SQLiteExchangeRatesRepository
+from nwtrack.infra.sqlite.repos.networth import SQLiteNetWorthRepository
+from nwtrack.infra.sqlite.uow import SQLiteUnitOfWork
+
+logger = logging.getLogger(__name__)
 
 # TODO: Separate generic build functions from concrete repo implementations.
 
@@ -91,7 +95,7 @@ def build_base_sqlite_uow_container() -> Container:
     Returns:
         Container: Configured DI container.
     """
-    print("Setting dependency container with SQLite repos and Unit of Work.")
+    logger.info("Setting dependency container with SQLite repos.")
     container = Container()
     container.register(
         Settings,
@@ -141,7 +145,7 @@ def build_data_services_container(container: Container) -> Container:
     Returns:
         Container: DI container with additional services.
     """
-    print("Setting up container with basic data and use case services.")
+    logger.info("Adding DB Admin and Init Data services to DI container.")
     container.register(
         DBAdminService,
         lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),
