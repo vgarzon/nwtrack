@@ -4,10 +4,14 @@ SQLite implementation of NetWorth repository.
 
 from __future__ import annotations
 
+import logging
+
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.domain.models import NetWorth
 from nwtrack.domain.value_objects import Month
 from nwtrack.infra.sqlite.mappers import NetWorthMapper
+
+logger = logging.getLogger(__name__)
 
 
 class SQLiteNetWorthRepository:
@@ -35,7 +39,13 @@ class SQLiteNetWorthRepository:
         results = self._db.fetch_all(
             query, {"month": str(month), "currency": currency_code}
         )
-        assert len(results) <= 1, "Expected at most one net worth record."
+        if len(results) > 1:
+            logger.error(
+                "Multiple net worth records found for month %s and currency %s.",
+                month,
+                currency_code,
+            )
+            raise ValueError("Multiple net worth records found.")
         return self._mapper.to_entity(dict(results[0]))
 
     def history(self, currency_code: str = "USD") -> list[NetWorth]:

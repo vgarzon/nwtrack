@@ -4,9 +4,13 @@ SQLite implementation of ExchangeRates repository.
 
 from __future__ import annotations
 
+import logging
+
+from nwtrack.application.ports.repos import BaseRepository
 from nwtrack.domain.models import ExchangeRate
 from nwtrack.domain.value_objects import Month
-from nwtrack.application.ports.repos import BaseRepository
+
+logger = logging.getLogger(__name__)
 
 
 class SQLiteExchangeRatesRepository(BaseRepository[ExchangeRate]):
@@ -25,7 +29,7 @@ class SQLiteExchangeRatesRepository(BaseRepository[ExchangeRate]):
             """,
             [self._mapper.to_record(record) for record in data],
         )
-        print("Inserted", rowcount, "exchange rate rows.")
+        logger.info("Inserted %d exchange rate rows.", rowcount)
 
     def get(self, month: Month, currency_code: str) -> ExchangeRate | None:
         """Get the exchange rate for a specific currency code and month
@@ -95,4 +99,4 @@ class SQLiteExchangeRatesRepository(BaseRepository[ExchangeRate]):
         """Delete all category records."""
         query = "DELETE FROM exchange_rates;"
         cur = self._db.execute(query)
-        print(f"Deleted {cur.rowcount} exchange rate records.")
+        logger.info("Deleted %d exchange rate records.", cur.rowcount)

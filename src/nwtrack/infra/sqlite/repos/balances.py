@@ -4,11 +4,14 @@ SQLite implementation of Balances repository.
 
 from __future__ import annotations
 
+import logging
 import sqlite3
 
+from nwtrack.application.ports.repos import BaseRepository
 from nwtrack.domain.models import Balance
 from nwtrack.domain.value_objects import Month
-from nwtrack.application.ports.repos import BaseRepository
+
+logger = logging.getLogger(__name__)
 
 
 class SQLiteBalancesRepository(BaseRepository[Balance]):
@@ -30,16 +33,18 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         try:
             cur = self._db.execute(query, self._mapper.to_record(data))
         except sqlite3.IntegrityError as e:
-            print(
-                f"Balance insertion failed for account_id '{data.account_id}' "
-                f"on month '{data.month}': {e}"
+            logger.exception(
+                "Balance insertion failed for account_id '%d' on month '%d': %s",
+                data.account_id,
+                data.month,
+                e,
             )
             raise ValueError(
                 f"Integrity error for account_id '{data.account_id}' "
                 f"on month '{data.month}': {e}"
             ) from e
         last_id = cur.lastrowid
-        print("Inserted one balance with ID", last_id)
+        logger.info("Inserted one balance with ID %d", last_id)
         return last_id
 
     def insert_many(self, data: list[Balance]) -> None:
@@ -56,7 +61,7 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
             query,
             [self._mapper.to_record(bal) for bal in data],
         )
-        print("Inserted", rowcount, "balance rows.")
+        logger.info("Inserted %d balance rows.", rowcount)
 
     def get(self, month: Month, account_name: str) -> Balance:
         """Get all account balances on a specific month.
@@ -78,7 +83,16 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         results = self._db.fetch_all(
             query, {"month": str(month), "account_name": account_name}
         )
-        assert len(results) <= 1, "Expected at most one balance record."
+        if len(results) > 1:
+            logger.error(
+                "Multiple balance records found for account '%s' on month '%s'.",
+                account_name,
+                month,
+            )
+            raise ValueError(
+                f"Multiple balance records found for account '{account_name}' "
+                f"on month '{month}'."
+            )
         return self._mapper.to_entity(dict(results[0]))
 
     def get_by_id(self, balance_id: int) -> Balance | None:
@@ -119,7 +133,16 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         results = self._db.fetch_all(
             query, {"month": str(month), "account_id": account_id}
         )
-        assert len(results) <= 1, "Expected at most one balance record."
+        if len(results) > 1:
+            logger.error(
+                "Multiple balance records found for account_id %d on month %s.",
+                account_id,
+                month,
+            )
+            raise ValueError(
+                f"Multiple balance records found for account_id {account_id} "
+                f"on month {month}."
+            )
         return self._mapper.to_entity(dict(results[0]))
 
     def get_all_by_account_id(self, account_id: int) -> list[Balance]:
@@ -186,8 +209,24 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
             "month": str(month),
         }
         cur = self._db.execute(update_query, params)
-        assert cur.rowcount == 1, "Expected exactly one row to be updated."
-        print(f"Updated account {account_id} on {month}.")
+        if cur.rowcount != 1:
+            logger.error(
+                "Update affected %d rows for account_id %d on month %s.",
+                cur.rowcount,
+                account_id,
+                month,
+            )
+            raise ValueError(
+                f"Update affected {cur.rowcount} rows for account_id "
+                f"{account_id} on month {month}."
+            )
+        else:
+            logger.info(
+                "Updated account_id %d on month %s with new amount %d.",
+                account_id,
+                month,
+                new_amount,
+            )
 
     def check_month(self, month: Month):
         """Check that there are balance entries for a given month.
@@ -224,7 +263,9 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
             "next_month": str(next_month),
         }
         cur = self._db.execute(insert_query, params)
-        print(f"Rolled {cur.rowcount} balances forward to {next_month}.")
+        logger.info(
+            "Rolled %d balances forward from %s to %s.", cur.rowcount, month, next_month
+        )
 
     def copy_by_month(self, source_month: Month, target_month: Month) -> int:
         """Copy balances from one month to another.
@@ -248,7 +289,9 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         }
         cur = self._db.execute(insert_query, params)
         row_count = cur.rowcount
-        print(f"Copied {row_count} balances from {source_month} to {target_month}.")
+        logger.info(
+            "Copied %d balances from %s to %s.", row_count, source_month, target_month
+        )
         return row_count
 
     def fetch_sample(self, limit: int = 5) -> list[Balance]:
@@ -292,8 +335,12 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         results = self._db.fetch_all(query)
         counts: list[tuple[Month, int]] = []
         for record in results:
-            assert record["month"] is not None, "Month value should not be None."
-            assert record["cnt"] is not None, "Count value should not be None."
+            if record is None:
+                logger.error("Encountered None record in count_per_month results.")
+                continue
+            if record["month"] is None or record["cnt"] is None:
+                logger.error("Encountered record with None values: %s", record)
+                continue
             month = Month.parse(str(record["month"]))
             cnt = int(record["cnt"])
             counts.append((month, cnt))
@@ -303,7 +350,7 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         """Delete all balance records."""
         query = "DELETE FROM balances;"
         cur = self._db.execute(query)
-        print(f"Deleted {cur.rowcount} balance records.")
+        logger.info("Deleted %d balance records.", cur.rowcount)
 
     def delete_by_account_id(self, account_id: int) -> int:
         """Delete balance records by account ID.
@@ -316,5 +363,7 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
         query = "DELETE FROM balances WHERE account_id = :account_id;"
         cur = self._db.execute(query, {"account_id": account_id})
         rowcount = cur.rowcount
-        print(f"Deleted {rowcount} balance records for account ID {account_id}.")
+        logger.info(
+            "Deleted %d balance records for account ID %d.", rowcount, account_id
+        )
         return rowcount
