@@ -76,7 +76,6 @@ def sample_entities(
     Returns:
         dict[str, list[dict[str, str]]]: Loaded data for each table.
     """
-    print("Loading sample data from CSV files...")
     records = {
         name: csv_to_records(path) for name, path in sample_data_file_paths.items()
     }

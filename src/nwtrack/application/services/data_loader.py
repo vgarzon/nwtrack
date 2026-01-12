@@ -2,10 +2,13 @@
 Data loading services
 """
 
+import logging
 from typing import Callable
 
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.infra.fileio.csv_io import csv_to_records
+
+logger = logging.getLogger(__name__)
 
 
 class InitDataService:
@@ -32,7 +35,7 @@ class InitDataService:
         Note:
           - Liabilities are stored as positive amounts.
         """
-        print("InitDataService: Inserting data from CSV files.")
+        logger.info("InitDataService: Inserting data from CSV files.")
         repo_names = [  # TODO: Use RepoRegistry (pending)
             "currencies",
             "categories",
@@ -40,9 +43,12 @@ class InitDataService:
             "balances",
             "exchange_rates",
         ]
-        assert all(name in repo_names for name in file_paths), (
-            f"Missing required file paths. Expected keys: {', '.join(repo_names)}"
-        )
+        if not all(name in repo_names for name in file_paths):
+            logger.error(
+                "Missing required file paths. Expected keys: %s",
+                ", ".join(repo_names),
+            )
+            raise KeyError("Missing required file paths.")
         records = {name: csv_to_records(path) for name, path in file_paths.items()}
 
         # NOTE: storing liabilities as positive amounts
