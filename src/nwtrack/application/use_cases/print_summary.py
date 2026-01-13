@@ -19,15 +19,17 @@ class SummaryService:
         self._uow = uow
 
     def run(self) -> None:
-        logger.info("Starting SummaryService.run")
+        logger.info("Starting Print Summary Service")
         self.print_active_accounts()
         month = self.select_month()
         if month is None:
+            logger.warning("No month selected. Exiting.")
             print("No month selected. Exiting.")
             return
         self.print_balances(month)
         self.print_summary_by_category(month)
         self.print_net_worth(month)
+        logger.info("Finished Print Summary Service")
 
     def select_month(self, n_months: int = 5) -> Month | None:
         balance_counts = self._get_balance_count_per_month()
@@ -83,7 +85,7 @@ class SummaryService:
             _id, _name = account.id, account.name
             _category = self._get_category_by_account_id(_id)
             _side = _category.side.value
-            print(f"  {_id:2}. {_name:20} {_category.name:16} ({_side})")
+            print(f"  {_id:2}. {_name:20} {_category.name:18} {_side:10}")
         print()
 
     def print_balances(self, month: Month):
@@ -100,8 +102,8 @@ class SummaryService:
             else:
                 account_side = account_category.side.value
             print(
-                f"  {account_id:2}. {account_name:20} ({account_side:9}) "
-                f"{balance.amount:10,}"
+                f"  {account_id:2}. {account_name:20} {account_side:10} "
+                f"{balance.amount:8,}"
             )
         print()
 
@@ -119,7 +121,7 @@ class SummaryService:
             category_name = mb.category.name
             category_side = mb.category.side.value
             amount = mb.amount
-            print(f"  {category_name:16} ({category_side:9}) Total: {amount:8,}")
+            print(f"  {category_name:16} {category_side:10} Total: {amount:8,}")
         print()
 
     def print_net_worth(self, month: Month, currency_code: str = "USD") -> None:
