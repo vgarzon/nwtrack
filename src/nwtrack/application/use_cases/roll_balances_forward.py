@@ -2,11 +2,14 @@
 Roll balances forward to next available month.
 """
 
+import logging
 from typing import Callable
 
+from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.domain.models import Balance
 from nwtrack.domain.value_objects import Month
-from nwtrack.application.ports.uow import UnitOfWork
+
+logger = logging.getLogger(__name__)
 
 
 class RollBalancesUpdater:
@@ -16,19 +19,22 @@ class RollBalancesUpdater:
         self._uow = uow
 
     def run(self) -> None:
+        logger.info("Starting Roll Balances Forward Updater")
         self.print_recent_months()
         target_month = self._get_next_free_month()
         print("Next available (target) month:", target_month)
         ans = input("Press Enter to continue or 'q' to quit: ")
         if ans.lower().strip() == "q":
-            print("Quitting")
+            print("Stopping")
             return
         source_month = self.select_month()
         if source_month is None:
-            print("Quitting")
+            print("Stopping")
             return
+        logger.info(f"Rolling balances from {source_month} to {target_month}")
         self._copy_monthly_balances(source_month, target_month)
         self.print_net_worth(target_month)
+        logger.info("Finished Roll Balances Forward Updater")
 
     def _get_next_free_month(self) -> Month:
         """Get the next month that does not have balances yet.
@@ -49,6 +55,7 @@ class RollBalancesUpdater:
         """
         balance_counts = self._get_balance_count_per_month()
         if not balance_counts:
+            logger.error("No balances found in the system.")
             raise ValueError("No balances found in the system.")
         balance_counts.sort(key=lambda x: x[0], reverse=True)
         recent_months = [month for month, _ in balance_counts]
@@ -63,11 +70,14 @@ class RollBalancesUpdater:
         """
         with self._uow() as uow:
             if not uow.balances.check_month(source_month):
+                logger.error(f"No balances found for month {source_month}")
                 raise ValueError(f"No balances found for month {source_month}")
+        logger.info(f"Rolling balances forward from {source_month} to {target_month}.")
         print(f"Rolling balances forward from {source_month} to {target_month}.")
         with self._uow() as uow:
             row_count = uow.balances.copy_by_month(source_month, target_month)
             if row_count == 0:
+                logger.warning("No balances were copied.  Rolling back.")
                 print("No balances were copied.  Rolling back.")
                 uow.rollback()
 
@@ -131,6 +141,7 @@ class RollBalancesUpdater:
         with self._uow() as uow:
             nw = uow.net_worth.get(month, currency_code)
         if not nw:
+            logger.error(f"No net worth data found for {month} in {currency_code}")
             raise ValueError(f"No net worth data found for {month} in {currency_code}")
         print(
             f"Month: {month} Currency: {currency_code} Assets: {nw.assets:,} "
@@ -166,9 +177,12 @@ class RollBalancesUpdater:
 
 def main() -> None:
     from dotenv import load_dotenv
+
     from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
+    from nwtrack.bootstrap.logging_config import setup_logging
 
     load_dotenv()
+    setup_logging()
 
     container = build_base_sqlite_uow_container()
     container.register(
