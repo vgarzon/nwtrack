@@ -73,7 +73,7 @@ def test_db_initializer_csv_file_path_quit(
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
     db_initializer.run()
     captured = capsys.readouterr()
-    assert "Quitting." in captured.out
+    assert "Stopping." in captured.out
 
 
 def test_db_initializer_csv_invalid_path(
@@ -91,6 +91,5 @@ def test_db_initializer_csv_invalid_path(
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
     db_initializer.run()
     captured = capsys.readouterr()
-
     assert f"Error: File not found at {invalid_path}" in captured.out
-    assert "Quitting." in captured.out
+    assert "Stopping." in captured.out

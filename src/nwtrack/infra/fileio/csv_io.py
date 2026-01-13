@@ -22,20 +22,30 @@ def csv_to_records(csv_file_path: str | Path) -> list[dict]:
     return data
 
 
-def records_to_csv(records, csv_file_path: str | Path, fieldnames=None):
+def records_to_csv(
+    records: list[dict],
+    csv_file_path: str | Path,
+    fieldnames: tuple[str, ...] | None = None,
+) -> None:
     """Write records to a CSV file.
 
     Args:
-        records (list of dict): List of records to write.
+        records (list[dict]): List of records to write.
         csv_file_path (str): Path to the output CSV file.
-        fieldnames (list of str): List of field names for the CSV.
+        fieldnames (tuple[str, ...] | None): Optional list of field names for the CSV.
             If None, use first dict keys.  Default: None
 
     Returns:
         None
     """
-    if fieldnames is None and records:
-        fieldnames = list(records[0].keys())
+    if not records:
+        raise ValueError("Emplty records list provided.")
+    if fieldnames is None:
+        try:
+            keys = records[0].keys()
+        except AttributeError as e:
+            raise ValueError("Records must be a list of dictionaries.") from e
+        fieldnames = tuple(keys)
 
     with open(csv_file_path, mode="w", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)

@@ -78,11 +78,12 @@ class BalanceUpdater:
         accounts_map_id = self._get_map_id_to_account()
         balance = self._get_balance_for_account_id(month, account_id)
         current_balance = balance.amount if balance else 0
-        _account = accounts_map_id.get(account_id)
-        if _account is None:
+        if account_id not in accounts_map_id:
             logger.error(f"Account id '{account_id}' not found")
-            ValueError(f"Account id '{account_id}' not found")
-        account_name = _account.name
+            raise ValueError("Account id '%d' not found", account_id)
+        _account: Account | None = accounts_map_id.get(account_id)
+        assert _account is not None, "Account should not be None here"
+        account_name: str = _account.name
 
         while True:
             print(
@@ -122,6 +123,7 @@ class BalanceUpdater:
             account_category = self._get_category_by_account_id(account_id)
             if account_category is None:
                 logger.error("Category not found for account ID %d", account_id)
+                raise ValueError(f"Category not found for account ID {account_id}")
             account_side = account_category.side.value
             print(
                 f"{account_id:2}. {account_name:20} {account_side:10} "

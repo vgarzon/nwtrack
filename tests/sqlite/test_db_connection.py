@@ -63,8 +63,7 @@ def insert_data_with_query(db_manager: DBConnectionManager) -> None:
     """Populate initial data into the database."""
     for table, data in TEST_DATA.items():
         query = INSERT_QUERIES[table]
-        rowcnt = db_manager.execute_many(query, data)
-        print(f"Inserted {rowcnt} into '{table}'.")
+        _ = db_manager.execute_many(query, data)
 
 
 def get_table_count(db_manager: DBConnectionManager, table_name: str) -> int:

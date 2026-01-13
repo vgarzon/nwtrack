@@ -4,10 +4,14 @@ Repository Registry.
 Collects repositories and mappers.  Passsed to Unit of Work in composition root.
 """
 
+import logging
 from typing import Any
 
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.application.registries.mappers import MapperRegistry
+
+
+logger = logging.getLogger(__name__)
 
 
 class RepositoryRegistry:
@@ -28,6 +32,7 @@ class RepositoryRegistry:
     def __getattr__(self, name: str) -> Any:
         """Dynamically get repository instances based on specs."""
         if name not in self._specs:
+            logging.error("Repository '%s' not found in registry specs.", name)
             raise AttributeError(f"No repository registered with name: {name}")
 
         if name not in self._instances:

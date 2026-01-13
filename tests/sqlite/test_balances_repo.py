@@ -28,7 +28,7 @@ def test_insert_single_balance(base_container, sample_entities) -> None:
         inserted_balance = uow.balances.get_by_account_id(
             month=month, account_id=account_id
         )
-    print(last_id)
+    assert last_id == 43
     assert inserted_balance is not None
     assert inserted_balance.account_id == new_balance_data["account_id"]
     assert str(inserted_balance.month) == new_balance_data["month"]

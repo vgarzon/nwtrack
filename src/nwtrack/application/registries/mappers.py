@@ -2,8 +2,12 @@
 Mapper Registry definition.
 """
 
+import logging
+
 from typing import Any
 from nwtrack.application.ports.mappers import Mapper, TEntity
+
+logger = logging.getLogger(__name__)
 
 
 class MapperRegistry:
@@ -23,4 +27,5 @@ class MapperRegistry:
         try:
             return self._registry[entity_cls]
         except KeyError:
+            logger.error(f"No mapper registered for entity: {entity_cls.__name__}")
             raise ValueError(f"No mapper registered for entity: {entity_cls.__name__}")
