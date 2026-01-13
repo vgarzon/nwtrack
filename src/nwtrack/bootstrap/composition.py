@@ -95,7 +95,7 @@ def build_base_sqlite_uow_container() -> Container:
     Returns:
         Container: Configured DI container.
     """
-    logger.info("Setting dependency container with SQLite repos.")
+    logger.info("Setting up dependency container with SQLite repos.")
     container = Container()
     container.register(
         Settings,

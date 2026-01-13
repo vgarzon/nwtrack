@@ -43,12 +43,12 @@ class InitDataService:
             "balances",
             "exchange_rates",
         ]
-        if not all(name in repo_names for name in file_paths):
-            logger.error(
-                "Missing required file paths. Expected keys: %s",
-                ", ".join(repo_names),
-            )
-            raise KeyError("Missing required file paths.")
+        for name in repo_names:
+            if name not in file_paths:
+                logger.error("Missing required file path for repo: %s", name)
+                raise KeyError(f"Missing required file path for repo: {name}")
+            logger.info("Loading data for repo %s from %s", name, file_paths[name])
+
         records = {name: csv_to_records(path) for name, path in file_paths.items()}
 
         # NOTE: storing liabilities as positive amounts
