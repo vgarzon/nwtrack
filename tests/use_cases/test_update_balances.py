@@ -59,4 +59,5 @@ def test_update_balances_run(
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
     updater.run()
     captured = capsys.readouterr()
-    assert re.search(r"Net Worth: 300", captured.out)
+    assert re.search(r"Liabilities:\s+500", captured.out)
+    assert re.search(r"Net Worth:\s+300", captured.out)

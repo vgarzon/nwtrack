@@ -2,11 +2,14 @@
 Update active account balances interactively
 """
 
+import logging
 from typing import Callable
 
 from nwtrack.domain.models import Account, Balance, Category
 from nwtrack.domain.value_objects import Month
 from nwtrack.application.ports.uow import UnitOfWork
+
+logger = logging.getLogger(__name__)
 
 
 class BalanceUpdater:
@@ -16,16 +19,19 @@ class BalanceUpdater:
         self._uow = uow
 
     def run(self) -> None:
+        logger.info("Starting Balance Updater")
         self.print_active_accounts()
         self.print_recent_months()
         month = self.input_month()
         if month is None:
+            logger.warning("No month selected. Exiting.")
+            print("No month selected. Exiting.")
             return
         self.update_balances_loop(month)
         print("Final active account balances:")
         self.print_balances(month)
-        print("Net Worth:")
         self.print_net_worth(month)
+        logger.info("Finished Balance Updater")
 
     def print_recent_months(self) -> None:
         balance_counts = self._get_balance_count_per_month()
@@ -72,14 +78,16 @@ class BalanceUpdater:
         accounts_map_id = self._get_map_id_to_account()
         balance = self._get_balance_for_account_id(month, account_id)
         current_balance = balance.amount if balance else 0
+        _account = accounts_map_id.get(account_id)
+        if _account is None:
+            logger.error(f"Account id '{account_id}' not found")
+            ValueError(f"Account id '{account_id}' not found")
+        account_name = _account.name
 
         while True:
-            _account = accounts_map_id.get(account_id)
-            assert _account is not None, f"Account id '{account_id}' not found"
-            account_name = _account.name
             print(
                 f"Balance amount for account {account_name} ({account_id}) on {month}: "
-                f"{current_balance}"
+                f"{current_balance:9,}"
             )
             new_amount_str = input("Enter new balance amount: ")
             try:
@@ -94,10 +102,14 @@ class BalanceUpdater:
         active_accounts = self._get_active_accounts()
         print("Active accounts:")
         for account in active_accounts:
-            _id, _name = account.id, account.name
+            if account is None:
+                logger.warning("Encountered None account in active accounts list")
+                continue
+            _id = account.id
+            _name = account.name
             _category = self._get_category_by_account_id(_id)
             _side = _category.side.value
-            print(f"Account {_id:2}: {_name:20} {_category.name:16} ({_side})")
+            print(f"{_id:2}. {_name:20} {_category.name:18} {_side:10}")
         print()
 
     def print_balances(self, month: Month):
@@ -108,13 +120,12 @@ class BalanceUpdater:
             account_id = balance.account_id
             account_name = account_map[account_id].name
             account_category = self._get_category_by_account_id(account_id)
-            assert account_category is not None, (
-                f"Category not found for account ID {account_id}"
-            )
+            if account_category is None:
+                logger.error("Category not found for account ID %d", account_id)
             account_side = account_category.side.value
             print(
-                f"{account_id:2} {account_name:20} ({account_side:9}) "
-                f"{balance.amount:10,}"
+                f"{account_id:2}. {account_name:20} {account_side:10} "
+                f"{balance.amount:9,}"
             )
         print()
 
@@ -128,13 +139,19 @@ class BalanceUpdater:
         Returns:
             None
         """
+        print("Net Worth Summary for {month} in {currency_code}:")
         with self._uow() as uow:
             nw = uow.net_worth.get(month, currency_code)
         if not nw:
-            raise ValueError(f"No net worth data found for {month} in {currency_code}")
+            logger.error(
+                "No networth data found for %s in %s", str(month), currency_code
+            )
+            print(f"No net worth data found for {month} in {currency_code}")
+            return
         print(
-            f"Month: {month} Currency: {currency_code} Assets: {nw.assets:,} "
-            f"Liabilities: {nw.liabilities:,} Net Worth: {nw.net_worth:,}"
+            f"Assets:      {nw.assets:8,}\n"
+            f"Liabilities: {nw.liabilities:8,}\n"
+            f"Net Worth:   {nw.net_worth:8,}"
         )
 
     def _get_category_by_account_id(self, account_id: int) -> Category | None:
@@ -231,8 +248,10 @@ class BalanceUpdater:
 def main() -> None:
     from dotenv import load_dotenv
     from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
+    from nwtrack.bootstrap.logging_config import setup_logging
 
     load_dotenv()
+    setup_logging()
 
     container = build_base_sqlite_uow_container()
     container.register(
