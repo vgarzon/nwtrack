@@ -2,11 +2,14 @@
 Demo interactive account creation use case.
 """
 
+import logging
 from typing import Callable
 from nwtrack.domain.models import Account, Category, Currency, Status
 from nwtrack.domain.value_objects import Month
 from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
 from nwtrack.application.ports.uow import UnitOfWork
+
+logger = logging.getLogger(__name__)
 
 
 class AccountCreator:
@@ -16,8 +19,14 @@ class AccountCreator:
         self._uow = uow
 
     def run(self) -> None:
-        self.print_active_accounts()
-        data = self.collect_data()
+        logger.info("Starting Account Creator")
+        self.print_accounts()
+        try:
+            data = self.collect_data()
+        except KeyboardInterrupt as e:
+            print("Account creation cancelled by user:", str(e))
+            logger.warning("Account creation cancelled by user.")
+            return
 
         with self._uow() as uow:
             account = uow.accounts.hydrate(
@@ -59,7 +68,8 @@ class AccountCreator:
             f"  Account ID: {account_id}, initial balance: {data['initial_amount']}, "
             f"initial month: {data['initial_month']}."
         )
-        self.print_all_accounts()
+        self.print_accounts(active_only=False)
+        logger.info("Finished Account Creator")
 
     def collect_data(self) -> dict[str, str | int | Month | Status]:
         """Collect account info from user input."""
@@ -86,7 +96,8 @@ class AccountCreator:
         while True:
             name = input("Enter account name or 'q' to quit: ").strip()
             if name.lower() == "q":
-                raise KeyboardInterrupt("Account creation cancelled by user.")
+                logger.warning("Quit while collecting account name.")
+                raise KeyboardInterrupt("Quit while collecting account name.")
             if name:
                 return name
             print("Account name cannot be empty.")
@@ -94,7 +105,8 @@ class AccountCreator:
     def _collect_description(self) -> str:
         description = input("Enter optional description or 'q' to quit: ").strip()
         if description.lower() == "q":
-            raise KeyboardInterrupt("Account creation cancelled by user.")
+            logger.warning("Quit while collecting description.")
+            raise KeyboardInterrupt("Quit while collecting description.")
         return description
 
     def _collect_category_name(self) -> str:
@@ -106,7 +118,8 @@ class AccountCreator:
         while True:
             choice = input("Enter choice or 'q' to quit: ").strip()
             if choice.lower() == "q":
-                raise KeyboardInterrupt("Account creation cancelled.")
+                logger.warning("Quit while collecting category name.")
+                raise KeyboardInterrupt("Quit while collecting category name.")
             try:
                 index = int(choice)
             except ValueError:
@@ -128,7 +141,8 @@ class AccountCreator:
         while True:
             choice = input("Enter choice or 'q' to quit: ").strip()
             if choice.lower() == "q":
-                raise KeyboardInterrupt("Account creation cancelled.")
+                logger.warning("Quit while collecting currency code.")
+                raise KeyboardInterrupt("Quit while collecting currency code.")
             try:
                 index = int(choice)
             except ValueError:
@@ -150,7 +164,8 @@ class AccountCreator:
         while True:
             choice = input("Enter choice or 'q' to quit: ").strip()
             if choice.lower() == "q":
-                raise KeyboardInterrupt("Account creation cancelled.")
+                logger.warning("Quit while collecting account status.")
+                raise KeyboardInterrupt("Quit while collecting account status.")
             try:
                 index = int(choice)
             except ValueError:
@@ -167,7 +182,8 @@ class AccountCreator:
         while True:
             amount_str = input("Enter initial balance amount or 'q' to quit: ").strip()
             if amount_str.lower() == "q":
-                raise KeyboardInterrupt("Account creation cancelled.")
+                logger.warning("Quit while collecting initial balance.")
+                raise KeyboardInterrupt("Quit while collecting initial balance.")
             try:
                 amount = int(amount_str)
                 break
@@ -182,7 +198,8 @@ class AccountCreator:
                 "Enter year and month as 'YYYY MM' or 'q' to quit: "
             ).strip()
             if response.lower().strip() == "q":
-                raise KeyboardInterrupt("Account creation cancelled.")
+                logger.warning("Quit while collecting initial month.")
+                raise KeyboardInterrupt("Quit while collecting initial month.")
             try:
                 _year, _month = map(int, response.split())
             except ValueError:
@@ -250,25 +267,33 @@ class AccountCreator:
             category = uow.categories.get(account.category_name)
         return category
 
-    def print_active_accounts(self):
-        active_accounts = self._get_all_accounts(active_only=True)
-        print("Active accounts:")
-        for account in active_accounts:
-            _id, _name = account.id, account.name
-            _category = self._get_category_by_account_id(_id)
-            _side = _category.side.value
-            print(f"Account {_id:2}: {_name:20} {_category.name:16} ({_side})")
-        print()
+    def print_accounts(self, active_only: bool = True) -> None:
+        """Print accounts.
 
-    def print_all_accounts(self):
-        all_accounts = self._get_all_accounts(active_only=False)
-        print("All accounts:")
-        for account in all_accounts:
-            _id, _name = account.id, account.name
-            _category = self._get_category_by_account_id(_id)
-            _side = _category.side.value
-            print(f"Account {_id:2}: {_name:20} {_category.name:16} ({_side})")
-        print()
+        Args:
+            active_only (bool): Whether to print only active accounts.
+        """
+        if active_only:
+            accounts = self._get_all_accounts(active_only=True)
+            print("Active accounts:")
+        else:
+            accounts = self._get_all_accounts(active_only=False)
+            print("All accounts:")
+
+        for account in accounts:
+            if account is None:
+                logger.warning("Skipped null account during print_accounts.")
+                continue
+            _id: int = account.id
+            _name: str = account.name
+            _category: Category | None = self._get_category_by_account_id(_id)
+            if _category is None:
+                logger.warning(
+                    f"Category not found for account ID {_id} during print_accounts."
+                )
+                continue
+            _side: str = str(_category.side.value)
+            print(f"{_id:2}. {_name:20} {_category.name:18} {_side:10}")
 
     def validate_new_account(
         self, data: dict, account_id: int, balance_id: int
@@ -323,8 +348,10 @@ class AccountCreator:
 
 def main() -> None:
     from dotenv import load_dotenv
+    from nwtrack.bootstrap.logging_config import setup_logging
 
     load_dotenv()
+    setup_logging()
 
     container = build_base_sqlite_uow_container()
     container.register(
