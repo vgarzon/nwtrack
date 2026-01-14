@@ -54,7 +54,7 @@ class DBInitializerCSV:
         try:
             self.collect_file_paths()
         except KeyboardInterrupt:
-            logging.warnmng("User aborted csv file input.")
+            logging.warning("User aborted csv file input.")
             self._console.print("[orange]Stopping.[/orange]")
             return
         fp_table = self._build_file_paths_table()
