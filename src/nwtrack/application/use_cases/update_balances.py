@@ -5,9 +5,13 @@ Update active account balances interactively
 import logging
 from typing import Callable
 
-from nwtrack.domain.models import Account, Balance, Category
-from nwtrack.domain.value_objects import Month
+from rich.console import Console
+from rich.prompt import IntPrompt, Prompt
+from rich.table import Table
+
 from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.domain.models import Account, Balance, Category, NetWorth
+from nwtrack.domain.value_objects import Month
 
 logger = logging.getLogger(__name__)
 
@@ -17,15 +21,16 @@ class BalanceUpdater:
 
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
+        self._console = Console()
 
     def run(self) -> None:
         logger.info("Starting Balance Updater")
+        self._console.rule("[bold green]Balance Updater[/bold green]")
         self.print_active_accounts()
-        self.print_recent_months()
-        month = self.input_month()
+        month = self.select_month()
         if month is None:
             logger.warning("No month selected. Exiting.")
-            print("No month selected. Exiting.")
+            self._console.print("[orange]No month selected. Exiting.[/orange]")
             return
         self.update_balances_loop(month)
         print("Final active account balances:")
@@ -33,44 +38,74 @@ class BalanceUpdater:
         self.print_net_worth(month)
         logger.info("Finished Balance Updater")
 
-    def print_recent_months(self) -> None:
+    def select_month(self, n_months: int = 3) -> Month | None:
+        """Select a month from recent months or input a specific month.
+
+        Args:
+            n_months (int): Number of recent months to display
+        Returns:
+            Month | None: Selected Month object or None if quit
+        """
         balance_counts = self._get_balance_count_per_month()
         balance_counts.sort(key=lambda x: x[0], reverse=True)
-        print("Recent month balance counts:")
-        for month, count in balance_counts[:3]:
-            print(f" {month}: {count} balances")
-        print()
+        recent_months = [month for month, _ in balance_counts[:n_months]]
+        table = self._build_month_balances_table(balance_counts[:n_months])
+        self._console.print(table)
+        self._console.print("Options:")
+        self._console.print("  [bold]A.[/bold] Enter year and month")
+        self._console.print("  [bold]Q.[/bold] Quit")
+        choice = Prompt.ask(
+            "[bold]Enter choice[/bold]",
+            choices=[str(i + 1) for i in range(n_months)] + ["A", "Q"],
+            default="1",
+            case_sensitive=False,
+        )
+        if choice.lower().strip() == "q":
+            return None
+        if choice.lower().strip() == "a":
+            return self.input_month()
+        choice_idx = int(choice) - 1
+        return recent_months[choice_idx]
 
     def input_month(self) -> Month | None:
-        while True:
-            response = input("Enter year and month as 'YYYY MM' or 'q' to quit: ")
-            if response.lower().strip() == "q":
+        """Input a specific month from user.
+
+        Returns:
+            Month | None: Month object or None if quit
+        """
+        from datetime import date
+
+        today = date.today()
+        _year = IntPrompt.ask("Enter year as 'YYYY'", default=today.year)
+        _month = IntPrompt.ask("Enter month as 'MM'", default=today.month)
+        try:
+            month = Month(year=_year, month=_month)
+        except ValueError:
+            logger.error("Invalid Month inputs %d %d", _year, _month)
+            self._console.print("[red]Invalid month format. Please use YYYY-MM.[/red]")
+            return None
+        with self._uow() as uow:
+            if not uow.balances.check_month(month):
+                logger.warning(f"No balance entries found for {month}.")
+                self._console.print(
+                    f"[orange]No balance entries found in {month}.[/orange]"
+                )
                 return None
-            try:
-                _year, _month = map(int, response.split())
-            except ValueError:
-                print("Invalid input format. Please use 'YYYY MM'.")
-                continue
-
-            try:
-                month = Month(year=_year, month=_month)
-
-            except ValueError:
-                print("Invalid month format. Please use YYYY-MM.")
-                continue
-            break
         return month
 
     def update_balances_loop(self, month: Month) -> None:
         while True:
             self.print_balances(month)
-            res = input("Select account to update. Enter 'q' to quit: ")
+            res = Prompt.ask("Enter account ID or 'q' to quit")
             if res.lower() == "q":
                 break
             try:
                 account_id = int(res)
             except ValueError:
-                print("Invalid input. Please enter a valid account ID or 'q' to quit. ")
+                self._console.print(
+                    "[magenta bold]Invalid input.[/magenta bold] "
+                    "Please enter a valid account ID or 'q' to quit."
+                )
                 continue
             self.update_account_balance(account_id, month)
 
@@ -82,54 +117,112 @@ class BalanceUpdater:
             logger.error(f"Account id '{account_id}' not found")
             raise ValueError("Account id '%d' not found", account_id)
         _account: Account | None = accounts_map_id.get(account_id)
-        assert _account is not None, "Account should not be None here"
+        assert _account is not None
         account_name: str = _account.name
-
-        while True:
-            print(
-                f"Balance amount for account {account_name} ({account_id}) on {month}: "
-                f"{current_balance:9,}"
-            )
-            new_amount_str = input("Enter new balance amount: ")
-            try:
-                new_amount = int(new_amount_str)
-            except ValueError:
-                print("Invalid amount. Please enter a valid integer amount.")
-                continue
-            break
+        self._console.print(
+            f"Account [bold]{account_name}[/bold] ({account_id}) balance on "
+            f"{month}: [bold green]{current_balance:8,}[/bold green]"
+        )
+        new_amount = IntPrompt.ask("Enter [bold]new balance[/bold] amount")
         self.update_balance(account_id, month, new_amount)
 
     def print_active_accounts(self):
+        """Print active accounts."""
         active_accounts = self._get_active_accounts()
-        print("Active accounts:")
-        for account in active_accounts:
-            if account is None:
-                logger.warning("Encountered None account in active accounts list")
-                continue
-            _id = account.id
-            _name = account.name
-            _category = self._get_category_by_account_id(_id)
-            _side = _category.side.value
-            print(f"{_id:2}. {_name:20} {_category.name:18} {_side:10}")
-        print()
+        table = self._build_accounts_table(active_accounts)
+        self._console.print(table)
+
+    def _build_month_balances_table(
+        self, balance_counts: list[tuple[Month, int]]
+    ) -> Table:
+        """Build a Rich Table of balances per month.
+
+        Args:
+            balance_counts (list[tuple[Month, int]]): List of tuples Month and count of balances
+        Returns:
+            Table: Rich Table object
+                idx (starts at 1) | month | count
+        """
+        table = Table(title="Balance Entries per Month")
+        table.add_column("Index", justify="right", style="green")
+        table.add_column("Month", style="cyan")
+        table.add_column("Balances", justify="right", style="magenta")
+        for idx, (month, count) in enumerate(balance_counts):
+            table.add_row(str(idx + 1), str(month), str(count))
+        return table
+
+    def _build_accounts_table(self, accounts: list[Account]) -> Table:
+        """Build a Rich Table of active accounts.
+        Args:
+            accounts (list[Account]): List of Account objects
+        Returns:
+            Table: Rich Table object
+        """
+        table = Table(title="Active Accounts")
+        table.add_column("ID", justify="right", style="cyan", no_wrap=True)
+        table.add_column("Name", style="magenta")
+        table.add_column("Category", style="green")
+        table.add_column("Side", style="yellow")
+        for account in accounts:
+            category = self._get_category_by_account_id(account.id)
+            category_name = category.name if category else "Unknown"
+            side = category.side.value if category else "Unknown"
+            table.add_row(
+                str(account.id),
+                account.name,
+                category_name,
+                side,
+            )
+        return table
 
     def print_balances(self, month: Month):
+        """Print balances for a specific month.
+
+        Args:
+            month (Month): Month object
+
+        Returns:
+            None
+        """
         balances = self._get_month_balances(month, active_only=True)
+        table = self._build_balances_table(balances, title_suffix=str(month))
+        self._console.print(table)
+
+    def _build_balances_table(
+        self, balances: list[Balance], title_suffix: str = ""
+    ) -> Table:
+        """Build a Rich Table of balances.
+
+        Args:
+            balances (list[Balance]): List of Balance objects
+            title_suffix (str): Suffix for table title
+        Returns:
+            Table: Rich Table object
+        """
         account_map = self._get_map_id_to_account()
-        print("Balances for", month)
+        _title = "Balances" + (f" {title_suffix}" if title_suffix else "")
+        table = Table(title=_title)
+        table.add_column("Acct_ID", justify="right", style="cyan", no_wrap=True)
+        table.add_column("Account Name", style="magenta")
+        table.add_column("Category", style="green")
+        table.add_column("Side", style="yellow")
+        table.add_column("Amount", justify="right", style="red")
         for balance in balances:
             account_id = balance.account_id
             account_name = account_map[account_id].name
-            account_category = self._get_category_by_account_id(account_id)
-            if account_category is None:
-                logger.error("Category not found for account ID %d", account_id)
-                raise ValueError(f"Category not found for account ID {account_id}")
-            account_side = account_category.side.value
-            print(
-                f"{account_id:2}. {account_name:20} {account_side:10} "
-                f"{balance.amount:9,}"
+            category = self._get_category_by_account_id(account_id)
+            if not category:
+                logger.error("Category not found for account ID {%}", account_id)
+            category_name = category.name if category else "Unknown"
+            side = category.side.value if category else "Unknown"
+            table.add_row(
+                str(account_id),
+                account_name,
+                category_name,
+                side,
+                f"{balance.amount:8,}",
             )
-        print()
+        return table
 
     def print_net_worth(self, month: Month, currency_code: str = "USD") -> None:
         """Print net worth on a specific month.
@@ -141,20 +234,48 @@ class BalanceUpdater:
         Returns:
             None
         """
-        print("Net Worth Summary for {month} in {currency_code}:")
         with self._uow() as uow:
             nw = uow.net_worth.get(month, currency_code)
         if not nw:
-            logger.error(
-                "No networth data found for %s in %s", str(month), currency_code
+            raise ValueError(f"No net worth data found for {month} in {currency_code}")
+        title_suffix = f"{month} ({currency_code})"
+        table = self._build_networth_table(nw, title_suffix, form="wide")
+        self._console.print(table)
+
+    def _build_networth_table(
+        self, nw: NetWorth, title_suffix: str = "", form="wide"
+    ) -> Table:
+        """Build a Rich Table of net worth summary.
+
+        Args:
+            month (Month): Month object
+            title_suffix (str): Suffix for table title
+            form (str): Table format, "wide" or "long"
+        Returns:
+            Table: Rich Table object
+        """
+        _title = "Net Worth Summary" + (f" {title_suffix}" if title_suffix else "")
+        table = Table(title=_title)
+        if form == "long":
+            table.add_column("Side", style="magenta")
+            table.add_column("Total", justify="right", style="red")
+            table.add_row("Assets", f"{nw.assets:9,}")
+            table.add_row("Liabilities", f"{nw.liabilities:9,}")
+            table.add_row("Net Worth", f"{nw.net_worth:9,}")
+        elif form == "wide":
+            table.add_column("Assets", justify="right", style="green")
+            table.add_column("Liabilities", justify="right", style="yellow")
+            table.add_column("Net Worth", justify="right", style="red")
+            table.add_row(
+                f"{nw.assets:9,}",
+                f"{nw.liabilities:9,}",
+                f"{nw.net_worth:9,}",
             )
-            print(f"No net worth data found for {month} in {currency_code}")
-            return
-        print(
-            f"Assets:      {nw.assets:8,}\n"
-            f"Liabilities: {nw.liabilities:8,}\n"
-            f"Net Worth:   {nw.net_worth:8,}"
-        )
+        else:
+            logger.error("Invalid table form: %s", form)
+            raise ValueError(f"Invalid table form: {form}")
+            table = Table()
+        return table
 
     def _get_category_by_account_id(self, account_id: int) -> Category | None:
         """Get category side for a given account ID.
@@ -249,6 +370,7 @@ class BalanceUpdater:
 
 def main() -> None:
     from dotenv import load_dotenv
+
     from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
     from nwtrack.bootstrap.logging_config import setup_logging
 
