@@ -5,6 +5,10 @@ Database initializer services
 import logging
 from pathlib import Path
 
+from rich.console import Console
+from rich.prompt import Confirm, Prompt
+from rich.table import Table
+
 from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.infra.config.settings import Settings
@@ -33,35 +37,56 @@ class DBInitializerCSV:
             "exchange_rates",
         ]
         self._file_paths: dict[str, str] = {}
+        self._console = Console()
 
     def run(self) -> None:
         """Run the database initialization process."""
         logger.info("Starting database initialization from CSV files.")
         logger.info("Database file path: %s", self._config.db_file_path)
         logger.info("DDL script path: %s", self._config.db_ddl_path)
-        print(f"Database file path: {self._config.db_file_path}")
-        print(f"DDL script path: {self._config.db_ddl_path}")
+        self._console.rule(
+            "[bold green]Database Initialization from CSV Files[/bold green]"
+        )
+        self._console.print(
+            f"[bold]SQLite db file path:[/bold] {self._config.db_file_path}\n"
+            f"[bold]DDL script path:[/bold] {self._config.db_ddl_path}"
+        )
         try:
             self.collect_file_paths()
         except KeyboardInterrupt:
-            logging.warning("User aborted csv file input.")
-            print("Stopping.")
+            logging.warnmng("User aborted csv file input.")
+            self._console.print("[orange]Stopping.[/orange]")
             return
-        print("Specified CSV file paths:")
-        for key, path in self._file_paths.items():
-            print(f"  {key}: {path}")
-        print("WARNING: This script will DELETE and RE-CREATE the database.")
-        confirmation = input("Type 'YES' to continue: ")
-        if confirmation.strip().lower() != "yes":
+        fp_table = self._build_file_paths_table()
+        self._console.print(fp_table)
+        self._console.print(
+            "\n[bold orange3]WARNING:[/bold orange3] This script will "
+            "[bold]DELETE and RE-CREATE[/bold] the database.\n"
+        )
+        accept = Confirm.ask("Do you want to continue?", default=False)
+        if not accept:
             logger.warning("User aborted database initialization.")
-            print("Quitting.")
+            self._console.print("[orange]Stopping.[/orange]")
             return
 
-        print("Initializing SQLite database.")
+        self._console.print("[yellow]Initializing SQLite database.[/yellow]")
         self._admin_svc.init_database()
         self._data_svc.insert_data_from_csv(self._file_paths)
-        print("Database initialization complete.")
+        self._console.print("[green]Database initialized successfully.[/green]")
         logger.info("Finished database initialization from CSV files.")
+
+    def _build_file_paths_table(self) -> Table:
+        """Build a table of file paths for display.
+
+        Returns:
+            Table: Rich Table object with file paths
+        """
+        table = Table(title="Specified CSV File Paths")
+        table.add_column("Repo", style="cyan", no_wrap=True)
+        table.add_column("Path", style="magenta")
+        for key, path in self._file_paths.items():
+            table.add_row(key, path)
+        return table
 
     def collect_file_paths(self) -> None:
         """Collect and validate file pahhs from user input.
@@ -73,16 +98,21 @@ class DBInitializerCSV:
             KeyboardInterrupt: if user interrupts input
         """
         file_paths = {}
-        print("Please enter the file paths for the required CSV files or 'q' to quit:")
+        self._console.print(
+            "[yellow]Please enter CSV file paths or 'q' to quit:[/yellow]"
+        )
         for file_key in self._required_keys:
             while True:
-                path_str = input(f"{file_key}: ").strip()
+                path_str = Prompt.ask(f"[bold]{file_key}[/bold]").strip()
                 if path_str.lower() == "q":
                     logger.warning("User aborted csv file input for key %s", file_key)
                     raise KeyboardInterrupt
                 path = Path(path_str)
                 if not path.is_file():
-                    print(f"Error: File not found at {path_str}. Please try again.")
+                    self._console.print(
+                        f"[red bold]Error: File not found[/red bold]: {path_str}. "
+                        "Please try again."
+                    )
                     continue
                 else:
                     file_paths[file_key] = path_str
@@ -96,10 +126,10 @@ def main() -> None:
     from nwtrack.application.ports.db import DBConnectionManager
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.application.services.db_admin import DBAdminService
-    from nwtrack.bootstrap.logging_config import setup_logging
     from nwtrack.bootstrap.composition import (
         build_base_sqlite_uow_container,
     )
+    from nwtrack.bootstrap.logging_config import setup_logging
 
     load_dotenv()
     setup_logging()
