@@ -10,6 +10,7 @@ from rich.prompt import IntPrompt, Prompt
 from rich.table import Table
 
 from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.application.dto import NewAccountData
 from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
 from nwtrack.domain.models import Account, Balance, Category, Currency, Status
 from nwtrack.domain.value_objects import Month
@@ -53,25 +54,24 @@ class AccountCreator:
         logger.info("Finished Account Creator")
 
     def create_account_and_balance(
-        self, data: dict[str, str | int | Month | Status]
+        self, data: NewAccountData
     ) -> tuple[int, int] | None:
         """Create account and initial balance in the database.
 
         Args:
-            data (dict[str, str]): Collected account data.
+            data (NewAccountData): Collected account data.
 
         Returns:
             tuple[int, int] | None: Tuple of account ID and balance ID, or None
         """
         with self._uow() as uow:
-            account = uow.accounts.hydrate(
-                {
-                    "name": data["account_name"],
-                    "description": data["description"],
-                    "category": data["category_name"],
-                    "currency": data["currency_code"],
-                    "status": data["status"],
-                }
+            account = Account(
+                id=0,
+                name=data.account_name,
+                description=data.description,
+                category_name=data.category_name,
+                currency_code=data.currency_code,
+                status=data.status,
             )
             try:
                 account_id = uow.accounts.insert(account)
@@ -79,12 +79,11 @@ class AccountCreator:
                 logger.exception("Error inserting account: %s", e)
                 uow.rollback()
                 return None
-            balance = uow.balances.hydrate(
-                {
-                    "account_id": account_id,
-                    "month": data["initial_month"],
-                    "amount": data["initial_amount"],
-                }
+            balance = Balance(
+                id=0,
+                account_id=account_id,
+                month=data.initial_month,
+                amount=data.initial_amount,
             )
             try:
                 balance_id = uow.balances.insert(balance)
@@ -94,26 +93,21 @@ class AccountCreator:
                 return None
         return account_id, balance_id
 
-    def collect_data(self) -> dict[str, str | int | Month | Status]:
-        """Collect account info from user input."""
+    def collect_data(self) -> NewAccountData:
+        """Collect account info from user input.
 
-        account_name = self._collect_account_name()
-        description = self._collect_description()
-        category_name = self._collect_category_name()
-        currency_code = self._collect_currency_code()
-        status = self._collect_status()
-        initial_month = str(self._collect_initial_month())
-        initial_balance = self._collect_initial_balance()
-
-        return {
-            "account_name": account_name,
-            "description": description,
-            "category_name": category_name,
-            "currency_code": currency_code,
-            "status": status,
-            "initial_month": initial_month,
-            "initial_amount": initial_balance,
-        }
+        Returns:
+            NewAccountData: Collected account data.
+        """
+        return NewAccountData(
+            account_name=self._collect_account_name(),
+            description=self._collect_description(),
+            category_name=self._collect_category_name(),
+            currency_code=self._collect_currency_code(),
+            status=self._collect_status(),
+            initial_month=self._collect_initial_month(),
+            initial_amount=self._collect_initial_balance(),
+        )
 
     def _collect_account_name(self) -> str:
         while True:
@@ -233,11 +227,11 @@ class AccountCreator:
             )
         return table
 
-    def _collect_initial_month(self) -> Month | None:
+    def _collect_initial_month(self) -> Month:
         """Input initial month from user.
 
         Returns:
-            Month | None: Month object or None if quit
+            Month: Month object
         """
         from datetime import date
 
@@ -419,12 +413,12 @@ class AccountCreator:
         return balance
 
     def validate_new_account(
-        self, data: dict, account_id: int, balance_id: int
+        self, data: NewAccountData, account_id: int, balance_id: int
     ) -> bool:
         """Validate that the new account and balance were created correctly.
 
         Args:
-            data (dict): The data used to create the account.
+            data (NewAccountData): The data used to create the account.
             account_id (int): The ID of the created account.
             balance_id (int): The ID of the created balance.
 
@@ -446,19 +440,19 @@ class AccountCreator:
         if account is None:
             _log_and_print("Account not found.")
             return False
-        if account.name != data["account_name"]:
+        if account.name != data.account_name:
             _log_and_print("Account name mismatch.")
             return False
-        if account.description != data["description"]:
+        if account.description != data.description:
             _log_and_print("Account description mismatch.")
             return False
-        if account.category_name != data["category_name"]:
+        if account.category_name != data.category_name:
             _log_and_print("Account category mismatch.")
             return False
-        if account.currency_code != data["currency_code"]:
+        if account.currency_code != data.currency_code:
             _log_and_print("Account currency mismatch.")
             return False
-        if account.status != data["status"]:
+        if account.status != data.status:
             _log_and_print("Account status mismatch.")
             return False
 
@@ -468,10 +462,10 @@ class AccountCreator:
         if balance.account_id != account_id:
             _log_and_print("Balance account ID mismatch.")
             return False
-        if str(balance.month) != str(data["initial_month"]):
+        if str(balance.month) != str(data.initial_month):
             _log_and_print("Balance month mismatch.")
             return False
-        if balance.amount != data["initial_amount"]:
+        if balance.amount != data.initial_amount:
             _log_and_print("Balance amount mismatch.")
             return False
 
