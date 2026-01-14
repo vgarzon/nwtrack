@@ -4,6 +4,7 @@ Tests for account creator use case
 
 import re
 import pytest
+import nwtrack.application.use_cases.create_account
 from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.infra.config.settings import Settings
 from nwtrack.bootstrap.container import Container
@@ -25,31 +26,54 @@ def configured_container(base_container: Container) -> Container:
     )
 
 
-def test_account_creator_run_success(
+def test_account_creator_run_success_defaults(
     configured_container: Container,
     sample_entities: dict[str, list],
     monkeypatch,
     capsys,
 ) -> None:
     # TODO: Use common fixture to init DB with entities
-    init_db_tables_w_entities(configured_container, sample_entities)
-    inputs = iter(
+    input_prompt = iter(
         [
             "savings_account_3",  # Account name
             "Savings account in USD",  # Account description
+        ]
+    )
+    input_int_prompt = iter(
+        [
             "1",  # Account type (1: asset)
-            "0",  # Currency code (0: USD)
-            "0",  # Status (0: active)
-            "2025 10",  # Initial month
+            "1",  # Currency code (0: USD)
+            "1",  # Status (0: active)
+            "2025",  # Initial year
+            "10",  # Initial month
             "100",  # Initial balance
         ]
     )
+
+    def mock_prompt(question, **kwargs):
+        return next(input_prompt)
+
+    def mock_int_prompt(question, **kwargs):
+        return int(next(input_int_prompt))
+
+    init_db_tables_w_entities(configured_container, sample_entities)
     updater: AccountCreator = configured_container.resolve(AccountCreator)
-    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+    monkeypatch.setattr(
+        nwtrack.application.use_cases.create_account.Prompt,
+        "ask",
+        mock_prompt,
+    )
+    monkeypatch.setattr(
+        nwtrack.application.use_cases.create_account.IntPrompt,
+        "ask",
+        mock_int_prompt,
+    )
     updater.run()
-    # TODO: Enable assertions through direct database queries
     captured = capsys.readouterr()
-    assert re.search(r"Account 'savings_account_3' created successfully", captured.out)
+    print(captured.out)
+    # TODO: Enable assertions through direct database queries
+    assert re.search(r"Account created successfully", captured.out)
+    assert re.search(r"Account name: savings_account_3", captured.out)
     assert re.search(r"Account ID: 5", captured.out)
-    assert re.search(r"initial balance: 100", captured.out)
-    assert re.search(r"initial month: 2025-10", captured.out)
+    assert re.search(r"Initial month: 2025-10", captured.out)
+    assert re.search(r"Initial balance: 100", captured.out)
