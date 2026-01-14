@@ -3,14 +3,17 @@ Test suite for the roll balances forward use case
 """
 
 import re
+
 import pytest
-from nwtrack.application.services.db_admin import DBAdminService
-from nwtrack.infra.config.settings import Settings
-from nwtrack.bootstrap.container import Container
+
+import nwtrack.application.use_cases.roll_balances_forward
 from nwtrack.application.ports.db import DBConnectionManager
-from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.application.services.data_loader import InitDataService
+from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.application.use_cases.roll_balances_forward import RollBalancesUpdater
+from nwtrack.bootstrap.container import Container
+from nwtrack.infra.config.settings import Settings
 from tests.helpers import init_db_tables_w_entities
 
 
@@ -43,16 +46,29 @@ def test_roll_balances_run_defaults(
 ) -> None:
     """Test initializing database and loading sample data."""
     # TODO: Use common fixture to init DB with entities
+    input_confirm = iter(["y"])
+    input_prompt = iter(["1"])
+
+    def mock_confirm(question, **kwargs):
+        return next(input_confirm)
+
+    def mock_prompt(question, **kwargs):
+        return next(input_prompt)
+
     init_db_tables_w_entities(configured_container, sample_entities)
-    inputs = iter(
-        [
-            "",  # Enter
-            "Y",  # Accept default source month
-        ]
-    )
     updater: RollBalancesUpdater = configured_container.resolve(RollBalancesUpdater)
-    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+    monkeypatch.setattr(
+        nwtrack.application.use_cases.roll_balances_forward.Confirm,
+        "ask",
+        mock_confirm,
+    )
+    monkeypatch.setattr(
+        nwtrack.application.use_cases.roll_balances_forward.Prompt,
+        "ask",
+        mock_prompt,
+    )
     updater.run()
     captured = capsys.readouterr()
     assert re.search(r"Next available .+ month: 2025-12", captured.out)
-    assert re.search(r"Net Worth: 100", captured.out)
+    assert re.search(r"Rolling balances forward.+from 2025-11 to 2025-12", captured.out)
+    assert re.search(r"700.+600.+100", captured.out)
