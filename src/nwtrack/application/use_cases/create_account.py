@@ -139,7 +139,7 @@ class AccountCreator:
             choice = IntPrompt.ask(
                 "Enter [bold]category index[/bold] or '0' to quit",
                 default=0,
-                choices=[str(i) for i in range(len(categories))],
+                choices=[str(i) for i in range(len(categories) + 1)],
             )
             if choice == 0:
                 logger.warning("Quit while collecting category name.")
@@ -174,7 +174,7 @@ class AccountCreator:
             choice = IntPrompt.ask(
                 "Enter [bold]currency index[/bold] or '0' to quit",
                 default=1,
-                choices=[str(i) for i in range(len(currencies))],
+                choices=[str(i) for i in range(len(currencies) + 1)],
             )
             if choice == 0:
                 logger.warning("Quit while collecting currency code.")
