@@ -170,6 +170,35 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
             logger.info(f"Deleted account with ID {account_id}.")
         return rowcount
 
+    def update(self, data: Account) -> int:
+        """Update account record.
+
+        Args:
+            data (Account): Account object with updated data.
+
+        Returns:
+            int: Number of updated account entries.
+        """
+        update_query = """
+        UPDATE accounts
+        SET name = :name,
+            description = :description,
+            category = :category,
+            currency = :currency,
+            status = :status
+        WHERE id = :id;
+        """
+        params = self._mapper.to_record(data)
+        cur = self._db.execute(update_query, params)
+        rowcount = cur.rowcount
+        if rowcount != 1:
+            logger.warning(
+                f"Expected to update 1 account with ID {data.id}, but updated {rowcount}."
+            )
+        else:
+            logger.info(f"Updated account with ID {data.id}.")
+        return rowcount
+
     def update_name(self, account_id: int, new_name: str) -> int:
         """Update account name.
 

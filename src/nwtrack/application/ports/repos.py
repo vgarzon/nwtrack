@@ -174,6 +174,10 @@ class AccountsRepository(Repository[Account], Protocol):
         """Update account name."""
         ...
 
+    def update(self, account: Account) -> int:
+        """Update account."""
+        ...
+
     def update_status(self, account_id: int, new_status: str) -> int:
         """Update account status."""
         ...
