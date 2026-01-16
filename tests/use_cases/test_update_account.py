@@ -10,7 +10,7 @@ from nwtrack.infra.config.settings import Settings
 from nwtrack.bootstrap.container import Container
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.application.use_cases.create_account import AccountCreator
+from nwtrack.application.use_cases.update_account_info import UpdateAccountInfo
 from tests.helpers import init_db_tables_w_entities
 
 
@@ -21,8 +21,8 @@ def configured_container(base_container: Container) -> Container:
         DBAdminService,
         lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),
     ).register(
-        AccountCreator,
-        lambda c: AccountCreator(uow=lambda: c.resolve(UnitOfWork)),
+        UpdateAccountInfo,
+        lambda c: UpdateAccountInfo(uow=lambda: c.resolve(UnitOfWork)),
     )
 
 
@@ -35,18 +35,21 @@ def test_account_creator_run_success_defaults(
     # TODO: Use common fixture to init DB with entities
     input_prompt = iter(
         [
-            "savings_account_3",  # Account name
-            "Savings account in USD",  # Account description
+            "bank_1_savings",  # Account name
+            "Savings account at bank 1",  # Account description
         ]
     )
     input_int_prompt = iter(
         [
-            "1",  # Account type (1: asset)
-            "1",  # Currency code (0: USD)
-            "1",  # Status (0: active)
-            "2025",  # Initial year
-            "10",  # Initial month
-            "100",  # Initial balance
+            "1",  # Account ID
+            "2",  # Account type: Savings
+            "2",  # Currency: CHF
+            "2",  # Status: Inactive
+        ]
+    )
+    input_confirm_prompt = iter(
+        [
+            "y",  # Proeed with update y/n
         ]
     )
 
@@ -56,23 +59,33 @@ def test_account_creator_run_success_defaults(
     def mock_int_prompt(question, **kwargs):
         return int(next(input_int_prompt))
 
+    def mock_confirm_prompt(question, **kwargs):
+        return next(input_confirm_prompt)
+
     init_db_tables_w_entities(configured_container, sample_entities)
-    updater: AccountCreator = configured_container.resolve(AccountCreator)
+    updater: UpdateAccountInfo = configured_container.resolve(UpdateAccountInfo)
     monkeypatch.setattr(
-        nwtrack.application.use_cases.create_account.Prompt,
+        nwtrack.application.use_cases.update_account_info.Prompt,
         "ask",
         mock_prompt,
     )
     monkeypatch.setattr(
-        nwtrack.application.use_cases.create_account.IntPrompt,
+        nwtrack.application.use_cases.update_account_info.IntPrompt,
         "ask",
         mock_int_prompt,
+    )
+    monkeypatch.setattr(
+        nwtrack.application.use_cases.update_account_info.Confirm,
+        "ask",
+        mock_confirm_prompt,
     )
     updater.run()
     captured = capsys.readouterr()
     # TODO: Enable assertions through direct database queries
-    assert re.search(r"Account created successfully", captured.out)
-    assert re.search(r"Account name: savings_account_3", captured.out)
-    assert re.search(r"Account ID: 5", captured.out)
-    assert re.search(r"Initial month: 2025-10", captured.out)
-    assert re.search(r"Initial balance: 100", captured.out)
+    assert re.search(r"Account ID: 1", captured.out)
+    assert re.search(r"Account name: bank_1_savings", captured.out)
+    assert re.search(r"Savings account at bank 1", captured.out)
+    assert re.search(r"Currency: CHF", captured.out)
+    assert re.search(r"Category: savings", captured.out)
+    assert re.search(r"Status: inactive", captured.out)
+    assert re.search(r"Account updated successfully", captured.out)
