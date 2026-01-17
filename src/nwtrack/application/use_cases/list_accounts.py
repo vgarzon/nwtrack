@@ -5,13 +5,12 @@ List accounts interactively
 import logging
 
 from rich.console import Console
-
 from rich.table import Table
 
 from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.application.services.fetch import FetchService
 from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
 from nwtrack.domain.models import Account
-from nwtrack.application.services.fetch import FetchService
 
 logger = logging.getLogger(__name__)
 
@@ -91,18 +90,24 @@ def main(active_only: bool = True) -> None:
     from dotenv import load_dotenv
 
     from nwtrack.bootstrap.logging_config import setup_logging
+    from nwtrack.bootstrap.container import Lifetime
 
     load_dotenv()
     setup_logging()
-    console = Console()
 
     container = build_base_sqlite_uow_container()
     container.register(
+        Console,
+        lambda c: Console(),
+        lifetime=Lifetime.SINGLETON,
+    ).register(
         FetchService,
         lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
     ).register(
         ListAccounts,
-        lambda c: ListAccounts(fetcher=c.resolve(FetchService), console=console),
+        lambda c: ListAccounts(
+            fetcher=c.resolve(FetchService), console=c.resolve(Console)
+        ),
     )
     container.resolve(ListAccounts).run(active_only=active_only)
 

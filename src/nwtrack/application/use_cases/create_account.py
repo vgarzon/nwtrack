@@ -24,7 +24,7 @@ class AccountCreator:
 
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
-        # TODO: Inject FetchService and Coonsole via container
+        # TODO: Inject FetchService and Coonsole via container -- see ListAccounts
         self._fetcher = FetchService(uow)
         self._console = Console()
 
