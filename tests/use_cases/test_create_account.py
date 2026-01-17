@@ -3,14 +3,16 @@ Tests for account creator use case
 """
 
 import re
+
 import pytest
+
 import nwtrack.application.use_cases.create_account
-from nwtrack.application.services.db_admin import DBAdminService
-from nwtrack.infra.config.settings import Settings
-from nwtrack.bootstrap.container import Container
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.application.use_cases.create_account import AccountCreator
+from nwtrack.bootstrap.container import Container
+from nwtrack.infra.config.settings import Settings
 from tests.helpers import init_db_tables_w_entities
 
 
@@ -22,7 +24,9 @@ def configured_container(base_container: Container) -> Container:
         lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),
     ).register(
         AccountCreator,
-        lambda c: AccountCreator(uow=lambda: c.resolve(UnitOfWork)),
+        lambda c: AccountCreator(
+            uow=lambda: c.resolve(UnitOfWork),
+        ),
     )
 
 

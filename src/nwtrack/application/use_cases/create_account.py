@@ -14,6 +14,7 @@ from nwtrack.application.dto import NewAccountData
 from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
 from nwtrack.domain.models import Account, Balance, Category, Currency, Status
 from nwtrack.domain.value_objects import Month
+from nwtrack.application.services.fetch import FetchService
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,8 @@ class AccountCreator:
 
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
+        # TODO: Inject FetchService and Coonsole via container
+        self._fetcher = FetchService(uow)
         self._console = Console()
 
     def run(self) -> None:
@@ -132,7 +135,7 @@ class AccountCreator:
         return description
 
     def _collect_category_name(self) -> str:
-        categories = self._get_all_categories()
+        categories = self._fetcher.get_all_categories()
         table = self._build_categories_table(categories)
         self._console.print(table)
         while True:
@@ -167,7 +170,7 @@ class AccountCreator:
         return table
 
     def _collect_currency_code(self) -> str:
-        currencies = self._get_all_currencies()
+        currencies = self._fetcher.get_all_currencies()
         table = self._build_currencies_table(currencies)
         self._console.print(table)
         while True:
@@ -263,60 +266,6 @@ class AccountCreator:
         )
         return amount
 
-    def _get_accounts(self, active_only: bool = True) -> list[Account]:
-        """Get a list of all accounts.
-
-        Args:
-            active_only (bool): Whether to include only active accounts.
-
-        Returns:
-            list[Account]: List of active Account objects.
-        """
-        if active_only:
-            with self._uow() as uow:
-                accounts = uow.accounts.get_active()
-        else:
-            with self._uow() as uow:
-                accounts = uow.accounts.get_all()
-        return accounts
-
-    def _get_all_categories(self) -> list[Category]:
-        """Get a list of all categories.
-
-        Returns:
-            list[Category]: List of Category objects.
-        """
-        with self._uow() as uow:
-            categories = uow.categories.get_all()
-        return categories
-
-    def _get_all_currencies(self) -> list[Currency]:
-        """Get a list of all currencies.
-
-        Returns:
-            list[Currency]: List of currency codes.
-        """
-        with self._uow() as uow:
-            currencies = uow.currencies.get_all()
-        return currencies
-
-    def _get_category_by_account_id(self, account_id: int) -> Category | None:
-        """Get category side for a given account ID.
-
-        Args:
-            account_id (int): Account ID
-
-        Returns:
-            Category | None: Category instance if found, else None.
-        """
-        with self._uow() as uow:
-            account = uow.accounts.get_by_id(account_id)
-        if not account:
-            return None
-        with self._uow() as uow:
-            category = uow.categories.get(account.category_name)
-        return category
-
     def print_accounts(self, active_only: bool = True) -> None:
         """Print accounts.
 
@@ -324,10 +273,10 @@ class AccountCreator:
             active_only (bool): Whether to print only active accounts.
         """
         if active_only:
-            accounts = self._get_accounts(active_only=True)
+            accounts = self._fetcher.get_accounts(active_only=True)
             title_prefix = "Active"
         else:
-            accounts = self._get_accounts(active_only=False)
+            accounts = self._fetcher.get_accounts(active_only=False)
             title_prefix = "All"
         table = self._build_accounts_table(accounts, title_prefix=title_prefix)
         self._console.print(table)
@@ -349,7 +298,7 @@ class AccountCreator:
         table.add_column("Category", style="green")
         table.add_column("Side", style="yellow")
         for account in accounts:
-            category = self._get_category_by_account_id(account.id)
+            category = self._fetcher.get_category_by_account_id(account.id)
             category_name = category.name if category else "Unknown"
             side = category.side.value if category else "Unknown"
             table.add_row(
@@ -367,8 +316,8 @@ class AccountCreator:
             account_id (int): The ID of the created account.
             balance_id (int): The ID of the created balance.
         """
-        account: Account | None = self._get_account_by_id(account_id)
-        balance: Balance | None = self._get_balance_by_id(balance_id)
+        account: Account | None = self._fetcher.get_account_by_id(account_id)
+        balance: Balance | None = self._fetcher.get_balance_by_id(balance_id)
         if account is None or balance is None:
             _msg = "Error retrieving newly created account or balance."
             logger.error(_msg)
@@ -386,32 +335,6 @@ class AccountCreator:
             f"[yellow]Initial balance:[/yellow] {balance.amount}\n"
         )
 
-    def _get_account_by_id(self, account_id: int) -> Account | None:
-        """Get account by ID.
-
-        Args:
-            account_id (int): Account ID
-
-        Returns:
-            Account | None: Account instance if found, else None.
-        """
-        with self._uow() as uow:
-            account = uow.accounts.get_by_id(account_id)
-        return account
-
-    def _get_balance_by_id(self, balance_id: int) -> Balance | None:
-        """Get balance by ID.
-
-        Args:
-            balance_id (int): Balance ID
-
-        Returns:
-            Balance | None: Balance instance if found, else None.
-        """
-        with self._uow() as uow:
-            balance = uow.balances.get_by_id(balance_id)
-        return balance
-
     def validate_new_account(
         self, data: NewAccountData, account_id: int, balance_id: int
     ) -> bool:
@@ -425,8 +348,8 @@ class AccountCreator:
         Returns:
             bool: True if validation passes, False otherwise.
         """
-        account = self._get_account_by_id(account_id)
-        balance = self._get_balance_by_id(balance_id)
+        account = self._fetcher.get_account_by_id(account_id)
+        balance = self._fetcher.get_balance_by_id(balance_id)
 
         def _log_and_print(message: str) -> None:
             logger.error(
@@ -485,8 +408,7 @@ def main() -> None:
         AccountCreator,
         lambda c: AccountCreator(uow=lambda: c.resolve(UnitOfWork)),
     )
-    account_creator: AccountCreator = container.resolve(AccountCreator)
-    account_creator.run()
+    container.resolve(AccountCreator).run()
 
 
 if __name__ == "__main__":

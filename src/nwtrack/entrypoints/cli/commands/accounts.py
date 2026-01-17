@@ -5,6 +5,16 @@ CLI account commands
 from nwtrack.entrypoints.cli.app import accounts_app
 
 
+@accounts_app.command("list")
+def list_accounts_interactive(active_only: bool = True):
+    """
+    List accounts
+    """
+    import nwtrack.application.use_cases.list_accounts as list_accounts
+
+    list_accounts.main(active_only=active_only)
+
+
 @accounts_app.command("create")
 def create_account_interactive():
     """
