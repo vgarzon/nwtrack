@@ -3,21 +3,23 @@ Export tables to csv files.
 """
 
 import logging
+from typing import Callable
 from pathlib import Path
 
 from rich.console import Console
-from rich.prompt import Confirm, Prompt
+from rich.prompt import Prompt, Confirm
 
-from nwtrack.application.services.export_csv import ExportCSV
+from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.infra.fileio.csv_io import records_to_csv
 
 logger = logging.getLogger(__name__)
 
 
-class ExportTablesCSVDir:
+class ExportTablesCSV:
     """Export database tables to CSV files."""
 
-    def __init__(self, exporter: ExportCSV, console: Console) -> None:
-        self._exporter = exporter
+    def __init__(self, uow: Callable[[], UnitOfWork], console: Console) -> None:
+        self._uow = uow
         self._console = console
         # TODO: Use RepoRegistry to specify table names
         self._table_names = [
@@ -27,8 +29,6 @@ class ExportTablesCSVDir:
             "balances",
             "exchange_rates",
         ]
-        self._prompt = Prompt(console=self._console)
-        self._confirm = Confirm(console=self._console)
 
     def run(self) -> None:
         """Run the export process."""
@@ -51,33 +51,25 @@ class ExportTablesCSVDir:
             KeyboardInterrupt: if user interrupts input
         """
         while True:
-            dir_str = self._prompt.ask(
-                "[yellow]Please enter target directory or 'q' to quit[/yellow]"
-            ).strip()
+            dir_str = (
+                Prompt(console=self._console)
+                .ask(
+                    "[yellow]Please enter target directory for CSV export or 'q' to quit[/yellow]"
+                )
+                .strip()
+            )
             if dir_str.lower() == "q":
                 logger.warning("User aborted csv export target directory input")
                 raise KeyboardInterrupt
             target_dir = Path(dir_str)
-            if target_dir.is_dir():
+            if not target_dir.is_dir():
+                self._console.print(
+                    f"[red bold]Error: Directory not found[/red bold]: {dir_str}. "
+                    "Please try again."
+                )
+                continue
+            else:
                 return target_dir
-
-            create = self._confirm.ask(
-                f"[red]Directory [/red][bold]{dir_str}[/bold] "
-                "[red]does not exist. Create it?[/red]",
-                default=False,
-            )
-            if create:
-                try:
-                    target_dir.mkdir(parents=True, exist_ok=True)
-                    self._console.print(f"[green]Created directory[/green]: {dir_str}")
-                    return target_dir
-                except Exception as e:
-                    logger.error("Failed to create directory %s: %s", dir_str, str(e))
-                    self._console.print(
-                        f"[red bold]Error:[/red bold] Failed to create directory {dir_str}. "
-                        "Please try again."
-                    )
-                    continue
 
     def export_tables_to_csv(self, target_dir: Path) -> None:
         """Export database tables to CSV files in the target directory.
@@ -87,9 +79,27 @@ class ExportTablesCSVDir:
         """
         for table_name in self._table_names:
             csv_path = target_dir / f"{table_name}.csv"
-            n_records = self._exporter.export_table(table_name, csv_path)
+            with self._uow() as uow:
+                try:
+                    repo = getattr(uow, table_name)
+                except AttributeError:
+                    logger.error(
+                        "Repository for table %s not found. Skipping.", table_name
+                    )
+                    continue
+                entities = repo.get_all()
+                records = [repo._mapper.to_record(entity) for entity in entities]
+
+            if not records:
+                logger.info(
+                    "No records found in table %s. Skipping export.", table_name
+                )
+                continue
+
+            records_to_csv(records, csv_path)
+            logger.info("Exported table %s to %s", table_name, csv_path)
             self._console.print(
-                f"[green]Exported[/green] {n_records} [bold]{table_name}[/bold] "
+                f"[green]Exported[/green] {len(records)} [bold]{table_name}[/bold] "
                 f"[green]to[/green] [bold]{csv_path}[/bold]"
             )
 
@@ -97,10 +107,9 @@ class ExportTablesCSVDir:
 def main() -> None:
     from dotenv import load_dotenv
 
-    from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.bootstrap.composition import (
-        Lifetime,
         build_base_sqlite_uow_container,
+        Lifetime,
     )
     from nwtrack.bootstrap.logging_config import setup_logging
 
@@ -113,15 +122,12 @@ def main() -> None:
         lambda c: Console(),
         lifetime=Lifetime.SINGLETON,
     ).register(
-        ExportCSV,
-        lambda c: ExportCSV(uow=lambda: c.resolve(UnitOfWork)),
-    ).register(
-        ExportTablesCSVDir,
-        lambda c: ExportTablesCSVDir(
-            exporter=c.resolve(ExportCSV), console=c.resolve(Console)
+        ExportTablesCSV,
+        lambda c: ExportTablesCSV(
+            uow=lambda: c.resolve(UnitOfWork), console=c.resolve(Console)
         ),
     )
-    container.resolve(ExportTablesCSVDir).run()
+    container.resolve(ExportTablesCSV).run()
 
 
 if __name__ == "__main__":
