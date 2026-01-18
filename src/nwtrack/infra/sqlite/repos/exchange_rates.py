@@ -53,6 +53,16 @@ class SQLiteExchangeRatesRepository(BaseRepository[ExchangeRate]):
         else:
             return None
 
+    def get_all(self) -> list[ExchangeRate]:
+        """Get all exchange rate records.
+
+        Returns:
+            list[ExchangeRate]: List of all exchange rate records
+        """
+        query = "SELECT currency, month, rate FROM exchange_rates;"
+        results = self._db.fetch_all(query)
+        return [self._mapper.to_entity(dict(res)) for res in results]
+
     def get_currency(self, currency_code: str) -> list[ExchangeRate]:
         """Get exchange rates for a given currency code
 

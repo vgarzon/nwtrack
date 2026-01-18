@@ -95,6 +95,20 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
             )
         return self._mapper.to_entity(dict(results[0]))
 
+    def get_all(self) -> list[Balance]:
+        """Get all balance records.
+
+        Returns:
+            list[Balance]: List of all balance records
+        """
+        query = """
+        SELECT id, account_id, month, amount
+        FROM balances
+        ORDER BY month, account_id;
+        """
+        results = self._db.fetch_all(query)
+        return [self._mapper.to_entity(dict(res)) for res in results]
+
     def get_by_id(self, balance_id: int) -> Balance | None:
         """Get balance by ID.
 
