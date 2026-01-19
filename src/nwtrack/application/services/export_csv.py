@@ -72,7 +72,7 @@ class ExportCSV:
 
         if not records:
             logger.info("No records found in table %s. Skipping export.", table_name)
-            return
+            return 0
 
         records_to_csv(records, csv_path)
         n_records = len(records)
