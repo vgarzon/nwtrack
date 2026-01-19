@@ -19,14 +19,6 @@ class ExportTablesCSVDir:
     def __init__(self, exporter: ExportCSV, console: Console) -> None:
         self._exporter = exporter
         self._console = console
-        # TODO: Use RepoRegistry to specify table names
-        self._table_names = [
-            "currencies",
-            "categories",
-            "accounts",
-            "balances",
-            "exchange_rates",
-        ]
         self._prompt = Prompt(console=self._console)
         self._confirm = Confirm(console=self._console)
 
@@ -39,7 +31,7 @@ class ExportTablesCSVDir:
         except KeyboardInterrupt:
             self._console.print("[red]CSV export aborted by user.[/red]")
             return
-        self.export_tables_to_csv(target_dir)
+        self.export_tables_to_dir(target_dir)
         logger.info("Finished exporting tables to CSV files.")
 
     def collect_target_dir(self) -> Path:
@@ -79,18 +71,17 @@ class ExportTablesCSVDir:
                     )
                     continue
 
-    def export_tables_to_csv(self, target_dir: Path) -> None:
+    def export_tables_to_dir(self, target_dir: Path) -> None:
         """Export database tables to CSV files in the target directory.
 
         Args:
             target_dir (Path): Target directory for CSV export.
         """
-        for table_name in self._table_names:
-            csv_path = target_dir / f"{table_name}.csv"
-            n_records = self._exporter.export_table(table_name, csv_path)
+        export_summary = self._exporter.export_tables_to_dir(target_dir)
+        for table_name, csv_path, n_records in export_summary:
             self._console.print(
-                f"[green]Exported[/green] {n_records} [bold]{table_name}[/bold] "
-                f"[green]to[/green] [bold]{csv_path}[/bold]"
+                f"[green]Exported[/green] {n_records} '[bold]{table_name}[/bold]' "
+                f"[green]records to[/green] [bold]{csv_path}[/bold]"
             )
 
 

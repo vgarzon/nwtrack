@@ -17,6 +17,38 @@ class ExportCSV:
 
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
+        # TODO: Use RepoRegistry to define table names
+        self._table_names = [
+            "currencies",
+            "categories",
+            "accounts",
+            "balances",
+            "exchange_rates",
+        ]
+
+    def export_tables_to_dir(self, target_dir: Path) -> list[tuple[str, str, int]]:
+        """Export pre-specified database tables to CSV files in target directory.
+
+        Args:
+            target_dir (Path): Target directory for CSV export.
+
+        Returns:
+            list[tuple[str, str, int]]: Summary of exported records per table.
+            - table_name (str): Name of the table.
+            - csv_path (str): Path to the exported CSV file.
+            - n_records (int): Number of records exported.
+        """
+        export_summary = []
+        for table_name in self._table_names:
+            csv_path = target_dir / f"{table_name}.csv"
+            n_records = self.export_table(table_name, csv_path)
+            export_summary.append((table_name, str(csv_path), n_records))
+        logger.info(
+            "Exported %d tables to CSV files in directory %s",
+            len(self._table_names),
+            target_dir,
+        )
+        return export_summary
 
     def export_table(self, table_name: str, csv_path: Path) -> int:
         """Export database table to CSV file.
@@ -44,7 +76,6 @@ class ExportCSV:
 
         records_to_csv(records, csv_path)
         n_records = len(records)
-
         logger.info(
             "Exported %d records from table %s to %s", n_records, table_name, csv_path
         )
