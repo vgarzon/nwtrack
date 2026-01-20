@@ -15,6 +15,23 @@ logger = logging.getLogger(__name__)
 class SQLiteCategoriesRepository(BaseRepository[Category]):
     """Repository for category SQLite database operations."""
 
+    def insert(self, data: Category) -> int:
+        """Insert a category into SQLite database.
+
+        Args:
+            data (Category): Category data dictionary.
+
+        Returns:
+            int: Number of inserted rows.
+        """
+        cur = self._db.execute(
+            "INSERT INTO categories (name, side) VALUES (:name, :side);",
+            self._mapper.to_record(data),
+        )
+        rowcount = cur.rowcount
+        logger.info("Inserted %d category row.", rowcount)
+        return rowcount
+
     def insert_many(self, data: list[Category]) -> None:
         """Insert list of categories into SQLite database.
 

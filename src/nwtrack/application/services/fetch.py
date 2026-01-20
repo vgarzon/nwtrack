@@ -92,3 +92,16 @@ class FetchService:
         with self._uow() as uow:
             balance = uow.balances.get_by_id(balance_id)
         return balance
+
+    def get_category_by_name(self, category_name: str) -> Category | None:
+        """Get category by name.
+
+        Args:
+            category_name (str): Category name
+
+        Returns:
+            Category | None: Category instance if found, else None.
+        """
+        with self._uow() as uow:
+            category = uow.categories.get(category_name)
+        return category

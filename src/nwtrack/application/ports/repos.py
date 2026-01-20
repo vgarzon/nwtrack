@@ -114,6 +114,10 @@ class CurrenciesRepository(Repository[Currency], Protocol):
 class CategoriesRepository(Repository[Category], Protocol):
     """Protocol for category repository operations."""
 
+    def insert(self, data: Category) -> int:
+        """Insert category object in respective table."""
+        ...
+
     def get(self, name: str) -> Category | None:
         """Get category by name."""
         ...
