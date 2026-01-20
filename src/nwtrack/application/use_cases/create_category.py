@@ -10,7 +10,6 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.application.dto import NewAccountData
 from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
 from nwtrack.domain.models import Category, Side
 from nwtrack.application.services.fetch import FetchService
@@ -212,4 +211,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

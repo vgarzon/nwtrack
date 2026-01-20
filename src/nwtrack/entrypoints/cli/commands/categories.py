@@ -5,15 +5,14 @@ CLI category commands
 from nwtrack.entrypoints.cli.app import categories_app
 
 
-# TODO: Enable listing categories once implemented
-# @categories_app.command("list")
-# def list_categories_interactive(active_only: bool = True):
-#     """
-#     List categories
-#     """
-#     import nwtrack.application.use_cases.list_categories as list_categories
-#
-#     list_categories.main(active_only=active_only)
+@categories_app.command("list")
+def list_categories_interactive():
+    """
+    List categories
+    """
+    import nwtrack.application.use_cases.list_categories as list_categories
+
+    list_categories.main()
 
 
 @categories_app.command("create")
