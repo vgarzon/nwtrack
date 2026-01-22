@@ -7,19 +7,22 @@ import re
 import pytest
 
 import nwtrack.application.use_cases.roll_balances_forward
-from nwtrack.application.ports.db import DBConnectionManager
-from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.application.services.data_loader import InitDataService
-from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.application.use_cases.roll_balances_forward import RollBalancesUpdater
-from nwtrack.bootstrap.container import Container
-from nwtrack.infra.config.settings import Settings
+from nwtrack.bootstrap.container import Container, Lifetime
 from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture
 def configured_container(base_container: Container) -> Container:
     """Register services in the container."""
+    from nwtrack.application.ports.db import DBConnectionManager
+    from nwtrack.application.ports.uow import UnitOfWork
+    from nwtrack.application.services.data_loader import InitDataService
+    from nwtrack.application.services.db_admin import DBAdminService
+    from nwtrack.application.services.fetch import FetchService
+    from nwtrack.application.use_cases.roll_balances_forward import Console
+    from nwtrack.infra.config.settings import Settings
+
     return (
         base_container.register(
             DBAdminService,
@@ -31,9 +34,18 @@ def configured_container(base_container: Container) -> Container:
             InitDataService,
             lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
         )
+        .register(Console, lambda c: Console(), lifetime=Lifetime.SINGLETON)
+        .register(
+            FetchService,
+            lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
+        )
         .register(
             RollBalancesUpdater,
-            lambda c: RollBalancesUpdater(uow=lambda: c.resolve(UnitOfWork)),
+            lambda c: RollBalancesUpdater(
+                uow=lambda: c.resolve(UnitOfWork),
+                fetcher=c.resolve(FetchService),
+                console=c.resolve(Console),
+            ),
         )
     )
 
@@ -56,7 +68,6 @@ def test_roll_balances_run_defaults(
         return next(input_prompt)
 
     init_db_tables_w_entities(configured_container, sample_entities)
-    updater: RollBalancesUpdater = configured_container.resolve(RollBalancesUpdater)
     monkeypatch.setattr(
         nwtrack.application.use_cases.roll_balances_forward.Confirm,
         "ask",
@@ -67,7 +78,7 @@ def test_roll_balances_run_defaults(
         "ask",
         mock_prompt,
     )
-    updater.run()
+    configured_container.resolve(RollBalancesUpdater).run()
     captured = capsys.readouterr()
     assert re.search(r"Next available .+ month: 2025-12", captured.out)
     assert re.search(r"Rolling balances forward.+from 2025-11 to 2025-12", captured.out)

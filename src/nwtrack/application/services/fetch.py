@@ -167,9 +167,26 @@ class FetchService:
         Returns:
             list[tuple[Month, int]]: list of tuples Month count of balance entries.
         """
+        # TODO: specify number of months to retrieve
         with self._uow() as uow:
             counts = uow.balances.count_per_month()
         return counts
+
+    def get_recent_months(self, n_months=12) -> list[Month]:
+        """Get sorted list of recent months with balances.
+
+        Args:
+            n_months (int): Number of recent months to retrieve, default is 12
+
+        Returns:
+            list[Month]: List of recent months in descending order.
+        """
+        balance_counts = self.get_balance_count_per_month()
+        if not balance_counts:
+            return []
+        balance_counts.sort(key=lambda x: x[0], reverse=True)
+        recent_months = [month for month, _ in balance_counts[:n_months]]
+        return recent_months
 
     def get_month_balances(
         self, month: Month, active_only: bool = True

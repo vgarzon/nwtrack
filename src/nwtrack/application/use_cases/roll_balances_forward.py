@@ -12,6 +12,7 @@ from rich.table import Table
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.domain.models import Balance, NetWorth
 from nwtrack.domain.value_objects import Month
+from nwtrack.application.services.fetch import FetchService
 
 logger = logging.getLogger(__name__)
 
@@ -19,14 +20,17 @@ logger = logging.getLogger(__name__)
 class RollBalancesUpdater:
     """Update account balances interactively."""
 
-    def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
+    def __init__(
+        self, uow: Callable[[], UnitOfWork], fetcher: FetchService, console: Console
+    ) -> None:
         self._uow = uow
-        self._console = Console()
+        self._fetcher = fetcher
+        self._console = console
 
     def run(self) -> None:
         logger.info("Starting Roll Balances Forward Updater")
         self._console.rule("[bold green]Roll Balances Forward[/bold green]")
-        target_month = self._get_next_free_month()
+        target_month = self.get_next_free_month()
         self._console.print(f"Next available target month: [bold]{target_month}[/bold]")
         proceed = Confirm.ask(
             f"Roll balances forward into [bold]{target_month}[/bold]?", default=True
@@ -44,31 +48,34 @@ class RollBalancesUpdater:
         self.print_net_worth(target_month)
         logger.info("Finished Roll Balances Forward Updater")
 
-    def _get_next_free_month(self) -> Month:
+    def get_next_free_month(self) -> Month:
         """Get the next month that does not have balances yet.
 
         Returns:
             Month: Next month without balances.
         """
-        recent_months = self._get_sorted_recent_months()
+        recent_months = self._fetcher.get_recent_months()
         latest_month = recent_months[0]
         next_month = latest_month.increment()
         return next_month
 
-    def _get_sorted_recent_months(self) -> list[Month]:
-        """Get sorted recent months with balances.
-
-        Returns:
-            list[Month]: List of recent months in descending order.
-        """
-        balance_counts = self._get_balance_count_per_month()
-        if not balance_counts:
-            logger.error("No balances found in the system.")
-            raise ValueError("No balances found in the system.")
-        balance_counts.sort(key=lambda x: x[0], reverse=True)
-        recent_months = [month for month, _ in balance_counts]
-        return recent_months
-
+    # def get_recent_months(self, n_months=12) -> list[Month]:
+    #     """Get sorted list of recent months with balances.
+    #
+    #     Args:
+    #         n_months (int): Number of recent months to retrieve, default is 12
+    #
+    #     Returns:
+    #         list[Month]: List of recent months in descending order.
+    #     """
+    #     balance_counts = self._fetcher.get_balance_count_per_month()
+    #     if not balance_counts:
+    #         logger.error("No balances found in the system.")
+    #         raise ValueError("No balances found in the system.")
+    #     balance_counts.sort(key=lambda x: x[0], reverse=True)
+    #     recent_months = [month for month, _ in balance_counts[:n_months]]
+    #     return recent_months
+    #
     def _copy_monthly_balances(self, source_month: Month, target_month: Month) -> None:
         """Copy all active account balances from one month to the next.
 
@@ -76,10 +83,10 @@ class RollBalancesUpdater:
             source_month (Month): Month to copy balances from.
             target_month (Month): Month to copy balances to.
         """
-        with self._uow() as uow:
-            if not uow.balances.check_month(source_month):
-                logger.error(f"No balances found for month {source_month}")
-                raise ValueError(f"No balances found for month {source_month}")
+        if not self._fetcher.check_month_in_balances(source_month):
+            _msg = f"No balances found for month {source_month}"
+            logger.error(_msg)
+            raise ValueError(_msg)
         logger.info(f"Rolling balances forward from {source_month} to {target_month}.")
         self._console.print(
             f"[green]\nRolling balances forward [bold]from {source_month} to "
@@ -102,7 +109,7 @@ class RollBalancesUpdater:
         Returns:
             Month | None: Selected Month object or None if quit
         """
-        balance_counts = self._get_balance_count_per_month()
+        balance_counts = self._fetcher.get_balance_count_per_month()
         balance_counts.sort(key=lambda x: x[0], reverse=True)
         recent_months = [month for month, _ in balance_counts[:n_months]]
         table = self._build_month_balances_table(balance_counts[:n_months])
@@ -225,37 +232,11 @@ class RollBalancesUpdater:
             table.add_row(str(idx + 1), str(month), str(count))
         return table
 
-    def _get_balance_count_per_month(self) -> list[tuple[Month, int]]:
-        """Get count of balance entries per month.
-
-        Returns:
-            list[tuple[Month, int]]: list of tuples Month count of balance entries.
-        """
-        with self._uow() as uow:
-            counts = uow.balances.count_per_month()
-        return counts
-
-    def _get_month_balances(
-        self, month: Month, active_only: bool = True
-    ) -> list[Balance]:
-        """Get balance all accounts on a specific month.
-
-        Args:
-            month (Month): Month object
-            active_only (bool): Whether to include only active accounts
-
-        Return:
-            list[Balance]: List of Balance object for the specified account and month.
-        """
-        with self._uow() as uow:
-            balances = uow.balances.get_month(month, active_only)
-        return balances
-
 
 def main() -> None:
     from dotenv import load_dotenv
 
-    from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
+    from nwtrack.bootstrap.composition import build_base_sqlite_uow_container, Lifetime
     from nwtrack.bootstrap.logging_config import setup_logging
 
     load_dotenv()
@@ -263,11 +244,19 @@ def main() -> None:
 
     container = build_base_sqlite_uow_container()
     container.register(
+        Console, lambda c: Console(), lifetime=Lifetime.SINGLETON
+    ).register(
+        FetchService,
+        lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
+    ).register(
         RollBalancesUpdater,
-        lambda c: RollBalancesUpdater(uow=lambda: c.resolve(UnitOfWork)),
+        lambda c: RollBalancesUpdater(
+            uow=lambda: c.resolve(UnitOfWork),
+            fetcher=c.resolve(FetchService),
+            console=c.resolve(Console),
+        ),
     )
-    updater: RollBalancesUpdater = container.resolve(RollBalancesUpdater)
-    updater.run()
+    container.resolve(RollBalancesUpdater).run()
 
 
 if __name__ == "__main__":
