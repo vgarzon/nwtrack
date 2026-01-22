@@ -20,6 +20,12 @@ from tests.helpers import init_db_tables_w_entities
 @pytest.fixture
 def configured_container(base_container: Container) -> Container:
     """Configure container."""
+    from nwtrack.application.use_cases.print_summary import (
+        FetchService,
+        Console,
+    )
+    from nwtrack.bootstrap.container import Lifetime
+
     return (
         base_container.register(
             DBAdminService,
@@ -32,8 +38,20 @@ def configured_container(base_container: Container) -> Container:
             lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
         )
         .register(
+            Console,
+            lambda c: Console(),
+            lifetime=Lifetime.SINGLETON,
+        )
+        .register(
+            FetchService,
+            lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
+        )
+        .register(
             SummaryService,
-            lambda c: SummaryService(uow=lambda: c.resolve(UnitOfWork)),
+            lambda c: SummaryService(
+                fetcher=c.resolve(FetchService),
+                console=c.resolve(Console),
+            ),
         )
     )
 
@@ -50,11 +68,10 @@ def test_print_summary_run_default_month(
     def mock_ask(question, **kwargs):
         return "1"
 
-    service: SummaryService = configured_container.resolve(SummaryService)
     monkeypatch.setattr(
         nwtrack.application.use_cases.print_summary.Prompt, "ask", mock_ask
     )
-    service.run()
+    configured_container.resolve(SummaryService).run()
     captured = capsys.readouterr()
     assert re.search(r"Balances 2025-11", captured.out)
     assert re.search(r"Balances 2025-11", captured.out)
@@ -80,14 +97,14 @@ def test_print_summary_run_input_month(
     def mock_int_ask(question, **kwargs):
         return next(inputs_int_ask)
 
-    service: SummaryService = configured_container.resolve(SummaryService)
     monkeypatch.setattr(
         nwtrack.application.use_cases.print_summary.Prompt, "ask", mock_ask
     )
     monkeypatch.setattr(
         nwtrack.application.use_cases.print_summary.IntPrompt, "ask", mock_int_ask
     )
-    service.run()
+
+    configured_container.resolve(SummaryService).run()
     captured = capsys.readouterr()
     assert re.search(r"Balances 2025-10", captured.out)
     assert re.search(r"Balances 2025-10", captured.out)

@@ -3,8 +3,11 @@ Fetch service module for read-only data retrieval.
 """
 
 from typing import Callable
+
+from nwtrack.application.dto import MonthlyCategoryBalance
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.domain.models import Account, Balance, Category, Currency
+from nwtrack.domain.models import Account, Balance, Category, Currency, NetWorth
+from nwtrack.domain.value_objects import Month
 
 
 class FetchService:
@@ -106,6 +109,20 @@ class FetchService:
             category = uow.categories.get(category_name)
         return category
 
+    def get_networth(self, month: Month, currency_code: str = "USD") -> NetWorth:
+        """Get net worth for a specific month and currency.
+
+        Args:
+            month (Month): Month object
+            currency_code (str, optional): The currency code. Defaults to "USD".
+
+        Returns:
+            Networth: Net worth amount if found, else None.
+        """
+        with self._uow() as uow:
+            networth = uow.net_worth.get(month, currency_code)
+        return networth
+
     def get_last_n_networth(self, n: int, currency_code: str = "USD") -> list:
         """Get last n months of net worth history for a given currency.
 
@@ -119,3 +136,63 @@ class FetchService:
         with self._uow() as uow:
             last_n = uow.net_worth.get_last_n(n, currency_code)
         return last_n
+
+    def get_map_id_to_account(self) -> dict[int, Account]:
+        """Get a map of account id to Account objects.
+
+        Returns:
+            dict[int, Account]: Map of account id to Account objects.
+        """
+        with self._uow() as uow:
+            accounts = uow.accounts.get_all()
+        return {acc.id: acc for acc in accounts}
+
+    def get_balance_count_per_month(self) -> list[tuple[Month, int]]:
+        """Get count of balance entries per month.
+
+        Returns:
+            list[tuple[Month, int]]: list of tuples Month count of balance entries.
+        """
+        with self._uow() as uow:
+            counts = uow.balances.count_per_month()
+        return counts
+
+    def get_month_balances(
+        self, month: Month, active_only: bool = True
+    ) -> list[Balance]:
+        """Get balance all accounts on a specific month.
+
+        Args:
+            month (Month): Month object
+            active_only (bool): Whether to include only active accounts
+
+        Return:
+            list[Balance]: List of Balance object for the specified account and month.
+        """
+        with self._uow() as uow:
+            balances = uow.balances.get_month(month, active_only)
+        return balances
+
+    def check_month_in_balances(self, month: Month) -> bool:
+        """Check if there are balance entries for a specific month.
+        Args:
+            month (Month): Month object
+                Returns:
+            bool: True if entries exist, False if not
+        """
+        with self._uow() as uow:
+            result = uow.balances.check_month(month)
+        return result
+
+    def get_monthly_balance_total_by_category(
+        self, month: Month
+    ) -> list[MonthlyCategoryBalance]:
+        """Get total balance per category for a specific month.
+        Args:
+            month (Month): Month object
+        Returns:
+           list[MonthlyCategoryBalance]: List of MonthlyCategoryBalance objects.
+        """
+        with self._uow() as uow:
+            monthly_balances = uow._reporting.monthly_balance_total_by_category(month)
+        return monthly_balances

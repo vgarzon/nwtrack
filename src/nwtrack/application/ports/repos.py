@@ -230,7 +230,7 @@ class BalancesRepository(Repository[Balance], Protocol):
         """Update the balance for specific account and month."""
         ...
 
-    def check_month(self, month: Month):
+    def check_month(self, month: Month) -> bool:
         """Check that there are balance entries for a given month."""
         ...
 

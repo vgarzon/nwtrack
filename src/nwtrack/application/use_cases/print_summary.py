@@ -3,7 +3,6 @@ Print network summary by category
 """
 
 import logging
-from typing import Callable
 
 from rich.console import Console
 from rich.prompt import IntPrompt, Prompt
@@ -11,8 +10,9 @@ from rich.table import Table
 
 from nwtrack.application.dto import MonthlyCategoryBalance
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.domain.models import Account, Balance, Category, NetWorth
+from nwtrack.domain.models import Account, Balance, NetWorth
 from nwtrack.domain.value_objects import Month
+from nwtrack.application.services.fetch import FetchService
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 class SummaryService:
     """Print net worth summary by category."""
 
-    def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
-        self._uow = uow
-        self._console = Console()
+    def __init__(self, fetcher: FetchService, console: Console) -> None:
+        self._fetcher = fetcher
+        self._console = console
 
     def run(self) -> None:
         """Run the summary service."""
@@ -47,7 +47,7 @@ class SummaryService:
         Returns:
             Month | None: Selected Month object or None if quit
         """
-        balance_counts = self._get_balance_count_per_month()
+        balance_counts = self._fetcher.get_balance_count_per_month()
         balance_counts.sort(key=lambda x: x[0], reverse=True)
         recent_months = [month for month, _ in balance_counts[:n_months]]
         table = self._build_month_balances_table(balance_counts[:n_months])
@@ -85,18 +85,17 @@ class SummaryService:
             logger.error("Invalid Month inputs %d %d", _year, _month)
             self._console.print("[red]Invalid month format. Please use YYYY-MM.[/red]")
             return None
-        with self._uow() as uow:
-            if not uow.balances.check_month(month):
-                logger.warning(f"No balance entries found for {month}.")
-                self._console.print(
-                    f"[orange]No balance entries found in {month}.[/orange]"
-                )
-                return None
+        if not self._fetcher.check_month_in_balances(month):
+            logger.warning(f"No balance entries found for {month}.")
+            self._console.print(
+                f"[orange]No balance entries found in {month}.[/orange]"
+            )
+            return None
         return month
 
     def print_active_accounts(self):
         """Print active accounts."""
-        active_accounts = self._get_active_accounts()
+        active_accounts = self._fetcher.get_accounts(active_only=True)
         table = self._build_accounts_table(active_accounts)
         self._console.print(table)
 
@@ -109,7 +108,7 @@ class SummaryService:
         Returns:
             None
         """
-        balances = self._get_month_balances(month, active_only=True)
+        balances = self._fetcher.get_month_balances(month, active_only=True)
         table = self._build_balances_table(balances, title_suffix=str(month))
         self._console.print(table)
 
@@ -120,8 +119,7 @@ class SummaryService:
         Returns:
             None
         """
-        with self._uow() as uow:
-            monthly_balances = uow._reporting.monthly_balance_total_by_category(month)
+        monthly_balances = self._fetcher.get_monthly_balance_total_by_category(month)
         table = self._build_category_summary_table(
             monthly_balances, title_suffix=str(month)
         )
@@ -137,8 +135,7 @@ class SummaryService:
         Returns:
             None
         """
-        with self._uow() as uow:
-            nw = uow.net_worth.get(month, currency_code)
+        nw = self._fetcher.get_networth(month, currency_code)
         if not nw:
             logger.warning("No net worth data found for %s in %s", month, currency_code)
             self._console.print(
@@ -197,7 +194,7 @@ class SummaryService:
         table.add_column("Category", style="green")
         table.add_column("Side", style="yellow")
         for account in accounts:
-            category = self._get_category_by_account_id(account.id)
+            category = self._fetcher.get_category_by_account_id(account.id)
             category_name = category.name if category else "Unknown"
             side = category.side.value if category else "Unknown"
             table.add_row(
@@ -238,7 +235,7 @@ class SummaryService:
         Returns:
             Table: Rich Table object
         """
-        account_map = self._get_map_id_to_account()
+        account_map = self._fetcher.get_map_id_to_account()
         _title = "Balances" + (f" {title_suffix}" if title_suffix else "")
         table = Table(title=_title)
         table.add_column("Acct_ID", justify="right", style="cyan", no_wrap=True)
@@ -249,7 +246,7 @@ class SummaryService:
         for balance in balances:
             account_id = balance.account_id
             account_name = account_map[account_id].name
-            category = self._get_category_by_account_id(account_id)
+            category = self._fetcher.get_category_by_account_id(account_id)
             if not category:
                 logger.error("Category not found for account ID {%}", account_id)
             category_name = category.name if category else "Unknown"
@@ -291,86 +288,33 @@ class SummaryService:
             )
         return table
 
-    def _get_category_by_account_id(self, account_id: int) -> Category | None:
-        """Get category side for a given account ID.
-
-        Args:
-            account_id (int): Account ID
-
-        Returns:
-            Category | None: Category instance if found, else None.
-        """
-        with self._uow() as uow:
-            account = uow.accounts.get_by_id(account_id)
-        if not account:
-            return None
-        with self._uow() as uow:
-            category = uow.categories.get(account.category_name)
-        return category
-
-    def _get_map_id_to_account(self) -> dict[int, Account]:
-        """Get a map of account id to Account objects.
-
-        Returns:
-            dict[int, Account]: Map of account id to Account objects.
-        """
-        with self._uow() as uow:
-            accounts = uow.accounts.get_all()
-        return {acc.id: acc for acc in accounts}
-
-    def _get_balance_count_per_month(self) -> list[tuple[Month, int]]:
-        """Get count of balance entries per month.
-
-        Returns:
-            list[tuple[Month, int]]: list of tuples Month count of balance entries.
-        """
-        with self._uow() as uow:
-            counts = uow.balances.count_per_month()
-        return counts
-
-    def _get_active_accounts(self) -> list[Account]:
-        """Get list of active accounts.
-
-        Returns:
-            list[Account]: List of active Account objects.
-        """
-        with self._uow() as uow:
-            accounts = uow.accounts.get_active()
-        return accounts
-
-    def _get_month_balances(
-        self, month: Month, active_only: bool = True
-    ) -> list[Balance]:
-        """Get balance all accounts on a specific month.
-
-        Args:
-            month (Month): Month object
-            active_only (bool): Whether to include only active accounts
-
-        Return:
-            list[Balance]: List of Balance object for the specified account and month.
-        """
-        with self._uow() as uow:
-            balances = uow.balances.get_month(month, active_only)
-        return balances
-
 
 def main() -> None:
     from dotenv import load_dotenv
 
     from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
     from nwtrack.bootstrap.logging_config import setup_logging
+    from nwtrack.bootstrap.container import Lifetime
 
     load_dotenv()
     setup_logging()
 
     container = build_base_sqlite_uow_container()
     container.register(
+        Console,
+        lambda c: Console(),
+        lifetime=Lifetime.SINGLETON,
+    ).register(
+        FetchService,
+        lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
+    ).register(
         SummaryService,
-        lambda c: SummaryService(uow=lambda: c.resolve(UnitOfWork)),
+        lambda c: SummaryService(
+            fetcher=c.resolve(FetchService),
+            console=c.resolve(Console),
+        ),
     )
-    service: SummaryService = container.resolve(SummaryService)
-    service.run()
+    container.resolve(SummaryService).run()
 
 
 if __name__ == "__main__":

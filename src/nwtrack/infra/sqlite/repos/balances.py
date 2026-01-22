@@ -242,7 +242,7 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
                 new_amount,
             )
 
-    def check_month(self, month: Month):
+    def check_month(self, month: Month) -> bool:
         """Check that there are balance entries for a given month.
 
         Args:
