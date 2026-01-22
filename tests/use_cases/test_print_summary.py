@@ -7,24 +7,24 @@ import re
 import pytest
 
 import nwtrack.application.use_cases.print_summary
-from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.application.services.data_loader import InitDataService
-from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.application.use_cases.print_summary import SummaryService
 from nwtrack.bootstrap.container import Container
-from nwtrack.infra.config.settings import Settings
 from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture
 def configured_container(base_container: Container) -> Container:
     """Configure container."""
+    from nwtrack.application.ports.db import DBConnectionManager
+    from nwtrack.application.services.data_loader import InitDataService
+    from nwtrack.application.services.db_admin import DBAdminService
     from nwtrack.application.use_cases.print_summary import (
-        FetchService,
         Console,
+        FetchService,
     )
     from nwtrack.bootstrap.container import Lifetime
+    from nwtrack.infra.config.settings import Settings
 
     return (
         base_container.register(
@@ -65,7 +65,7 @@ def test_print_summary_run_default_month(
     """Test print summary service."""
     init_db_tables_w_entities(configured_container, sample_entities)
 
-    def mock_ask(question, **kwargs):
+    def mock_ask(*args, **kwargs):
         return "1"
 
     monkeypatch.setattr(
@@ -91,10 +91,10 @@ def test_print_summary_run_input_month(
 
     init_db_tables_w_entities(configured_container, sample_entities)
 
-    def mock_ask(question, **kwargs):
+    def mock_ask(*args, **kwargs):
         return next(inputs_ask)
 
-    def mock_int_ask(question, **kwargs):
+    def mock_int_ask(*args, **kwargs):
         return next(inputs_int_ask)
 
     monkeypatch.setattr(

@@ -28,6 +28,9 @@ class UpdateAccountInfo:
         self._uow = uow
         self._fetcher = fetcher
         self._console = console
+        self._confirm = Confirm(console=self._console)
+        self._prompt = Prompt(console=self._console)
+        self._int_prompt = IntPrompt(console=self._console)
 
     def run(self) -> None:
         logger.info("Starting Update Account Info use case")
@@ -49,7 +52,7 @@ class UpdateAccountInfo:
 
         self._console.print("[bold]Updated account data[/bold]")
         self.print_account_data(updated_account)
-        proceed = Confirm.ask("Proceed with update", default=False)
+        proceed = self._confirm.ask("Proceed with update", default=False)
         if not proceed:
             self._console.print("[magenta]Stopping.[/magenta]")
             logger.warning("Stopping without updating database.")
@@ -77,7 +80,7 @@ class UpdateAccountInfo:
     def select_account_to_update(self) -> int:
         self.print_accounts(active_only=False)
         while True:
-            account_id = IntPrompt.ask(
+            account_id = self._int_prompt.ask(
                 "Enter [bold]account ID[/bold] to update or '0' to quit",
                 default=0,
             )
@@ -171,7 +174,7 @@ class UpdateAccountInfo:
             str: Account name.
         """
         while True:
-            name = Prompt.ask(
+            name = self._prompt.ask(
                 "Enter [bold]account name[/bold] or 'q' to quit",
                 default=default,
             ).strip()
@@ -220,7 +223,7 @@ class UpdateAccountInfo:
         Returns:
             str: Description.
         """
-        description = Prompt.ask(
+        description = self._prompt.ask(
             "Enter optional [bold]description[/bold] or 'q' to quit",
             default=default,
         ).strip()
@@ -246,7 +249,7 @@ class UpdateAccountInfo:
         table = self._build_categories_table(categories)
         self._console.print(table)
         while True:
-            choice = IntPrompt.ask(
+            choice = self._int_prompt.ask(
                 "Enter [bold]category index[/bold] or '0' to quit",
                 default=default_index,
                 choices=[str(i) for i in range(len(categories) + 1)],
@@ -293,7 +296,7 @@ class UpdateAccountInfo:
         table = self._build_currencies_table(currencies)
         self._console.print(table)
         while True:
-            choice = IntPrompt.ask(
+            choice = self._int_prompt.ask(
                 "Enter [bold]currency index[/bold] or '0' to quit",
                 default=default_index,
                 choices=[str(i) for i in range(len(currencies) + 1)],
@@ -328,7 +331,7 @@ class UpdateAccountInfo:
         default_index = status_options.index(default) + 1
         table = self._build_status_table(status_options)
         self._console.print(table)
-        choice = IntPrompt.ask(
+        choice = self._int_prompt.ask(
             "Select [bold]account status[/bold] by index or '0' to quit",
             default=default_index,
             choices=["0", "1", "2"],

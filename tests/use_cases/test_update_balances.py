@@ -80,10 +80,10 @@ def test_update_balances_run(
         ]
     )
 
-    def mock_prompt(question, **kwargs):
+    def mock_prompt(*args, **kwargs):
         return next(input_prompt)
 
-    def mock_int_prompt(question, **kwargs):
+    def mock_int_prompt(*args, **kwargs):
         return int(next(input_int_prompt))
 
     init_db_tables_w_entities(configured_container, sample_entities)

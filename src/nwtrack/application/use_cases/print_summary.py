@@ -23,6 +23,8 @@ class SummaryService:
     def __init__(self, fetcher: FetchService, console: Console) -> None:
         self._fetcher = fetcher
         self._console = console
+        self._prompt = Prompt(console=self._console)
+        self._int_prompt = IntPrompt(console=self._console)
 
     def run(self) -> None:
         """Run the summary service."""
@@ -55,7 +57,7 @@ class SummaryService:
         self._console.print("Options:")
         self._console.print("  [bold]A.[/bold] Enter year and month")
         self._console.print("  [bold]Q.[/bold] Quit")
-        choice = Prompt.ask(
+        choice = self._prompt.ask(
             "[bold]Enter choice[/bold]",
             choices=[str(i + 1) for i in range(n_months)] + ["A", "Q"],
             default="1",
@@ -77,8 +79,8 @@ class SummaryService:
         from datetime import date
 
         today = date.today()
-        _year = IntPrompt.ask("Enter year as 'YYYY'", default=today.year)
-        _month = IntPrompt.ask("Enter month as 'MM'", default=today.month)
+        _year = self._int_prompt.ask("Enter year as 'YYYY'", default=today.year)
+        _month = self._int_prompt.ask("Enter month as 'MM'", default=today.month)
         try:
             month = Month(year=_year, month=_month)
         except ValueError:

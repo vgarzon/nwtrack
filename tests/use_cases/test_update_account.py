@@ -80,13 +80,13 @@ def test_account_creator_run_success_defaults(
         ]
     )
 
-    def mock_prompt(question, **kwargs):
+    def mock_prompt(*args, **kwargs):
         return next(input_prompt)
 
-    def mock_int_prompt(question, **kwargs):
+    def mock_int_prompt(*args, **kwargs):
         return int(next(input_int_prompt))
 
-    def mock_confirm_prompt(question, **kwargs):
+    def mock_confirm_prompt(*args, **kwargs):
         return next(input_confirm_prompt)
 
     init_db_tables_w_entities(configured_container, sample_entities)

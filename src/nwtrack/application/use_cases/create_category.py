@@ -10,9 +10,8 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
-from nwtrack.domain.models import Category, Side
 from nwtrack.application.services.fetch import FetchService
+from nwtrack.domain.models import Category, Side
 
 logger = logging.getLogger(__name__)
 
@@ -192,6 +191,7 @@ class CreateCategoryInteractive:
 def main() -> None:
     from dotenv import load_dotenv
 
+    from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
     from nwtrack.bootstrap.logging_config import setup_logging
 
     load_dotenv()

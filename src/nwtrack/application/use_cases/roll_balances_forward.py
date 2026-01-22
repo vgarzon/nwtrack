@@ -10,9 +10,9 @@ from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.domain.models import Balance, NetWorth
-from nwtrack.domain.value_objects import Month
 from nwtrack.application.services.fetch import FetchService
+from nwtrack.domain.models import NetWorth
+from nwtrack.domain.value_objects import Month
 
 logger = logging.getLogger(__name__)
 
@@ -59,23 +59,6 @@ class RollBalancesUpdater:
         next_month = latest_month.increment()
         return next_month
 
-    # def get_recent_months(self, n_months=12) -> list[Month]:
-    #     """Get sorted list of recent months with balances.
-    #
-    #     Args:
-    #         n_months (int): Number of recent months to retrieve, default is 12
-    #
-    #     Returns:
-    #         list[Month]: List of recent months in descending order.
-    #     """
-    #     balance_counts = self._fetcher.get_balance_count_per_month()
-    #     if not balance_counts:
-    #         logger.error("No balances found in the system.")
-    #         raise ValueError("No balances found in the system.")
-    #     balance_counts.sort(key=lambda x: x[0], reverse=True)
-    #     recent_months = [month for month, _ in balance_counts[:n_months]]
-    #     return recent_months
-    #
     def _copy_monthly_balances(self, source_month: Month, target_month: Month) -> None:
         """Copy all active account balances from one month to the next.
 
@@ -236,7 +219,7 @@ class RollBalancesUpdater:
 def main() -> None:
     from dotenv import load_dotenv
 
-    from nwtrack.bootstrap.composition import build_base_sqlite_uow_container, Lifetime
+    from nwtrack.bootstrap.composition import Lifetime, build_base_sqlite_uow_container
     from nwtrack.bootstrap.logging_config import setup_logging
 
     load_dotenv()
