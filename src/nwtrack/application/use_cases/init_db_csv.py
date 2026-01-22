@@ -24,10 +24,12 @@ class DBInitializerCSV:
         config: Settings,
         admin_svc: DBAdminService,
         data_svc: InitDataService,
+        console: Console,
     ) -> None:
         self._config = config
         self._admin_svc = admin_svc
         self._data_svc = data_svc
+        self._console = console
         # TODO: Use RepoRegistry to specify required keys
         self._required_keys = [
             "currencies",
@@ -37,7 +39,8 @@ class DBInitializerCSV:
             "exchange_rates",
         ]
         self._file_paths: dict[str, str] = {}
-        self._console = Console()
+        self._prompt = Prompt(console=self._console)
+        self._confirm = Confirm(console=self._console)
 
     def run(self) -> None:
         """Run the database initialization process."""
@@ -63,7 +66,7 @@ class DBInitializerCSV:
             "\n[bold orange3]WARNING:[/bold orange3] This script will "
             "[bold]DELETE and RE-CREATE[/bold] the database.\n"
         )
-        accept = Confirm.ask("Do you want to continue?", default=False)
+        accept = self._confirm.ask("Do you want to continue?", default=False)
         if not accept:
             logger.warning("User aborted database initialization.")
             self._console.print("[orange]Stopping.[/orange]")
@@ -103,7 +106,7 @@ class DBInitializerCSV:
         )
         for file_key in self._required_keys:
             while True:
-                path_str = Prompt.ask(f"[bold]{file_key}[/bold]").strip()
+                path_str = self._prompt.ask(f"[bold]{file_key}[/bold]").strip()
                 if path_str.lower() == "q":
                     logger.warning("User aborted csv file input for key %s", file_key)
                     raise KeyboardInterrupt
@@ -128,6 +131,7 @@ def main() -> None:
     from nwtrack.application.services.db_admin import DBAdminService
     from nwtrack.bootstrap.composition import (
         build_base_sqlite_uow_container,
+        Lifetime,
     )
     from nwtrack.bootstrap.logging_config import setup_logging
 
@@ -142,13 +146,19 @@ def main() -> None:
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
     ).register(
+        Console,
+        lambda c: Console(),
+        lifetime=Lifetime.SINGLETON,
+    ).register(
         DBInitializerCSV,
         lambda c: DBInitializerCSV(
-            c.resolve(Settings), c.resolve(DBAdminService), c.resolve(InitDataService)
+            config=c.resolve(Settings),
+            admin_svc=c.resolve(DBAdminService),
+            data_svc=c.resolve(InitDataService),
+            console=c.resolve(Console),
         ),
     )
-    db_initializer: DBInitializerCSV = container.resolve(DBInitializerCSV)
-    db_initializer.run()
+    container.resolve(DBInitializerCSV).run()
 
 
 if __name__ == "__main__":

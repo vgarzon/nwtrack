@@ -5,18 +5,21 @@ Test DBInitializerCSV class methods.
 import pytest
 
 import nwtrack.application.use_cases.init_db_csv
-from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.application.services.data_loader import InitDataService
-from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.application.use_cases.init_db_csv import DBInitializerCSV
 from nwtrack.bootstrap.container import Container
-from nwtrack.infra.config.settings import Settings
 
 
 @pytest.fixture
 def configured_container(base_container: Container) -> Container:
     """Register additional services required for tests."""
+    from nwtrack.application.ports.db import DBConnectionManager
+    from nwtrack.application.services.data_loader import InitDataService
+    from nwtrack.application.services.db_admin import DBAdminService
+    from nwtrack.application.use_cases.init_db_csv import Console
+    from nwtrack.bootstrap.container import Lifetime
+    from nwtrack.infra.config.settings import Settings
+
     return (
         base_container.register(
             DBAdminService,
@@ -29,11 +32,17 @@ def configured_container(base_container: Container) -> Container:
             lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
         )
         .register(
+            Console,
+            lambda c: Console(),
+            lifetime=Lifetime.SINGLETON,
+        )
+        .register(
             DBInitializerCSV,
             lambda c: DBInitializerCSV(
-                c.resolve(Settings),
-                c.resolve(DBAdminService),
-                c.resolve(InitDataService),
+                config=c.resolve(Settings),
+                admin_svc=c.resolve(DBAdminService),
+                data_svc=c.resolve(InitDataService),
+                console=c.resolve(Console),
             ),
         )
     )
@@ -56,20 +65,19 @@ def test_db_initializer_csv_yes(configured_container, monkeypatch, capsys) -> No
     )
     inputs_confirm = iter(["YES"])
 
-    def mock_prompt(question, **kwargs):
+    def mock_prompt(*args, **kwargs):
         return next(inputs_prompt)
 
-    def mock_confirm(question, **kwargs):
+    def mock_confirm(*args, **kwargs):
         return next(inputs_confirm)
 
-    db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
     monkeypatch.setattr(
         nwtrack.application.use_cases.init_db_csv.Prompt, "ask", mock_prompt
     )
     monkeypatch.setattr(
         nwtrack.application.use_cases.init_db_csv.Confirm, "ask", mock_confirm
     )
-    db_initializer.run()
+    configured_container.resolve(DBInitializerCSV).run()
     captured = capsys.readouterr()
     assert "Database initialized successfully." in captured.out
     with _uow_factory(configured_container) as uow:
@@ -83,14 +91,13 @@ def test_db_initializer_csv_file_path_quit(
 ) -> None:
     inputs = iter(["q"])
 
-    def mock_prompt(question, **kwargs):
+    def mock_prompt(*args, **kwargs):
         return next(inputs)
 
-    db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
     monkeypatch.setattr(
         nwtrack.application.use_cases.init_db_csv.Prompt, "ask", mock_prompt
     )
-    db_initializer.run()
+    configured_container.resolve(DBInitializerCSV).run()
     captured = capsys.readouterr()
     assert "Stopping." in captured.out
 
@@ -106,17 +113,15 @@ def test_db_initializer_csv_invalid_path(
         ]
     )
 
-    def mock_prompt(question, **kwargs):
+    def mock_prompt(*args, **kwargs):
         return next(inputs)
-
-    db_initializer: DBInitializerCSV = configured_container.resolve(DBInitializerCSV)
 
     monkeypatch.setattr(
         nwtrack.application.use_cases.init_db_csv.Prompt,
         "ask",
         mock_prompt,
     )
-    db_initializer.run()
+    configured_container.resolve(DBInitializerCSV).run()
     captured = capsys.readouterr()
     print(captured.out)
     assert f"Error: File not found: {invalid_path}" in captured.out
