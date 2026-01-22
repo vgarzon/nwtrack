@@ -262,6 +262,10 @@ class NetWorthRepository(Protocol):
         """Get net worth value for given month and currency."""
         ...
 
-    def history(self, currency_code: str = "USD") -> list[NetWorth]:
+    def get_history(self, currency_code: str = "USD") -> list[NetWorth]:
         """Get net worth history for a given currency."""
+        ...
+
+    def get_last_n(self, n: int, currency_code: str = "USD") -> list[NetWorth]:
+        """Get last n net worth records for a given currency."""
         ...

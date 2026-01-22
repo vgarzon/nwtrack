@@ -237,7 +237,11 @@ class BalanceUpdater:
         with self._uow() as uow:
             nw = uow.net_worth.get(month, currency_code)
         if not nw:
-            raise ValueError(f"No net worth data found for {month} in {currency_code}")
+            logger.warning("No net worth data found for %s in %s", month, currency_code)
+            self._console.print(
+                f"[red]No net worth data found for {month} in {currency_code}[/red]"
+            )
+            return
         title_suffix = f"{month} ({currency_code})"
         table = self._build_networth_table(nw, title_suffix, form="wide")
         self._console.print(table)

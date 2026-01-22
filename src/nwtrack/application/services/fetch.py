@@ -105,3 +105,17 @@ class FetchService:
         with self._uow() as uow:
             category = uow.categories.get(category_name)
         return category
+
+    def get_last_n_networth(self, n: int, currency_code: str = "USD") -> list:
+        """Get last n months of net worth history for a given currency.
+
+        Args:
+            n (int): Number of months to retrieve.
+            currency_code (str, optional): The currency code. Defaults to "USD".
+
+        Returns:
+            list: List of Net Worth records.
+        """
+        with self._uow() as uow:
+            last_n = uow.net_worth.get_last_n(n, currency_code)
+        return last_n

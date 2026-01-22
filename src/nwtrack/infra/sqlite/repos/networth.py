@@ -21,7 +21,7 @@ class SQLiteNetWorthRepository:
         self._db: DBConnectionManager = db
         self._mapper: NetWorthMapper = mapper
 
-    def get(self, month: Month, currency_code: str = "USD") -> NetWorth:
+    def get(self, month: Month, currency_code: str = "USD") -> NetWorth | None:
         """Get net worth value for given month and currency
 
         Args:
@@ -46,9 +46,26 @@ class SQLiteNetWorthRepository:
                 currency_code,
             )
             raise ValueError("Multiple net worth records found.")
-        return self._mapper.to_entity(dict(results[0]))
+        elif len(results) == 0:
+            logger.info(
+                "No net worth record found for month %s and currency %s.",
+                month,
+                currency_code,
+            )
+            return None
+        try:
+            networth = self._mapper.to_entity(dict(results[0]))
+        except Exception as e:
+            logger.exception(
+                "Error mapping net worth record for month %s and currency %s: %s",
+                month,
+                currency_code,
+                str(e),
+            )
+            raise ValueError("Error mapping net worth record.") from e
+        return networth
 
-    def history(self, currency_code: str = "USD") -> list[NetWorth]:
+    def get_history(self, currency_code: str = "USD") -> list[NetWorth]:
         """Get net worth history for a given currency.
         Args:
             currency_code (str, optional): The currency code. Defaults to "USD".
@@ -64,3 +81,34 @@ class SQLiteNetWorthRepository:
         """
         results = self._db.fetch_all(query, {"currency": currency_code})
         return [self._mapper.to_entity(dict(record)) for record in results]
+
+    def get_last_n(self, n: int, currency_code: str = "USD") -> list[NetWorth]:
+        """Get last n months of net worth history for a given currency.
+        Args:
+            n (int): Number of months to retrieve.
+            currency_code (str, optional): The currency code. Defaults to "USD".
+
+        Returns:
+            list[NetWorth]: List of Net Worth records.
+        """
+        query = """
+        SELECT month, total_assets, total_liabilities, net_worth, currency
+        FROM networth_history
+        WHERE currency = :currency
+        ORDER BY month DESC
+        LIMIT :n;
+        """
+        results = self._db.fetch_all(query, {"n": n, "currency": currency_code})
+        if results is None:
+            logger.info("No net worth records found for currency %s.", currency_code)
+            return []
+        try:
+            last_n = [self._mapper.to_entity(dict(record)) for record in results]
+        except Exception as e:
+            logger.exception(
+                "Error mapping net worth records for currency %s: %s",
+                currency_code,
+                str(e),
+            )
+            last_n = []
+        return last_n
