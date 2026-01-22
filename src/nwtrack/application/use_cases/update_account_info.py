@@ -10,8 +10,8 @@ from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
 from nwtrack.domain.models import Account, Category, Currency, Status
+from nwtrack.application.services.fetch import FetchService
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +19,15 @@ logger = logging.getLogger(__name__)
 class UpdateAccountInfo:
     """Update account information interactively."""
 
-    def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
+    def __init__(
+        self,
+        uow: Callable[[], UnitOfWork],
+        fetcher: FetchService,
+        console: Console,
+    ) -> None:
         self._uow = uow
-        self._console = Console()
+        self._fetcher = fetcher
+        self._console = console
 
     def run(self) -> None:
         logger.info("Starting Update Account Info use case")
@@ -78,7 +84,7 @@ class UpdateAccountInfo:
             if account_id == 0:
                 logger.warning("Quit while selecting account to update.")
                 raise KeyboardInterrupt("Quit while selecting account to update.")
-            account = self._get_account_by_id(account_id)
+            account = self._fetcher.get_account_by_id(account_id)
             if account:
                 return account_id
             else:
@@ -94,7 +100,7 @@ class UpdateAccountInfo:
         Returns:
             Account: Collected account data.
         """
-        account = self._get_account_by_id(account_id)
+        account = self._fetcher.get_account_by_id(account_id)
         if account is None:
             raise ValueError(f"Account ID {account_id} not found.")
 
@@ -123,10 +129,10 @@ class UpdateAccountInfo:
             active_only (bool): Whether to print only active accounts.
         """
         if active_only:
-            accounts = self._get_accounts(active_only=True)
+            accounts = self._fetcher.get_accounts(active_only=True)
             title_prefix = "Active"
         else:
-            accounts = self._get_accounts(active_only=False)
+            accounts = self._fetcher.get_accounts(active_only=False)
             title_prefix = "All"
         table = self._build_accounts_table(accounts, title_prefix=title_prefix)
         self._console.print(table)
@@ -149,7 +155,7 @@ class UpdateAccountInfo:
         Returns:
             bool: True if update was successful, False otherwise.
         """
-        retrieved_data: Account | None = self._get_account_by_id(account_id)
+        retrieved_data: Account | None = self._fetcher.get_account_by_id(account_id)
         if retrieved_data is None:
             _msg = "Error retrieving newly created account or balance."
             logger.error(_msg)
@@ -196,7 +202,7 @@ class UpdateAccountInfo:
         table.add_column("Category", style="green")
         table.add_column("Side", style="yellow")
         for account in accounts:
-            category = self._get_category_by_account_id(account.id)
+            category = self._fetcher.get_category_by_account_id(account.id)
             category_name = category.name if category else "Unknown"
             side = category.side.value if category else "Unknown"
             table.add_row(
@@ -230,7 +236,7 @@ class UpdateAccountInfo:
         Returns:
             str: Category name.
         """
-        categories = self._get_all_categories()
+        categories = self._fetcher.get_all_categories()
         if default != "":
             default_index = next(
                 (i + 1 for i, cat in enumerate(categories) if cat.name == default), 0
@@ -277,7 +283,7 @@ class UpdateAccountInfo:
         Returns:
             str: Currency code.
         """
-        currencies = self._get_all_currencies()
+        currencies = self._fetcher.get_all_currencies()
         if default != "":
             default_index = next(
                 (i + 1 for i, cur in enumerate(currencies) if cur.code == default), 1
@@ -344,89 +350,33 @@ class UpdateAccountInfo:
             )
         return table
 
-    def _get_accounts(self, active_only: bool = True) -> list[Account]:
-        """Get a list of all accounts.
-
-        Args:
-            active_only (bool): Whether to include only active accounts.
-
-        Returns:
-            list[Account]: List of active Account objects.
-        """
-        if active_only:
-            with self._uow() as uow:
-                accounts = uow.accounts.get_active()
-        else:
-            with self._uow() as uow:
-                accounts = uow.accounts.get_all()
-        return accounts
-
-    def _get_all_categories(self) -> list[Category]:
-        """Get a list of all categories.
-
-        Returns:
-            list[Category]: List of Category objects.
-        """
-        with self._uow() as uow:
-            categories = uow.categories.get_all()
-        return categories
-
-    def _get_all_currencies(self) -> list[Currency]:
-        """Get a list of all currencies.
-
-        Returns:
-            list[Currency]: List of currency codes.
-        """
-        with self._uow() as uow:
-            currencies = uow.currencies.get_all()
-        return currencies
-
-    def _get_category_by_account_id(self, account_id: int) -> Category | None:
-        """Get category side for a given account ID.
-
-        Args:
-            account_id (int): Account ID
-
-        Returns:
-            Category | None: Category instance if found, else None.
-        """
-        with self._uow() as uow:
-            account = uow.accounts.get_by_id(account_id)
-        if not account:
-            return None
-        with self._uow() as uow:
-            category = uow.categories.get(account.category_name)
-        return category
-
-    def _get_account_by_id(self, account_id: int) -> Account | None:
-        """Get account by ID.
-
-        Args:
-            account_id (int): Account ID
-
-        Returns:
-            Account | None: Account instance if found, else None.
-        """
-        with self._uow() as uow:
-            account = uow.accounts.get_by_id(account_id)
-        return account
-
 
 def main() -> None:
     from dotenv import load_dotenv
 
     from nwtrack.bootstrap.logging_config import setup_logging
+    from nwtrack.bootstrap.composition import build_base_sqlite_uow_container, Lifetime
 
     load_dotenv()
     setup_logging()
 
     container = build_base_sqlite_uow_container()
     container.register(
+        Console,
+        lambda c: Console(),
+        lifetime=Lifetime.SINGLETON,
+    ).register(
+        FetchService,
+        lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
+    ).register(
         UpdateAccountInfo,
-        lambda c: UpdateAccountInfo(uow=lambda: c.resolve(UnitOfWork)),
+        lambda c: UpdateAccountInfo(
+            uow=lambda: c.resolve(UnitOfWork),
+            fetcher=c.resolve(FetchService),
+            console=c.resolve(Console),
+        ),
     )
-    update_use_case: UpdateAccountInfo = container.resolve(UpdateAccountInfo)
-    update_use_case.run()
+    container.resolve(UpdateAccountInfo).run()
 
 
 if __name__ == "__main__":
