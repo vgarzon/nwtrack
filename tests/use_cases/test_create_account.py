@@ -7,26 +7,49 @@ import re
 import pytest
 
 import nwtrack.application.use_cases.create_account
-from nwtrack.application.ports.db import DBConnectionManager
-from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.application.use_cases.create_account import AccountCreator
 from nwtrack.bootstrap.container import Container
-from nwtrack.infra.config.settings import Settings
 from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture
 def configured_container(base_container: Container) -> Container:
     """Register services in the container."""
-    return base_container.register(
-        DBAdminService,
-        lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),
-    ).register(
+    from nwtrack.application.ports.db import DBConnectionManager
+    from nwtrack.application.ports.uow import UnitOfWork
+    from nwtrack.application.services.db_admin import DBAdminService
+    from nwtrack.application.use_cases.create_account import (
         AccountCreator,
-        lambda c: AccountCreator(
-            uow=lambda: c.resolve(UnitOfWork),
-        ),
+        Console,
+        FetchService,
+    )
+    from nwtrack.bootstrap.container import Lifetime
+    from nwtrack.infra.config.settings import Settings
+
+    return (
+        base_container.register(
+            DBAdminService,
+            lambda c: DBAdminService(
+                c.resolve(Settings), c.resolve(DBConnectionManager)
+            ),
+        )
+        .register(
+            Console,
+            lambda c: Console(),
+            lifetime=Lifetime.SINGLETON,
+        )
+        .register(
+            FetchService,
+            lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
+        )
+        .register(
+            AccountCreator,
+            lambda c: AccountCreator(
+                uow=lambda: c.resolve(UnitOfWork),
+                fetcher=c.resolve(FetchService),
+                console=c.resolve(Console),
+            ),
+        )
     )
 
 
@@ -54,14 +77,13 @@ def test_account_creator_run_success_defaults(
         ]
     )
 
-    def mock_prompt(question, **kwargs):
+    def mock_prompt(*args, **kwargs):
         return next(input_prompt)
 
-    def mock_int_prompt(question, **kwargs):
+    def mock_int_prompt(*args, **kwargs):
         return int(next(input_int_prompt))
 
     init_db_tables_w_entities(configured_container, sample_entities)
-    updater: AccountCreator = configured_container.resolve(AccountCreator)
     monkeypatch.setattr(
         nwtrack.application.use_cases.create_account.Prompt,
         "ask",
@@ -72,7 +94,7 @@ def test_account_creator_run_success_defaults(
         "ask",
         mock_int_prompt,
     )
-    updater.run()
+    configured_container.resolve(AccountCreator).run()
     captured = capsys.readouterr()
     # TODO: Enable assertions through direct database queries
     assert re.search(r"Account created successfully", captured.out)

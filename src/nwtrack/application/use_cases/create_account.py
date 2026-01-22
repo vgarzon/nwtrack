@@ -9,12 +9,11 @@ from rich.console import Console
 from rich.prompt import IntPrompt, Prompt
 from rich.table import Table
 
-from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.dto import NewAccountData
-from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
+from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Account, Balance, Category, Currency, Status
 from nwtrack.domain.value_objects import Month
-from nwtrack.application.services.fetch import FetchService
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +21,17 @@ logger = logging.getLogger(__name__)
 class AccountCreator:
     """Create account interactively."""
 
-    def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
+    def __init__(
+        self,
+        uow: Callable[[], UnitOfWork],
+        fetcher: FetchService,
+        console: Console,
+    ) -> None:
         self._uow = uow
-        # TODO: Inject FetchService and Coonsole via container -- see ListAccounts
-        self._fetcher = FetchService(uow)
-        self._console = Console()
+        self._fetcher = fetcher
+        self._console = console
+        self._prompt = Prompt(console=self._console)
+        self._int_prompt = IntPrompt(console=self._console)
 
     def run(self) -> None:
         logger.info("Starting Account Creator")
@@ -114,7 +119,9 @@ class AccountCreator:
 
     def _collect_account_name(self) -> str:
         while True:
-            name = Prompt.ask("Enter [bold]account name[/bold] or 'q' to quit").strip()
+            name = self._prompt.ask(
+                "Enter [bold]account name[/bold] or 'q' to quit"
+            ).strip()
             if name.lower() == "q":
                 logger.warning("Quit while collecting account name.")
                 raise KeyboardInterrupt("Quit while collecting account name.")
@@ -126,7 +133,7 @@ class AccountCreator:
             )
 
     def _collect_description(self) -> str:
-        description = Prompt.ask(
+        description = self._prompt.ask(
             "Enter optional [bold]description[/bold] or 'q' to quit: "
         ).strip()
         if description.lower() == "q":
@@ -139,7 +146,7 @@ class AccountCreator:
         table = self._build_categories_table(categories)
         self._console.print(table)
         while True:
-            choice = IntPrompt.ask(
+            choice = self._int_prompt.ask(
                 "Enter [bold]category index[/bold] or '0' to quit",
                 default=0,
                 choices=[str(i) for i in range(len(categories) + 1)],
@@ -174,7 +181,7 @@ class AccountCreator:
         table = self._build_currencies_table(currencies)
         self._console.print(table)
         while True:
-            choice = IntPrompt.ask(
+            choice = self._int_prompt.ask(
                 "Enter [bold]currency index[/bold] or '0' to quit",
                 default=1,
                 choices=[str(i) for i in range(len(currencies) + 1)],
@@ -208,7 +215,7 @@ class AccountCreator:
         status_options = [Status.ACTIVE, Status.INACTIVE]
         table = self._build_status_table(status_options)
         self._console.print(table)
-        choice = IntPrompt.ask(
+        choice = self._int_prompt.ask(
             "Select [bold]account status[/bold] by index or '0' to quit",
             default=1,
             choices=["0", "1", "2"],
@@ -240,10 +247,10 @@ class AccountCreator:
 
         _today = date.today()
         while True:
-            _year = IntPrompt.ask(
+            _year = self._int_prompt.ask(
                 "Enter initial [bold]year[/bold] as 'YYYY'", default=_today.year
             )
-            _month = IntPrompt.ask(
+            _month = self._int_prompt.ask(
                 "Enter initial [bold]month[/bold] as 'MM'",
                 default=_today.month,
                 choices=[str(k) for k in range(1, 13)],
@@ -260,7 +267,7 @@ class AccountCreator:
         return month
 
     def _collect_initial_balance(self) -> int:
-        amount = IntPrompt.ask(
+        amount = self._int_prompt.ask(
             "Enter initial [bold]balance amount[/bold] (integer)",
             default=0,
         )
@@ -398,6 +405,7 @@ class AccountCreator:
 def main() -> None:
     from dotenv import load_dotenv
 
+    from nwtrack.bootstrap.composition import Lifetime, build_base_sqlite_uow_container
     from nwtrack.bootstrap.logging_config import setup_logging
 
     load_dotenv()
@@ -405,8 +413,19 @@ def main() -> None:
 
     container = build_base_sqlite_uow_container()
     container.register(
+        Console,
+        lambda c: Console(),
+        lifetime=Lifetime.SINGLETON,
+    ).register(
+        FetchService,
+        lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
+    ).register(
         AccountCreator,
-        lambda c: AccountCreator(uow=lambda: c.resolve(UnitOfWork)),
+        lambda c: AccountCreator(
+            uow=lambda: c.resolve(UnitOfWork),
+            fetcher=c.resolve(FetchService),
+            console=c.resolve(Console),
+        ),
     )
     container.resolve(AccountCreator).run()
 
