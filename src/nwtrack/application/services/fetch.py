@@ -96,6 +96,20 @@ class FetchService:
             balance = uow.balances.get_by_id(balance_id)
         return balance
 
+    def get_balance_for_account_id(self, month: Month, account_id: int) -> Balance:
+        """Get balance for an account on a specific month.
+
+        Args:
+            month (Month): Month object
+            account_id (int): Account id
+
+        Return:
+            Balance: Balance object for the specified account and month.
+        """
+        with self._uow() as uow:
+            balance = uow.balances.get_by_account_id(month, account_id)
+        return balance
+
     def get_category_by_name(self, category_name: str) -> Category | None:
         """Get category by name.
 

@@ -7,19 +7,25 @@ import re
 import pytest
 
 import nwtrack.application.use_cases.update_balances
-from nwtrack.application.ports.db import DBConnectionManager
-from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.application.services.data_loader import InitDataService
-from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.application.use_cases.update_balances import BalanceUpdater
 from nwtrack.bootstrap.container import Container
-from nwtrack.infra.config.settings import Settings
 from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture
 def configured_container(base_container: Container) -> Container:
     """Configure container."""
+    from nwtrack.application.ports.db import DBConnectionManager
+    from nwtrack.application.services.data_loader import InitDataService
+    from nwtrack.application.services.db_admin import DBAdminService
+    from nwtrack.application.use_cases.print_summary import (
+        Console,
+        FetchService,
+        UnitOfWork,
+    )
+    from nwtrack.bootstrap.container import Lifetime
+    from nwtrack.infra.config.settings import Settings
+
     return (
         base_container.register(
             DBAdminService,
@@ -32,8 +38,21 @@ def configured_container(base_container: Container) -> Container:
             lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
         )
         .register(
+            Console,
+            lambda c: Console(),
+            lifetime=Lifetime.SINGLETON,
+        )
+        .register(
+            FetchService,
+            lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
+        )
+        .register(
             BalanceUpdater,
-            lambda c: BalanceUpdater(uow=lambda: c.resolve(UnitOfWork)),
+            lambda c: BalanceUpdater(
+                uow=lambda: c.resolve(UnitOfWork),
+                fetcher=c.resolve(FetchService),
+                console=c.resolve(Console),
+            ),
         )
     )
 
@@ -68,7 +87,6 @@ def test_update_balances_run(
         return int(next(input_int_prompt))
 
     init_db_tables_w_entities(configured_container, sample_entities)
-    updater: BalanceUpdater = configured_container.resolve(BalanceUpdater)
     monkeypatch.setattr(
         nwtrack.application.use_cases.update_balances.Prompt,
         "ask",
@@ -79,7 +97,7 @@ def test_update_balances_run(
         "ask",
         mock_int_prompt,
     )
-    updater.run()
+    configured_container.resolve(BalanceUpdater).run()
     captured = capsys.readouterr()
     assert re.search(r"Balances 2025-11", captured.out)
     assert re.search(r"Account bank_1_checking.+2025-11.+200", captured.out)

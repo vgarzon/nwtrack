@@ -212,6 +212,7 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
             month (Month): The month to the entry to update.
             new_amount (int): The new balance amount.
         """
+        # TODO: Return updated Balance object or None if failed
         update_query = """
         UPDATE balances
         SET amount = :amount
