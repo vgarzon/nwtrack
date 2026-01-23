@@ -6,9 +6,11 @@ import re
 
 import pytest
 
-import nwtrack.application.use_cases.print_summary
+import nwtrack.application.use_cases.report_balances_by_category
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.application.use_cases.print_summary import SummaryService
+from nwtrack.application.use_cases.report_balances_by_category import (
+    ReportBalancesByCategory,
+)
 from nwtrack.bootstrap.container import Container
 from tests.helpers import init_db_tables_w_entities
 
@@ -19,12 +21,15 @@ def configured_container(base_container: Container) -> Container:
     from nwtrack.application.ports.db import DBConnectionManager
     from nwtrack.application.services.data_loader import InitDataService
     from nwtrack.application.services.db_admin import DBAdminService
-    from nwtrack.application.use_cases.print_summary import (
-        Console,
+    from nwtrack.application.use_cases.report_balances_by_category import (
+        ConsoleFactory,
         FetchService,
     )
     from nwtrack.bootstrap.container import Lifetime
+    from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
     from nwtrack.infra.config.settings import Settings
+
+    console_default = ConsoleSettings(record=True)
 
     return (
         base_container.register(
@@ -38,8 +43,8 @@ def configured_container(base_container: Container) -> Container:
             lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
         )
         .register(
-            Console,
-            lambda c: Console(),
+            ConsoleFactory,
+            lambda c: ConsoleFactory(default_settings=console_default),
             lifetime=Lifetime.SINGLETON,
         )
         .register(
@@ -47,10 +52,10 @@ def configured_container(base_container: Container) -> Container:
             lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
         )
         .register(
-            SummaryService,
-            lambda c: SummaryService(
+            ReportBalancesByCategory,
+            lambda c: ReportBalancesByCategory(
                 fetcher=c.resolve(FetchService),
-                console=c.resolve(Console),
+                console_factory=c.resolve(ConsoleFactory),
             ),
         )
     )
@@ -69,9 +74,11 @@ def test_print_summary_run_default_month(
         return "1"
 
     monkeypatch.setattr(
-        nwtrack.application.use_cases.print_summary.Prompt, "ask", mock_ask
+        nwtrack.application.use_cases.report_balances_by_category.Prompt,
+        "ask",
+        mock_ask,
     )
-    configured_container.resolve(SummaryService).run()
+    configured_container.resolve(ReportBalancesByCategory).run()
     captured = capsys.readouterr()
     assert re.search(r"Balances 2025-11", captured.out)
     assert re.search(r"Balances 2025-11", captured.out)
@@ -98,13 +105,17 @@ def test_print_summary_run_input_month(
         return next(inputs_int_ask)
 
     monkeypatch.setattr(
-        nwtrack.application.use_cases.print_summary.Prompt, "ask", mock_ask
+        nwtrack.application.use_cases.report_balances_by_category.Prompt,
+        "ask",
+        mock_ask,
     )
     monkeypatch.setattr(
-        nwtrack.application.use_cases.print_summary.IntPrompt, "ask", mock_int_ask
+        nwtrack.application.use_cases.report_balances_by_category.IntPrompt,
+        "ask",
+        mock_int_ask,
     )
 
-    configured_container.resolve(SummaryService).run()
+    configured_container.resolve(ReportBalancesByCategory).run()
     captured = capsys.readouterr()
     assert re.search(r"Balances 2025-10", captured.out)
     assert re.search(r"Balances 2025-10", captured.out)

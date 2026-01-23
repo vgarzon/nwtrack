@@ -1,10 +1,9 @@
 """
-Print network summary by category
+Print summary of balances by category.
 """
 
 import logging
 
-from rich.console import Console
 from rich.prompt import IntPrompt, Prompt
 from rich.table import Table
 
@@ -13,16 +12,17 @@ from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.domain.models import Account, Balance, NetWorth
 from nwtrack.domain.value_objects import Month
 from nwtrack.application.services.fetch import FetchService
+from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
 
 logger = logging.getLogger(__name__)
 
 
-class SummaryService:
-    """Print net worth summary by category."""
+class ReportBalancesByCategory:
+    """Print summary of balances by category."""
 
-    def __init__(self, fetcher: FetchService, console: Console) -> None:
+    def __init__(self, fetcher: FetchService, console_factory: ConsoleFactory) -> None:
         self._fetcher = fetcher
-        self._console = console
+        self._console = console_factory()
         self._prompt = Prompt(console=self._console)
         self._int_prompt = IntPrompt(console=self._console)
 
@@ -297,26 +297,29 @@ def main() -> None:
     from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
     from nwtrack.bootstrap.logging_config import setup_logging
     from nwtrack.bootstrap.container import Lifetime
+    from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
 
     load_dotenv()
     setup_logging()
 
+    console_defaults = ConsoleSettings(record=False)
+
     container = build_base_sqlite_uow_container()
     container.register(
-        Console,
-        lambda c: Console(),
+        ConsoleFactory,
+        lambda _: ConsoleFactory(default_settings=console_defaults),
         lifetime=Lifetime.SINGLETON,
     ).register(
         FetchService,
         lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
     ).register(
-        SummaryService,
-        lambda c: SummaryService(
+        ReportBalancesByCategory,
+        lambda c: ReportBalancesByCategory(
             fetcher=c.resolve(FetchService),
-            console=c.resolve(Console),
+            console_factory=c.resolve(ConsoleFactory),
         ),
     )
-    container.resolve(SummaryService).run()
+    container.resolve(ReportBalancesByCategory).run()
 
 
 if __name__ == "__main__":
