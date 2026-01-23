@@ -65,7 +65,6 @@ def test_print_summary_run_default_month(
     configured_container: Container,
     sample_entities: dict[str, list],
     monkeypatch,
-    capsys,
 ) -> None:
     """Test print summary service."""
     init_db_tables_w_entities(configured_container, sample_entities)
@@ -78,19 +77,19 @@ def test_print_summary_run_default_month(
         "ask",
         mock_ask,
     )
-    configured_container.resolve(ReportBalancesByCategory).run()
-    captured = capsys.readouterr()
-    assert re.search(r"Balances 2025-11", captured.out)
-    assert re.search(r"Balances 2025-11", captured.out)
-    assert re.search(r"credit_cards_1.+revolving_credit.+600", captured.out)
-    assert re.search(r"700.+600.+100", captured.out)
+    service = configured_container.resolve(ReportBalancesByCategory)
+    service.run()
+    captured_output = service._console.export_text()
+    assert re.search(r"Balances 2025-11", captured_output)
+    assert re.search(r"Balances 2025-11", captured_output)
+    assert re.search(r"credit_cards_1.+revolving_credit.+600", captured_output)
+    assert re.search(r"700.+600.+100", captured_output)
 
 
 def test_print_summary_run_input_month(
     configured_container: Container,
     sample_entities: dict[str, list],
     monkeypatch,
-    capsys,
 ) -> None:
     """Test print summary service."""
     inputs_ask = iter(["A"])
@@ -115,9 +114,10 @@ def test_print_summary_run_input_month(
         mock_int_ask,
     )
 
-    configured_container.resolve(ReportBalancesByCategory).run()
-    captured = capsys.readouterr()
-    assert re.search(r"Balances 2025-10", captured.out)
-    assert re.search(r"Balances 2025-10", captured.out)
-    assert re.search(r"credit_cards_1.+revolving_credit.+700", captured.out)
-    assert re.search(r"900.+700.+200", captured.out)
+    service = configured_container.resolve(ReportBalancesByCategory)
+    service.run()
+    captured_output = service._console.export_text()
+    assert re.search(r"Balances 2025-10", captured_output)
+    assert re.search(r"Balances 2025-10", captured_output)
+    assert re.search(r"credit_cards_1.+revolving_credit.+700", captured_output)
+    assert re.search(r"900.+700.+200", captured_output)
