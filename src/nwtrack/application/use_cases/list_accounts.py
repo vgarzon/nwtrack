@@ -34,7 +34,7 @@ class ListAccounts:
 
     def _fetch_account_data(
         self, active_only: bool = True
-    ) -> tuple[list[Account], dict[int, Category]]:
+    ) -> tuple[list[Account], dict[int, Category | None]]:
         """Build the accounts table.
 
         Args:

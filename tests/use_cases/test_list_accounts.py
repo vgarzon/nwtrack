@@ -61,7 +61,7 @@ def test_list_accounts_active_only(
 ) -> None:
     # TODO: Use common fixture to init DB with entities
     init_db_tables_w_entities(configured_container, sample_entities)
-    service = configured_container.resolve(ListAccounts)
+    service: ListAccounts = configured_container.resolve(ListAccounts)
     service.run(active_only=True)
     recorded = service._console.export_text()
     assert re.search(r".+3.+credit_cards_1.+revolving_credit", recorded)
@@ -74,7 +74,7 @@ def test_list_all_accounts(
 ) -> None:
     # TODO: Use common fixture to init DB with entities
     init_db_tables_w_entities(configured_container, sample_entities)
-    service = configured_container.resolve(ListAccounts)
+    service: ListAccounts = configured_container.resolve(ListAccounts)
     service.run(active_only=False)
     recorded = service._console.export_text()
     assert re.search(r".+3.+credit_cards_1.+revolving_credit", recorded)

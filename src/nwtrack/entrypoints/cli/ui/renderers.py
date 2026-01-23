@@ -9,7 +9,7 @@ from nwtrack.domain.models import Account, Category
 
 def build_accounts_table(
     accounts: list[Account],
-    categories_map: dict[int, Category],
+    categories_map: dict[int, Category | None],
     title_prefix: str = "",
 ) -> Table:
     """Build a Rich Table of active accounts.
