@@ -5,14 +5,14 @@ CLI reporting commands
 from nwtrack.entrypoints.cli.app import reports_app
 
 
-@reports_app.command("networth-category")
+@reports_app.command("balances-category")
 def category_summary_report_interactive():
     """
     Generate a networth summary by category interactively.
     """
-    import nwtrack.application.use_cases.print_summary as print_summary
+    import nwtrack.application.use_cases.report_balances_by_category as report_balances
 
-    print_summary.main()
+    report_balances.main()
 
 
 @reports_app.command("networth-history")
@@ -23,9 +23,9 @@ def networth_history_report_interactive(n_months: int = 12):
     Args:
         n_months (int): Number of months to include in the report, defaults to 12
     """
-    import nwtrack.application.use_cases.report_networth_history as report_networth_history
+    import nwtrack.application.use_cases.report_networth_history as report_networth
 
     if n_months <= 0:
         n_months = 12
 
-    report_networth_history.main(n_months=n_months)
+    report_networth.main(n_months=n_months)
