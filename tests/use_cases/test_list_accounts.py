@@ -6,15 +6,11 @@ import re
 
 import pytest
 
-from nwtrack.application.ports.db import DBConnectionManager
-from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.application.use_cases.list_accounts import (
-    Console,
     FetchService,
     ListAccounts,
 )
-from nwtrack.bootstrap.container import Container, Lifetime
+from nwtrack.bootstrap.container import Container
 from nwtrack.infra.config.settings import Settings
 from tests.helpers import init_db_tables_w_entities
 
@@ -22,10 +18,20 @@ from tests.helpers import init_db_tables_w_entities
 @pytest.fixture
 def configured_container(base_container: Container) -> Container:
     """Register services in the container."""
+
+    from nwtrack.application.ports.db import DBConnectionManager
+    from nwtrack.application.services.db_admin import DBAdminService
+    from nwtrack.application.ports.uow import UnitOfWork
+    from nwtrack.bootstrap.container import Lifetime
+    from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
+    from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
+
+    console_default = ConsoleSettings(width=None, record=False)
+
     return (
         base_container.register(
-            Console,
-            lambda c: Console(),
+            ConsoleFactory,
+            lambda _: ConsoleFactory(default_settings=console_default),
             lifetime=Lifetime.SINGLETON,
         )
         .register(
@@ -42,7 +48,7 @@ def configured_container(base_container: Container) -> Container:
             ListAccounts,
             lambda c: ListAccounts(
                 fetcher=c.resolve(FetchService),
-                console=Console(),
+                console_factory=c.resolve(ConsoleFactory),
             ),
         )
     )
