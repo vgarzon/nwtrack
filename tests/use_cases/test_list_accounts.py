@@ -26,7 +26,8 @@ def configured_container(base_container: Container) -> Container:
     from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
     from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
 
-    console_default = ConsoleSettings(width=None, record=False)
+    # export recorded console output for testing
+    console_default = ConsoleSettings(record=True)
 
     return (
         base_container.register(
@@ -57,26 +58,24 @@ def configured_container(base_container: Container) -> Container:
 def test_list_accounts_active_only(
     configured_container: Container,
     sample_entities: dict[str, list],
-    monkeypatch,
-    capsys,
 ) -> None:
     # TODO: Use common fixture to init DB with entities
     init_db_tables_w_entities(configured_container, sample_entities)
-    configured_container.resolve(ListAccounts).run(active_only=True)
-    captured = capsys.readouterr()
-    assert re.search(r".+3.+credit_cards_1.+revolving_credit", captured.out)
-    assert re.search(r".+4.+mortgage_1.+mortgage", captured.out) is None
+    service = configured_container.resolve(ListAccounts)
+    service.run(active_only=True)
+    recorded = service._console.export_text()
+    assert re.search(r".+3.+credit_cards_1.+revolving_credit", recorded)
+    assert re.search(r".+4.+mortgage_1.+mortgage", recorded) is None
 
 
 def test_list_all_accounts(
     configured_container: Container,
     sample_entities: dict[str, list],
-    monkeypatch,
-    capsys,
 ) -> None:
     # TODO: Use common fixture to init DB with entities
     init_db_tables_w_entities(configured_container, sample_entities)
-    configured_container.resolve(ListAccounts).run(active_only=False)
-    captured = capsys.readouterr()
-    assert re.search(r".+3.+credit_cards_1.+revolving_credit", captured.out)
-    assert re.search(r".+4.+mortgage_1.+mortgage", captured.out)
+    service = configured_container.resolve(ListAccounts)
+    service.run(active_only=False)
+    recorded = service._console.export_text()
+    assert re.search(r".+3.+credit_cards_1.+revolving_credit", recorded)
+    assert re.search(r".+4.+mortgage_1.+mortgage", recorded)
