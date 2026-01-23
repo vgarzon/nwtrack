@@ -50,3 +50,22 @@ def render_account_data(console: Console, account: Account) -> None:
         f"[yellow]Category:[/yellow] {account.category_name}\n"
         f"[yellow]Status:[/yellow] {account.status}"
     )
+
+
+def build_categories_table(categories: list[Category]) -> Table:
+    """Build a Rich Table of active accounts.
+
+    Args:
+        categories (list[Category]): List of Category objects
+
+    Returns:
+        Table: Rich Table object
+    """
+    table = Table(title="Categories")
+    table.add_column("Name", style="magenta")
+    table.add_column("Side", style="yellow")
+    for category in categories:
+        category_name = category.name if category else "Unknown"
+        side_value = category.side.value if category else "Unknown"
+        table.add_row(category_name, side_value)
+    return table
