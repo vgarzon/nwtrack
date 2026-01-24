@@ -7,12 +7,16 @@ import logging
 from rich.prompt import IntPrompt, Prompt
 from rich.table import Table
 
-from nwtrack.application.dto import MonthlyCategoryBalance
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.domain.models import Account, Balance, NetWorth
+from nwtrack.domain.models import Account, NetWorth
 from nwtrack.domain.value_objects import Month
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
+from nwtrack.entrypoints.cli.ui.prompts import prompt_for_month, prompt_for_month_choice
+from nwtrack.entrypoints.cli.ui.renderers import (
+    build_category_summary_table,
+    build_balances_table,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,20 +56,10 @@ class ReportBalancesByCategory:
         balance_counts = self._fetcher.get_balance_count_per_month()
         balance_counts.sort(key=lambda x: x[0], reverse=True)
         recent_months = [month for month, _ in balance_counts[:n_months]]
-        table = self._build_month_balances_table(balance_counts[:n_months])
-        self._console.print(table)
-        self._console.print("Options:")
-        self._console.print("  [bold]A.[/bold] Enter year and month")
-        self._console.print("  [bold]Q.[/bold] Quit")
-        choice = self._prompt.ask(
-            "[bold]Enter choice[/bold]",
-            choices=[str(i + 1) for i in range(n_months)] + ["A", "Q"],
-            default="1",
-            case_sensitive=False,
-        )
-        if choice.lower().strip() == "q":
+        choice = prompt_for_month_choice(self._console, balance_counts[:n_months])
+        if choice == "q":
             return None
-        if choice.lower().strip() == "a":
+        if choice == "a":
             return self.input_month()
         choice_idx = int(choice) - 1
         return recent_months[choice_idx]
@@ -76,23 +70,16 @@ class ReportBalancesByCategory:
         Returns:
             Month | None: Month object or None if quit
         """
-        from datetime import date
-
-        today = date.today()
-        _year = self._int_prompt.ask("Enter year as 'YYYY'", default=today.year)
-        _month = self._int_prompt.ask("Enter month as 'MM'", default=today.month)
-        try:
-            month = Month(year=_year, month=_month)
-        except ValueError:
-            logger.error("Invalid Month inputs %d %d", _year, _month)
-            self._console.print("[red]Invalid month format. Please use YYYY-MM.[/red]")
-            return None
-        if not self._fetcher.check_month_in_balances(month):
-            logger.warning(f"No balance entries found for {month}.")
-            self._console.print(
-                f"[orange]No balance entries found in {month}.[/orange]"
-            )
-            return None
+        while True:
+            month = prompt_for_month(self._console)
+            if month is None:
+                return None
+            if not self._fetcher.check_month_in_balances(month):
+                _msg = f"No balance entries found for {month}."
+                logger.warning(_msg)
+                self._console.print(f"[orange]{_msg}[/orange]")
+                continue
+            break
         return month
 
     def print_active_accounts(self):
@@ -111,7 +98,14 @@ class ReportBalancesByCategory:
             None
         """
         balances = self._fetcher.get_month_balances(month, active_only=True)
-        table = self._build_balances_table(balances, title_suffix=str(month))
+        account_map = self._fetcher.get_map_id_to_account()
+        category_map = {
+            b.account_id: self._fetcher.get_category_by_account_id(b.account_id)
+            for b in balances
+        }
+        table = build_balances_table(
+            balances, account_map, category_map, title_suffix=str(month)
+        )
         self._console.print(table)
 
     def print_summary_by_category(self, month: Month) -> None:
@@ -122,9 +116,7 @@ class ReportBalancesByCategory:
             None
         """
         monthly_balances = self._fetcher.get_monthly_balance_total_by_category(month)
-        table = self._build_category_summary_table(
-            monthly_balances, title_suffix=str(month)
-        )
+        table = build_category_summary_table(monthly_balances, title_suffix=str(month))
         self._console.print(table)
 
     def print_net_worth(self, month: Month, currency_code: str = "USD") -> None:
@@ -204,89 +196,6 @@ class ReportBalancesByCategory:
                 account.name,
                 category_name,
                 side,
-            )
-        return table
-
-    def _build_month_balances_table(
-        self, balance_counts: list[tuple[Month, int]]
-    ) -> Table:
-        """Build a Rich Table of balances per month.
-
-        Args:
-            balance_counts (list[tuple[Month, int]]): List of tuples Month and count of balances
-        Returns:
-            Table: Rich Table object
-                idx (starts at 1) | month | count
-        """
-        table = Table(title="Balance Entries per Month")
-        table.add_column("Index", justify="right", style="green")
-        table.add_column("Month", style="cyan")
-        table.add_column("Balances", justify="right", style="magenta")
-        for idx, (month, count) in enumerate(balance_counts):
-            table.add_row(str(idx + 1), str(month), str(count))
-        return table
-
-    def _build_balances_table(
-        self, balances: list[Balance], title_suffix: str = ""
-    ) -> Table:
-        """Build a Rich Table of balances.
-
-        Args:
-            balances (list[Balance]): List of Balance objects
-            title_suffix (str): Suffix for table title
-        Returns:
-            Table: Rich Table object
-        """
-        account_map = self._fetcher.get_map_id_to_account()
-        _title = "Balances" + (f" {title_suffix}" if title_suffix else "")
-        table = Table(title=_title)
-        table.add_column("Acct_ID", justify="right", style="cyan", no_wrap=True)
-        table.add_column("Account Name", style="magenta")
-        table.add_column("Category", style="green")
-        table.add_column("Side", style="yellow")
-        table.add_column("Amount", justify="right", style="red")
-        for balance in balances:
-            account_id = balance.account_id
-            account_name = account_map[account_id].name
-            category = self._fetcher.get_category_by_account_id(account_id)
-            if not category:
-                logger.error("Category not found for account ID {%}", account_id)
-            category_name = category.name if category else "Unknown"
-            side = category.side.value if category else "Unknown"
-            table.add_row(
-                str(account_id),
-                account_name,
-                category_name,
-                side,
-                f"{balance.amount:8,}",
-            )
-        return table
-
-    def _build_category_summary_table(
-        self, monthly_balances: list[MonthlyCategoryBalance], title_suffix: str = ""
-    ) -> Table:
-        """Build a Rich Table of summary by category.
-
-        Args:
-            monthly_balances: List of MonthlyCategoryBalance objects
-            title_suffix (str): Suffix for table title
-
-        Returns:
-            Table: Rich Table object
-        """
-        _title = "Summary by Category" + (f" {title_suffix}" if title_suffix else "")
-        table = Table(title=_title)
-        table.add_column("Category", style="magenta")
-        table.add_column("Side", style="green")
-        table.add_column("Total", justify="right", style="red")
-        for mb in monthly_balances:
-            category_name = mb.category.name
-            category_side = mb.category.side.value
-            amount = mb.amount
-            table.add_row(
-                category_name,
-                category_side,
-                f"{amount:8,}",
             )
         return table
 
