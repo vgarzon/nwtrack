@@ -5,13 +5,21 @@ Create category interactively.
 import logging
 from typing import Callable
 
-from rich.console import Console
 from rich.prompt import Prompt
-from rich.table import Table
 
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Category, Side
+from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
+from nwtrack.entrypoints.cli.ui.renderers import (
+    build_categories_table,
+    render_category_data,
+)
+from nwtrack.entrypoints.cli.ui.prompts import (
+    prompt_for_category_name,
+    prompt_for_category_side,
+    prompt_to_confirm_action,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +28,14 @@ class CreateCategoryInteractive:
     """Create category interactively."""
 
     def __init__(
-        self, uow: Callable[[], UnitOfWork], fetcher: FetchService, console: Console
+        self,
+        uow: Callable[[], UnitOfWork],
+        fetcher: FetchService,
+        console_factory: ConsoleFactory,
     ) -> None:
         self._uow = uow
         self._fetcher = fetcher
-        self._console = console
+        self._console = console_factory()
         self._prompt = Prompt(console=self._console)
 
     def run(self) -> None:
@@ -45,6 +56,13 @@ class CreateCategoryInteractive:
             self._console.print(f"[red]{_msg}[/red]")
             return
 
+        self._console.print("\n[bold]Category to be created:[/bold]")
+        render_category_data(self._console, data)
+        if not prompt_to_confirm_action(self._console, "Create category?"):
+            self._console.print("[yellow]Category creation cancelled.[/yellow]")
+            logger.info("Category creation cancelled by user.")
+            return
+
         result: str | None = self.insert_category(data)
         if result is None:
             _msg = "Category creation failed."
@@ -52,10 +70,14 @@ class CreateCategoryInteractive:
             self._console.print(f"[red]{_msg}[/red]")
             return
         category_name: str = result
+        is_valid, validation_msg = self.validate_created_category(data, category_name)
+        if not is_valid:
+            logger.error("Created category validation failed: %s", validation_msg)
+            self._console.print(f"[red]Validation failed:[/red] {validation_msg}")
+            return
         self._console.print(
             f"[bold green]Category '{category_name}' created successfully.[/bold green]"
         )
-        self.print_category_info(category_name)
         self.print_categories()
         logger.info("Finished Interactive Category Creator")
 
@@ -116,11 +138,9 @@ class CreateCategoryInteractive:
 
     def _collect_name(self) -> str:
         while True:
-            name = Prompt.ask("Enter [bold]category name[/bold] or 'q' to quit").strip()
+            name = prompt_for_category_name(self._console)
             if name.lower() == "q":
-                _msg = "Quit while collecting category name."
-                logger.warning(_msg)
-                raise KeyboardInterrupt(_msg)
+                raise KeyboardInterrupt("Quit while collecting category name.")
             if name:
                 return name
             self._console.print(
@@ -128,82 +148,71 @@ class CreateCategoryInteractive:
             )
 
     def _collect_side(self) -> Side:
-        _side = Prompt.ask(
-            "Enter [bold]side[/bold] or 'q' to quit",
-            choices=[side.value for side in Side] + ["q"],
-            default=Side.ASSET.value,
-        )
-        if _side.lower() == "q":
-            _msg = "Quit while collecting side."
-            logger.warning(_msg)
-            raise KeyboardInterrupt(_msg)
+        side_value = prompt_for_category_side(self._console)
+        if side_value.lower() == "q":
+            raise KeyboardInterrupt("Quit while collecting side.")
         try:
-            side = Side(_side)
+            side = Side(side_value)
         except ValueError:
-            self._console.print(f"[magenta]Invalid side:[/magenta] {_side}.")
+            logger.error("Invalid side entered: %s", side_value)
             raise KeyboardInterrupt("Invalid side entered.")
         return side
 
     def print_categories(self) -> None:
         """Print categories."""
         categories = self._fetcher.get_all_categories()
-        table = self._build_categories_table(categories)
+        table = build_categories_table(categories)
         self._console.print(table)
 
-    def _build_categories_table(self, categories: list[Category]) -> Table:
-        """Build a Rich Table of active accounts.
+    def validate_created_category(
+        self, data: Category, category_name: str
+    ) -> tuple[bool, str]:
+        """Validate that the created category matches input data.
 
         Args:
-            categories (list[Category]): List of Category objects
+            data (Category): Input category data
+            category_name (str): Category name
 
         Returns:
-            Table: Rich Table object
-        """
-        table = Table(title="Categories")
-        table.add_column("Name", style="magenta")
-        table.add_column("Side", style="yellow")
-        for category in categories:
-            category_name = category.name if category else "Unknown"
-            side_value = category.side.value if category else "Unknown"
-            table.add_row(category_name, side_value)
-        return table
-
-    def print_category_info(self, category_name: str) -> None:
-        """Print category info.
-
-        Args:
-            category_name (str): Category name
+            tuple[bool, str]: Validation result and message
         """
         result: Category | None = self._fetcher.get_category_by_name(category_name)
         if result is None:
             _msg = f"Error retrieving category '{category_name}'."
-            logger.error(_msg)
-            self._console.print(f"[red]{_msg}[/red]")
-            return
+            return False, _msg
         category: Category = result
 
-        self._console.print(
-            f"[yellow]Category name:[/yellow] {category.name}\n"
-            f"[yellow]Category side:[/yellow] {category.side}"
-        )
+        if category.name != data.name:
+            return False, "Category name mismatch."
+        if category.side != data.side:
+            return False, "Category side mismatch."
+
+        return True, "Category validated successfully."
 
 
 def main() -> None:
     from dotenv import load_dotenv
 
-    from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
+    from nwtrack.bootstrap.composition import build_base_sqlite_uow_container, Lifetime
     from nwtrack.bootstrap.logging_config import setup_logging
+    from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
 
     load_dotenv()
     setup_logging()
 
+    console_defaults = ConsoleSettings(record=False)
+
     container = build_base_sqlite_uow_container()
     container.register(
+        ConsoleFactory,
+        lambda _: ConsoleFactory(default_settings=console_defaults),
+        lifetime=Lifetime.SINGLETON,
+    ).register(
         CreateCategoryInteractive,
         lambda c: CreateCategoryInteractive(
             uow=lambda: c.resolve(UnitOfWork),
             fetcher=FetchService(uow=lambda: c.resolve(UnitOfWork)),
-            console=Console(),
+            console_factory=c.resolve(ConsoleFactory),
         ),
     )
     container.resolve(CreateCategoryInteractive).run()

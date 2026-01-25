@@ -265,3 +265,10 @@ def render_new_account_info(
         f"[yellow]Initial month:[/yellow] {balance.month}\n"
         f"[yellow]Initial balance:[/yellow] {balance.amount}\n"
     )
+
+
+def render_category_data(console: Console, category: Category) -> None:
+    console.print(
+        f"[yellow]Category name:[/yellow] {category.name}\n"
+        f"[yellow]Category side:[/yellow] {category.side.value}\n"
+    )

@@ -168,3 +168,35 @@ def prompt_for_status_choice(console: Console, n_options) -> int:
         choices=[str(i) for i in range(n_options + 1)],
     )
     return choice
+
+
+def prompt_for_category_name(console: Console) -> str:
+    """Prompt user for category name.
+
+    Args:
+        console (Console): Rich Console object
+    Returns:
+        str: Category name
+    """
+    prompt = Prompt(console=console)
+    name = prompt.ask("Enter [bold]category name[/bold] or 'q' to quit")
+    return name.strip()
+
+
+def prompt_for_category_side(console: Console) -> str:
+    """Prompt user for category side.
+
+    Args:
+        console (Console): Rich Console object
+    Returns:
+        Side: Category side
+    """
+    from nwtrack.domain.models import Side
+
+    prompt = Prompt(console=console)
+    choice = prompt.ask(
+        "Enter [bold]side[/bold] or 'q' to quit",
+        choices=[side.value for side in Side] + ["q"],
+        default=Side.ASSET.value,
+    )
+    return choice
