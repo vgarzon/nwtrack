@@ -6,7 +6,7 @@ from rich.console import Console
 from rich.table import Table
 
 from nwtrack.application.dto import MonthlyCategoryBalance
-from nwtrack.domain.models import Account, Balance, Category
+from nwtrack.domain.models import Account, Balance, Category, NetWorth
 from nwtrack.domain.value_objects import Month
 
 
@@ -124,7 +124,7 @@ def build_category_summary_table(
 def build_balances_table(
     balances: list[Balance],
     account_map: dict[int, Account],
-    category_map: dict[int, Account],
+    category_map: dict[int, Category | None],
     title_suffix: str = "",
 ) -> Table:
     """Build a Rich Table of balances.
@@ -148,7 +148,8 @@ def build_balances_table(
     for balance in balances:
         account_id = balance.account_id
         account_name = account_map[account_id].name
-        category = category_map.get(account_id, None)
+        category: Category | None = category_map.get(account_id, None)
+        assert category is not None, f"Category not found for account ID {account_id}"
         category_name = category.name if category else "Unknown"
         side = category.side.value if category else "Unknown"
         table.add_row(
@@ -158,4 +159,38 @@ def build_balances_table(
             side,
             f"{balance.amount:8,}",
         )
+    return table
+
+
+def build_networth_table(nw: NetWorth, title_suffix: str = "", form="wide") -> Table:
+    """Build a Rich Table of net worth summary.
+
+    Args:
+        nw (NetWorth): NetWorth object
+        title_suffix (str): Suffix for table title
+        form (str): Table format, "wide" or "long"
+
+    Returns:
+        Table: Rich Table object
+    """
+    _title = "Net Worth Summary" + (f" {title_suffix}" if title_suffix else "")
+    table = Table(title=_title)
+    if form == "long":
+        table.add_column("Side", style="magenta")
+        table.add_column("Total", justify="right", style="red")
+        table.add_row("Assets", f"{nw.assets:9,}")
+        table.add_row("Liabilities", f"{nw.liabilities:9,}")
+        table.add_row("Net Worth", f"{nw.net_worth:9,}")
+    elif form == "wide":
+        table.add_column("Assets", justify="right", style="green")
+        table.add_column("Liabilities", justify="right", style="yellow")
+        table.add_column("Net Worth", justify="right", style="red")
+        table.add_row(
+            f"{nw.assets:9,}",
+            f"{nw.liabilities:9,}",
+            f"{nw.net_worth:9,}",
+        )
+    else:
+        raise ValueError(f"Invalid table form: {form}")
+        table = Table()
     return table

@@ -18,7 +18,7 @@ def configured_container(base_container: Container) -> Container:
     from nwtrack.application.ports.db import DBConnectionManager
     from nwtrack.application.services.data_loader import InitDataService
     from nwtrack.application.services.db_admin import DBAdminService
-    from nwtrack.application.use_cases.print_summary import (
+    from nwtrack.application.use_cases.update_balances import (
         Console,
         FetchService,
         UnitOfWork,

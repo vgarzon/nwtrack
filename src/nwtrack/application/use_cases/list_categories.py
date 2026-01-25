@@ -5,6 +5,7 @@ List categories
 import logging
 
 from nwtrack.application.services.fetch import FetchService
+from nwtrack.bootstrap.container import Container
 from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
 from nwtrack.entrypoints.cli.ui.renderers import build_categories_table
 
@@ -26,7 +27,7 @@ class ListCategories:
         logger.info("Finished List Accounts")
 
 
-def bootstrap() -> None:
+def bootstrap() -> Container:
     """Bootstrap the List Categories use case app.
 
     Returns:

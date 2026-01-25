@@ -69,15 +69,14 @@ def test_print_summary_run_default_month(
     """Test print summary service."""
     init_db_tables_w_entities(configured_container, sample_entities)
 
-    def mock_ask(*args, **kwargs):
-        return "1"
-
     monkeypatch.setattr(
-        nwtrack.application.use_cases.report_balances_by_category.Prompt,
-        "ask",
-        mock_ask,
+        nwtrack.application.use_cases.report_balances_by_category,
+        "prompt_for_month_choice",
+        lambda *args, **kwargs: "1",
     )
-    service = configured_container.resolve(ReportBalancesByCategory)
+    service: ReportBalancesByCategory = configured_container.resolve(
+        ReportBalancesByCategory
+    )
     service.run()
     captured_output = service._console.export_text()
     assert re.search(r"Balances 2025-11", captured_output)
@@ -92,29 +91,24 @@ def test_print_summary_run_input_month(
     monkeypatch,
 ) -> None:
     """Test print summary service."""
-    inputs_ask = iter(["A"])
-    inputs_int_ask = iter([2025, 10])
+    from nwtrack.domain.value_objects import Month
 
     init_db_tables_w_entities(configured_container, sample_entities)
 
-    def mock_ask(*args, **kwargs):
-        return next(inputs_ask)
-
-    def mock_int_ask(*args, **kwargs):
-        return next(inputs_int_ask)
-
     monkeypatch.setattr(
-        nwtrack.application.use_cases.report_balances_by_category.Prompt,
-        "ask",
-        mock_ask,
+        nwtrack.application.use_cases.report_balances_by_category,
+        "prompt_for_month_choice",
+        lambda *args, **kwargs: "a",
     )
     monkeypatch.setattr(
-        nwtrack.application.use_cases.report_balances_by_category.IntPrompt,
-        "ask",
-        mock_int_ask,
+        nwtrack.application.use_cases.report_balances_by_category,
+        "prompt_for_month",
+        lambda *args, **kwargs: Month(2025, 10),
     )
 
-    service = configured_container.resolve(ReportBalancesByCategory)
+    service: ReportBalancesByCategory = configured_container.resolve(
+        ReportBalancesByCategory
+    )
     service.run()
     captured_output = service._console.export_text()
     assert re.search(r"Balances 2025-10", captured_output)
