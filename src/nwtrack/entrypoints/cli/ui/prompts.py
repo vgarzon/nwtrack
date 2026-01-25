@@ -1,12 +1,12 @@
 """ """
 
 from rich.console import Console
-from rich.prompt import IntPrompt, Prompt
+from rich.prompt import IntPrompt, Prompt, Confirm
 from nwtrack.domain.models import Month
 
 
 def prompt_for_month(console: Console) -> Month:
-    """Input a specific month from user.
+    """Prompt for year and month with defaults to current month.
 
     Returns:
         Month: Month object
@@ -16,8 +16,12 @@ def prompt_for_month(console: Console) -> Month:
     today = date.today()
     int_prompt = IntPrompt(console=console)
     while True:
-        _year = int_prompt.ask("Enter year as 'YYYY'", default=today.year)
-        _month = int_prompt.ask("Enter month as 'MM'", default=today.month)
+        _year = int_prompt.ask("Enter [bold]year[/bold] as 'YYYY'", default=today.year)
+        _month = int_prompt.ask(
+            "Enter [bold]month[/bold] as 'MM'",
+            default=today.month,
+            choices=[str(k) for k in range(1, 13)],
+        )
         try:
             month = Month(year=_year, month=_month)
         except ValueError:
@@ -55,3 +59,112 @@ def prompt_for_month_choice(
         case_sensitive=False,
     )
     return choice.lower().strip()
+
+
+def prompt_for_account_name(console: Console) -> str:
+    """Prompt user for account name.
+
+    Args:
+        console (Console): Rich Console object
+
+    Returns:
+        str: Account name
+    """
+    prompt = Prompt(console=console)
+    name = prompt.ask("Enter [bold]account name[/bold] or 'q' to quit")
+    return name.strip()
+
+
+def prompt_for_account_description(console: Console) -> str:
+    """Prompt user for account description.
+
+    Args:
+        console (Console): Rich Console object
+
+    Returns:
+        str: Account description
+    """
+    prompt = Prompt(console=console)
+    name = prompt.ask("Enter optional [bold]description[/bold] or 'q' to quit")
+    return name.strip()
+
+
+def prompt_for_category_choice(console: Console, n_categories: int = 0) -> int:
+    """Prompt user to choose category input method.
+
+    Args:
+        console (Console): Rich Console object
+        n_categories (int): Length of categories list
+
+    Returns:
+        int: User choice
+    """
+    int_prompt = IntPrompt(console=console)
+    choice = int_prompt.ask(
+        "Enter [bold]category index[/bold] or '0' to quit",
+        default=0,  # 0 to quit
+        choices=[str(i) for i in range(n_categories + 1)],
+    )
+    return choice
+
+
+def prompt_for_currency_choice(console: Console, n_currencies: int = 0) -> int:
+    """Prompt user to choose currency input method.
+
+    Args:
+        console (Console): Rich Console object
+        n_currencies (int): Length of currencies list
+
+    Returns:
+        int: User choice
+    """
+    int_prompt = IntPrompt(console=console)
+    choice = int_prompt.ask(
+        "Enter [bold]currency index[/bold] or '0' to quit",
+        default=1,  # assumes USD is choise 1
+        choices=[str(i) for i in range(n_currencies + 1)],
+    )
+    return choice
+
+
+def prompt_to_confirm_action(console: Console, action: str = "") -> bool:
+    """Prompt user to confirm action."""
+    confirm = Confirm(console=console)
+    answer = confirm.ask(f"[bold]{action}[/bold]")
+    return answer
+
+
+def prompt_for_balance_amount(console: Console) -> int:
+    """Prompt user for initial balance amount.
+
+    Args:
+        console (Console): Rich Console object
+    Returns:
+        int: Balance amount
+    from rich.prompt import FloatPrompt
+    """
+    int_prompt = IntPrompt(console=console)
+    amount = int_prompt.ask(
+        "Enter initial [bold]balance amount[/bold] (integer)",
+        default=0,
+    )
+    return amount
+
+
+def prompt_for_status_choice(console: Console, n_options) -> int:
+    """Prompt user to choose account status.
+
+    Args:
+        console (Console): Rich Console object
+        n_options (int): Number of status options
+
+    Returns:
+        int: User choice
+    """
+    int_prompt = IntPrompt(console=console)
+    choice = int_prompt.ask(
+        "Select [bold]account status[/bold] by index or '0' to quit",
+        default=1,  # assumes 'active' is choice 1 (index 0)
+        choices=[str(i) for i in range(n_options + 1)],
+    )
+    return choice

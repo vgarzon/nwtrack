@@ -6,7 +6,7 @@ from rich.console import Console
 from rich.table import Table
 
 from nwtrack.application.dto import MonthlyCategoryBalance
-from nwtrack.domain.models import Account, Balance, Category, NetWorth
+from nwtrack.domain.models import Account, Balance, Category, Currency, NetWorth, Status
 from nwtrack.domain.value_objects import Month
 
 
@@ -71,6 +71,28 @@ def build_categories_table(categories: list[Category]) -> Table:
         category_name = category.name if category else "Unknown"
         side_value = category.side.value if category else "Unknown"
         table.add_row(category_name, side_value)
+    return table
+
+
+def build_indexed_categories_table(categories: list[Category]) -> Table:
+    """Build a Rich Table of categories with index.
+
+    Args:
+        categories (list[Category]): List of Category objects
+
+    Returns:
+        Table: Rich Table object
+    """
+    table = Table(title="Categories")
+    table.add_column("Index", justify="right", style="cyan", no_wrap=True)
+    table.add_column("Name", style="magenta")
+    table.add_column("Side", style="green")
+    for k, category in enumerate(categories):
+        table.add_row(
+            str(k + 1),
+            category.name,
+            category.side.value,
+        )
     return table
 
 
@@ -194,3 +216,52 @@ def build_networth_table(nw: NetWorth, title_suffix: str = "", form="wide") -> T
         raise ValueError(f"Invalid table form: {form}")
         table = Table()
     return table
+
+
+def build_currencies_table(currencies: list[Currency]) -> Table:
+    """Build a Rich Table of currencies.
+
+    Args:
+        currencies (list[Currency]): List of Currency objects
+
+    Returns:
+        Table: Rich Table object
+    """
+    table = Table(title="Currencies")
+    table.add_column("Index", justify="right", style="cyan", no_wrap=True)
+    table.add_column("Code", style="magenta")
+    table.add_column("Description", style="green")
+    for k, currency in enumerate(currencies):
+        table.add_row(
+            str(k + 1),
+            currency.code,
+            currency.description,
+        )
+    return table
+
+
+def build_status_table(status_options: list[Status]) -> Table:
+    table = Table(title="Status Options")
+    table.add_column("Index", justify="right", style="cyan", no_wrap=True)
+    table.add_column("Status", style="magenta")
+    for k, status in enumerate(status_options):
+        table.add_row(
+            str(k + 1),
+            status.value,
+        )
+    return table
+
+
+def render_new_account_info(
+    console: Console, account: Account, balance: Balance
+) -> None:
+    console.print(
+        f"[yellow]Account name:[/yellow] {account.name}\n"
+        f"[yellow]Account ID:[/yellow] {account.id}\n"
+        f"[yellow]Description:[/yellow] {account.description}\n"
+        f"[yellow]Currency:[/yellow] {account.currency_code}\n"
+        f"[yellow]Category:[/yellow] {account.category_name}\n"
+        f"[yellow]Status:[/yellow] {account.status.value}\n"
+        f"[yellow]Initial month:[/yellow] {balance.month}\n"
+        f"[yellow]Initial balance:[/yellow] {balance.amount}\n"
+    )

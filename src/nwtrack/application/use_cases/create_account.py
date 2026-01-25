@@ -1,19 +1,33 @@
 """
-Demo interactive account creation use case.
+Create new account interactively.
 """
 
 import logging
 from typing import Callable
 
-from rich.console import Console
-from rich.prompt import IntPrompt, Prompt
-from rich.table import Table
-
 from nwtrack.application.dto import NewAccountData
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.domain.models import Account, Balance, Category, Currency, Status
+from nwtrack.domain.models import Account, Balance, Category, Status
 from nwtrack.domain.value_objects import Month
+from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
+from nwtrack.entrypoints.cli.ui.renderers import (
+    build_accounts_table,
+    build_currencies_table,
+    build_indexed_categories_table,
+    build_status_table,
+    render_new_account_info,
+)
+from nwtrack.entrypoints.cli.ui.prompts import (
+    prompt_for_account_description,
+    prompt_for_account_name,
+    prompt_for_category_choice,
+    prompt_for_currency_choice,
+    prompt_for_month,
+    prompt_for_balance_amount,
+    prompt_to_confirm_action,
+    prompt_for_status_choice,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +39,11 @@ class AccountCreator:
         self,
         uow: Callable[[], UnitOfWork],
         fetcher: FetchService,
-        console: Console,
+        console_factory: ConsoleFactory,
     ) -> None:
         self._uow = uow
         self._fetcher = fetcher
-        self._console = console
-        self._prompt = Prompt(console=self._console)
-        self._int_prompt = IntPrompt(console=self._console)
+        self._console = console_factory()
 
     def run(self) -> None:
         logger.info("Starting Account Creator")
@@ -40,8 +52,8 @@ class AccountCreator:
         try:
             data = self.collect_data()
         except KeyboardInterrupt as e:
-            print("Account creation cancelled by user:", str(e))
-            logger.warning("Account creation cancelled by user.")
+            self._console.print("[red]Account creation cancelled.[/red]", str(e))
+            logger.warning("Account creation cancelled. %s", e)
             return
 
         res: tuple | None = self.create_account_and_balance(data)
@@ -52,12 +64,25 @@ class AccountCreator:
             return
         account_id, balance_id = res
 
-        check = self.validate_new_account(data, account_id, balance_id)
-        if not check:
-            raise ValueError("New account validation failed.")
+        self._console.print("\n[bold green]New account data:[/bold green]")
+        self.print_new_account_info(account_id, balance_id)
+        proceed = prompt_to_confirm_action(self._console, "Create account?")
+        if not proceed:
+            self._console.print("[red]Account creation cancelled.[/red]")
+            logger.warning("Account creation cancelled.")
             return
 
-        self.print_new_account_info(account_id, balance_id)
+        success, message = self.validate_created_account(data, account_id, balance_id)
+        if not success:
+            logger.error(
+                "Validation failed: %s",
+                message,
+                extra={"account_id": account_id, "balance_id": balance_id},
+            )
+            raise ValueError(f"New account validation failed: {message}")
+            return
+
+        self._console.print("[bold green]Account created successfully.[/bold green]")
         self.print_accounts(active_only=False)
         logger.info("Finished Account Creator")
 
@@ -119,11 +144,8 @@ class AccountCreator:
 
     def _collect_account_name(self) -> str:
         while True:
-            name = self._prompt.ask(
-                "Enter [bold]account name[/bold] or 'q' to quit"
-            ).strip()
+            name = prompt_for_account_name(self._console)
             if name.lower() == "q":
-                logger.warning("Quit while collecting account name.")
                 raise KeyboardInterrupt("Quit while collecting account name.")
             # TODO: Add string validation rules here
             if name:
@@ -133,109 +155,39 @@ class AccountCreator:
             )
 
     def _collect_description(self) -> str:
-        description = self._prompt.ask(
-            "Enter optional [bold]description[/bold] or 'q' to quit: "
-        ).strip()
+        description = prompt_for_account_description(self._console)
         if description.lower() == "q":
-            logger.warning("Quit while collecting description.")
             raise KeyboardInterrupt("Quit while collecting description.")
         return description
 
     def _collect_category_name(self) -> str:
         categories = self._fetcher.get_all_categories()
-        table = self._build_categories_table(categories)
+        table = build_indexed_categories_table(categories)
         self._console.print(table)
-        while True:
-            choice = self._int_prompt.ask(
-                "Enter [bold]category index[/bold] or '0' to quit",
-                default=0,
-                choices=[str(i) for i in range(len(categories) + 1)],
-            )
-            if choice == 0:
-                logger.warning("Quit while collecting category name.")
-                raise KeyboardInterrupt("Quit while collecting category name.")
-            index = choice - 1
-            if 0 <= index < len(categories):
-                break
-            else:
-                self._console.print(
-                    "[magenta]Invalid choice.[/magenta] Please try again."
-                )
-        return categories[index].name
-
-    def _build_categories_table(self, categories: list[Category]) -> Table:
-        table = Table(title="Categories")
-        table.add_column("Index", justify="right", style="cyan", no_wrap=True)
-        table.add_column("Name", style="magenta")
-        table.add_column("Side", style="green")
-        for k, category in enumerate(categories):
-            table.add_row(
-                str(k + 1),
-                category.name,
-                category.side.value,
-            )
-        return table
+        n_categories = len(categories)
+        choice = prompt_for_category_choice(self._console, n_categories)
+        if choice == 0:
+            raise KeyboardInterrupt("Quit while collecting category name.")
+        return categories[choice - 1].name
 
     def _collect_currency_code(self) -> str:
         currencies = self._fetcher.get_all_currencies()
-        table = self._build_currencies_table(currencies)
+        table = build_currencies_table(currencies)
         self._console.print(table)
-        while True:
-            choice = self._int_prompt.ask(
-                "Enter [bold]currency index[/bold] or '0' to quit",
-                default=1,
-                choices=[str(i) for i in range(len(currencies) + 1)],
-            )
-            if choice == 0:
-                logger.warning("Quit while collecting currency code.")
-                raise KeyboardInterrupt("Quit while collecting currency code.")
-            index = choice - 1
-            if 0 <= index < len(currencies):
-                break
-            else:
-                self._console.print(
-                    "[magenta]Invalid choice.[/magenta] Please try again."
-                )
-        return currencies[index].code
-
-    def _build_currencies_table(self, currencies: list[Currency]) -> Table:
-        table = Table(title="Currencies")
-        table.add_column("Index", justify="right", style="cyan", no_wrap=True)
-        table.add_column("Code", style="magenta")
-        table.add_column("Description", style="green")
-        for k, currency in enumerate(currencies):
-            table.add_row(
-                str(k + 1),
-                currency.code,
-                currency.description,
-            )
-        return table
+        n_currencies = len(currencies)
+        choice = prompt_for_currency_choice(self._console, n_currencies)
+        if choice == 0:
+            raise KeyboardInterrupt("Quit while collecting currency code.")
+        return currencies[choice - 1].code
 
     def _collect_status(self) -> Status:
         status_options = [Status.ACTIVE, Status.INACTIVE]
-        table = self._build_status_table(status_options)
+        table = build_status_table(status_options)
         self._console.print(table)
-        choice = self._int_prompt.ask(
-            "Select [bold]account status[/bold] by index or '0' to quit",
-            default=1,
-            choices=["0", "1", "2"],
-        )
+        choice = prompt_for_status_choice(self._console, len(status_options))
         if choice == 0:
-            logger.warning("Quit while collecting account status.")
             raise KeyboardInterrupt("Quit while collecting account status.")
-        index = choice - 1
-        return status_options[index]
-
-    def _build_status_table(self, status_options: list[Status]) -> Table:
-        table = Table(title="Status Options")
-        table.add_column("Index", justify="right", style="cyan", no_wrap=True)
-        table.add_column("Status", style="magenta")
-        for k, status in enumerate(status_options):
-            table.add_row(
-                str(k + 1),
-                status.value,
-            )
-        return table
+        return status_options[choice - 1]
 
     def _collect_initial_month(self) -> Month:
         """Input initial month from user.
@@ -243,35 +195,10 @@ class AccountCreator:
         Returns:
             Month: Month object
         """
-        from datetime import date
-
-        _today = date.today()
-        while True:
-            _year = self._int_prompt.ask(
-                "Enter initial [bold]year[/bold] as 'YYYY'", default=_today.year
-            )
-            _month = self._int_prompt.ask(
-                "Enter initial [bold]month[/bold] as 'MM'",
-                default=_today.month,
-                choices=[str(k) for k in range(1, 13)],
-            )
-            try:
-                month = Month(year=_year, month=_month)
-            except ValueError:
-                logger.error("Invalid Month inputs %d %d", _year, _month)
-                self._console.print(
-                    "[red]Invalid month format.[/red] Please use YYYY-MM."
-                )
-                continue
-            break
-        return month
+        return prompt_for_month(self._console)
 
     def _collect_initial_balance(self) -> int:
-        amount = self._int_prompt.ask(
-            "Enter initial [bold]balance amount[/bold] (integer)",
-            default=0,
-        )
-        return amount
+        return prompt_for_balance_amount(self._console)
 
     def print_accounts(self, active_only: bool = True) -> None:
         """Print accounts.
@@ -279,42 +206,29 @@ class AccountCreator:
         Args:
             active_only (bool): Whether to print only active accounts.
         """
-        if active_only:
-            accounts = self._fetcher.get_accounts(active_only=True)
-            title_prefix = "Active"
-        else:
-            accounts = self._fetcher.get_accounts(active_only=False)
-            title_prefix = "All"
-        table = self._build_accounts_table(accounts, title_prefix=title_prefix)
+        accounts, category_map = self._fetch_account_data(active_only=active_only)
+        title_prefix = "Active" if active_only else "All"
+        table = build_accounts_table(accounts, category_map, title_prefix)
         self._console.print(table)
 
-    def _build_accounts_table(
-        self, accounts: list[Account], title_prefix: str = ""
-    ) -> Table:
-        """Build a Rich Table of active accounts.
+    def _fetch_account_data(
+        self, active_only: bool = True
+    ) -> tuple[list[Account], dict[int, Category | None]]:
+        """Build the accounts table.
+
         Args:
-            accounts (list[Account]): List of Account objects
-            title_prefix (str): Optional prefix for the table title.
+            active_only (bool): Whether to print only active accounts.
+
         Returns:
-            Table: Rich Table object
+            tuple[list[Account], dict[int, Category]]: List of accounts and
+                mapping of account IDs to categories.
         """
-        _title = f"{title_prefix} Accounts" if title_prefix else "Accounts"
-        table = Table(title=_title)
-        table.add_column("ID", justify="right", style="cyan", no_wrap=True)
-        table.add_column("Name", style="magenta")
-        table.add_column("Category", style="green")
-        table.add_column("Side", style="yellow")
-        for account in accounts:
-            category = self._fetcher.get_category_by_account_id(account.id)
-            category_name = category.name if category else "Unknown"
-            side = category.side.value if category else "Unknown"
-            table.add_row(
-                str(account.id),
-                account.name,
-                category_name,
-                side,
-            )
-        return table
+        accounts = self._fetcher.get_accounts(active_only=active_only)
+        categories_map = {
+            account.id: self._fetcher.get_category_by_account_id(account.id)
+            for account in accounts
+        }
+        return accounts, categories_map
 
     def print_new_account_info(self, account_id: int, balance_id: int) -> None:
         """Print info about the newly created account and balance.
@@ -330,21 +244,11 @@ class AccountCreator:
             logger.error(_msg)
             self._console.print(f"[red]{_msg}[/red]")
             return
+        render_new_account_info(self._console, account, balance)
 
-        self._console.print(
-            f"\n[bold green]Account created successfully.[/bold green]\n"
-            f"[yellow]Account name:[/yellow] {account.name}\n"
-            f"[yellow]Account ID:[/yellow] {account.id}\n"
-            f"[yellow]Description:[/yellow] {account.description}\n"
-            f"[yellow]Currency:[/yellow] {account.currency_code}\n"
-            f"[yellow]Category:[/yellow] {account.category_name}\n"
-            f"[yellow]Initial month:[/yellow] {balance.month}\n"
-            f"[yellow]Initial balance:[/yellow] {balance.amount}\n"
-        )
-
-    def validate_new_account(
+    def validate_created_account(
         self, data: NewAccountData, account_id: int, balance_id: int
-    ) -> bool:
+    ) -> tuple[bool, str]:
         """Validate that the new account and balance were created correctly.
 
         Args:
@@ -353,53 +257,33 @@ class AccountCreator:
             balance_id (int): The ID of the created balance.
 
         Returns:
-            bool: True if validation passes, False otherwise.
+            tuple[bool, str]: validation result and error message if any.
         """
         account = self._fetcher.get_account_by_id(account_id)
         balance = self._fetcher.get_balance_by_id(balance_id)
 
-        def _log_and_print(message: str) -> None:
-            logger.error(
-                "Validation failed: " + message,
-                extra={"account_id": account_id, "balance_id": balance_id},
-            )
-            self._console.print(
-                "[magenta bold]Validation failed:[/magenta bold] " + message
-            )
-
         if account is None:
-            _log_and_print("Account not found.")
-            return False
+            return False, "Account not found."
         if account.name != data.account_name:
-            _log_and_print("Account name mismatch.")
-            return False
+            return False, "Account name mismatch."
         if account.description != data.description:
-            _log_and_print("Account description mismatch.")
-            return False
+            return False, "Account description mismatch."
         if account.category_name != data.category_name:
-            _log_and_print("Account category mismatch.")
-            return False
+            return False, "Account category mismatch."
         if account.currency_code != data.currency_code:
-            _log_and_print("Account currency mismatch.")
-            return False
+            return False, "Account currency mismatch."
         if account.status != data.status:
-            _log_and_print("Account status mismatch.")
-            return False
-
+            return False, "Account status mismatch."
         if balance is None:
-            _log_and_print("Balance not found.")
-            return False
+            return False, "Balance not found."
         if balance.account_id != account_id:
-            _log_and_print("Balance account ID mismatch.")
-            return False
+            return False, "Balance account ID mismatch."
         if str(balance.month) != str(data.initial_month):
-            _log_and_print("Balance month mismatch.")
-            return False
+            return False, "Balance month mismatch."
         if balance.amount != data.initial_amount:
-            _log_and_print("Balance amount mismatch.")
-            return False
+            return False, "Balance amount mismatch."
 
-        return True
+        return True, ""
 
 
 def main() -> None:
@@ -407,14 +291,17 @@ def main() -> None:
 
     from nwtrack.bootstrap.composition import Lifetime, build_base_sqlite_uow_container
     from nwtrack.bootstrap.logging_config import setup_logging
+    from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
 
     load_dotenv()
     setup_logging()
 
+    console_defaults = ConsoleSettings(record=False)
+
     container = build_base_sqlite_uow_container()
     container.register(
-        Console,
-        lambda c: Console(),
+        ConsoleFactory,
+        lambda _: ConsoleFactory(default_settings=console_defaults),
         lifetime=Lifetime.SINGLETON,
     ).register(
         FetchService,
@@ -424,7 +311,7 @@ def main() -> None:
         lambda c: AccountCreator(
             uow=lambda: c.resolve(UnitOfWork),
             fetcher=c.resolve(FetchService),
-            console=c.resolve(Console),
+            console_factory=c.resolve(ConsoleFactory),
         ),
     )
     container.resolve(AccountCreator).run()
