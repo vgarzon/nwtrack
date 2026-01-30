@@ -16,34 +16,30 @@ A personal net worth tracking application with a CLI interface.
 Requires Python 3.12+ and [uv](https://github.com/astral-sh/uv) for dependency management.
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd nwtrack
-
 # Install dependencies
 uv sync
 
 # Run the application
-python -m nwtrack.entrypoints.cli.main --help
+uv run nwtrack --help
 ```
 
 ## Usage
 
 ```bash
 # List accounts
-python -m nwtrack.entrypoints.cli.main accounts list
+uv run nwtrack accounts list
 
 # Create a new account
-python -m nwtrack.entrypoints.cli.main accounts create
+uv run nwtrack accounts create
 
 # Update balances interactively
-python -m nwtrack.entrypoints.cli.main balances update
+uv run nwtrack balances update
 
 # View net worth report
-python -m nwtrack.entrypoints.cli.main reports networth
+uv run nwtrack reports networth
 
 # Export data to CSV
-python -m nwtrack.entrypoints.cli.main export csv
+uv run nwtrack export csv
 ```
 
 ## Architecture
@@ -56,15 +52,7 @@ Built with clean architecture principles:
 
 Data is stored in a local SQLite database with tables for currencies, categories, accounts, balances, and exchange rates.
 
-## Development
-
-See [CLAUDE.md](CLAUDE.md) for detailed development instructions including:
-- Architecture details and design patterns
-- Development commands using `just`
-- Testing and code quality tools
-- Project conventions
-
-Quick start:
+## Quick start:
 ```bash
 # Install just if needed: https://github.com/casey/just
 just install        # Install dependencies
