@@ -1,7 +1,8 @@
 """ """
 
 from rich.console import Console
-from rich.prompt import IntPrompt, Prompt, Confirm
+from rich.prompt import Confirm, IntPrompt, Prompt
+
 from nwtrack.domain.models import Month
 
 
@@ -87,6 +88,27 @@ def prompt_for_account_description(console: Console) -> str:
     prompt = Prompt(console=console)
     name = prompt.ask("Enter optional [bold]description[/bold] or 'q' to quit")
     return name.strip()
+
+
+def prompt_for_account_id(console: Console) -> int | None:
+    """Prompt user for account ID.
+
+    Args:
+        console (Console): Rich Console object
+
+    Returns:
+        int | None: Account ID or None if user quits
+    """
+    prompt = Prompt(console=console)
+    while True:
+        response = prompt.ask("Enter [bold]account ID[/bold] or 'q' to quit")
+        if response.lower().strip() == "q":
+            return None
+        try:
+            account_id = int(response)
+            return account_id
+        except ValueError:
+            console.print("[red]Invalid input. Please enter a valid account ID.[/red]")
 
 
 def prompt_for_category_choice(console: Console, n_categories: int = 0) -> int:

@@ -23,3 +23,13 @@ def update_balances_interactive():
     import nwtrack.application.use_cases.update_balances as update_balances
 
     update_balances.main()
+
+
+@balances_app.command("delete")
+def delete_balance_interactive():
+    """
+    Delete a balance entry interactively.
+    """
+    import nwtrack.application.use_cases.delete_balance as delete_balance
+
+    delete_balance.main()

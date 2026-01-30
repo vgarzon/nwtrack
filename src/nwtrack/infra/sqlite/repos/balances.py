@@ -382,3 +382,26 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
             "Deleted %d balance records for account ID %d.", rowcount, account_id
         )
         return rowcount
+
+    def delete_by_account_and_month(self, account_id: int, month: Month) -> int:
+        """Delete balance record by account ID and month.
+
+        Args:
+            account_id (int): Account ID
+            month (Month): Month object
+
+        Returns:
+            int: Number of deleted rows (0 or 1 due to UNIQUE constraint)
+        """
+        query = (
+            "DELETE FROM balances WHERE account_id = :account_id AND month = :month;"
+        )
+        cur = self._db.execute(query, {"account_id": account_id, "month": str(month)})
+        rowcount = cur.rowcount
+        logger.info(
+            "Deleted %d balance record(s) for account_id %d on month %s.",
+            rowcount,
+            account_id,
+            month,
+        )
+        return rowcount

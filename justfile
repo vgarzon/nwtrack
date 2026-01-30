@@ -10,35 +10,35 @@ install:
 
 # Run all tests
 test:
-    pytest
+    uv run pytest tests/
 
 # Run tests with verbose output
 test-v:
-    pytest -v
+    uv run pytest -v tests/
 
 # Run specific test file
 test-file FILE:
-    pytest {{FILE}}
+    uv run pytest {{FILE}}
 
 # Run tests matching a pattern
 test-pattern PATTERN:
-    pytest -k {{PATTERN}}
+    uv run pytest -k {{PATTERN}}
 
 # Run linter
 lint:
-    ruff check .
+    uv run ruff check .
 
 # Auto-fix linting issues
 lint-fix:
-    ruff check --fix .
+    uv run ruff check --fix .
 
 # Format code
 format:
-    ruff format .
+    uv run ruff format .
 
 # Type check with mypy
 typecheck:
-    mypy
+    uv run mypy .
 
 # Run all checks (lint + typecheck + test)
 check: lint typecheck test
@@ -58,6 +58,10 @@ accounts-create:
 # Update balances interactively
 balances-update:
     uv run nwtrack balances update
+
+# Delete balance interactively
+balances-delete:
+    uv run nwtrack balances delete
 
 # Show networth report
 report-networth:

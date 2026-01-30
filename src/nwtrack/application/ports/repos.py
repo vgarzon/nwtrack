@@ -246,6 +246,10 @@ class BalancesRepository(Repository[Balance], Protocol):
         """Delete balance records by account ID."""
         ...
 
+    def delete_by_account_and_month(self, account_id: int, month: Month) -> int:
+        """Delete balance record by account ID and month."""
+        ...
+
     def count_per_month(self) -> list[tuple[Month, int]]:
         """Count the number balance entries per month."""
         ...
