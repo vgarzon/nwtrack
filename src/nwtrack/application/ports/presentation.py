@@ -10,6 +10,7 @@ from typing import Protocol
 
 from nwtrack.application.dto import NewAccountData
 from nwtrack.domain.models import Account, Balance, Category, NetWorth
+from nwtrack.domain.value_objects import Month
 
 
 class AccountListPresenter(Protocol):
@@ -299,4 +300,96 @@ class AccountUpdatePresenter(Protocol):
 
     def show_success(self) -> None:
         """Display success message."""
+        ...
+
+
+class BalanceUpdatePresenter(Protocol):
+    """Presenter for balance update workflow."""
+
+    def show_header(self) -> None:
+        """Display workflow header."""
+        ...
+
+    def display_active_accounts(self, accounts: list[Account]) -> None:
+        """Display active accounts table.
+
+        Args:
+            accounts: List of active accounts to display
+        """
+        ...
+
+    def select_month(self, balance_counts: list[tuple[Month, int]]) -> Month | None:
+        """Present month selection with recent months or custom input.
+
+        Args:
+            balance_counts: List of (Month, count) tuples for recent months
+
+        Returns:
+            Selected Month or None if cancelled
+        """
+        ...
+
+    def show_invalid_month_error(self) -> None:
+        """Display error for invalid month input."""
+        ...
+
+    def show_no_balances_warning(self, month: Month) -> None:
+        """Display warning when no balances found for month.
+
+        Args:
+            month: The month that has no balances
+        """
+        ...
+
+    def show_no_month_selected(self) -> None:
+        """Display message when no month is selected."""
+        ...
+
+    def display_balances(self, balances: list[Balance], month: Month) -> None:
+        """Display balances table for a specific month.
+
+        Args:
+            balances: List of balances to display
+            month: Month for the balances
+        """
+        ...
+
+    def prompt_for_account_id(self) -> int | None:
+        """Prompt for account ID to update.
+
+        Returns:
+            Account ID or None if user wants to quit the loop
+        """
+        ...
+
+    def show_invalid_account_id(self) -> None:
+        """Display error for invalid account ID input."""
+        ...
+
+    def show_current_balance_and_prompt(
+        self, account_name: str, account_id: int, month: Month, current_balance: int
+    ) -> int:
+        """Show current balance and prompt for new amount.
+
+        Args:
+            account_name: Name of the account
+            account_id: ID of the account
+            month: Month of the balance
+            current_balance: Current balance amount
+
+        Returns:
+            New balance amount
+        """
+        ...
+
+    def display_final_summary(
+        self, balances: list[Balance], networth: NetWorth | None, month: Month
+    ) -> None:
+        """Display final balances and net worth summary.
+
+        Args:
+            balances: Final list of balances
+            networth: Net worth data or None if not available
+            month: Month for the summary
+        """
         ...
