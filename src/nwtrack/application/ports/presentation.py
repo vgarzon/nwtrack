@@ -8,7 +8,8 @@ protocols, not on concrete UI implementations like Rich.
 
 from typing import Protocol
 
-from nwtrack.domain.models import Account, Category, NetWorth
+from nwtrack.application.dto import NewAccountData
+from nwtrack.domain.models import Account, Balance, Category, NetWorth
 
 
 class AccountListPresenter(Protocol):
@@ -141,5 +142,80 @@ class CategoryCreationPresenter(Protocol):
         Args:
             category_name: Name of created category
             categories: Updated list of all categories
+        """
+        ...
+
+
+class AccountCreationPresenter(Protocol):
+    """Presenter for account creation workflow."""
+
+    def show_header(self) -> None:
+        """Display workflow header."""
+        ...
+
+    def display_accounts(
+        self,
+        accounts: list[Account],
+        categories: dict[int, Category | None],
+        active_only: bool = True,
+    ) -> None:
+        """Display existing accounts table.
+
+        Args:
+            accounts: List of accounts to display
+            categories: Mapping of account IDs to their categories
+            active_only: Whether only active accounts are shown
+        """
+        ...
+
+    def collect_account_data(self) -> NewAccountData | None:
+        """Interactively collect all account data from user.
+
+        This includes: name, description, category, currency, status,
+        initial month, and initial balance amount.
+
+        Returns:
+            NewAccountData or None if cancelled by user
+        """
+        ...
+
+    def show_preview_and_confirm(self, account: Account, balance: Balance) -> bool:
+        """Show preview of account and balance to be created, get confirmation.
+
+        Args:
+            account: Account data to preview
+            balance: Balance data to preview
+
+        Returns:
+            True if user confirms, False otherwise
+        """
+        ...
+
+    def show_cancellation(self, message: str = "") -> None:
+        """Display cancellation message.
+
+        Args:
+            message: Optional additional context
+        """
+        ...
+
+    def show_error(self, message: str) -> None:
+        """Display error message.
+
+        Args:
+            message: Error message to display
+        """
+        ...
+
+    def show_success(
+        self,
+        accounts: list[Account],
+        categories: dict[int, Category | None],
+    ) -> None:
+        """Display success message and updated accounts list.
+
+        Args:
+            accounts: Updated list of all accounts
+            categories: Mapping of account IDs to their categories
         """
         ...
