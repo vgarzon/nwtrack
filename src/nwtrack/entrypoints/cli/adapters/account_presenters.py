@@ -3,10 +3,12 @@ Rich-based presenters for account-related use cases.
 """
 
 from rich.console import Console
+from rich.prompt import Confirm, IntPrompt, Prompt
+from rich.table import Table
 
 from nwtrack.application.dto import NewAccountData
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.domain.models import Account, Balance, Category, Status
+from nwtrack.domain.models import Account, Balance, Category, Currency, Status
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.ui.prompts import (
     prompt_for_account_description,
@@ -203,3 +205,289 @@ class RichAccountCreationPresenter:
         """
         self._console.print("[bold green]Account created successfully.[/bold green]")
         self.display_accounts(accounts, categories, active_only=False)
+
+
+class RichAccountUpdatePresenter:
+    """Rich-based implementation of AccountUpdatePresenter."""
+
+    def __init__(self, console: Console, fetcher: FetchService) -> None:
+        self._console = console
+        self._fetcher = fetcher
+        self._prompt = Prompt(console=console)
+        self._int_prompt = IntPrompt(console=console)
+        self._confirm = Confirm(console=console)
+
+    def show_header(self) -> None:
+        """Display workflow header using Rich."""
+        self._console.rule("[bold green]Update Account Info[/bold green]")
+
+    def display_accounts(
+        self,
+        accounts: list[Account],
+        categories: dict[int, Category | None],
+        active_only: bool = False,
+    ) -> None:
+        """Display accounts table.
+
+        Args:
+            accounts: List of accounts to display
+            categories: Mapping of account IDs to their categories
+            active_only: Whether only active accounts are shown
+        """
+        title_prefix = "Active" if active_only else "All"
+        table = build_accounts_table(accounts, categories, title_prefix)
+        self._console.print(table)
+
+    def select_account(self) -> int | None:
+        """Prompt user to select an account to update by ID.
+
+        Returns:
+            Account ID or None if cancelled
+        """
+        while True:
+            account_id = self._int_prompt.ask(
+                "Enter [bold]account ID[/bold] to update or '0' to quit",
+                default=0,
+            )
+            if account_id == 0:
+                return None
+            # Validate account exists
+            account = self._fetcher.get_account_by_id(account_id)
+            if account:
+                return account_id
+            else:
+                self.show_account_not_found(account_id)
+
+    def show_account_not_found(self, account_id: int) -> None:
+        """Display error when account ID is not found.
+
+        Args:
+            account_id: The account ID that was not found
+        """
+        self._console.print(
+            f"[magenta]Account ID {account_id} not found.[/magenta] Please try again."
+        )
+
+    def collect_updated_data(self, current_account: Account) -> Account | None:
+        """Interactively collect updated account data with current values as defaults.
+
+        Args:
+            current_account: Current account data to use as defaults
+
+        Returns:
+            Updated Account or None if cancelled by user
+        """
+        self._console.print(
+            f"Updating account [bold]{current_account.name}[/bold] "
+            f"(ID: {current_account.id})"
+        )
+
+        try:
+            new_name = self._collect_account_name(default=current_account.name)
+            new_description = self._collect_description(
+                default=current_account.description
+            )
+            new_category_name = self._collect_category_name(
+                default=current_account.category_name
+            )
+            new_currency_code = self._collect_currency_code(
+                default=current_account.currency_code
+            )
+            new_status = self._collect_status(default=current_account.status)
+
+            return Account(
+                id=current_account.id,
+                name=new_name,
+                description=new_description,
+                category_name=new_category_name,
+                currency_code=new_currency_code,
+                status=new_status,
+            )
+        except KeyboardInterrupt:
+            return None
+
+    def _collect_account_name(self, default: str = "") -> str:
+        """Collect account name from user."""
+        while True:
+            name = self._prompt.ask(
+                "Enter [bold]account name[/bold] or 'q' to quit",
+                default=default,
+            ).strip()
+            if name.lower() == "q":
+                raise KeyboardInterrupt("Quit while collecting account name.")
+            if name:
+                return name
+            self._console.print(
+                "[magenta]Account name cannot be empty.[/magenta] Please try again."
+            )
+
+    def _collect_description(self, default: str = "") -> str:
+        """Collect account description from user."""
+        description = self._prompt.ask(
+            "Enter optional [bold]description[/bold] or 'q' to quit",
+            default=default,
+        ).strip()
+        if description.lower() == "q":
+            raise KeyboardInterrupt("Quit while collecting description.")
+        return description
+
+    def _collect_category_name(self, default: str = "") -> str:
+        """Collect category selection from user."""
+        categories = self._fetcher.get_all_categories()
+
+        # Find default index
+        default_index = 0
+        if default:
+            default_index = next(
+                (i + 1 for i, cat in enumerate(categories) if cat.name == default), 0
+            )
+
+        table = self._build_categories_table(categories)
+        self._console.print(table)
+
+        while True:
+            choice = self._int_prompt.ask(
+                "Enter [bold]category index[/bold] or '0' to quit",
+                default=default_index,
+                choices=[str(i) for i in range(len(categories) + 1)],
+            )
+            if choice == 0:
+                raise KeyboardInterrupt("Quit while collecting category name.")
+            index = choice - 1
+            if 0 <= index < len(categories):
+                return categories[index].name
+            else:
+                self._console.print(
+                    "[magenta]Invalid choice.[/magenta] Please try again."
+                )
+
+    def _build_categories_table(self, categories: list[Category]) -> Table:
+        """Build categories selection table."""
+        table = Table(title="Categories")
+        table.add_column("Index", justify="right", style="cyan", no_wrap=True)
+        table.add_column("Name", style="magenta")
+        table.add_column("Side", style="green")
+        for k, category in enumerate(categories):
+            table.add_row(
+                str(k + 1),
+                category.name,
+                category.side.value,
+            )
+        return table
+
+    def _collect_currency_code(self, default: str = "") -> str:
+        """Collect currency selection from user."""
+        currencies = self._fetcher.get_all_currencies()
+
+        # Find default index
+        default_index = 1
+        if default:
+            default_index = next(
+                (i + 1 for i, cur in enumerate(currencies) if cur.code == default), 1
+            )
+
+        table = self._build_currencies_table(currencies)
+        self._console.print(table)
+
+        while True:
+            choice = self._int_prompt.ask(
+                "Enter [bold]currency index[/bold] or '0' to quit",
+                default=default_index,
+                choices=[str(i) for i in range(len(currencies) + 1)],
+            )
+            if choice == 0:
+                raise KeyboardInterrupt("Quit while collecting currency code.")
+            index = choice - 1
+            if 0 <= index < len(currencies):
+                return currencies[index].code
+            else:
+                self._console.print(
+                    "[magenta]Invalid choice.[/magenta] Please try again."
+                )
+
+    def _build_currencies_table(self, currencies: list[Currency]) -> Table:
+        """Build currencies selection table."""
+        table = Table(title="Currencies")
+        table.add_column("Index", justify="right", style="cyan", no_wrap=True)
+        table.add_column("Code", style="magenta")
+        table.add_column("Description", style="green")
+        for k, currency in enumerate(currencies):
+            table.add_row(
+                str(k + 1),
+                currency.code,
+                currency.description,
+            )
+        return table
+
+    def _collect_status(self, default: Status = Status.ACTIVE) -> Status:
+        """Collect status selection from user."""
+        status_options = [Status.ACTIVE, Status.INACTIVE]
+        default_index = status_options.index(default) + 1
+
+        table = self._build_status_table(status_options)
+        self._console.print(table)
+
+        choice = self._int_prompt.ask(
+            "Select [bold]account status[/bold] by index or '0' to quit",
+            default=default_index,
+            choices=["0", "1", "2"],
+        )
+        if choice == 0:
+            raise KeyboardInterrupt("Quit while collecting account status.")
+        index = choice - 1
+        return status_options[index]
+
+    def _build_status_table(self, status_options: list[Status]) -> Table:
+        """Build status selection table."""
+        table = Table(title="Status Options")
+        table.add_column("Index", justify="right", style="cyan", no_wrap=True)
+        table.add_column("Status", style="magenta")
+        for k, status in enumerate(status_options):
+            table.add_row(
+                str(k + 1),
+                status.value,
+            )
+        return table
+
+    def show_preview_and_confirm(self, updated_account: Account) -> bool:
+        """Show preview and get confirmation.
+
+        Args:
+            updated_account: Updated account data to preview
+
+        Returns:
+            True if user confirms, False otherwise
+        """
+        self._console.print("[bold]Updated account data[/bold]")
+        self._console.print(
+            f"[yellow]Account ID:[/yellow] {updated_account.id}\n"
+            f"[yellow]Account name:[/yellow] {updated_account.name}\n"
+            f"[yellow]Description:[/yellow] {updated_account.description}\n"
+            f"[yellow]Currency:[/yellow] {updated_account.currency_code}\n"
+            f"[yellow]Category:[/yellow] {updated_account.category_name}\n"
+            f"[yellow]Status:[/yellow] {updated_account.status}"
+        )
+        return self._confirm.ask("Proceed with update", default=False)
+
+    def show_cancellation(self, message: str = "") -> None:
+        """Display cancellation message.
+
+        Args:
+            message: Optional additional context
+        """
+        msg = "[magenta]Account update cancelled.[/magenta]"
+        if message:
+            msg += f" {message}"
+        self._console.print(msg)
+
+    def show_error(self, message: str) -> None:
+        """Display error message.
+
+        Args:
+            message: Error message to display
+        """
+        self._console.print(f"[red]{message}[/red]")
+
+    def show_success(self) -> None:
+        """Display success message."""
+        self._console.print("\n[bold green]Account updated successfully.[/bold green]")

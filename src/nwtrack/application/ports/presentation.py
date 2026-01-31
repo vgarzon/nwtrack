@@ -219,3 +219,84 @@ class AccountCreationPresenter(Protocol):
             categories: Mapping of account IDs to their categories
         """
         ...
+
+
+class AccountUpdatePresenter(Protocol):
+    """Presenter for account update workflow."""
+
+    def show_header(self) -> None:
+        """Display workflow header."""
+        ...
+
+    def display_accounts(
+        self,
+        accounts: list[Account],
+        categories: dict[int, Category | None],
+        active_only: bool = False,
+    ) -> None:
+        """Display accounts table.
+
+        Args:
+            accounts: List of accounts to display
+            categories: Mapping of account IDs to their categories
+            active_only: Whether only active accounts are shown
+        """
+        ...
+
+    def select_account(self) -> int | None:
+        """Prompt user to select an account to update by ID.
+
+        Returns:
+            Account ID or None if cancelled
+        """
+        ...
+
+    def show_account_not_found(self, account_id: int) -> None:
+        """Display error when account ID is not found.
+
+        Args:
+            account_id: The account ID that was not found
+        """
+        ...
+
+    def collect_updated_data(self, current_account: Account) -> Account | None:
+        """Interactively collect updated account data with current values as defaults.
+
+        Args:
+            current_account: Current account data to use as defaults
+
+        Returns:
+            Updated Account or None if cancelled by user
+        """
+        ...
+
+    def show_preview_and_confirm(self, updated_account: Account) -> bool:
+        """Show preview of updated account and get confirmation.
+
+        Args:
+            updated_account: Updated account data to preview
+
+        Returns:
+            True if user confirms, False otherwise
+        """
+        ...
+
+    def show_cancellation(self, message: str = "") -> None:
+        """Display cancellation message.
+
+        Args:
+            message: Optional additional context
+        """
+        ...
+
+    def show_error(self, message: str) -> None:
+        """Display error message.
+
+        Args:
+            message: Error message to display
+        """
+        ...
+
+    def show_success(self) -> None:
+        """Display success message."""
+        ...
