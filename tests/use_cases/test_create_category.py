@@ -5,11 +5,16 @@ Tests for account creator use case
 import re
 
 import pytest
+from rich.console import Console
 from tests.helpers import init_db_tables_w_entities
 
-import nwtrack.application.use_cases.create_category
+import nwtrack.entrypoints.cli.adapters.category_presenters
+from nwtrack.application.services.fetch import FetchService
 from nwtrack.application.use_cases.create_category import CreateCategoryInteractive
 from nwtrack.bootstrap.container import Container
+from nwtrack.entrypoints.cli.adapters.category_presenters import (
+    RichCategoryCreationPresenter,
+)
 
 
 @pytest.fixture
@@ -18,15 +23,8 @@ def configured_container(base_container: Container) -> Container:
     from nwtrack.application.ports.db import DBConnectionManager
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.application.services.db_admin import DBAdminService
-    from nwtrack.application.use_cases.create_category import (
-        ConsoleFactory,
-        FetchService,
-    )
     from nwtrack.bootstrap.container import Lifetime
-    from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
     from nwtrack.infra.config.settings import Settings
-
-    console_defaults = ConsoleSettings(record=True)
 
     return (
         base_container.register(
@@ -36,8 +34,8 @@ def configured_container(base_container: Container) -> Container:
             ),
         )
         .register(
-            ConsoleFactory,
-            lambda _: ConsoleFactory(default_settings=console_defaults),
+            Console,
+            lambda _: Console(record=True),
             lifetime=Lifetime.SINGLETON,
         )
         .register(
@@ -45,11 +43,15 @@ def configured_container(base_container: Container) -> Container:
             lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
         )
         .register(
+            RichCategoryCreationPresenter,
+            lambda c: RichCategoryCreationPresenter(console=c.resolve(Console)),
+        )
+        .register(
             CreateCategoryInteractive,
             lambda c: CreateCategoryInteractive(
                 uow=lambda: c.resolve(UnitOfWork),
-                fetcher=FetchService(uow=lambda: c.resolve(UnitOfWork)),
-                console_factory=c.resolve(ConsoleFactory),
+                fetcher=c.resolve(FetchService),
+                presenter=c.resolve(RichCategoryCreationPresenter),
             ),
         )
     )
@@ -62,18 +64,19 @@ def test_create_category_run(
 ) -> None:
     init_db_tables_w_entities(configured_container, sample_entities)
 
+    # Patch the prompt functions in the presenter module
     monkeypatch.setattr(
-        nwtrack.application.use_cases.create_category,
+        nwtrack.entrypoints.cli.adapters.category_presenters,
         "prompt_for_category_name",
         lambda *args, **kwargs: "new_category_5",
     )
     monkeypatch.setattr(
-        nwtrack.application.use_cases.create_category,
+        nwtrack.entrypoints.cli.adapters.category_presenters,
         "prompt_for_category_side",
         lambda *args, **kwargs: "asset",
     )
     monkeypatch.setattr(
-        nwtrack.application.use_cases.create_category,
+        nwtrack.entrypoints.cli.adapters.category_presenters,
         "prompt_to_confirm_action",
         lambda *args, **kwargs: True,
     )
@@ -81,8 +84,14 @@ def test_create_category_run(
     service: CreateCategoryInteractive = configured_container.resolve(
         CreateCategoryInteractive
     )
-    service.run()
-    captured_output = service._console.export_text()
+    result = service.run()
+
+    assert result.success
+    assert result.data == "new_category_5"
+
+    # Check console output
+    console: Console = configured_container.resolve(Console)
+    captured_output = console.export_text()
     # TODO: Enable assertions through direct database queries instead of output matching
     assert re.search(r"Category 'new_category_5' created successfully", captured_output)
     assert re.search(r"Category name: new_category_5", captured_output)

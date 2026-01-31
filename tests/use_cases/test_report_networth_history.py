@@ -5,14 +5,17 @@ Tests for networth history service
 import re
 
 import pytest
+from rich.console import Console
 from tests.helpers import init_db_tables_w_entities
 
+from nwtrack.application.services.fetch import FetchService
 from nwtrack.application.use_cases.report_networth_history import (
-    Console,
-    FetchService,
     NetworthHistoryReport,
 )
 from nwtrack.bootstrap.container import Container, Lifetime
+from nwtrack.entrypoints.cli.adapters.report_presenters import (
+    RichNetworthHistoryPresenter,
+)
 from nwtrack.infra.config.settings import Settings
 
 
@@ -26,7 +29,7 @@ def configured_container(base_container: Container) -> Container:
     return (
         base_container.register(
             Console,
-            lambda c: Console(),
+            lambda _: Console(),
             lifetime=Lifetime.SINGLETON,
         )
         .register(
@@ -40,10 +43,14 @@ def configured_container(base_container: Container) -> Container:
             lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
         )
         .register(
+            RichNetworthHistoryPresenter,
+            lambda c: RichNetworthHistoryPresenter(console=c.resolve(Console)),
+        )
+        .register(
             NetworthHistoryReport,
             lambda c: NetworthHistoryReport(
                 fetcher=c.resolve(FetchService),
-                console=c.resolve(Console),
+                presenter=c.resolve(RichNetworthHistoryPresenter),
             ),
         )
     )

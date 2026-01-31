@@ -4,11 +4,9 @@ Print networth history report.
 
 import logging
 
-from rich.console import Console
-from rich.table import Table
-
+from nwtrack.application.dto import OperationResult
+from nwtrack.application.ports.presentation import NetworthHistoryPresenter
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.domain.models import NetWorth
 
 logger = logging.getLogger(__name__)
 
@@ -16,99 +14,69 @@ logger = logging.getLogger(__name__)
 class NetworthHistoryReport:
     """Print networth history report."""
 
-    def __init__(self, fetcher: FetchService, console: Console) -> None:
+    def __init__(
+        self, fetcher: FetchService, presenter: NetworthHistoryPresenter
+    ) -> None:
         self._fetcher = fetcher
-        self._console = console
+        self._presenter = presenter
 
-    def run(self, n_months: int = 12) -> None:
-        """Run the summary service.
+    def run(
+        self, n_months: int = 12, currency_code: str = "USD"
+    ) -> OperationResult[None]:
+        """Run the networth history report.
 
         Args:
-            n_months (int): Number of months to include in the report, defaults to 12
+            n_months: Number of months to include in the report, defaults to 12
+            currency_code: Currency code for the report, defaults to "USD"
+
+        Returns:
+            OperationResult indicating success/failure
         """
         logger.info("Starting Networth History Report Service")
-        self._console.rule("[bold green]Networth History Report", align="center")
-        # NOTE: Variable currency_code is currently hardcoded to "USD"
-        self.print_net_worth_history(n_months, "USD")
-        logger.info("Finished Networth History Report Service")
+        self._presenter.show_header()
 
-    def print_net_worth_history(self, n: int = 12, currency_code: str = "USD") -> None:
-        """Print net worth on a specific month.
+        # Fetch networth records
+        nws = self._fetcher.get_last_n_networth(n_months, currency_code)
 
-        Args:
-            n: Number of months to retrieve, defaults to 12
-            currency (str): Currency code (default: "USD")
-
-        Returns:
-            None
-        """
-        nws = self._fetcher.get_last_n_networth(n, currency_code)
         if not nws:
             logger.warning("No net worth history found in %s", currency_code)
-            self._console.print(
-                f"[red]No net worth data found in {currency_code}[/red]"
-            )
-            return
-        if len(nws) < n:
+            self._presenter.show_no_data_warning(currency_code)
+            return OperationResult(success=False, error_message="No data found")
+
+        if len(nws) < n_months:
             logger.warning(
                 "Requested %d months of net worth history, but only %d found.",
-                n,
+                n_months,
                 len(nws),
             )
-            self._console.print(
-                f"[yellow]Only {len(nws)} months of net worth data found in "
-                f"{currency_code}[/yellow]"
-            )
-        nws.sort(key=lambda x: x.month)  # Ensure chronological order
-        table = self._build_networth_history_table(nws)
-        self._console.print(table)
+            self._presenter.show_partial_data_warning(n_months, len(nws), currency_code)
 
-    def _build_networth_history_table(self, nws: list[NetWorth]) -> Table:
-        """Build a Rich Table of net worth summary.
+        # Ensure chronological order
+        nws.sort(key=lambda x: x.month)
 
-        Args:
-            nws (list[NetWorth]): List of Net Worth records
+        # Display results
+        self._presenter.display_networth_history(nws, currency_code)
 
-        Returns:
-            Table: Rich Table object
-        """
-        _first_month = nws[0].month if nws else ""
-        _last_month = nws[-1].month if nws else ""
-        _title = f"Net Worth History {_first_month} to {_last_month}"
-        table = Table(title=f"[green]{_title}[/green]")
-        table.add_column("Month", justify="right")
-        table.add_column("Assets", justify="right", style="green")
-        table.add_column("Liabilities", justify="right", style="yellow")
-        table.add_column("Net Worth", justify="right", style="red")
-        table.add_column("Change", justify="right")
-        for k, nw in enumerate(nws):
-            if k > 0:
-                change = nw.net_worth - nws[k - 1].net_worth
-                color_str = "red" if change < 0 else "green"
-                change_str = f"[{color_str}]{change:7,}[/{color_str}]"
-            else:
-                change_str = ""
-            table.add_row(
-                f"{nw.month}",
-                f"{nw.assets:9,}",
-                f"{nw.liabilities:9,}",
-                f"{nw.net_worth:9,}",
-                f"{change_str}",
-            )
-        return table
+        logger.info("Finished Networth History Report Service")
+        return OperationResult(success=True)
 
 
-def main(n_months: int = 12) -> None:
+def main(n_months: int = 12, currency_code: str = "USD") -> None:
     """Main entry point for networth history report script.
 
     Args:
-        n_months (int): Number of months to include in the report, defaults to 12
+        n_months: Number of months to include in the report, defaults to 12
+        currency_code: Currency code for the report, defaults to "USD"
     """
     from dotenv import load_dotenv
+    from rich.console import Console
 
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.bootstrap.composition import Lifetime, build_base_sqlite_uow_container
     from nwtrack.bootstrap.logging_config import setup_logging
+    from nwtrack.entrypoints.cli.adapters.report_presenters import (
+        RichNetworthHistoryPresenter,
+    )
 
     load_dotenv()
     setup_logging()
@@ -116,20 +84,28 @@ def main(n_months: int = 12) -> None:
     container = build_base_sqlite_uow_container()
     container.register(
         Console,
-        lambda c: Console(),
+        lambda _: Console(),
         lifetime=Lifetime.SINGLETON,
     ).register(
         FetchService,
         lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
     ).register(
+        RichNetworthHistoryPresenter,
+        lambda c: RichNetworthHistoryPresenter(console=c.resolve(Console)),
+    ).register(
         NetworthHistoryReport,
         lambda c: NetworthHistoryReport(
             fetcher=c.resolve(FetchService),
-            console=c.resolve(Console),
+            presenter=c.resolve(RichNetworthHistoryPresenter),
         ),
     )
-    service: NetworthHistoryReport = container.resolve(NetworthHistoryReport)
-    service.run(n_months)
+
+    result: OperationResult[None] = container.resolve(NetworthHistoryReport).run(
+        n_months, currency_code
+    )
+    import sys
+
+    sys.exit(0 if result.success else 1)
 
 
 if __name__ == "__main__":
