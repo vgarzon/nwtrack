@@ -3,7 +3,7 @@ Data loading services
 """
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.infra.fileio.csv_io import csv_to_records

@@ -107,7 +107,7 @@ def main(n_months: int = 12) -> None:
     from dotenv import load_dotenv
 
     from nwtrack.application.ports.uow import UnitOfWork
-    from nwtrack.bootstrap.composition import build_base_sqlite_uow_container, Lifetime
+    from nwtrack.bootstrap.composition import Lifetime, build_base_sqlite_uow_container
     from nwtrack.bootstrap.logging_config import setup_logging
 
     load_dotenv()

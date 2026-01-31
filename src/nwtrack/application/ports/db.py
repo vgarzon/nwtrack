@@ -4,14 +4,14 @@ Database protocols.
 
 from __future__ import annotations
 
-from typing import Any, Protocol, TypeAlias
 from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Protocol
 
-ParamValue: TypeAlias = str | int | float | bool | bytes | None
-ParamMapping: TypeAlias = Mapping[str, ParamValue]
-ParamSequence: TypeAlias = Sequence[ParamValue]
-ParamSet: TypeAlias = ParamMapping | ParamSequence
-ManyParams: TypeAlias = Iterable[ParamSet]
+type ParamValue = str | int | float | bool | bytes | None
+type ParamMapping = Mapping[str, ParamValue]
+type ParamSequence = Sequence[ParamValue]
+type ParamSet = ParamMapping | ParamSequence
+type ManyParams = Iterable[ParamSet]
 
 
 class DBConnectionManager(Protocol):

@@ -3,26 +3,25 @@ Test record to entity mappers.
 """
 
 from nwtrack.application.ports.mappers import Mapper
+from nwtrack.domain.models import (
+    Account,
+    Balance,
+    Category,
+    Currency,
+    ExchangeRate,
+    NetWorth,
+    Side,
+    Status,
+)
+from nwtrack.domain.value_objects import Month
 from nwtrack.infra.sqlite.mappers import (
     AccountMapper,
+    BalanceMapper,
     CategoryMapper,
     CurrencyMapper,
-    BalanceMapper,
     ExchangeRateMapper,
     NetWorthMapper,
 )
-
-from nwtrack.domain.models import (
-    Currency,
-    Category,
-    Account,
-    Balance,
-    ExchangeRate,
-    NetWorth,
-    Status,
-    Side,
-)
-from nwtrack.domain.value_objects import Month
 
 
 def test_currency_mapper() -> None:

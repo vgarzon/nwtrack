@@ -10,7 +10,6 @@ from typing import Any
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.application.registries.mappers import MapperRegistry
 
-
 logger = logging.getLogger(__name__)
 
 

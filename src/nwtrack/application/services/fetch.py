@@ -2,7 +2,7 @@
 Fetch service module for read-only data retrieval.
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 from nwtrack.application.dto import MonthlyCategoryBalance
 from nwtrack.application.ports.uow import UnitOfWork

@@ -5,11 +5,11 @@ Tests for account creator use case
 import re
 
 import pytest
+from tests.helpers import init_db_tables_w_entities
 
 import nwtrack.application.use_cases.create_category
 from nwtrack.application.use_cases.create_category import CreateCategoryInteractive
 from nwtrack.bootstrap.container import Container
-from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture
@@ -23,8 +23,8 @@ def configured_container(base_container: Container) -> Container:
         FetchService,
     )
     from nwtrack.bootstrap.container import Lifetime
-    from nwtrack.infra.config.settings import Settings
     from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
+    from nwtrack.infra.config.settings import Settings
 
     console_defaults = ConsoleSettings(record=True)
 

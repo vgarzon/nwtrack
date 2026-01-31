@@ -27,6 +27,6 @@ from nwtrack.entrypoints.cli.commands import (  # noqa: F401, E402
     accounts,
     balances,
     categories,
-    reports,
     export,
+    reports,
 )

@@ -2,10 +2,10 @@
 Halper functions to initialize the database with sample data.
 """
 
+from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.bootstrap.container import Container
-from nwtrack.application.services.data_loader import InitDataService
-from nwtrack.application.ports.uow import UnitOfWork
 
 
 def init_db_tables_w_entities(container: Container, entities: dict[str, list]) -> None:

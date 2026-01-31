@@ -3,18 +3,19 @@ Mappers to convert records to and from entities.
 """
 
 from __future__ import annotations
+
+from nwtrack.application.ports.mappers import DBRecord, Mapper
 from nwtrack.domain.models import (
     Account,
     Balance,
-    Currency,
     Category,
+    Currency,
     ExchangeRate,
     NetWorth,
     Side,
     Status,
 )
 from nwtrack.domain.value_objects import Month
-from nwtrack.application.ports.mappers import Mapper, DBRecord
 
 
 class CurrencyMapper(Mapper[Currency]):

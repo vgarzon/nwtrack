@@ -26,19 +26,19 @@ test-pattern PATTERN:
 
 # Run linter
 lint:
-    uv run ruff check .
+    uv run ruff check src/ tests/
 
 # Auto-fix linting issues
 lint-fix:
-    uv run ruff check --fix .
+    uv run ruff check --fix src/ tests/
 
 # Format code
 format:
-    uv run ruff format .
+    uv run ruff format src/ tests/
 
 # Type check with mypy
 typecheck:
-    uv run mypy .
+    uv run mypy src/ tests/
 
 # Run all checks (lint + typecheck + test)
 check: lint typecheck test

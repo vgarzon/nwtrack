@@ -4,13 +4,13 @@ Mapper protocol for converting between databaes ecords and entities.
 
 from __future__ import annotations
 
-from typing import Protocol, Any, TypeVar, Mapping, TypeAlias
-
+from collections.abc import Mapping
+from typing import Any, Protocol, TypeVar
 
 TEntity = TypeVar("TEntity")
 
 # DBRecord = dict[str, Any]
-DBRecord: TypeAlias = Mapping[str, Any]
+type DBRecord = Mapping[str, Any]
 
 
 class Mapper(Protocol[TEntity]):

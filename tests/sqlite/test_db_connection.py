@@ -2,14 +2,14 @@
 Test cases for database connection and unit of work functionalities.
 """
 
-from nwtrack.bootstrap.composition import build_data_services_container
-
-from nwtrack.application.services.db_admin import DBAdminService
-from nwtrack.infra.config.settings import Settings
-from nwtrack.bootstrap.container import Container
-from nwtrack.application.ports.db import DBConnectionManager
-from nwtrack.infra.sqlite.db_manager import SQLiteConnectionManager
 from tests.data.basic import TEST_DATA
+
+from nwtrack.application.ports.db import DBConnectionManager
+from nwtrack.application.services.db_admin import DBAdminService
+from nwtrack.bootstrap.composition import build_data_services_container
+from nwtrack.bootstrap.container import Container
+from nwtrack.infra.config.settings import Settings
+from nwtrack.infra.sqlite.db_manager import SQLiteConnectionManager
 
 INSERT_QUERIES: dict[str, str] = {
     "currencies": """

@@ -4,8 +4,9 @@ Simple dependency injection container.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from enum import StrEnum
-from typing import Any, Callable, Self, cast
+from typing import Any, Self, cast
 
 
 class Lifetime(StrEnum):

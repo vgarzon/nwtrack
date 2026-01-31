@@ -5,13 +5,13 @@ Test use case to export database tables to CSV files.
 import textwrap
 
 import pytest
+from tests.helpers import init_db_tables_w_entities
 
 import nwtrack.application.use_cases.export_tables_csv
 from nwtrack.application.use_cases.export_tables_csv import (
     ExportTablesCSVInteractive,
 )
 from nwtrack.bootstrap.container import Container, Lifetime
-from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture
@@ -119,19 +119,19 @@ def test_export_tables_interactive(
     categories_expected = textwrap.dedent(categories_expected).lstrip()
     accounts_expected = textwrap.dedent(accounts_expected).lstrip()
 
-    with open(tmp_path / "currencies.csv", "r", encoding="utf-8") as f:
+    with open(tmp_path / "currencies.csv", encoding="utf-8") as f:
         currencies_csv = f.read()
     assert currencies_csv == currencies_expected
 
-    with open(tmp_path / "categories.csv", "r", encoding="utf-8") as f:
+    with open(tmp_path / "categories.csv", encoding="utf-8") as f:
         categories_csv = f.read()
     assert categories_csv == categories_expected
 
-    with open(tmp_path / "accounts.csv", "r", encoding="utf-8") as f:
+    with open(tmp_path / "accounts.csv", encoding="utf-8") as f:
         accounts_csv = f.read()
     assert accounts_csv == accounts_expected
 
-    with open(tmp_path / "balances.csv", "r", encoding="utf-8") as f:
+    with open(tmp_path / "balances.csv", encoding="utf-8") as f:
         balances_csv = f.readlines()
     assert "id,account_id,month,amount\n" == balances_csv[0]
     assert "10,2,2024-08,2100\n" in balances_csv[:11]

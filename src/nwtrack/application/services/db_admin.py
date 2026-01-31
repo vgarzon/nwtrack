@@ -23,6 +23,6 @@ class DBAdminService:
             "Initializing database with DDL script '%s'", self._config.db_ddl_path
         )
         ddl_path = self._config.db_ddl_path
-        with open(ddl_path, "r", encoding="utf-8") as f:
+        with open(ddl_path, encoding="utf-8") as f:
             ddl_script = f.read()
         self._db.script(ddl_script)

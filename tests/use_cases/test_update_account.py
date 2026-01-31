@@ -5,11 +5,11 @@ Tests for account creator use case
 import re
 
 import pytest
+from tests.helpers import init_db_tables_w_entities
 
 import nwtrack.application.use_cases.create_account
 from nwtrack.application.use_cases.update_account_info import UpdateAccountInfo
 from nwtrack.bootstrap.container import Container
-from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture

@@ -7,17 +7,16 @@ from __future__ import annotations
 import logging
 import sqlite3
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TypeAlias
 
 from nwtrack.infra.config.settings import Settings
 
 logger = logging.getLogger(__name__)
 
-SQLiteValue: TypeAlias = str | int | float | bool | bytes | None
-SQLiteParamMapping: TypeAlias = Mapping[str, SQLiteValue]
-SQLiteParamSequence: TypeAlias = Sequence[SQLiteValue]
-SQLiteParamSet: TypeAlias = SQLiteParamMapping | SQLiteParamSequence
-SQLiteManyParams: TypeAlias = Iterable[SQLiteParamSet]
+type SQLiteValue = str | int | float | bool | bytes | None
+type SQLiteParamMapping = Mapping[str, SQLiteValue]
+type SQLiteParamSequence = Sequence[SQLiteValue]
+type SQLiteParamSet = SQLiteParamMapping | SQLiteParamSequence
+type SQLiteManyParams = Iterable[SQLiteParamSet]
 
 
 class SQLiteConnectionManager:

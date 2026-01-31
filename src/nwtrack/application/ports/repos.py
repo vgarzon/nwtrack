@@ -4,9 +4,10 @@ Repository protocols.
 
 from __future__ import annotations
 
-from typing import Protocol, TypeVar, Generic
+from typing import Protocol, TypeVar
 
 from nwtrack.application.ports.db import DBConnectionManager
+from nwtrack.application.ports.mappers import DBRecord, Mapper
 from nwtrack.domain.models import (
     Account,
     Balance,
@@ -16,7 +17,6 @@ from nwtrack.domain.models import (
     NetWorth,
 )
 from nwtrack.domain.value_objects import Month
-from nwtrack.application.ports.mappers import Mapper, DBRecord
 
 TEntity = TypeVar("TEntity")
 
@@ -37,7 +37,7 @@ class Repository(Protocol[TEntity]):
     def hydrate_many(self, data: list[DBRecord]) -> list[TEntity]: ...
 
 
-class BaseRepository(Generic[TEntity]):
+class BaseRepository[TEntity]:
     """Base repository class implementing common methods."""
 
     def __init__(self, db: DBConnectionManager, mapper: Mapper[TEntity]) -> None:

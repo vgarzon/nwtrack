@@ -3,8 +3,8 @@ Mapper Registry definition.
 """
 
 import logging
-
 from typing import Any
+
 from nwtrack.application.ports.mappers import Mapper, TEntity
 
 logger = logging.getLogger(__name__)

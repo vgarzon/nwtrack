@@ -3,7 +3,7 @@ Roll balances forward to next available month.
 """
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from rich.console import Console
 from rich.prompt import Confirm, IntPrompt, Prompt
@@ -202,7 +202,8 @@ class RollBalancesUpdater:
         """Build a Rich Table of balances per month.
 
         Args:
-            balance_counts (list[tuple[Month, int]]): List of tuples Month and count of balances
+            balance_counts: List of tuples (Month, count of balances)
+
         Returns:
             Table: Rich Table object
                 idx (starts at 1) | month | count

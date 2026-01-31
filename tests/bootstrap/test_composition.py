@@ -5,10 +5,10 @@ Test container composition root
 import pytest
 
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.infra.config.settings import Settings
-from nwtrack.bootstrap.container import Container, Lifetime
-from nwtrack.infra.sqlite.uow import SQLiteUnitOfWork
 from nwtrack.application.registries.repos import RepositoryRegistry
+from nwtrack.bootstrap.container import Container, Lifetime
+from nwtrack.infra.config.settings import Settings
+from nwtrack.infra.sqlite.uow import SQLiteUnitOfWork
 
 
 @pytest.fixture

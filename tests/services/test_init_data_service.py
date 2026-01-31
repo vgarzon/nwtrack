@@ -3,18 +3,18 @@ Test initial data service
 """
 
 import pytest
-
-from nwtrack.application.services.db_admin import DBAdminService
-from nwtrack.infra.config.settings import Settings
-from nwtrack.bootstrap.container import Container
-from nwtrack.application.ports.db import DBConnectionManager
-from nwtrack.application.services.data_loader import InitDataService
-from nwtrack.application.ports.uow import UnitOfWork
 from tests.helpers import (
     count_entries,
     init_db_tables_from_csv,
     init_db_tables_w_entities,
 )
+
+from nwtrack.application.ports.db import DBConnectionManager
+from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.application.services.data_loader import InitDataService
+from nwtrack.application.services.db_admin import DBAdminService
+from nwtrack.bootstrap.container import Container
+from nwtrack.infra.config.settings import Settings
 
 
 @pytest.fixture

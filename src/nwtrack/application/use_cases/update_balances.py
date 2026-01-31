@@ -3,16 +3,16 @@ Update active account balances interactively
 """
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from rich.console import Console
 from rich.prompt import IntPrompt, Prompt
 from rich.table import Table
 
 from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Account, Balance, NetWorth
 from nwtrack.domain.value_objects import Month
-from nwtrack.application.services.fetch import FetchService
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +144,8 @@ class BalanceUpdater:
         """Build a Rich Table of balances per month.
 
         Args:
-            balance_counts (list[tuple[Month, int]]): List of tuples Month and count of balances
+            balance_counts: List of tuples (Month, count of balances)
+
         Returns:
             Table: Rich Table object
                 idx (starts at 1) | month | count
@@ -305,8 +306,8 @@ def main() -> None:
     from dotenv import load_dotenv
 
     from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
-    from nwtrack.bootstrap.logging_config import setup_logging
     from nwtrack.bootstrap.container import Lifetime
+    from nwtrack.bootstrap.logging_config import setup_logging
 
     load_dotenv()
     setup_logging()

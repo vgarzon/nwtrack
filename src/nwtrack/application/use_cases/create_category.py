@@ -3,7 +3,7 @@ Create category interactively.
 """
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from rich.prompt import Prompt
 
@@ -11,14 +11,14 @@ from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Category, Side
 from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
-from nwtrack.entrypoints.cli.ui.renderers import (
-    build_categories_table,
-    render_category_data,
-)
 from nwtrack.entrypoints.cli.ui.prompts import (
     prompt_for_category_name,
     prompt_for_category_side,
     prompt_to_confirm_action,
+)
+from nwtrack.entrypoints.cli.ui.renderers import (
+    build_categories_table,
+    render_category_data,
 )
 
 logger = logging.getLogger(__name__)
@@ -130,7 +130,8 @@ class CreateCategoryInteractive:
             if category.name.lower() == data.name.lower():
                 logger.error("Category name '%s' already exists.", data.name)
                 self._console.print(
-                    f"[red]Error:[/red] Category name [bold]'{data.name}'[/bold] already exists."
+                    f"[red]Error:[/red] Category name "
+                    f"[bold]'{data.name}'[/bold] already exists."
                 )
                 return False
         # TODO: Add more validation as needed
@@ -193,7 +194,7 @@ class CreateCategoryInteractive:
 def main() -> None:
     from dotenv import load_dotenv
 
-    from nwtrack.bootstrap.composition import build_base_sqlite_uow_container, Lifetime
+    from nwtrack.bootstrap.composition import Lifetime, build_base_sqlite_uow_container
     from nwtrack.bootstrap.logging_config import setup_logging
     from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
 

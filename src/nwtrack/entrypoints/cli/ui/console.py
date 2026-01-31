@@ -2,9 +2,10 @@
 Rich console for enhanced terminal output.
 """
 
+from dataclasses import dataclass
+
 from rich.console import Console
 from rich.theme import Theme
-from dataclasses import dataclass
 
 
 @dataclass(frozen=True)

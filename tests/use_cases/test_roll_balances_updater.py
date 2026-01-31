@@ -5,11 +5,11 @@ Test suite for the roll balances forward use case
 import re
 
 import pytest
+from tests.helpers import init_db_tables_w_entities
 
 import nwtrack.application.use_cases.roll_balances_forward
 from nwtrack.application.use_cases.roll_balances_forward import RollBalancesUpdater
 from nwtrack.bootstrap.container import Container, Lifetime
-from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture

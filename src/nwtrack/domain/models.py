@@ -4,6 +4,7 @@ Primary data models
 
 from dataclasses import dataclass
 from enum import StrEnum
+
 from nwtrack.domain.value_objects import Month
 
 

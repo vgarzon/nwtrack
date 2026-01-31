@@ -2,8 +2,8 @@
 File input / output utility functions.
 """
 
-from pathlib import Path
 import csv
+from pathlib import Path
 
 
 def csv_to_records(csv_file_path: str | Path) -> list[dict]:
@@ -15,7 +15,7 @@ def csv_to_records(csv_file_path: str | Path) -> list[dict]:
     Returns:
         list[dict]: List of records as dictionaries.
     """
-    with open(csv_file_path, "r") as file:
+    with open(csv_file_path) as file:
         reader = csv.DictReader(file)
         data = [row for row in reader]
 

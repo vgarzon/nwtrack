@@ -4,27 +4,34 @@ List categories
 
 import logging
 
+from nwtrack.application.dto import OperationResult
+from nwtrack.application.ports.presentation import CategoryListPresenter
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.bootstrap.container import Container
-from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
-from nwtrack.entrypoints.cli.ui.renderers import build_categories_table
 
 logger = logging.getLogger(__name__)
 
 
 class ListCategories:
-    """List categores."""
+    """List categories."""
 
-    def __init__(self, fetcher: FetchService, console_factory: ConsoleFactory) -> None:
+    def __init__(
+        self, fetcher: FetchService, presenter: CategoryListPresenter
+    ) -> None:
         self._fetcher = fetcher
-        self._console = console_factory()
+        self._presenter = presenter
 
-    def run(self) -> None:
-        logger.info("Starting List Accounts")
+    def run(self) -> OperationResult[None]:
+        """Run the List Categories use case.
+
+        Returns:
+            OperationResult indicating success/failure
+        """
+        logger.info("Starting List Categories")
         categories = self._fetcher.get_all_categories()
-        table = build_categories_table(categories)
-        self._console.print(table)
-        logger.info("Finished List Accounts")
+        self._presenter.display_categories(categories)
+        logger.info("Finished List Categories")
+        return OperationResult(success=True)
 
 
 def bootstrap() -> Container:
@@ -34,31 +41,35 @@ def bootstrap() -> Container:
         Container: Configured DI container.
     """
     from dotenv import load_dotenv
+    from rich.console import Console
 
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
     from nwtrack.bootstrap.container import Lifetime
     from nwtrack.bootstrap.logging_config import setup_logging
-    from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
+    from nwtrack.entrypoints.cli.adapters.category_presenters import (
+        RichCategoryListPresenter,
+    )
 
     load_dotenv()
     setup_logging()
 
-    console_settings = ConsoleSettings(record=False)
-
     container = build_base_sqlite_uow_container()
     container.register(
-        ConsoleFactory,
-        lambda _: ConsoleFactory(default_settings=console_settings),
+        Console,
+        lambda _: Console(),
         lifetime=Lifetime.SINGLETON,
     ).register(
         FetchService,
         lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
     ).register(
+        RichCategoryListPresenter,
+        lambda c: RichCategoryListPresenter(console=c.resolve(Console)),
+    ).register(
         ListCategories,
         lambda c: ListCategories(
             fetcher=c.resolve(FetchService),
-            console_factory=c.resolve(ConsoleFactory),
+            presenter=c.resolve(RichCategoryListPresenter),
         ),
     )
     return container
@@ -66,7 +77,10 @@ def bootstrap() -> Container:
 
 def main() -> None:
     """Main function for listing categories interactively."""
-    bootstrap().resolve(ListCategories).run()
+    result: OperationResult[None] = bootstrap().resolve(ListCategories).run()
+    import sys
+
+    sys.exit(0 if result.success else 1)
 
 
 if __name__ == "__main__":

@@ -100,7 +100,8 @@ def build_balance_counts_table(balance_counts: list[tuple[Month, int]]) -> Table
     """Build a Rich Table of balances per month.
 
     Args:
-        balance_counts (list[tuple[Month, int]]): List of tuples Month and count of balances
+        balance_counts: List of tuples (Month, count of balances)
+
     Returns:
         Table: Rich Table object
             idx (starts at 1) | month | count

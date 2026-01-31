@@ -2,10 +2,11 @@
 Tests for reporting queries.
 """
 
-from nwtrack.domain.value_objects import Month
-from nwtrack.bootstrap.composition import build_data_services_container
-from tests.helpers import init_db_tables_w_entities, _uow_factory
+from tests.helpers import _uow_factory, init_db_tables_w_entities
+
 from nwtrack.application.dto import MonthlyCategoryBalance
+from nwtrack.bootstrap.composition import build_data_services_container
+from nwtrack.domain.value_objects import Month
 
 
 def test_get_monthly_total_by_category(base_container, sample_entities) -> None:

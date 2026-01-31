@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import logging
 
-from nwtrack.domain.models import Currency
 from nwtrack.application.ports.repos import BaseRepository
+from nwtrack.domain.models import Currency
 
 logger = logging.getLogger(__name__)
 

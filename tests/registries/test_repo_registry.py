@@ -2,14 +2,16 @@
 Test repo registry functionality.
 """
 
-import pytest
 from typing import Any
+
+import pytest
 from tests.fakes import FakeEntityA, FakeEntityB
+
 from nwtrack.application.ports.db import DBConnectionManager
+from nwtrack.application.ports.mappers import DBRecord
+from nwtrack.application.ports.repos import Repository
 from nwtrack.application.registries.mappers import MapperRegistry
 from nwtrack.application.registries.repos import RepositoryRegistry
-from nwtrack.application.ports.repos import Repository
-from nwtrack.application.ports.mappers import DBRecord
 
 
 @pytest.fixture(scope="module")

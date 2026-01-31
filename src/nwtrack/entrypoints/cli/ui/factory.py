@@ -3,7 +3,8 @@ Rich console factory to be used in DI containers.
 """
 
 from rich.console import Console
-from nwtrack.entrypoints.cli.ui.console import build_console, ConsoleSettings
+
+from nwtrack.entrypoints.cli.ui.console import ConsoleSettings, build_console
 
 
 class ConsoleFactory:

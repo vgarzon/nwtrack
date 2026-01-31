@@ -130,8 +130,8 @@ def main() -> None:
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.application.services.db_admin import DBAdminService
     from nwtrack.bootstrap.composition import (
-        build_base_sqlite_uow_container,
         Lifetime,
+        build_base_sqlite_uow_container,
     )
     from nwtrack.bootstrap.logging_config import setup_logging
 

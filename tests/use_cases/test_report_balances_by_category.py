@@ -5,6 +5,7 @@ Test print summary use case
 import re
 
 import pytest
+from tests.helpers import init_db_tables_w_entities
 
 import nwtrack.application.use_cases.report_balances_by_category
 from nwtrack.application.ports.uow import UnitOfWork
@@ -12,7 +13,6 @@ from nwtrack.application.use_cases.report_balances_by_category import (
     ReportBalancesByCategory,
 )
 from nwtrack.bootstrap.container import Container
-from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture

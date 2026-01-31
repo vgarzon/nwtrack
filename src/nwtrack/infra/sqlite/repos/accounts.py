@@ -164,7 +164,9 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         rowcount = cur.rowcount
         if rowcount != 1:
             logger.warning(
-                f"Expected to delete 1 account with ID {account_id}, but deleted {rowcount}."
+                "Expected to delete 1 account with ID %s, but deleted %s.",
+                account_id,
+                rowcount,
             )
         else:
             logger.info(f"Deleted account with ID {account_id}.")
@@ -193,7 +195,9 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         rowcount = cur.rowcount
         if rowcount != 1:
             logger.warning(
-                f"Expected to update 1 account with ID {data.id}, but updated {rowcount}."
+                "Expected to update 1 account with ID %s, but updated %s.",
+                data.id,
+                rowcount,
             )
         else:
             logger.info(f"Updated account with ID {data.id}.")
@@ -222,7 +226,9 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         rowcount = cur.rowcount
         if rowcount != 1:
             logger.warning(
-                f"Expected to update 1 account with ID {account_id}, but updated {rowcount}."
+                "Expected to update 1 account with ID %s, but updated %s.",
+                account_id,
+                rowcount,
             )
         else:
             logger.info(f"Updated account {account_id} to name '{new_name}'.")
@@ -251,7 +257,9 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         rowcount = cur.rowcount
         if rowcount != 1:
             logger.warning(
-                f"Expected to update 1 account with ID {account_id}, but updated {rowcount}."
+                "Expected to update 1 account with ID %s, but updated %s.",
+                account_id,
+                rowcount,
             )
         else:
             logger.info(f"Updated account {account_id} to status '{new_status}'.")
@@ -280,7 +288,9 @@ class SQLiteAccountsRepository(BaseRepository[Account]):
         rowcount = cur.rowcount
         if rowcount != 1:
             logger.warning(
-                f"Expected to update 1 account with ID {account_id}, but updated {rowcount}."
+                "Expected to update 1 account with ID %s, but updated %s.",
+                account_id,
+                rowcount,
             )
         else:
             logger.info(

@@ -5,6 +5,7 @@ Tests for networth history service
 import re
 
 import pytest
+from tests.helpers import init_db_tables_w_entities
 
 from nwtrack.application.use_cases.report_networth_history import (
     Console,
@@ -13,7 +14,6 @@ from nwtrack.application.use_cases.report_networth_history import (
 )
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.infra.config.settings import Settings
-from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture

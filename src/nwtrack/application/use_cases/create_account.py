@@ -3,7 +3,7 @@ Create new account interactively.
 """
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from nwtrack.application.dto import NewAccountData
 from nwtrack.application.ports.uow import UnitOfWork
@@ -11,22 +11,22 @@ from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Account, Balance, Category, Status
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
+from nwtrack.entrypoints.cli.ui.prompts import (
+    prompt_for_account_description,
+    prompt_for_account_name,
+    prompt_for_balance_amount,
+    prompt_for_category_choice,
+    prompt_for_currency_choice,
+    prompt_for_month,
+    prompt_for_status_choice,
+    prompt_to_confirm_action,
+)
 from nwtrack.entrypoints.cli.ui.renderers import (
     build_accounts_table,
     build_currencies_table,
     build_indexed_categories_table,
     build_status_table,
     render_new_account_info,
-)
-from nwtrack.entrypoints.cli.ui.prompts import (
-    prompt_for_account_description,
-    prompt_for_account_name,
-    prompt_for_category_choice,
-    prompt_for_currency_choice,
-    prompt_for_month,
-    prompt_for_balance_amount,
-    prompt_to_confirm_action,
-    prompt_for_status_choice,
 )
 
 logger = logging.getLogger(__name__)

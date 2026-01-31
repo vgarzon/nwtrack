@@ -5,11 +5,11 @@ Test suite for the balance updater use case
 import re
 
 import pytest
+from tests.helpers import init_db_tables_w_entities
 
 import nwtrack.application.use_cases.update_balances
 from nwtrack.application.use_cases.update_balances import BalanceUpdater
 from nwtrack.bootstrap.container import Container
-from tests.helpers import init_db_tables_w_entities
 
 
 @pytest.fixture

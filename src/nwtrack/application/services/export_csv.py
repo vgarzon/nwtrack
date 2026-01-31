@@ -3,9 +3,9 @@ Service to export records to CSV files.
 """
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
 
-from typing import Callable
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.infra.fileio.csv_io import records_to_csv
 

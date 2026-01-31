@@ -5,15 +5,15 @@ Print summary of balances by category.
 import logging
 
 from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Account, Category
 from nwtrack.domain.value_objects import Month
-from nwtrack.application.services.fetch import FetchService
 from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
 from nwtrack.entrypoints.cli.ui.prompts import prompt_for_month, prompt_for_month_choice
 from nwtrack.entrypoints.cli.ui.renderers import (
     build_accounts_table,
-    build_category_summary_table,
     build_balances_table,
+    build_category_summary_table,
     build_networth_table,
 )
 
@@ -167,8 +167,8 @@ def main() -> None:
     from dotenv import load_dotenv
 
     from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
-    from nwtrack.bootstrap.logging_config import setup_logging
     from nwtrack.bootstrap.container import Lifetime
+    from nwtrack.bootstrap.logging_config import setup_logging
     from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
 
     load_dotenv()

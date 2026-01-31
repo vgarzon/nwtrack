@@ -2,10 +2,10 @@
 Reporting module for generating summary reports from data analysis results.
 """
 
-from nwtrack.domain.models import Category, Side
-from nwtrack.domain.value_objects import Month
 from nwtrack.application.dto import MonthlyCategoryBalance
 from nwtrack.application.ports.db import DBConnectionManager
+from nwtrack.domain.models import Category, Side
+from nwtrack.domain.value_objects import Month
 
 
 class SQLiteReportingQueries:
@@ -24,21 +24,21 @@ class SQLiteReportingQueries:
             list[MonthlyCategoryBalance]: List of rows with category and total amount.
         """
         query = """
-        SELECT 
+        SELECT
           c.name as category_name,
           c.side as category_side,
           sum(b.amount) as total_amount
-        FROM 
+        FROM
           balances b
-        JOIN 
+        JOIN
           accounts a on b.account_id = a.id
-        JOIN 
+        JOIN
           categories c on a.category = c.name
-        WHERE 
+        WHERE
           b.month = :month
-        GROUP by 
+        GROUP by
           c.name, c.side
-        ORDER by 
+        ORDER by
           c.side, c.name;
         """
         rows = self._db.fetch_all(query, {"month": str(month)})

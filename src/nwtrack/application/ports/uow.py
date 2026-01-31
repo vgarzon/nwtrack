@@ -3,6 +3,8 @@ Unit of Work protocol
 """
 
 from typing import Protocol
+
+from nwtrack.application.ports.reporting import ReportingQueries
 from nwtrack.application.ports.repos import (
     AccountsRepository,
     BalancesRepository,
@@ -11,7 +13,6 @@ from nwtrack.application.ports.repos import (
     ExchangeRatesRepository,
     NetWorthRepository,
 )
-from nwtrack.application.ports.reporting import ReportingQueries
 
 
 class UnitOfWork(Protocol):

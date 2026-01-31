@@ -3,15 +3,15 @@ Demo interactive use case for updating account information.
 """
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from rich.console import Console
 from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.domain.models import Account, Category, Currency, Status
 from nwtrack.application.services.fetch import FetchService
+from nwtrack.domain.models import Account, Category, Currency, Status
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +92,8 @@ class UpdateAccountInfo:
                 return account_id
             else:
                 self._console.print(
-                    f"[magenta]Account ID {account_id} not found.[/magenta] Please try again."
+                    f"[magenta]Account ID {account_id} not found.[/magenta] "
+                    f"Please try again."
                 )
 
     def collect_data(self, account_id: int) -> Account:
@@ -357,8 +358,8 @@ class UpdateAccountInfo:
 def main() -> None:
     from dotenv import load_dotenv
 
+    from nwtrack.bootstrap.composition import Lifetime, build_base_sqlite_uow_container
     from nwtrack.bootstrap.logging_config import setup_logging
-    from nwtrack.bootstrap.composition import build_base_sqlite_uow_container, Lifetime
 
     load_dotenv()
     setup_logging()
