@@ -3,12 +3,9 @@ Database initializer services
 """
 
 import logging
-from pathlib import Path
 
-from rich.console import Console
-from rich.prompt import Confirm, Prompt
-from rich.table import Table
-
+from nwtrack.application.dto import OperationResult
+from nwtrack.application.ports.presentation import DBInitCSVPresenter
 from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.infra.config.settings import Settings
@@ -24,12 +21,12 @@ class DBInitializerCSV:
         config: Settings,
         admin_svc: DBAdminService,
         data_svc: InitDataService,
-        console: Console,
+        presenter: DBInitCSVPresenter,
     ) -> None:
         self._config = config
         self._admin_svc = admin_svc
         self._data_svc = data_svc
-        self._console = console
+        self._presenter = presenter
         # TODO: Use RepoRegistry to specify required keys
         self._required_keys = [
             "currencies",
@@ -39,104 +36,72 @@ class DBInitializerCSV:
             "exchange_rates",
         ]
         self._file_paths: dict[str, str] = {}
-        self._prompt = Prompt(console=self._console)
-        self._confirm = Confirm(console=self._console)
 
-    def run(self) -> None:
+    def run(self) -> OperationResult[None]:
         """Run the database initialization process."""
         logger.info("Starting database initialization from CSV files.")
         logger.info("Database file path: %s", self._config.db_file_path)
         logger.info("DDL script path: %s", self._config.db_ddl_path)
-        self._console.rule(
-            "[bold green]Database Initialization from CSV Files[/bold green]"
-        )
-        self._console.print(
-            f"[bold]SQLite db file path:[/bold] {self._config.db_file_path}\n"
-            f"[bold]DDL script path:[/bold] {self._config.db_ddl_path}"
-        )
+        self._presenter.show_header(self._config.db_file_path, self._config.db_ddl_path)
         try:
-            self.collect_file_paths()
+            self._file_paths = self._presenter.prompt_for_file_paths(
+                self._required_keys
+            )
         except KeyboardInterrupt:
             logging.warning("User aborted csv file input.")
-            self._console.print("[orange]Stopping.[/orange]")
-            return
-        fp_table = self._build_file_paths_table()
-        self._console.print(fp_table)
-        self._console.print(
-            "\n[bold orange3]WARNING:[/bold orange3] This script will "
-            "[bold]DELETE and RE-CREATE[/bold] the database.\n"
-        )
-        accept = self._confirm.ask("Do you want to continue?", default=False)
+            self._presenter.show_cancellation()
+            return OperationResult(success=False, error_message="Aborted by user")
+
+        self._presenter.show_file_paths_table(self._file_paths)
+        accept = self._presenter.prompt_for_confirmation()
         if not accept:
             logger.warning("User aborted database initialization.")
-            self._console.print("[orange]Stopping.[/orange]")
-            return
+            self._presenter.show_cancellation()
+            return OperationResult(success=False, error_message="Aborted by user")
 
-        self._console.print("[yellow]Initializing SQLite database.[/yellow]")
-        self._admin_svc.init_database()
-        self._data_svc.insert_data_from_csv(self._file_paths)
-        self._console.print("[green]Database initialized successfully.[/green]")
+        try:
+            self._admin_svc.init_database()
+        except Exception as e:
+            logger.error("Database initialization failed: %s", e)
+            self._presenter.show_error(f"Database initialization failed: {e}")
+            return OperationResult(success=False, error_message=str(e))
+
+        try:
+            self._data_svc.insert_data_from_csv(self._file_paths)
+        except Exception as e:
+            logger.error("Data insertion from CSV files failed: %s", e)
+            self._presenter.show_error(f"Data insertion failed: {e}")
+            return OperationResult(success=False, error_message=str(e))
+
+        self._presenter.show_success()
         logger.info("Finished database initialization from CSV files.")
-
-    def _build_file_paths_table(self) -> Table:
-        """Build a table of file paths for display.
-
-        Returns:
-            Table: Rich Table object with file paths
-        """
-        table = Table(title="Specified CSV File Paths")
-        table.add_column("Repo", style="cyan", no_wrap=True)
-        table.add_column("Path", style="magenta")
-        for key, path in self._file_paths.items():
-            table.add_row(key, path)
-        return table
-
-    def collect_file_paths(self) -> None:
-        """Collect and validate file pahhs from user input.
-
-        Returns:
-            None
-
-        Exceptions:
-            KeyboardInterrupt: if user interrupts input
-        """
-        file_paths = {}
-        self._console.print(
-            "[yellow]Please enter CSV file paths or 'q' to quit:[/yellow]"
-        )
-        for file_key in self._required_keys:
-            while True:
-                path_str = self._prompt.ask(f"[bold]{file_key}[/bold]").strip()
-                if path_str.lower() == "q":
-                    logger.warning("User aborted csv file input for key %s", file_key)
-                    raise KeyboardInterrupt
-                path = Path(path_str)
-                if not path.is_file():
-                    self._console.print(
-                        f"[red bold]Error: File not found[/red bold]: {path_str}. "
-                        "Please try again."
-                    )
-                    continue
-                else:
-                    file_paths[file_key] = path_str
-                    break
-        self._file_paths = file_paths.copy()
+        return OperationResult(success=True)
 
 
-def main() -> None:
+def main() -> int:
+    """Main entry point for DB initialization from CSV files.
+
+    Returns:
+        int: Exit code, 0 for success, non-zero for failure
+    """
     from dotenv import load_dotenv
+    from rich.console import Console
 
     from nwtrack.application.ports.db import DBConnectionManager
+    from nwtrack.application.ports.presentation import DBInitCSVPresenter
     from nwtrack.application.ports.uow import UnitOfWork
-    from nwtrack.application.services.db_admin import DBAdminService
-    from nwtrack.bootstrap.composition import (
-        Lifetime,
-        build_base_sqlite_uow_container,
-    )
+    from nwtrack.bootstrap.composition import Lifetime, build_base_sqlite_uow_container
     from nwtrack.bootstrap.logging_config import setup_logging
+    from nwtrack.entrypoints.cli.adapters.db_admin_presenters import (
+        RichDBInitCSVPresenter,
+    )
+    from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
+    from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
 
     load_dotenv()
     setup_logging()
+
+    console_defaults = ConsoleSettings(record=False)
 
     container = build_base_sqlite_uow_container()
     container.register(
@@ -147,7 +112,10 @@ def main() -> None:
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
     ).register(
         Console,
-        lambda c: Console(),
+        lambda c: ConsoleFactory(default_settings=console_defaults)(),
+    ).register(
+        DBInitCSVPresenter,
+        lambda c: RichDBInitCSVPresenter(console=c.resolve(Console)),
         lifetime=Lifetime.SINGLETON,
     ).register(
         DBInitializerCSV,
@@ -155,11 +123,15 @@ def main() -> None:
             config=c.resolve(Settings),
             admin_svc=c.resolve(DBAdminService),
             data_svc=c.resolve(InitDataService),
-            console=c.resolve(Console),
+            presenter=c.resolve(DBInitCSVPresenter),
         ),
     )
-    container.resolve(DBInitializerCSV).run()
+    result: OperationResult[None] = container.resolve(DBInitializerCSV).run()
+
+    return 0 if result.success else 1
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    sys.exit(main())

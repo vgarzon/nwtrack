@@ -16,9 +16,7 @@ logger = logging.getLogger(__name__)
 class ListAccounts:
     """List accounts interactively."""
 
-    def __init__(
-        self, fetcher: FetchService, presenter: AccountListPresenter
-    ) -> None:
+    def __init__(self, fetcher: FetchService, presenter: AccountListPresenter) -> None:
         self._fetcher = fetcher
         self._presenter = presenter
 
@@ -56,11 +54,14 @@ class ListAccounts:
         return accounts, categories_map
 
 
-def main(active_only: bool = True) -> None:
+def main(active_only: bool = True) -> int:
     """Main function for listing accounts interactively.
 
     Args:
         active_only: Whether to list only active accounts.
+
+    Returns:
+        Exit code: 0 on success, 1 on failure.
     """
     from dotenv import load_dotenv
     from rich.console import Console
@@ -97,9 +98,7 @@ def main(active_only: bool = True) -> None:
     result: OperationResult[None] = container.resolve(ListAccounts).run(
         active_only=active_only
     )
-    import sys
-
-    sys.exit(0 if result.success else 1)
+    return 0 if result.success else 1
 
 
 if __name__ == "__main__":
@@ -107,4 +106,4 @@ if __name__ == "__main__":
 
     argv = sys.argv[1:]
     active_only = False if "--no-active-only" in argv else True
-    main(active_only=active_only)
+    sys.exit(main(active_only=active_only))

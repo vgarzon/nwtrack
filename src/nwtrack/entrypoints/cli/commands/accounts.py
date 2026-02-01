@@ -10,9 +10,11 @@ def list_accounts_interactive(active_only: bool = True):
     """
     List accounts
     """
+    import sys
+
     import nwtrack.application.use_cases.list_accounts as list_accounts
 
-    list_accounts.main(active_only=active_only)
+    sys.exit(list_accounts.main(active_only=active_only))
 
 
 @accounts_app.command("create")

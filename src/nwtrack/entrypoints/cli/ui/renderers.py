@@ -242,6 +242,14 @@ def build_currencies_table(currencies: list[Currency]) -> Table:
 
 
 def build_status_table(status_options: list[Status]) -> Table:
+    """Build a Rich Table of status options.
+
+    Args:
+        status_options (list[Status]): List of Status enum options
+
+    Returns:
+        Table: Rich Table object
+    """
     table = Table(title="Status Options")
     table.add_column("Index", justify="right", style="cyan", no_wrap=True)
     table.add_column("Status", style="magenta")
@@ -256,6 +264,13 @@ def build_status_table(status_options: list[Status]) -> Table:
 def render_new_account_info(
     console: Console, account: Account, balance: Balance
 ) -> None:
+    """Render information about a newly created account.
+
+    Args:
+        console: Rich Console object
+        account: Account object
+        balance: Balance object
+    """
     console.print(
         f"[yellow]Account name:[/yellow] {account.name}\n"
         f"[yellow]Account ID:[/yellow] {account.id}\n"
@@ -273,3 +288,22 @@ def render_category_data(console: Console, category: Category) -> None:
         f"[yellow]Category name:[/yellow] {category.name}\n"
         f"[yellow]Category side:[/yellow] {category.side.value}\n"
     )
+
+
+def build_file_paths_table(file_paths: dict[str, str], title_prefix: str = "") -> Table:
+    """Build a table of file paths for display.
+
+    Args:
+        file_paths (list[str]): List of file paths
+        title_prefix (str): Optional title prefix
+
+    Returns:
+        Table: Rich Table object with file paths
+    """
+    title = f"{title_prefix} File Paths" if title_prefix else "File Paths"
+    table = Table(title=title)
+    table.add_column("Repo", style="cyan", no_wrap=True)
+    table.add_column("Path", style="magenta")
+    for key, path in file_paths.items():
+        table.add_row(key, path)
+    return table

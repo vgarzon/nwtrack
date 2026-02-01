@@ -393,3 +393,55 @@ class BalanceUpdatePresenter(Protocol):
             month: Month for the summary
         """
         ...
+
+
+class DBInitCSVPresenter(Protocol):
+    """Presenter for DB initialization from CSV workflow."""
+
+    def show_header(self, db_file_path: str, db_ddl_path: str) -> None:
+        """Display workflow header using Rich.
+
+        Args:
+            db_file_path: Path to the SQLite database file
+            db_ddl_path: Path to the DDL script file
+        """
+        ...
+
+    def prompt_for_file_paths(self, table_names: list[str]) -> dict[str, str]:
+        """Prompt user to input CSV file paths for required tables.
+
+        Args:
+            table_names: List of required table names
+
+        Returns:
+            List of file paths as strings
+        """
+        ...
+
+    def show_file_paths_table(self, file_paths: dict[str, str]) -> None:
+        """Display the table of file paths.
+
+        Args:
+            file_paths: List of file paths
+        """
+        ...
+
+    def prompt_for_confirmation(self) -> bool:
+        """Prompt user to confirm continuation.
+
+        Returns:
+            True if user confirms, False otherwise
+        """
+        ...
+
+    def show_cancellation(self) -> None:
+        """Display user cancellation message."""
+        ...
+
+    def show_success(self) -> None:
+        """Display successful completion message."""
+        ...
+
+    def show_error(self, message: str) -> None:
+        """Display error message."""
+        ...
