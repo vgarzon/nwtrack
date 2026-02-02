@@ -8,7 +8,7 @@ protocols, not on concrete UI implementations like Rich.
 
 from typing import Protocol
 
-from nwtrack.application.dto import NewAccountData
+from nwtrack.application.dto import MonthlyCategoryBalance, NewAccountData
 from nwtrack.domain.models import Account, Balance, Category, NetWorth
 from nwtrack.domain.value_objects import Month
 
@@ -444,4 +444,107 @@ class DBInitCSVPresenter(Protocol):
 
     def show_error(self, message: str) -> None:
         """Display error message."""
+        ...
+
+
+class BalancesByCategoryPresenter(Protocol):
+    """Presenter for balances by category report workflow."""
+
+    def show_header(self) -> None:
+        """Display report header using Rich."""
+        ...
+
+    def show_accounts_table(
+        self,
+        accounts: list[Account],
+        category_map: dict[int, Category | None],
+        title_prefix: str = "",
+    ) -> None: ...
+
+    def show_balances_table(
+        self,
+        balances: list[Balance],
+        account_map: dict[int, Account],
+        category_map: dict[int, Category | None],
+        title_suffix: str = "",
+    ) -> None:
+        """Show balances table with account and category information.
+
+        Args:
+            balances: List of balances
+            account_map: Mapping of account IDs to Account objects
+            category_map: Mapping of account IDs to Category objects
+            title_suffix: Suffix for the table title
+
+        Returns:
+            None
+        """
+        ...
+
+    def show_summary_by_category(
+        self, monthly_balances: list[MonthlyCategoryBalance], title_suffix: str = ""
+    ) -> None:
+        """Print summary by category for a specific month.
+
+        Args:
+            monthly_balances: list[MonthlyCategoryBalance]
+            title_suffix: Suffix for the table title
+        """
+        ...
+
+    def show_networth_table(
+        self, nw: NetWorth, title_suffix: str = "", form: str = "wide"
+    ) -> None:
+        """Print net worth on a specific month.
+
+        Args:
+            nw (NetWorth): NetWorth object
+            title_suffix (str): Suffix for the table title
+            form (str): Table form, either "wide" or "long"
+
+        Returns:
+            None
+        """
+        ...
+
+    def prompt_for_month_choice(
+        self, balance_counts: list[tuple[Month, int]]
+    ) -> Month | None:
+        """Present month selection with recent months or custom input.
+
+        Args:
+            balance_counts: List of (Month, count) tuples for recent months
+
+        Returns:
+            Selected Month or None if cancelled
+        """
+        ...
+
+    def _input_custom_month(self) -> Month | None:
+        """Input a specific month from user."""
+        ...
+
+    def show_invalid_month_error(self) -> None:
+        """Display error for invalid month input."""
+        ...
+
+    def show_no_balances_warning(self, month: Month) -> None:
+        """Display warning when no balances found for month.
+
+        Args:
+            month: The month that has no balances
+        """
+        ...
+
+    def show_no_month_selected_message(self) -> None:
+        """Display messag3 when no month is selected."""
+        ...
+
+    def show_no_networth_data_warning(self, month: Month, currency_code: str) -> None:
+        """Display warning when no net worth data found for month and currency.
+
+        Args:
+            month: The month that has no net worth data
+            currency_code: The currency code that was searched
+        """
         ...

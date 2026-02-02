@@ -10,9 +10,11 @@ def category_summary_report_interactive():
     """
     Generate a networth summary by category interactively.
     """
+    import sys
+
     import nwtrack.application.use_cases.report_balances_by_category as report_balances
 
-    report_balances.main()
+    sys.exit(report_balances.main())
 
 
 @reports_app.command("networth-history")

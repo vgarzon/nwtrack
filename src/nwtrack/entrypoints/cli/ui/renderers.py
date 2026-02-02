@@ -307,3 +307,57 @@ def build_file_paths_table(file_paths: dict[str, str], title_prefix: str = "") -
     for key, path in file_paths.items():
         table.add_row(key, path)
     return table
+
+
+def build_networth_history_table(nws: list[NetWorth]) -> Table:
+    """Build a Rich Table of net worth summary.
+
+    Args:
+        console: Rich Console object
+        nws: List of Net Worth records
+
+    Returns:
+        Table: Rich Table object
+    """
+    _first_month = nws[0].month if nws else ""
+    _last_month = nws[-1].month if nws else ""
+    _title = f"Net Worth History {_first_month} to {_last_month}"
+    table = Table(title=f"[green]{_title}[/green]")
+    table.add_column("Month", justify="right")
+    table.add_column("Assets", justify="right", style="green")
+    table.add_column("Liabilities", justify="right", style="yellow")
+    table.add_column("Net Worth", justify="right", style="red")
+    table.add_column("Change", justify="right")
+    for k, nw in enumerate(nws):
+        if k > 0:
+            change = nw.net_worth - nws[k - 1].net_worth
+            color_str = "red" if change < 0 else "green"
+            change_str = f"[{color_str}]{change:7,}[/{color_str}]"
+        else:
+            change_str = ""
+        table.add_row(
+            f"{nw.month}",
+            f"{nw.assets:9,}",
+            f"{nw.liabilities:9,}",
+            f"{nw.net_worth:9,}",
+            f"{change_str}",
+        )
+    return table
+
+
+def build_month_balances_table(balance_counts: list[tuple[Month, int]]) -> Table:
+    """Build Rich table of balances per month.
+
+    Args:
+        balance_counts: List of tuples (Month, count of balances)
+
+    Returns:
+        Table: Rich Table object
+    """
+    table = Table(title="Balance Entries per Month")
+    table.add_column("Index", justify="right", style="green")
+    table.add_column("Month", style="cyan")
+    table.add_column("Balances", justify="right", style="magenta")
+    for idx, (month, count) in enumerate(balance_counts):
+        table.add_row(str(idx + 1), str(month), str(count))
+    return table
