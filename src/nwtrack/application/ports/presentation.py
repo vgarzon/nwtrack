@@ -82,6 +82,12 @@ class NetworthHistoryPresenter(Protocol):
         """
         ...
 
+    def display_total_change(
+        self, networth_records: list[NetWorth], currency_code: str
+    ) -> None:
+        """Display total change in net worth over the period."""
+        ...
+
 
 class CategoryCreationPresenter(Protocol):
     """Presenter for category creation workflow."""

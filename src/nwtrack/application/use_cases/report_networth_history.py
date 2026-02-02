@@ -1,5 +1,5 @@
 """
-Print networth history report.
+Display network history and total change over a specified period.
 """
 
 import logging
@@ -56,17 +56,21 @@ class NetworthHistoryReport:
 
         # Display results
         self._presenter.display_networth_history(nws, currency_code)
+        self._presenter.display_total_change(nws, currency_code)
 
         logger.info("Finished Networth History Report Service")
         return OperationResult(success=True)
 
 
-def main(n_months: int = 12, currency_code: str = "USD") -> None:
+def main(n_months: int = 12, currency_code: str = "USD") -> int:
     """Main entry point for networth history report script.
 
     Args:
         n_months: Number of months to include in the report, defaults to 12
         currency_code: Currency code for the report, defaults to "USD"
+
+    Returns:
+        Exit code: 0 on success, 1 on failure
     """
     from dotenv import load_dotenv
     from rich.console import Console
@@ -103,9 +107,7 @@ def main(n_months: int = 12, currency_code: str = "USD") -> None:
     result: OperationResult[None] = container.resolve(NetworthHistoryReport).run(
         n_months, currency_code
     )
-    import sys
-
-    sys.exit(0 if result.success else 1)
+    return 0 if result.success else 1
 
 
 if __name__ == "__main__":
@@ -116,4 +118,4 @@ if __name__ == "__main__":
     else:
         n_months = 12
 
-    main(n_months)
+    sys.exit(main(n_months))

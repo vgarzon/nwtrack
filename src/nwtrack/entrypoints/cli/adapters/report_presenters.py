@@ -15,6 +15,7 @@ from nwtrack.entrypoints.cli.ui.renderers import (
     build_category_summary_table,
     build_month_balances_table,
     build_networth_history_table,
+    build_networth_history_total_change_table,
     build_networth_table,
 )
 
@@ -63,6 +64,31 @@ class RichNetworthHistoryPresenter:
             f"[yellow]Only {found} months of net worth data found in "
             f"{currency_code}[/yellow]"
         )
+
+    def display_total_change(
+        self, networth_records: list[NetWorth], currency_code: str
+    ) -> None:
+        """Display total change in net worth over the period.
+
+        Args:
+            networth_records: List of networth records
+            currency_code: Currency code for the report
+        """
+        if len(networth_records) < 2:
+            return
+
+        def calc_change(xa, xb, attr):
+            """Calculate absolute and percentage change in attribute."""
+            a = getattr(xa, attr)
+            b = getattr(xb, attr)
+            return b - a, (b - a) / a * 100 if a != 0 else 0
+
+        changes = {
+            k: calc_change(networth_records[0], networth_records[-1], k)
+            for k in ["assets", "liabilities", "net_worth"]
+        }
+        table = build_networth_history_total_change_table(changes)
+        self._console.print(table)
 
 
 class RichBalancesByCategoryPresenter:

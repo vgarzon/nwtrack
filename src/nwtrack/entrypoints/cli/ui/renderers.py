@@ -361,3 +361,26 @@ def build_month_balances_table(balance_counts: list[tuple[Month, int]]) -> Table
     for idx, (month, count) in enumerate(balance_counts):
         table.add_row(str(idx + 1), str(month), str(count))
     return table
+
+
+def build_networth_history_total_change_table(changes: dict) -> Table:
+    """Build Rich table of total net worth changes.
+
+    Args:
+        changes: Dictionary with total change data
+
+    Returns:
+        Table: Rich Table object
+    """
+    table = Table(title="Total Change")
+    table.add_column("Assets", justify="right", style="green")
+    table.add_column("Liabilities", justify="right", style="orange3")
+    table.add_column("Net Worth", justify="right", style="bold")
+
+    changes_abs = (f"{changes[k][0]:,}" for k in ["assets", "liabilities", "net_worth"])
+    changes_pct = (
+        f"({changes[k][1]:.0%})" for k in ["assets", "liabilities", "net_worth"]
+    )
+    table.add_row(*changes_abs)
+    table.add_row(*changes_pct)
+    return table
