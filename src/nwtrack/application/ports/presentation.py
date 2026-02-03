@@ -405,7 +405,7 @@ class DBInitCSVPresenter(Protocol):
     """Presenter for DB initialization from CSV workflow."""
 
     def show_header(self, db_file_path: str, db_ddl_path: str) -> None:
-        """Display workflow header using Rich.
+        """Display workflow header.
 
         Args:
             db_file_path: Path to the SQLite database file
@@ -457,7 +457,7 @@ class BalancesByCategoryPresenter(Protocol):
     """Presenter for balances by category report workflow."""
 
     def show_header(self) -> None:
-        """Display report header using Rich."""
+        """Display report header."""
         ...
 
     def show_accounts_table(
@@ -560,7 +560,7 @@ class BalancesRollForwardPresenter(Protocol):
     """Presenter for balances roll forward workflow."""
 
     def show_header(self) -> None:
-        """Display workflow header using Rich."""
+        """Display workflow header."""
         ...
 
     def select_month(self, balance_counts: list[tuple[Month, int]]) -> Month | None:
@@ -640,5 +640,94 @@ class BalancesRollForwardPresenter(Protocol):
 
         Returns:
             None
+        """
+        ...
+
+
+class BalanceDeleterPresenter(Protocol):
+    """Presenter for BalanceDeleter workflow."""
+
+    def show_header(self) -> None:
+        """Display workflow header."""
+        ...
+
+    def select_month(self, balance_counts: list[tuple[Month, int]]) -> Month | None:
+        """Present month selection with recent months or custom input.
+
+        Args:
+            balance_counts: List of (Month, count) tuples for recent months
+
+        Returns:
+            Selected Month or None if cancelled
+        """
+        ...
+
+    def _input_custom_month(self) -> Month | None:
+        """Input a specific month from user."""
+        ...
+
+    def show_invalid_month_error(self) -> None:
+        """Display error for invalid month input."""
+        ...
+
+    def select_account(self, month: Month) -> int | None:
+        """Prompt for account ID and validate it exists.
+
+        Args:
+            month (Month): Month for context
+
+        Returns:
+            int | None: Account ID or None if user quits
+        """
+        ...
+
+    def display_balances(
+        self,
+        balances: list[Balance],
+        account_map: dict[int, Account],
+        category_map: dict[int, Category | None],
+        title_suffix: str = "",
+    ) -> None:
+        """Show balances table with account and category information.
+
+        Args:
+            balances: List of balances
+            account_map: Mapping of account IDs to Account objects
+            category_map: Mapping of account IDs to Category objects
+            title_suffix: Suffix for the table title
+        """
+        ...
+
+    def show_cancellation(self) -> None:
+        """Display user cancellation message."""
+        ...
+
+    def show_error(self, message: str = "") -> None:
+        """Display error message.
+
+        Args:
+            message: Error message string
+        """
+        ...
+
+    def show_balance_details(
+        self, account: Account, balance: Balance, month: Month
+    ) -> None:
+        """Display balance details before deletion."""
+        ...
+
+    def prompt_to_confirm_deletion(self) -> bool:
+        """Prompt user to confirm balance deletion.
+
+        Returns:
+            True if user confirms, False otherwise
+        """
+        ...
+
+    def show_success(self, message: str = "") -> None:
+        """Display success message.
+
+        Args:
+            message: Success message string
         """
         ...

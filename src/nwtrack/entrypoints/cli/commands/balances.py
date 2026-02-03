@@ -2,6 +2,8 @@
 CLI balance commands
 """
 
+import sys
+
 from nwtrack.entrypoints.cli.app import balances_app
 
 
@@ -12,7 +14,7 @@ def roll_balances_forward_interactive():
     """
     import nwtrack.application.use_cases.roll_balances_forward as roll_balances_forward
 
-    roll_balances_forward.main()
+    sys.exit(roll_balances_forward.main())
 
 
 @balances_app.command("update")
@@ -22,7 +24,7 @@ def update_balances_interactive():
     """
     import nwtrack.application.use_cases.update_balances as update_balances
 
-    update_balances.main()
+    sys.exit(update_balances.main())
 
 
 @balances_app.command("delete")
@@ -32,4 +34,4 @@ def delete_balance_interactive():
     """
     import nwtrack.application.use_cases.delete_balance as delete_balance
 
-    delete_balance.main()
+    sys.exit(delete_balance.main())

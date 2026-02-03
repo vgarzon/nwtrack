@@ -9,9 +9,14 @@ from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.domain.models import Account, Balance, NetWorth
+from nwtrack.domain.models import Account, Balance, Category, NetWorth
 from nwtrack.domain.value_objects import Month
+from nwtrack.entrypoints.cli.ui.prompts import (
+    prompt_for_account_id,
+    prompt_to_confirm_action,
+)
 from nwtrack.entrypoints.cli.ui.renderers import (
+    build_balances_table,
     build_month_balances_table,
     build_networth_table,
 )
@@ -371,3 +376,136 @@ class RichBalancesRollForwardPresenter:
         """
         table = build_networth_table(nw, title_suffix, form="wide")
         self._console.print(table)
+
+
+class RichBalanceDeleterPresenter:
+    """Rich-based implementation of BalanceDeleterPresenter."""
+
+    def __init__(self, console: Console, fetcher: FetchService) -> None:
+        self._console = console
+        self._fetcher = fetcher
+        self._prompt = Prompt(console=self._console)
+        self._int_prompt = IntPrompt(console=self._console)
+        self._confirm = Confirm(console=self._console)
+
+    def show_header(self) -> None:
+        """Display workflow header using Rich."""
+        self._console.rule("[bold red]Balance Deletion[/bold red]")
+
+    def select_month(self, balance_counts: list[tuple[Month, int]]) -> Month | None:
+        """Present month selection with recent months or custom input.
+
+        Args:
+            balance_counts: List of (Month, count) tuples for recent months
+
+        Returns:
+            Selected Month or None if cancelled
+        """
+        recent_months = [month for month, _ in balance_counts]
+        n_months = len(balance_counts)
+
+        table = build_month_balances_table(balance_counts)
+        self._console.print(table)
+        self._console.print("Options:")
+        self._console.print("  [bold]A.[/bold] Enter year and month")
+        self._console.print("  [bold]Q.[/bold] Quit")
+
+        choice = self._prompt.ask(
+            "[bold]Enter choice[/bold]",
+            choices=[str(i + 1) for i in range(n_months)] + ["A", "Q"],
+            default="1",
+            case_sensitive=False,
+        )
+
+        if choice.lower().strip() == "q":
+            return None
+        if choice.lower().strip() == "a":
+            return self._input_custom_month()
+
+        choice_idx = int(choice) - 1
+        return recent_months[choice_idx]
+
+    def _input_custom_month(self) -> Month | None:
+        """Input a specific month from user."""
+        today = date.today()
+        _year = self._int_prompt.ask("Enter year as 'YYYY'", default=today.year)
+        _month = self._int_prompt.ask("Enter month as 'MM'", default=today.month)
+
+        try:
+            month = Month(year=_year, month=_month)
+        except ValueError:
+            self.show_invalid_month_error()
+            return None
+
+        # TODO: Re-enable month check when fetcher is available
+        # if not self._fetcher.check_month_in_balances(month):
+        #     self.show_no_balances_warning(month)
+        #     return None
+
+        return month
+
+    def show_invalid_month_error(self) -> None:
+        """Display error for invalid month input."""
+        self._console.print("[red]Invalid month format. Please use YYYY-MM.[/red]")
+
+    def select_account(self, month: Month) -> int | None:
+        """Prompt for account ID and validate it exists.
+
+        Args:
+            month (Month): Month for context
+
+        Returns:
+            int | None: Account ID or None if user quits
+        """
+        account_id = prompt_for_account_id(self._console)
+        return account_id
+
+    def display_balances(
+        self,
+        balances: list[Balance],
+        account_map: dict[int, Account],
+        category_map: dict[int, Category | None],
+        title_suffix: str = "",
+    ) -> None:
+        table = build_balances_table(
+            balances, account_map, category_map, title_suffix=title_suffix
+        )
+        self._console.print(table)
+
+    def show_cancellation(self) -> None:
+        """Display user cancellation message."""
+        self._console.print("[red]Operation canceled by user.[/red]")
+
+    def show_error(self, message: str = "") -> None:
+        """Display error message.
+
+        Args:
+            message: Error message string
+        """
+        self._console.print(f"[red]Error: {message}[/red]")
+
+    def show_balance_details(
+        self, account: Account, balance: Balance, month: Month
+    ) -> None:
+        """Display balance details before deletion."""
+        self._console.print("\n[bold]Balance to delete:[/bold]")
+        self._console.print(f"  Account: {account.name} (ID: {account.id})")
+        self._console.print(f"  Month: {month}")
+        self._console.print(f"  Amount: {balance.amount:,}")
+
+    def prompt_to_confirm_deletion(self) -> bool:
+        """Prompt user to confirm balance deletion.
+
+        Returns:
+            True if user confirms, False otherwise
+        """
+        return prompt_to_confirm_action(self._console, "Delete this balance entry?")
+
+    def show_success(self, message: str = "") -> None:
+        """Display success message.
+
+        Args:
+            message: Success message string
+        """
+        _text = "Operation successful." if not message else message
+        self._console.print(f"[green]{_text}[/green]")

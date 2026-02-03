@@ -172,4 +172,3 @@ if __name__ == "__main__":
     import sys
 
     sys.exit(main())
-# 247 lines above before refactoring

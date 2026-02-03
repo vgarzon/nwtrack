@@ -132,8 +132,12 @@ class BalanceUpdater:
             )
 
 
-def main() -> None:
-    """Main entry point for balance update script."""
+def main() -> int:
+    """Main entry point for balance update script.
+
+    Returns:
+        int: Exit code (0 for success, 1 for failure)
+    """
     from dotenv import load_dotenv
     from rich.console import Console
 
@@ -171,10 +175,11 @@ def main() -> None:
     )
 
     result: OperationResult[None] = container.resolve(BalanceUpdater).run()
-    import sys
 
-    sys.exit(0 if result.success else 1)
+    return 0 if result.success else 1
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    sys.exit(main())
