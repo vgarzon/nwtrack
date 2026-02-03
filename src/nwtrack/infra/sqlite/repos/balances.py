@@ -361,6 +361,22 @@ class SQLiteBalancesRepository(BaseRepository[Balance]):
             counts.append((month, cnt))
         return counts
 
+    def count_for_month(self, month: Month) -> int:
+        """Count the number of balance records for a specific month.
+
+        Args:
+            month (Month): Month object
+        Returns:
+            int: Number of balance records for the month.
+        """
+        query = """
+        SELECT COUNT(*) AS cnt
+        FROM balances
+        WHERE month = :month;
+        """
+        result = self._db.fetch_one(query, {"month": str(month)})
+        return result["cnt"] if result else 0
+
     def delete_all(self) -> None:
         """Delete all balance records."""
         query = "DELETE FROM balances;"

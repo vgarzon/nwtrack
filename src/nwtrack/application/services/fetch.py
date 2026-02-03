@@ -123,7 +123,7 @@ class FetchService:
             category = uow.categories.get(category_name)
         return category
 
-    def get_networth(self, month: Month, currency_code: str = "USD") -> NetWorth:
+    def get_networth(self, month: Month, currency_code: str = "USD") -> NetWorth | None:
         """Get net worth for a specific month and currency.
 
         Args:
@@ -131,7 +131,7 @@ class FetchService:
             currency_code (str, optional): The currency code. Defaults to "USD".
 
         Returns:
-            Networth: Net worth amount if found, else None.
+            Networth | None: Net worth amount if found, else None.
         """
         with self._uow() as uow:
             networth = uow.net_worth.get(month, currency_code)
@@ -214,6 +214,17 @@ class FetchService:
         with self._uow() as uow:
             result = uow.balances.check_month(month)
         return result
+
+    def get_balance_count_for_month(self, source_month: Month) -> int:
+        """Get count of balance entries for a specific month.
+        Args:
+            source_month (Month): Month object
+        Returns:
+            int: Count of balance entries for the month.
+        """
+        with self._uow() as uow:
+            count = uow.balances.count_for_month(source_month)
+        return count
 
     def get_monthly_balance_total_by_category(
         self, month: Month

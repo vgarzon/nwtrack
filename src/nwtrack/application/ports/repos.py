@@ -254,6 +254,10 @@ class BalancesRepository(Repository[Balance], Protocol):
         """Count the number balance entries per month."""
         ...
 
+    def count_for_month(self, month: Month) -> int:
+        """Count the number balance entries for a specific month."""
+        ...
+
     def copy_by_month(self, from_month: Month, to_month: Month) -> int:
         """Copy balance entries from one month to another."""
         ...

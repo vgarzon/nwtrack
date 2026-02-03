@@ -5,12 +5,16 @@ Rich-based presenters for balance-related use cases.
 from datetime import date
 
 from rich.console import Console
-from rich.prompt import IntPrompt, Prompt
+from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Account, Balance, NetWorth
 from nwtrack.domain.value_objects import Month
+from nwtrack.entrypoints.cli.ui.renderers import (
+    build_month_balances_table,
+    build_networth_table,
+)
 
 
 class RichBalanceUpdatePresenter:
@@ -19,8 +23,8 @@ class RichBalanceUpdatePresenter:
     def __init__(self, console: Console, fetcher: FetchService) -> None:
         self._console = console
         self._fetcher = fetcher
-        self._prompt = Prompt(console=console)
-        self._int_prompt = IntPrompt(console=console)
+        self._prompt = Prompt(console=self._console)
+        self._int_prompt = IntPrompt(console=self._console)
 
     def show_header(self) -> None:
         """Display workflow header using Rich."""
@@ -54,9 +58,7 @@ class RichBalanceUpdatePresenter:
             )
         return table
 
-    def select_month(
-        self, balance_counts: list[tuple[Month, int]]
-    ) -> Month | None:
+    def select_month(self, balance_counts: list[tuple[Month, int]]) -> Month | None:
         """Present month selection with recent months or custom input.
 
         Args:
@@ -68,7 +70,7 @@ class RichBalanceUpdatePresenter:
         recent_months = [month for month, _ in balance_counts]
         n_months = len(balance_counts)
 
-        table = self._build_month_balances_table(balance_counts)
+        table = build_month_balances_table(balance_counts)
         self._console.print(table)
         self._console.print("Options:")
         self._console.print("  [bold]A.[/bold] Enter year and month")
@@ -88,18 +90,6 @@ class RichBalanceUpdatePresenter:
 
         choice_idx = int(choice) - 1
         return recent_months[choice_idx]
-
-    def _build_month_balances_table(
-        self, balance_counts: list[tuple[Month, int]]
-    ) -> Table:
-        """Build Rich table of balances per month."""
-        table = Table(title="Balance Entries per Month")
-        table.add_column("Index", justify="right", style="green")
-        table.add_column("Month", style="cyan")
-        table.add_column("Balances", justify="right", style="magenta")
-        for idx, (month, count) in enumerate(balance_counts):
-            table.add_row(str(idx + 1), str(month), str(count))
-        return table
 
     def _input_custom_month(self) -> Month | None:
         """Input a specific month from user."""
@@ -234,21 +224,150 @@ class RichBalanceUpdatePresenter:
         """Display net worth table."""
         currency_code = "USD"  # Hardcoded for now
         title_suffix = f"{month} ({currency_code})"
-        table = self._build_networth_table(nw, title_suffix)
+        table = build_networth_table(nw, title_suffix, form="wide")
         self._console.print(table)
 
-    def _build_networth_table(
-        self, nw: NetWorth, title_suffix: str = ""
-    ) -> Table:
-        """Build Rich table of net worth summary."""
-        _title = "Net Worth Summary" + (f" {title_suffix}" if title_suffix else "")
-        table = Table(title=_title)
-        table.add_column("Assets", justify="right", style="green")
-        table.add_column("Liabilities", justify="right", style="yellow")
-        table.add_column("Net Worth", justify="right", style="red")
-        table.add_row(
-            f"{nw.assets:9,}",
-            f"{nw.liabilities:9,}",
-            f"{nw.net_worth:9,}",
+
+class RichBalancesRollForwardPresenter:
+    """Rich-based implementation of BalancesRollForwardPresenter."""
+
+    def __init__(self, console: Console) -> None:
+        self._console = console
+        self._confirm = Confirm(console=self._console)
+        self._prompt = Prompt(console=self._console)
+        self._int_prompt = IntPrompt(console=self._console)
+
+    def show_header(self) -> None:
+        """Display workflow header using Rich."""
+        self._console.rule("[bold green]Roll Balances Forward[/bold green]")
+
+    def select_month(self, balance_counts: list[tuple[Month, int]]) -> Month | None:
+        """Present month selection with recent months or custom input.
+
+        Args:
+            balance_counts: List of (Month, count) tuples for recent months
+
+        Returns:
+            Selected Month or None if cancelled
+        """
+        recent_months = [month for month, _ in balance_counts]
+        n_months = len(balance_counts)
+
+        table = build_month_balances_table(balance_counts)
+        self._console.print(table)
+        self._console.print("Options:")
+        self._console.print("  [bold]A.[/bold] Enter year and month")
+        self._console.print("  [bold]Q.[/bold] Quit")
+
+        choice = self._prompt.ask(
+            "[bold]Enter choice[/bold]",
+            choices=[str(i + 1) for i in range(n_months)] + ["A", "Q"],
+            default="1",
+            case_sensitive=False,
         )
-        return table
+
+        if choice.lower().strip() == "q":
+            return None
+        if choice.lower().strip() == "a":
+            return self._input_custom_month()
+
+        choice_idx = int(choice) - 1
+        return recent_months[choice_idx]
+
+    def _input_custom_month(self) -> Month | None:
+        """Input a specific month from user."""
+        today = date.today()
+        _year = self._int_prompt.ask("Enter year as 'YYYY'", default=today.year)
+        _month = self._int_prompt.ask("Enter month as 'MM'", default=today.month)
+
+        try:
+            month = Month(year=_year, month=_month)
+        except ValueError:
+            self.show_invalid_month_error()
+            return None
+
+        # TODO: Re-enable month check when fetcher is available
+        # if not self._fetcher.check_month_in_balances(month):
+        #     self.show_no_balances_warning(month)
+        #     return None
+
+        return month
+
+    def show_invalid_month_error(self) -> None:
+        """Display error for invalid month input."""
+        self._console.print("[red]Invalid month format. Please use YYYY-MM.[/red]")
+
+    def confirm_target_month(self, target_month: Month) -> bool:
+        """Prompt user to confirm rolling balances forward.
+
+        Args:
+            target_month: The month to roll balances into
+
+        Returns:
+            True if user confirms, False otherwise
+        """
+        self._console.print(f"Next available target month: [bold]{target_month}[/bold]")
+        answer = self._confirm.ask(
+            f"Roll balances forward into [bold]{target_month}[/bold]?", default=True
+        )
+        return answer
+
+    def prompt_to_confirm_months(
+        self, source_month: Month, target_month: Month
+    ) -> bool:
+        """Prompt user to confirm continuation.
+
+        Args:
+            source_month: The month to copy balances from
+            target_month: The month to copy balances to
+
+        Returns:
+            True if user confirms, False otherwise
+        """
+        return self._confirm.ask(
+            f"Copy balances from [bold]{source_month}[/bold] to "
+            f"[bold]{target_month}[/bold]?",
+            default=False,
+        )
+
+    def show_cancellation(self) -> None:
+        """Display user cancellation message."""
+        self._console.print("[red]Operation canceled by user.[/red]")
+
+    def show_success(self, message: str = "") -> None:
+        """Display success message.
+
+        Args:
+            message: Success message string
+        """
+        _text = "Operation successful." if not message else message
+        self._console.print(f"[green]{_text}[/green]")
+
+    def show_info(self, message: str) -> None:
+        """Display informational message.
+
+        Args:
+            message: Informational message string
+        """
+        self._console.print(message)
+
+    def show_error(self, message: str = "") -> None:
+        """Display error message.
+
+        Args:
+            message: Error message string
+        """
+        self._console.print(f"[bold red]Error:[/bold] {message}[/red]")
+
+    def display_networth(self, nw: NetWorth, title_suffix: str = "") -> None:
+        """Display worth on a specific month.
+
+        Args:
+            nw (NetWorth): NetWorth object
+            title_suffix (str): Suffix for the table title
+
+        Returns:
+            None
+        """
+        table = build_networth_table(nw, title_suffix, form="wide")
+        self._console.print(table)

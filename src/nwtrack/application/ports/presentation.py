@@ -554,3 +554,91 @@ class BalancesByCategoryPresenter(Protocol):
             currency_code: The currency code that was searched
         """
         ...
+
+
+class BalancesRollForwardPresenter(Protocol):
+    """Presenter for balances roll forward workflow."""
+
+    def show_header(self) -> None:
+        """Display workflow header using Rich."""
+        ...
+
+    def select_month(self, balance_counts: list[tuple[Month, int]]) -> Month | None:
+        """Present month selection with recent months or custom input.
+
+        Args:
+            balance_counts: List of (Month, count) tuples for recent months
+
+        Returns:
+            Selected Month or None if cancelled
+        """
+        ...
+
+    def show_invalid_month_error(self) -> None:
+        """Display error for invalid month input."""
+        ...
+
+    def confirm_target_month(self, target_month: Month) -> bool:
+        """Prompt user to confirm rolling balances forward.
+
+        Args:
+            target_month: The month to roll balances into
+
+        Returns:
+            True if user confirms, False otherwise
+        """
+        ...
+
+    def prompt_to_confirm_months(
+        self, source_month: Month, target_month: Month
+    ) -> bool:
+        """Prompt user to confirm continuation.
+
+        Args:
+            source_month: The month to copy balances from
+            target_month: The month to copy balances to
+
+        Returns:
+            True if user confirms, False otherwise
+        """
+        ...
+
+    def show_cancellation(self) -> None:
+        """Display user cancellation message."""
+        ...
+
+    def show_success(self, message: str = "") -> None:
+        """Display success message.
+
+        Args:
+            message: Success message string
+        """
+        ...
+
+    def show_info(self, message: str) -> None:
+        """Display informational message.
+
+        Args:
+            message: Informational message string
+        """
+        ...
+
+    def show_error(self, message: str = "") -> None:
+        """Display error message.
+
+        Args:
+            message: Error message string
+        """
+        ...
+
+    def display_networth(self, nw: NetWorth, title_suffix: str = "") -> None:
+        """Display worth on a specific month.
+
+        Args:
+            nw (NetWorth): NetWorth object
+            title_suffix (str): Suffix for the table title
+
+        Returns:
+            None
+        """
+        ...
