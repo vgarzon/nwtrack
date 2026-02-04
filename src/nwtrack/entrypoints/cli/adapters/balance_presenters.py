@@ -6,7 +6,6 @@ from datetime import date
 
 from rich.console import Console
 from rich.prompt import Confirm, IntPrompt, Prompt
-from rich.table import Table
 
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Account, Balance, Category, NetWorth
@@ -16,6 +15,7 @@ from nwtrack.entrypoints.cli.ui.prompts import (
     prompt_to_confirm_action,
 )
 from nwtrack.entrypoints.cli.ui.renderers import (
+    build_accounts_table,
     build_balances_table,
     build_month_balances_table,
     build_networth_table,
@@ -41,27 +41,12 @@ class RichBalanceUpdatePresenter:
         Args:
             accounts: List of active accounts to display
         """
-        table = self._build_accounts_table(accounts)
+        category_map = {
+            account.id: self._fetcher.get_category_by_account_id(account.id)
+            for account in accounts
+        }
+        table = build_accounts_table(accounts, category_map, title_prefix="Active")
         self._console.print(table)
-
-    def _build_accounts_table(self, accounts: list[Account]) -> Table:
-        """Build Rich table of active accounts."""
-        table = Table(title="Active Accounts")
-        table.add_column("ID", justify="right", style="cyan", no_wrap=True)
-        table.add_column("Name", style="magenta")
-        table.add_column("Category", style="green")
-        table.add_column("Side", style="yellow")
-        for account in accounts:
-            category = self._fetcher.get_category_by_account_id(account.id)
-            category_name = category.name if category else "Unknown"
-            side = category.side.value if category else "Unknown"
-            table.add_row(
-                str(account.id),
-                account.name,
-                category_name,
-                side,
-            )
-        return table
 
     def select_month(self, balance_counts: list[tuple[Month, int]]) -> Month | None:
         """Present month selection with recent months or custom input.
@@ -137,35 +122,17 @@ class RichBalanceUpdatePresenter:
             balances: List of balances to display
             month: Month for the balances
         """
-        table = self._build_balances_table(balances, title_suffix=str(month))
-        self._console.print(table)
-
-    def _build_balances_table(
-        self, balances: list[Balance], title_suffix: str = ""
-    ) -> Table:
-        """Build Rich table of balances."""
         account_map = self._fetcher.get_map_id_to_account()
-        _title = "Balances" + (f" {title_suffix}" if title_suffix else "")
-        table = Table(title=_title)
-        table.add_column("Acct_ID", justify="right", style="cyan", no_wrap=True)
-        table.add_column("Account Name", style="magenta")
-        table.add_column("Category", style="green")
-        table.add_column("Side", style="yellow")
-        table.add_column("Amount", justify="right", style="red")
-        for balance in balances:
-            account_id = balance.account_id
-            account_name = account_map[account_id].name
-            category = self._fetcher.get_category_by_account_id(account_id)
-            category_name = category.name if category else "Unknown"
-            side = category.side.value if category else "Unknown"
-            table.add_row(
-                str(account_id),
-                account_name,
-                category_name,
-                side,
-                f"{balance.amount:8,}",
+        category_map = {
+            balance.account_id: self._fetcher.get_category_by_account_id(
+                balance.account_id
             )
-        return table
+            for balance in balances
+        }
+        table = build_balances_table(
+            balances, account_map, category_map, title_suffix=str(month)
+        )
+        self._console.print(table)
 
     def prompt_for_account_id(self) -> int | None:
         """Prompt for account ID to update.
