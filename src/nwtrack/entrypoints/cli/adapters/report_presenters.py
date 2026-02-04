@@ -81,7 +81,7 @@ class RichNetworthHistoryPresenter:
             """Calculate absolute and percentage change in attribute."""
             a = getattr(xa, attr)
             b = getattr(xb, attr)
-            return b - a, (b - a) / a * 100 if a != 0 else 0
+            return b - a, (b - a) / a if a != 0 else 0
 
         changes = {
             k: calc_change(networth_records[0], networth_records[-1], k)
