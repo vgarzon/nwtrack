@@ -42,11 +42,12 @@ class RollBalancesUpdater:
             logger.info("User cancelled month selection.")
             self._presenter.show_cancellation()
             return OperationResult(success=False, error_message="User cancelled.")
-
         if not self._fetcher.check_month_in_balances(source_month):
-            _msg = f"No balances found for month {source_month}"
-            logger.error(_msg)
-            return OperationResult(success=False, error_message=_msg)
+            self._presenter.show_no_balances_warning(source_month)
+            logger.warning("No balances found for %s.  Stopping.", source_month)
+            return OperationResult(
+                success=False, error_message="No balances for selected month."
+            )
 
         proceed = self._presenter.prompt_to_confirm_months(source_month, target_month)
         if not proceed:

@@ -48,10 +48,7 @@ def configured_container(base_container: Container) -> Container:
         )
         .register(
             RichBalanceUpdatePresenter,
-            lambda c: RichBalanceUpdatePresenter(
-                console=c.resolve(Console),
-                fetcher=c.resolve(FetchService),
-            ),
+            lambda c: RichBalanceUpdatePresenter(console=c.resolve(Console)),
         )
         .register(
             BalanceUpdater,

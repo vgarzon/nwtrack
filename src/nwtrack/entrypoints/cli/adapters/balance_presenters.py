@@ -7,7 +7,6 @@ from datetime import date
 from rich.console import Console
 from rich.prompt import Confirm, IntPrompt, Prompt
 
-from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Account, Balance, Category, NetWorth
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.ui.prompts import (
@@ -25,9 +24,8 @@ from nwtrack.entrypoints.cli.ui.renderers import (
 class RichBalanceUpdatePresenter:
     """Rich-based implementation of BalanceUpdatePresenter."""
 
-    def __init__(self, console: Console, fetcher: FetchService) -> None:
+    def __init__(self, console: Console) -> None:
         self._console = console
-        self._fetcher = fetcher
         self._prompt = Prompt(console=self._console)
         self._int_prompt = IntPrompt(console=self._console)
 
@@ -35,16 +33,15 @@ class RichBalanceUpdatePresenter:
         """Display workflow header using Rich."""
         self._console.rule("[bold green]Balance Updater[/bold green]")
 
-    def display_active_accounts(self, accounts: list[Account]) -> None:
+    def display_active_accounts(
+        self, accounts: list[Account], category_map: dict[int, Category | None]
+    ) -> None:
         """Display active accounts table.
 
         Args:
             accounts: List of active accounts to display
+            category_map: Mapping of account IDs to their categories
         """
-        category_map = {
-            account.id: self._fetcher.get_category_by_account_id(account.id)
-            for account in accounts
-        }
         table = build_accounts_table(accounts, category_map, title_prefix="Active")
         self._console.print(table)
 
@@ -93,10 +90,6 @@ class RichBalanceUpdatePresenter:
             self.show_invalid_month_error()
             return None
 
-        if not self._fetcher.check_month_in_balances(month):
-            self.show_no_balances_warning(month)
-            return None
-
         return month
 
     def show_invalid_month_error(self) -> None:
@@ -109,26 +102,27 @@ class RichBalanceUpdatePresenter:
         Args:
             month: The month that has no balances
         """
-        self._console.print(f"[orange]No balance entries found in {month}.[/orange]")
+        self._console.print(f"[orange3]No balance entries found in {month}.[/orange3]")
 
     def show_no_month_selected(self) -> None:
         """Display message when no month is selected."""
         self._console.print("[orange]No month selected. Exiting.[/orange]")
 
-    def display_balances(self, balances: list[Balance], month: Month) -> None:
+    def display_balances(
+        self,
+        balances: list[Balance],
+        account_map: dict[int, Account],
+        category_map: dict[int, Category | None],
+        month: Month,
+    ) -> None:
         """Display balances table for a specific month.
 
         Args:
             balances: List of balances to display
+            account_map: Mapping of account IDs to Account objects
+            category_map: Mapping of account IDs to Category objects
             month: Month for the balances
         """
-        account_map = self._fetcher.get_map_id_to_account()
-        category_map = {
-            balance.account_id: self._fetcher.get_category_by_account_id(
-                balance.account_id
-            )
-            for balance in balances
-        }
         table = build_balances_table(
             balances, account_map, category_map, title_suffix=str(month)
         )
@@ -176,24 +170,13 @@ class RichBalanceUpdatePresenter:
         )
         return self._int_prompt.ask("Enter [bold]new balance[/bold] amount")
 
-    def display_final_summary(
-        self, balances: list[Balance], networth: NetWorth | None, month: Month
-    ) -> None:
-        """Display final balances and net worth summary.
+    def display_networth(self, nw: NetWorth, month: Month) -> None:
+        """Display net worth table.
 
         Args:
-            balances: Final list of balances
-            networth: Net worth data or None if not available
-            month: Month for the summary
+            nw (NetWorth): NetWorth object
+            month (Month): Month for the net worth
         """
-        print("Final active account balances:")
-        self.display_balances(balances, month)
-
-        if networth:
-            self._display_networth(networth, month)
-
-    def _display_networth(self, nw: NetWorth, month: Month) -> None:
-        """Display net worth table."""
         currency_code = "USD"  # Hardcoded for now
         title_suffix = f"{month} ({currency_code})"
         table = build_networth_table(nw, title_suffix, form="wide")
@@ -258,16 +241,19 @@ class RichBalancesRollForwardPresenter:
             self.show_invalid_month_error()
             return None
 
-        # TODO: Re-enable month check when fetcher is available
-        # if not self._fetcher.check_month_in_balances(month):
-        #     self.show_no_balances_warning(month)
-        #     return None
-
         return month
 
     def show_invalid_month_error(self) -> None:
         """Display error for invalid month input."""
         self._console.print("[red]Invalid month format. Please use YYYY-MM.[/red]")
+
+    def show_no_balances_warning(self, month: Month) -> None:
+        """Display warning when no balances found for month.
+
+        Args:
+            month: The month that has no balances
+        """
+        self._console.print(f"[orange3]No balance entries found in {month}.[/orange3]")
 
     def confirm_target_month(self, target_month: Month) -> bool:
         """Prompt user to confirm rolling balances forward.
@@ -348,9 +334,8 @@ class RichBalancesRollForwardPresenter:
 class RichBalanceDeleterPresenter:
     """Rich-based implementation of BalanceDeleterPresenter."""
 
-    def __init__(self, console: Console, fetcher: FetchService) -> None:
+    def __init__(self, console: Console) -> None:
         self._console = console
-        self._fetcher = fetcher
         self._prompt = Prompt(console=self._console)
         self._int_prompt = IntPrompt(console=self._console)
         self._confirm = Confirm(console=self._console)
@@ -404,16 +389,19 @@ class RichBalanceDeleterPresenter:
             self.show_invalid_month_error()
             return None
 
-        # TODO: Re-enable month check when fetcher is available
-        # if not self._fetcher.check_month_in_balances(month):
-        #     self.show_no_balances_warning(month)
-        #     return None
-
         return month
 
     def show_invalid_month_error(self) -> None:
         """Display error for invalid month input."""
         self._console.print("[red]Invalid month format. Please use YYYY-MM.[/red]")
+
+    def show_no_balances_warning(self, month: Month) -> None:
+        """Display warning when no balances found for month.
+
+        Args:
+            month: The month that has no balances
+        """
+        self._console.print(f"[orange3]No balance entries found in {month}.[/orange3]")
 
     def select_account(self, month: Month) -> int | None:
         """Prompt for account ID and validate it exists.

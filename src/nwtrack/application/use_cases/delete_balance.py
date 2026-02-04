@@ -37,6 +37,12 @@ class BalanceDeleter:
             self._presenter.show_cancellation()
             logger.warning("No month selected. Exiting.")
             return OperationResult(success=False, error_message="No month selected.")
+        if not self._fetcher.check_month_in_balances(month):
+            self._presenter.show_no_balances_warning(month)
+            logger.warning("No balances found for %s.  Stopping.", month)
+            return OperationResult(
+                success=False, error_message="No balances for selected month."
+            )
 
         self.display_balances(month)
 
@@ -168,9 +174,7 @@ def main() -> int:
         lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
     ).register(
         BalanceDeleterPresenter,
-        lambda c: RichBalanceDeleterPresenter(
-            console=c.resolve(Console), fetcher=c.resolve(FetchService)
-        ),
+        lambda c: RichBalanceDeleterPresenter(console=c.resolve(Console)),
     ).register(
         BalanceDeleter,
         lambda c: BalanceDeleter(

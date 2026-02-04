@@ -9,7 +9,7 @@ from nwtrack.application.dto import OperationResult
 from nwtrack.application.ports.presentation import BalanceUpdatePresenter
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.domain.models import Account
+from nwtrack.domain.models import Account, NetWorth
 from nwtrack.domain.value_objects import Month
 
 logger = logging.getLogger(__name__)
@@ -38,8 +38,7 @@ class BalanceUpdater:
 
         # Show header and active accounts
         self._presenter.show_header()
-        active_accounts = self._fetcher.get_accounts(active_only=True)
-        self._presenter.display_active_accounts(active_accounts)
+        self._display_active_accounts()
 
         # Select month
         month = self._select_month()
@@ -47,17 +46,31 @@ class BalanceUpdater:
             logger.warning("No month selected. Exiting.")
             self._presenter.show_no_month_selected()
             return OperationResult(success=False, error_message="No month selected")
+        if not self._fetcher.check_month_in_balances(month):
+            self._presenter.show_no_balances_warning(month)
+            logger.warning("No balances found for %s.  Stopping.", month)
+            return OperationResult(
+                success=False, error_message="No balances for selected month."
+            )
 
         # Interactive update loop
         self._run_update_loop(month)
 
         # Display final summary
-        balances = self._fetcher.get_month_balances(month, active_only=True)
         networth = self._fetcher.get_networth(month, "USD")
-        self._presenter.display_final_summary(balances, networth, month)
+        self._display_final_summary(networth, month)
 
         logger.info("Finished Balance Updater")
         return OperationResult(success=True)
+
+    def _display_active_accounts(self) -> None:
+        """Display a list of active accounts."""
+        active_accounts = self._fetcher.get_accounts(active_only=True)
+        category_map = {
+            account.id: self._fetcher.get_category_by_account_id(account.id)
+            for account in active_accounts
+        }
+        self._presenter.display_active_accounts(active_accounts, category_map)
 
     def _select_month(self, n_months: int = 3) -> Month | None:
         """Select a month from recent months or input a specific month.
@@ -80,8 +93,7 @@ class BalanceUpdater:
         """
         while True:
             # Display current balances
-            balances = self._fetcher.get_month_balances(month, active_only=True)
-            self._presenter.display_balances(balances, month)
+            self._display_balances(month)
 
             # Prompt for account ID
             account_id = self._presenter.prompt_for_account_id()
@@ -96,6 +108,22 @@ class BalanceUpdater:
             except ValueError as e:
                 logger.error("Error updating balance: %s", e)
                 continue
+
+    def _display_balances(self, month: Month) -> None:
+        """Display balances to select from.
+
+        Args:
+            month (Month): Month object
+        """
+        balances = self._fetcher.get_month_balances(month, active_only=True)
+        account_map = self._fetcher.get_map_id_to_account()
+        category_map = {
+            balance.account_id: self._fetcher.get_category_by_account_id(
+                balance.account_id
+            )
+            for balance in balances
+        }
+        self._presenter.display_balances(balances, account_map, category_map, month)
 
     def _update_single_balance(self, account_id: int, month: Month) -> None:
         """Update balance for a single account.
@@ -131,6 +159,18 @@ class BalanceUpdater:
                 account_id=account_id, month=month, new_amount=new_amount
             )
 
+    def _display_final_summary(self, networth: NetWorth | None, month: Month) -> None:
+        """Display final balances and net worth summary.
+
+        Args:
+            balances: Final list of balances
+            networth: Net worth data or None if not available
+            month: Month for the summary
+        """
+        self._display_balances(month)
+        if networth:
+            self._presenter.display_networth(networth, month)
+
 
 def main() -> int:
     """Main entry point for balance update script.
@@ -161,10 +201,7 @@ def main() -> int:
         lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
     ).register(
         RichBalanceUpdatePresenter,
-        lambda c: RichBalanceUpdatePresenter(
-            console=c.resolve(Console),
-            fetcher=c.resolve(FetchService),
-        ),
+        lambda c: RichBalanceUpdatePresenter(console=c.resolve(Console)),
     ).register(
         BalanceUpdater,
         lambda c: BalanceUpdater(

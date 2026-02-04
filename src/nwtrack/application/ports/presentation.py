@@ -316,11 +316,14 @@ class BalanceUpdatePresenter(Protocol):
         """Display workflow header."""
         ...
 
-    def display_active_accounts(self, accounts: list[Account]) -> None:
+    def display_active_accounts(
+        self, accounts: list[Account], category_map: dict[int, Category | None]
+    ) -> None:
         """Display active accounts table.
 
         Args:
             accounts: List of active accounts to display
+            category_map: Mapping of account IDs to their categories
         """
         ...
 
@@ -351,11 +354,19 @@ class BalanceUpdatePresenter(Protocol):
         """Display message when no month is selected."""
         ...
 
-    def display_balances(self, balances: list[Balance], month: Month) -> None:
+    def display_balances(
+        self,
+        balances: list[Balance],
+        account_map: dict[int, Account],
+        category_map: dict[int, Category | None],
+        month: Month,
+    ) -> None:
         """Display balances table for a specific month.
 
         Args:
             balances: List of balances to display
+            account_map: Mapping of account IDs to Account objects
+            category_map: Mapping of account IDs to Category objects
             month: Month for the balances
         """
         ...
@@ -397,6 +408,15 @@ class BalanceUpdatePresenter(Protocol):
             balances: Final list of balances
             networth: Net worth data or None if not available
             month: Month for the summary
+        """
+        ...
+
+    def display_networth(self, nw: NetWorth, month: Month) -> None:
+        """Display net worth table.
+
+        Args:
+            nw (NetWorth): NetWorth object
+            month (Month): Month for the net worth
         """
         ...
 
@@ -643,6 +663,14 @@ class BalancesRollForwardPresenter(Protocol):
         """
         ...
 
+    def show_no_balances_warning(self, month: Month) -> None:
+        """Display warning when no balances found for month.
+
+        Args:
+            month: The month that has no balances
+        """
+        ...
+
 
 class BalanceDeleterPresenter(Protocol):
     """Presenter for BalanceDeleter workflow."""
@@ -668,6 +696,14 @@ class BalanceDeleterPresenter(Protocol):
 
     def show_invalid_month_error(self) -> None:
         """Display error for invalid month input."""
+        ...
+
+    def show_no_balances_warning(self, month: Month) -> None:
+        """Display warning when no balances found for month.
+
+        Args:
+            month: The month that has no balances
+        """
         ...
 
     def select_account(self, month: Month) -> int | None:

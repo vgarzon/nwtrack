@@ -54,9 +54,7 @@ def configured_container(base_container: Container) -> Container:
         )
         .register(
             BalanceDeleterPresenter,
-            lambda c: RichBalanceDeleterPresenter(
-                console=c.resolve(Console), fetcher=c.resolve(FetchService)
-            ),
+            lambda c: RichBalanceDeleterPresenter(console=c.resolve(Console)),
         )
         .register(
             BalanceDeleter,
