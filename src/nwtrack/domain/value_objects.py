@@ -35,6 +35,10 @@ class Month:
             return NotImplemented
         return self.year == other.year and self.month == other.month
 
+    def __hash__(self) -> int:
+        """Make Month hashable for use in sets, dicts, and composite keys."""
+        return hash((self.year, self.month))
+
     def __lt__(self, other: object) -> bool:
         if not isinstance(other, Month):
             return NotImplemented
