@@ -1,3 +1,25 @@
+-- ============================================================================
+-- DEPRECATED: This file is no longer used for schema management
+-- ============================================================================
+--
+-- As of the SQLAlchemy native schema migration, the database schema is now
+-- managed entirely through SQLAlchemy ORM models in:
+--   src/nwtrack/infra/sqlite/orm_models.py
+--
+-- Schema creation is handled by: Base.metadata.create_all()
+--
+-- This file is kept for reference purposes only. The authoritative schema
+-- definition is in the ORM models, which include:
+--   - Table definitions with proper typing
+--   - Foreign key relationships
+--   - CHECK constraints on Category.side and Account.status
+--   - Composite UNIQUE constraints on Balance and ExchangeRate
+--
+-- The networth_history VIEW has been replaced with SQLAlchemy queries in:
+--   src/nwtrack/infra/sqlite/sqlalchemy_repos/networth.py
+--
+-- ============================================================================
+
 -- Simple schema for a simple networth tracking application
 -- Prototype SQLite version
 
