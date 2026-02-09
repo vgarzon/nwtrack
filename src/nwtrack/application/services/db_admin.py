@@ -21,9 +21,15 @@ class DBAdminService:
         self._session_manager = session_manager
 
     def init_database(self) -> None:
-        """Initialize the database schema using SQLAlchemy metadata."""
+        """Initialize the database schema using SQLAlchemy metadata.
+
+        Drops all existing tables and recreates them from scratch.
+        """
         logger.info(
             "Initializing database schema at '%s' using SQLAlchemy",
-            self._config.db_file_path
+            self._config.db_file_path,
         )
+        logger.info("Dropping existing tables...")
+        Base.metadata.drop_all(self._session_manager.engine)
+        logger.info("Creating tables from ORM models...")
         Base.metadata.create_all(self._session_manager.engine)
