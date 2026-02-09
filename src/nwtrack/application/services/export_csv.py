@@ -4,9 +4,12 @@ Service to export records to CSV files.
 
 import logging
 from collections.abc import Callable
+from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.domain.value_objects import Month
 from nwtrack.infra.fileio.csv_io import records_to_csv
 
 logger = logging.getLogger(__name__)
@@ -25,6 +28,36 @@ class ExportCSV:
             "balances",
             "exchange_rates",
         ]
+
+    @staticmethod
+    def _entity_to_record(entity: Any) -> dict[str, Any]:
+        """Convert an entity to a dictionary record for CSV export.
+
+        Handles special types like Month and Enums that need conversion.
+
+        Args:
+            entity: Domain entity to convert
+
+        Returns:
+            Dictionary representation suitable for CSV export
+        """
+        import dataclasses
+
+        record = {}
+
+        # Get all fields from the dataclass
+        for field in dataclasses.fields(entity):
+            value = getattr(entity, field.name)
+
+            # Convert special types to CSV-friendly formats
+            if isinstance(value, Month):
+                record[field.name] = str(value)
+            elif isinstance(value, Enum):
+                record[field.name] = value.value
+            else:
+                record[field.name] = value
+
+        return record
 
     def export_tables_to_dir(self, target_dir: Path) -> list[tuple[str, str, int]]:
         """Export pre-specified database tables to CSV files in target directory.
@@ -68,7 +101,8 @@ class ExportCSV:
                 logger.error("Repository for table %s not found. Skipping.", table_name)
                 raise ValueError(f"Repository for table {table_name} not found.")
             entities = repo.get_all()
-            records = [repo._mapper.to_record(entity) for entity in entities]
+            # Convert entities to records (dicts) for CSV export
+            records = [self._entity_to_record(entity) for entity in entities]
 
         if not records:
             logger.info("No records found in table %s. Skipping export.", table_name)
