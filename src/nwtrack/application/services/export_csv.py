@@ -42,20 +42,32 @@ class ExportCSV:
             Dictionary representation suitable for CSV export
         """
         import dataclasses
+        from sqlalchemy import inspect
 
         record = {}
 
-        # Get all fields from the dataclass
+        # Get SQLAlchemy mapper to access column names
+        mapper = inspect(entity.__class__)
+
+        # Map field names to database column names
         for field in dataclasses.fields(entity):
             value = getattr(entity, field.name)
 
+            # Get the database column name (may differ from Python attribute name)
+            column_name = field.name
+            if field.name in mapper.attrs:
+                column = mapper.attrs[field.name]
+                if hasattr(column, 'columns'):
+                    # Get the actual column name from the first column
+                    column_name = list(column.columns)[0].name
+
             # Convert special types to CSV-friendly formats
             if isinstance(value, Month):
-                record[field.name] = str(value)
+                record[column_name] = str(value)
             elif isinstance(value, Enum):
-                record[field.name] = value.value
+                record[column_name] = value.value
             else:
-                record[field.name] = value
+                record[column_name] = value
 
         return record
 

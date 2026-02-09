@@ -17,10 +17,21 @@ from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
 
 
 @pytest.fixture(scope="module")
-def base_config() -> Settings:
-    """Test configuration with in-memory database."""
+def base_config(tmp_path_factory) -> Settings:
+    """Test configuration with temporary file database.
+
+    Uses a temp file instead of :memory: so that both SQLAlchemy
+    and SQLiteConnectionManager can access the same database.
+    """
+    import tempfile
+    import os
+
+    # Create a temporary database file
+    temp_dir = tmp_path_factory.mktemp("db")
+    db_file = temp_dir / "test.db"
+
     return Settings(
-        db_file_path=":memory:",
+        db_file_path=str(db_file),
         db_ddl_path="sql/nwtrack_ddl.sql",
     )
 
@@ -45,10 +56,9 @@ def base_container(base_config) -> Container:
     )
 
     # Initialize database schema
-    from nwtrack.infra.sqlite.orm_models import Base
-
-    session_manager = container.resolve(SQLAlchemySessionManager)
-    Base.metadata.create_all(session_manager.engine)
+    # Note: We skip creating tables here because init_db_tables_w_entities
+    # will run the DDL script which properly creates the schema including
+    # the networth_history VIEW (not table)
 
     return container
 

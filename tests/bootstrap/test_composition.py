@@ -5,10 +5,9 @@ Test container composition root
 import pytest
 
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.application.registries.repos import RepositoryRegistry
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.infra.config.settings import Settings
-from nwtrack.infra.sqlite.uow import SQLiteUnitOfWork
+from nwtrack.infra.sqlite.sqlalchemy_uow import SQLAlchemyUnitOfWork
 
 
 @pytest.fixture
@@ -50,26 +49,20 @@ def test_resolve_uow(configured_container):
     """Test resolving UnitOfWork from the configured_container."""
     uow = configured_container.resolve(UnitOfWork)
     assert uow is not None
-    assert isinstance(uow, SQLiteUnitOfWork)
-    assert hasattr(uow, "_db")
-    assert hasattr(uow, "_repos")
+    assert isinstance(uow, SQLAlchemyUnitOfWork)
+    assert hasattr(uow, "_session_factory")
+    assert hasattr(uow, "_db_manager")
 
 
-def test_mapper_registry_in_uow(configured_container):
-    """Test that MapperRegistry is correctly set in SQLiteUnitOfWork."""
-    uow = configured_container.resolve(UnitOfWork)
-    assert uow is not None
-    assert hasattr(uow, "_mappers")
-    # NOTE: This works because MapperRegistry is a concrete implementation
-    assert isinstance(
-        uow._mappers, configured_container.resolve(type(uow._mappers)).__class__
-    )
-    assert uow._mappers is configured_container.resolve(type(uow._mappers))
-
-
-def test_repository_registry_in_uow(configured_container):
-    """Test that RepositoryRegistry is correctly set in SQLiteUnitOfWork."""
-    uow = configured_container.resolve(UnitOfWork)
-    assert uow is not None
-    assert hasattr(uow, "_repos")
-    assert uow._repos is configured_container.resolve(RepositoryRegistry)
+def test_uow_has_repositories(configured_container):
+    """Test that UnitOfWork provides access to all repositories."""
+    # Create factory function that resolves UnitOfWork
+    uow_factory = lambda: configured_container.resolve(UnitOfWork)
+    with uow_factory() as uow:
+        # Verify all repositories are accessible
+        assert hasattr(uow, "currencies")
+        assert hasattr(uow, "categories")
+        assert hasattr(uow, "accounts")
+        assert hasattr(uow, "balances")
+        assert hasattr(uow, "exchange_rates")
+        assert hasattr(uow, "net_worth")

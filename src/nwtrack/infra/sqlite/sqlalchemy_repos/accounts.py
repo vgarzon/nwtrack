@@ -325,7 +325,8 @@ class SQLAlchemyAccountsRepository(AccountsRepository):
             status=Status(record["status"]),
         )
         # Set id after construction (init=False in ORM model)
-        if "id" in record:
+        # Only set id if it's present and non-zero (0 means auto-generate)
+        if "id" in record and int(record["id"]) > 0:
             account.id = int(record["id"])
         return account
 

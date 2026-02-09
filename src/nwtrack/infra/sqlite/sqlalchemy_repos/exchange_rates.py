@@ -122,7 +122,8 @@ class SQLAlchemyExchangeRatesRepository(ExchangeRatesRepository):
             rate=record["rate"],
         )
         # Set id after construction (init=False in ORM model)
-        if "id" in record:
+        # Only set id if it's present and non-zero (0 means auto-generate)
+        if "id" in record and int(record["id"]) > 0:
             exchange_rate.id = int(record["id"])
         return exchange_rate
 
