@@ -19,18 +19,18 @@ from nwtrack.entrypoints.cli.adapters.balance_presenters import (
 @pytest.fixture
 def configured_container(base_container: Container) -> Container:
     """Configure container."""
-    from nwtrack.application.ports.db import DBConnectionManager
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.application.services.data_loader import InitDataService
     from nwtrack.application.services.db_admin import DBAdminService
     from nwtrack.bootstrap.container import Lifetime
     from nwtrack.infra.config.settings import Settings
+    from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
 
     return (
         base_container.register(
             DBAdminService,
             lambda c: DBAdminService(
-                c.resolve(Settings), c.resolve(DBConnectionManager)
+                c.resolve(Settings), c.resolve(SQLAlchemySessionManager)
             ),
         )
         .register(

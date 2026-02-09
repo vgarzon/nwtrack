@@ -66,7 +66,7 @@ def build_data_services_container(container: Container) -> Container:
     """Build basic data services container.
 
     Adds:
-        - DBAdminService (requires DBConnectionManager for DDL operations)
+        - DBAdminService (requires SQLAlchemySessionManager for schema operations)
         - InitDataService
 
     Args:
@@ -77,19 +77,11 @@ def build_data_services_container(container: Container) -> Container:
     """
     logger.info("Adding DB Admin and Init Data services to DI container.")
 
-    # Register DBConnectionManager for DBAdminService if not already registered
-    try:
-        container.resolve(DBConnectionManager)
-    except KeyError:
-        container.register(
-            DBConnectionManager,
-            lambda c: SQLiteConnectionManager(c.resolve(Settings)),
-            lifetime=Lifetime.SINGLETON,
-        )
-
     container.register(
         DBAdminService,
-        lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),
+        lambda c: DBAdminService(
+            c.resolve(Settings), c.resolve(SQLAlchemySessionManager)
+        ),
     ).register(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),

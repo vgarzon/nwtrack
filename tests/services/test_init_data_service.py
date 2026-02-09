@@ -9,12 +9,12 @@ from tests.helpers import (
     init_db_tables_w_entities,
 )
 
-from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.bootstrap.container import Container
 from nwtrack.infra.config.settings import Settings
+from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
 
 
 @pytest.fixture
@@ -22,7 +22,9 @@ def configured_container(base_container: Container) -> Container:
     """Configure container for tests."""
     return base_container.register(
         DBAdminService,
-        lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),
+        lambda c: DBAdminService(
+            c.resolve(Settings), c.resolve(SQLAlchemySessionManager)
+        ),
     ).register(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
