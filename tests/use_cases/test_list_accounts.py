@@ -41,9 +41,9 @@ class MockAccountListPresenter:
 def configured_container(base_container: Container) -> Container:
     """Register services in the container."""
 
-    from nwtrack.application.ports.db import DBConnectionManager
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.application.services.db_admin import DBAdminService
+    from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
 
     mock_presenter = MockAccountListPresenter()
 
@@ -51,7 +51,7 @@ def configured_container(base_container: Container) -> Container:
         base_container.register(
             DBAdminService,
             lambda c: DBAdminService(
-                c.resolve(Settings), c.resolve(DBConnectionManager)
+                c.resolve(Settings), c.resolve(SQLAlchemySessionManager)
             ),
         )
         .register(

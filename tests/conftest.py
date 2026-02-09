@@ -13,6 +13,8 @@ from nwtrack.bootstrap.composition import build_base_container
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.infra.config.settings import Settings
 from nwtrack.infra.fileio.csv_io import csv_to_records
+from nwtrack.infra.sqlite.orm_models import Base
+from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
 
 
 @pytest.fixture(scope="module")
@@ -52,10 +54,13 @@ def base_container(base_config) -> Container:
         lifetime=Lifetime.SINGLETON,
     )
 
-    # Initialize database schema
-    # Note: We skip creating tables here because init_db_tables_w_entities
-    # will run the DDL script which properly creates the schema including
-    # the networth_history VIEW (not table)
+    # Drop and recreate database schema using SQLAlchemy metadata
+    # This ensures each test function starts with a clean database
+    session_manager: SQLAlchemySessionManager = container.resolve(
+        SQLAlchemySessionManager
+    )
+    Base.metadata.drop_all(session_manager.engine)
+    Base.metadata.create_all(session_manager.engine)
 
     return container
 

@@ -8,16 +8,19 @@ dataclasses and SQLAlchemy models.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import (
+    CheckConstraint,
     Float,
     ForeignKey,
     Integer,
     String,
     TypeDecorator,
+    UniqueConstraint,
 )
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 if TYPE_CHECKING:
@@ -84,6 +87,9 @@ class Category(MappedAsDataclass, Base):
     """Category entity."""
 
     __tablename__ = "categories"
+    __table_args__ = (
+        CheckConstraint("side IN ('asset', 'liability')", name="check_category_side"),
+    )
 
     name: Mapped[str] = mapped_column(String, primary_key=True)
     side: Mapped[Side] = mapped_column(
@@ -95,6 +101,11 @@ class Account(MappedAsDataclass, Base):
     """Account entity."""
 
     __tablename__ = "accounts"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('active', 'inactive')", name="check_account_status"
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
     name: Mapped[str] = mapped_column(String, unique=True)
@@ -115,6 +126,9 @@ class Balance(MappedAsDataclass, Base):
     """Balance entity."""
 
     __tablename__ = "balances"
+    __table_args__ = (
+        UniqueConstraint("account_id", "month", name="uq_balance_account_month"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
     account_id: Mapped[int] = mapped_column(
@@ -128,6 +142,9 @@ class ExchangeRate(MappedAsDataclass, Base):
     """Exchange rate entity."""
 
     __tablename__ = "exchange_rates"
+    __table_args__ = (
+        UniqueConstraint("currency", "month", name="uq_exchange_rate_currency_month"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
     currency_code: Mapped[str] = mapped_column(
@@ -137,17 +154,16 @@ class ExchangeRate(MappedAsDataclass, Base):
     rate: Mapped[float] = mapped_column(Float)
 
 
-class NetWorth(MappedAsDataclass, Base):
-    """NetWorth view entity (read-only)."""
+@dataclass
+class NetWorth:
+    """NetWorth computed entity (DTO for aggregation results).
 
-    __tablename__ = "networth_history"
-    __table_args__ = {"info": {"is_view": True}}
+    This is not an ORM model - it represents computed aggregation data
+    from Balance/Account/Category joins.
+    """
 
-    # Composite key for view
-    month: Mapped[Month] = mapped_column("month", MonthType, primary_key=True)
-    currency_code: Mapped[str] = mapped_column(
-        "currency", String, primary_key=True
-    )
-    assets: Mapped[int] = mapped_column("total_assets", Integer, init=False)
-    liabilities: Mapped[int] = mapped_column("total_liabilities", Integer, init=False)
-    net_worth: Mapped[int] = mapped_column("net_worth", Integer, init=False)
+    month: Month
+    currency_code: str
+    assets: int
+    liabilities: int
+    net_worth: int
