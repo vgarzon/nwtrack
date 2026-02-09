@@ -87,7 +87,6 @@ def main() -> int:
     from dotenv import load_dotenv
     from rich.console import Console
 
-    from nwtrack.application.ports.db import DBConnectionManager
     from nwtrack.application.ports.presentation import DBInitCSVPresenter
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.bootstrap.composition import Lifetime, build_base_container
@@ -97,6 +96,7 @@ def main() -> int:
     )
     from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
     from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
+    from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
 
     load_dotenv()
     setup_logging()
@@ -106,7 +106,9 @@ def main() -> int:
     container = build_base_container()
     container.register(
         DBAdminService,
-        lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),
+        lambda c: DBAdminService(
+            c.resolve(Settings), c.resolve(SQLAlchemySessionManager)
+        ),
     ).register(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
