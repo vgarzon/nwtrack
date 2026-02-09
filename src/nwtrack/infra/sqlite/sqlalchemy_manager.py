@@ -42,7 +42,12 @@ class SQLAlchemySessionManager:
             cursor.execute("PRAGMA foreign_keys=ON")
             cursor.close()
 
-        self.session_factory = sessionmaker(bind=self.engine)
+        # Configure session factory
+        # expire_on_commit=False allows entities to be used after session closes
+        self.session_factory = sessionmaker(
+            bind=self.engine,
+            expire_on_commit=False,
+        )
 
     def create_session(self) -> Session:
         """Create a new Session instance.
