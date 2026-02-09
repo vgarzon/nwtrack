@@ -42,6 +42,7 @@ class ExportCSV:
             Dictionary representation suitable for CSV export
         """
         import dataclasses
+
         from sqlalchemy import inspect
 
         record = {}

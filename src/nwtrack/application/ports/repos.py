@@ -266,7 +266,7 @@ class BalancesRepository(Repository[Balance], Protocol):
 class NetWorthRepository(Protocol):
     """Protocol for net worth repository operations."""
 
-    def get(self, month: Month, currency_code: str = "USD") -> NetWorth:
+    def get(self, month: Month, currency_code: str = "USD") -> NetWorth | None:
         """Get net worth value for given month and currency."""
         ...
 

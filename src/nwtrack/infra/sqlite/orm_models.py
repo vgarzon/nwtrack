@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import (
     Float,
     ForeignKey,
@@ -17,16 +18,15 @@ from sqlalchemy import (
     String,
     TypeDecorator,
 )
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Dialect
 
-from nwtrack.domain.value_objects import Month
-
 # Import enums from domain
 from enum import StrEnum
+
+from nwtrack.domain.value_objects import Month
 
 
 class Side(StrEnum):

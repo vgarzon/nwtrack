@@ -5,6 +5,8 @@ SQLAlchemy implementation of Accounts repository.
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
+from typing import Any
 
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
@@ -134,7 +136,7 @@ class SQLAlchemyAccountsRepository(AccountsRepository):
     def delete_all(self) -> None:
         """Delete all account records."""
         result = self._session.execute(delete(Account))
-        logger.info("Deleted %d account records.", result.rowcount)
+        logger.info("Deleted %d account records.", result.rowcount)  # type: ignore[attr-defined]
 
     def delete_by_id(self, account_id: int) -> int:
         """Delete account by ID.
@@ -148,7 +150,7 @@ class SQLAlchemyAccountsRepository(AccountsRepository):
         result = self._session.execute(
             delete(Account).where(Account.id == account_id)
         )
-        rowcount = result.rowcount or 0
+        rowcount = result.rowcount or 0  # type: ignore[attr-defined]
         if rowcount != 1:
             logger.warning(
                 "Expected to delete 1 account with ID %s, but deleted %s.",
@@ -189,7 +191,7 @@ class SQLAlchemyAccountsRepository(AccountsRepository):
             .where(Account.id == account_id)
             .values(name=new_name)
         )
-        rowcount = result.rowcount or 0
+        rowcount = result.rowcount or 0  # type: ignore[attr-defined]
         if rowcount != 1:
             logger.warning(
                 "Expected to update 1 account with ID %s, but updated %s.",
@@ -215,7 +217,7 @@ class SQLAlchemyAccountsRepository(AccountsRepository):
             .where(Account.id == account_id)
             .values(status=Status(new_status))
         )
-        rowcount = result.rowcount or 0
+        rowcount = result.rowcount or 0  # type: ignore[attr-defined]
         if rowcount != 1:
             logger.warning(
                 "Expected to update 1 account with ID %s, but updated %s.",
@@ -241,7 +243,7 @@ class SQLAlchemyAccountsRepository(AccountsRepository):
             .where(Account.id == account_id)
             .values(currency_code=new_currency_code)
         )
-        rowcount = result.rowcount or 0
+        rowcount = result.rowcount or 0  # type: ignore[attr-defined]
         if rowcount != 1:
             logger.warning(
                 "Expected to update 1 account with ID %s, but updated %s.",
@@ -269,7 +271,7 @@ class SQLAlchemyAccountsRepository(AccountsRepository):
             .where(Account.id == account_id)
             .values(category_name=new_category_name)
         )
-        rowcount = result.rowcount or 0
+        rowcount = result.rowcount or 0  # type: ignore[attr-defined]
         if rowcount != 1:
             logger.warning(
                 "Expected to update 1 account with ID %d, but updated %d.",
@@ -297,7 +299,7 @@ class SQLAlchemyAccountsRepository(AccountsRepository):
             .where(Account.id == account_id)
             .values(description=new_description)
         )
-        rowcount = result.rowcount or 0
+        rowcount = result.rowcount or 0  # type: ignore[attr-defined]
         if rowcount != 1:
             logger.warning(
                 "Expected to update 1 account with ID %d, but updated %d.",
@@ -308,7 +310,7 @@ class SQLAlchemyAccountsRepository(AccountsRepository):
             logger.info("Updated account %d description.", account_id)
         return rowcount
 
-    def hydrate(self, record: dict) -> Account:
+    def hydrate(self, record: Mapping[str, Any]) -> Account:
         """Hydrate record to Account entity.
 
         Args:
@@ -330,7 +332,7 @@ class SQLAlchemyAccountsRepository(AccountsRepository):
             account.id = int(record["id"])
         return account
 
-    def hydrate_many(self, data: list[dict]) -> list[Account]:
+    def hydrate_many(self, data: list[Mapping[str, Any]]) -> list[Account]:
         """Hydrate list of records to list of Account entities.
 
         Args:

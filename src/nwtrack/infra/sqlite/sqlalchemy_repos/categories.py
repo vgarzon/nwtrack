@@ -5,6 +5,8 @@ SQLAlchemy implementation of Categories repository.
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
+from typing import Any
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
@@ -95,9 +97,9 @@ class SQLAlchemyCategoriesRepository(CategoriesRepository):
     def delete_all(self) -> None:
         """Delete all category records."""
         result = self._session.execute(delete(Category))
-        logger.info("Deleted %d category records.", result.rowcount)
+        logger.info("Deleted %d category records.", result.rowcount)  # type: ignore[attr-defined]
 
-    def hydrate(self, record: dict) -> Category:
+    def hydrate(self, record: Mapping[str, Any]) -> Category:
         """Hydrate record to Category entity.
 
         Args:
@@ -110,7 +112,7 @@ class SQLAlchemyCategoriesRepository(CategoriesRepository):
 
         return Category(name=record["name"], side=Side(record["side"]))
 
-    def hydrate_many(self, data: list[dict]) -> list[Category]:
+    def hydrate_many(self, data: list[Mapping[str, Any]]) -> list[Category]:
         """Hydrate list of records to list of Category entities.
 
         Args:
