@@ -295,14 +295,17 @@ class RichAccountUpdatePresenter:
             )
             new_status = self._collect_status(default=current_account.status)
 
-            return Account(
-                id=current_account.id,
+            # Create Account without id (init=False in ORM model)
+            updated_account = Account(
                 name=new_name,
                 description=new_description,
                 category_name=new_category_name,
                 currency_code=new_currency_code,
                 status=new_status,
             )
+            # Set id after construction
+            updated_account.id = current_account.id
+            return updated_account
         except KeyboardInterrupt:
             return None
 
