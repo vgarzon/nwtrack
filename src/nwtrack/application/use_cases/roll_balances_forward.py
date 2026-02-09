@@ -129,7 +129,7 @@ def main() -> int:
     """
     from dotenv import load_dotenv
 
-    from nwtrack.bootstrap.composition import Lifetime, build_base_sqlite_uow_container
+    from nwtrack.bootstrap.composition import Lifetime, build_base_container
     from nwtrack.bootstrap.logging_config import setup_logging
     from nwtrack.entrypoints.cli.adapters.balance_presenters import (
         RichBalancesRollForwardPresenter,
@@ -145,7 +145,7 @@ def main() -> int:
 
     console_default = ConsoleSettings(record=False)
 
-    container = build_base_sqlite_uow_container()
+    container = build_base_container()
     container.register(
         Console,
         lambda _: ConsoleFactory(console_default)(),

@@ -76,7 +76,7 @@ def main(n_months: int = 12, currency_code: str = "USD") -> int:
     from rich.console import Console
 
     from nwtrack.application.ports.uow import UnitOfWork
-    from nwtrack.bootstrap.composition import Lifetime, build_base_sqlite_uow_container
+    from nwtrack.bootstrap.composition import Lifetime, build_base_container
     from nwtrack.bootstrap.logging_config import setup_logging
     from nwtrack.entrypoints.cli.adapters.report_presenters import (
         RichNetworthHistoryPresenter,
@@ -85,7 +85,7 @@ def main(n_months: int = 12, currency_code: str = "USD") -> int:
     load_dotenv()
     setup_logging()
 
-    container = build_base_sqlite_uow_container()
+    container = build_base_container()
     container.register(
         Console,
         lambda _: Console(),

@@ -7,7 +7,7 @@ import logging
 from nwtrack.application.dto import OperationResult
 from nwtrack.application.ports.presentation import AccountListPresenter
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
+from nwtrack.bootstrap.composition import build_base_container
 from nwtrack.domain.models import Account, Category
 
 logger = logging.getLogger(__name__)
@@ -76,7 +76,7 @@ def main(active_only: bool = True) -> int:
     load_dotenv()
     setup_logging()
 
-    container = build_base_sqlite_uow_container()
+    container = build_base_container()
     container.register(
         Console,
         lambda _: Console(),
