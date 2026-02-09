@@ -101,8 +101,8 @@ class AccountCreator:
             Tuple of account ID and balance ID, or None if failed
         """
         with self._uow() as uow:
+            # Create Account without id (init=False in ORM model)
             account = Account(
-                id=0,
                 name=data.account_name,
                 description=data.description,
                 category_name=data.category_name,
@@ -115,8 +115,8 @@ class AccountCreator:
                 logger.exception("Error inserting account: %s", e)
                 uow.rollback()
                 return None
+            # Create Balance without id (init=False in ORM model)
             balance = Balance(
-                id=0,
                 account_id=account_id,
                 month=data.initial_month,
                 amount=data.initial_amount,
