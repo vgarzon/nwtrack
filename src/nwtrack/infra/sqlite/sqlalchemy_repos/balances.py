@@ -5,6 +5,8 @@ SQLAlchemy implementation of Balances repository.
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
+from typing import Any
 
 from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.exc import IntegrityError
@@ -197,15 +199,15 @@ class SQLAlchemyBalancesRepository(BalancesRepository):
             .where(Balance.account_id == account_id, Balance.month == month)
             .values(amount=new_amount)
         )
-        if result.rowcount != 1:
+        if result.rowcount != 1:  # type: ignore[attr-defined]
             logger.error(
                 "Update affected %d rows for account_id %d on month %s.",
-                result.rowcount,
+                result.rowcount,  # type: ignore[attr-defined]
                 account_id,
                 month,
             )
             raise ValueError(
-                f"Update affected {result.rowcount} rows for account_id "
+                f"Update affected {result.rowcount} rows for account_id "  # type: ignore[attr-defined]
                 f"{account_id} on month {month}."
             )
         else:
@@ -250,7 +252,7 @@ class SQLAlchemyBalancesRepository(BalancesRepository):
         )
         logger.info(
             "Rolled %d balances forward from %s to %s.",
-            result.rowcount,
+            result.rowcount,  # type: ignore[attr-defined]
             month,
             next_month,
         )
@@ -276,7 +278,7 @@ class SQLAlchemyBalancesRepository(BalancesRepository):
             sql,
             {"source_month": str(source_month), "target_month": str(target_month)},
         )
-        row_count = result.rowcount or 0
+        row_count = result.rowcount or 0  # type: ignore[attr-defined]
         logger.info(
             "Copied %d balances from %s to %s.", row_count, source_month, target_month
         )
@@ -342,7 +344,7 @@ class SQLAlchemyBalancesRepository(BalancesRepository):
     def delete_all(self) -> None:
         """Delete all balance records."""
         result = self._session.execute(delete(Balance))
-        logger.info("Deleted %d balance records.", result.rowcount)
+        logger.info("Deleted %d balance records.", result.rowcount)  # type: ignore[attr-defined]
 
     def delete_by_account_id(self, account_id: int) -> int:
         """Delete balance records by account ID.
@@ -356,7 +358,7 @@ class SQLAlchemyBalancesRepository(BalancesRepository):
         result = self._session.execute(
             delete(Balance).where(Balance.account_id == account_id)
         )
-        rowcount = result.rowcount or 0
+        rowcount = result.rowcount or 0  # type: ignore[attr-defined]
         logger.info(
             "Deleted %d balance records for account ID %d.", rowcount, account_id
         )
@@ -377,7 +379,7 @@ class SQLAlchemyBalancesRepository(BalancesRepository):
                 Balance.account_id == account_id, Balance.month == month
             )
         )
-        rowcount = result.rowcount or 0
+        rowcount = result.rowcount or 0  # type: ignore[attr-defined]
         logger.info(
             "Deleted %d balance record(s) for account_id %d on month %s.",
             rowcount,
@@ -386,7 +388,7 @@ class SQLAlchemyBalancesRepository(BalancesRepository):
         )
         return rowcount
 
-    def hydrate(self, record: dict) -> Balance:
+    def hydrate(self, record: Mapping[str, Any]) -> Balance:
         """Hydrate record to Balance entity.
 
         Args:
@@ -408,7 +410,7 @@ class SQLAlchemyBalancesRepository(BalancesRepository):
             balance.id = int(record["id"])
         return balance
 
-    def hydrate_many(self, data: list[dict]) -> list[Balance]:
+    def hydrate_many(self, data: list[Mapping[str, Any]]) -> list[Balance]:
         """Hydrate list of records to list of Balance entities.
 
         Args:

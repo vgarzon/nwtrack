@@ -13,7 +13,6 @@ from nwtrack.bootstrap.composition import build_base_container
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.infra.config.settings import Settings
 from nwtrack.infra.fileio.csv_io import csv_to_records
-from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
 
 
 @pytest.fixture(scope="module")
@@ -23,8 +22,6 @@ def base_config(tmp_path_factory) -> Settings:
     Uses a temp file instead of :memory: so that both SQLAlchemy
     and SQLiteConnectionManager can access the same database.
     """
-    import tempfile
-    import os
 
     # Create a temporary database file
     temp_dir = tmp_path_factory.mktemp("db")

@@ -56,8 +56,11 @@ def test_resolve_uow(configured_container):
 
 def test_uow_has_repositories(configured_container):
     """Test that UnitOfWork provides access to all repositories."""
+
     # Create factory function that resolves UnitOfWork
-    uow_factory = lambda: configured_container.resolve(UnitOfWork)
+    def uow_factory():
+        return configured_container.resolve(UnitOfWork)
+
     with uow_factory() as uow:
         # Verify all repositories are accessible
         assert hasattr(uow, "currencies")

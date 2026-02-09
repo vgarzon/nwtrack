@@ -34,11 +34,12 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         self._session: Session | None = None
         self._db_manager = db_manager
 
-    def __enter__(self) -> "SQLAlchemyUnitOfWork":
+    def __enter__(self) -> SQLAlchemyUnitOfWork:
         """Enter context manager, create session and instantiate repositories."""
         self._session = self._session_factory()
 
         # Import repository implementations here to avoid circular imports
+        from nwtrack.infra.sqlite.reporting import SQLiteReportingQueries
         from nwtrack.infra.sqlite.sqlalchemy_repos.accounts import (
             SQLAlchemyAccountsRepository,
         )
@@ -57,7 +58,6 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         from nwtrack.infra.sqlite.sqlalchemy_repos.networth import (
             SQLAlchemyNetWorthRepository,
         )
-        from nwtrack.infra.sqlite.reporting import SQLiteReportingQueries
 
         # Instantiate repositories with shared session
         self.currencies = SQLAlchemyCurrenciesRepository(self._session)

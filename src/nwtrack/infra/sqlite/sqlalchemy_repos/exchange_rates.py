@@ -5,6 +5,8 @@ SQLAlchemy implementation of ExchangeRates repository.
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
+from typing import Any
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
@@ -105,9 +107,9 @@ class SQLAlchemyExchangeRatesRepository(ExchangeRatesRepository):
     def delete_all(self) -> None:
         """Delete all exchange rate records."""
         result = self._session.execute(delete(ExchangeRate))
-        logger.info("Deleted %d exchange rate records.", result.rowcount)
+        logger.info("Deleted %d exchange rate records.", result.rowcount)  # type: ignore[attr-defined]
 
-    def hydrate(self, record: dict) -> ExchangeRate:
+    def hydrate(self, record: Mapping[str, Any]) -> ExchangeRate:
         """Hydrate record to ExchangeRate entity.
 
         Args:
@@ -118,7 +120,11 @@ class SQLAlchemyExchangeRatesRepository(ExchangeRatesRepository):
         """
         exchange_rate = ExchangeRate(
             currency_code=record["currency"],
-            month=Month.parse(record["month"]) if isinstance(record["month"], str) else record["month"],
+            month=(
+                Month.parse(record["month"])
+                if isinstance(record["month"], str)
+                else record["month"]
+            ),
             rate=record["rate"],
         )
         # Set id after construction (init=False in ORM model)
@@ -127,7 +133,7 @@ class SQLAlchemyExchangeRatesRepository(ExchangeRatesRepository):
             exchange_rate.id = int(record["id"])
         return exchange_rate
 
-    def hydrate_many(self, data: list[dict]) -> list[ExchangeRate]:
+    def hydrate_many(self, data: list[Mapping[str, Any]]) -> list[ExchangeRate]:
         """Hydrate list of records to list of ExchangeRate entities.
 
         Args:

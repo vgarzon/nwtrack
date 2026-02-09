@@ -5,6 +5,8 @@ SQLAlchemy implementation of Currencies repository.
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
+from typing import Any
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
@@ -90,9 +92,9 @@ class SQLAlchemyCurrenciesRepository(CurrenciesRepository):
     def delete_all(self) -> None:
         """Delete all currency records."""
         result = self._session.execute(delete(Currency))
-        logger.info("Deleted %d currency records.", result.rowcount)
+        logger.info("Deleted %d currency records.", result.rowcount)  # type: ignore[attr-defined]
 
-    def hydrate(self, record: dict) -> Currency:
+    def hydrate(self, record: Mapping[str, Any]) -> Currency:
         """Hydrate record to Currency entity.
 
         Args:
@@ -103,7 +105,7 @@ class SQLAlchemyCurrenciesRepository(CurrenciesRepository):
         """
         return Currency(code=record["code"], description=record["description"])
 
-    def hydrate_many(self, data: list[dict]) -> list[Currency]:
+    def hydrate_many(self, data: list[Mapping[str, Any]]) -> list[Currency]:
         """Hydrate list of records to list of Currency entities.
 
         Args:
