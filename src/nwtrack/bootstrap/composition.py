@@ -24,6 +24,7 @@ def build_sqlalchemy_uow_container() -> Container:
     """Build container with SQLAlchemy Unit of Work.
 
     This is now the default container using SQLAlchemy ORM.
+    Also provides DBConnectionManager for legacy reporting queries.
 
     Returns:
         Container: Configured DI container with SQLAlchemy
@@ -35,13 +36,18 @@ def build_sqlalchemy_uow_container() -> Container:
         lambda _: load_settings(),
         lifetime=Lifetime.SINGLETON,
     ).register(
+        DBConnectionManager,
+        lambda c: SQLiteConnectionManager(c.resolve(Settings)),
+        lifetime=Lifetime.SINGLETON,
+    ).register(
         SQLAlchemySessionManager,
         lambda c: SQLAlchemySessionManager(c.resolve(Settings)),
         lifetime=Lifetime.SINGLETON,
     ).register(
         UnitOfWork,
         lambda c: SQLAlchemyUnitOfWork(
-            lambda: c.resolve(SQLAlchemySessionManager).create_session()
+            session_factory=lambda: c.resolve(SQLAlchemySessionManager).create_session(),
+            db_manager=c.resolve(DBConnectionManager),
         ),
     )
     return container
