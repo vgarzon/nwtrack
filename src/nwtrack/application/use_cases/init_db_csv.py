@@ -90,7 +90,7 @@ def main() -> int:
     from nwtrack.application.ports.db import DBConnectionManager
     from nwtrack.application.ports.presentation import DBInitCSVPresenter
     from nwtrack.application.ports.uow import UnitOfWork
-    from nwtrack.bootstrap.composition import Lifetime, build_base_sqlite_uow_container
+    from nwtrack.bootstrap.composition import Lifetime, build_base_container
     from nwtrack.bootstrap.logging_config import setup_logging
     from nwtrack.entrypoints.cli.adapters.db_admin_presenters import (
         RichDBInitCSVPresenter,
@@ -103,7 +103,7 @@ def main() -> int:
 
     console_defaults = ConsoleSettings(record=False)
 
-    container = build_base_sqlite_uow_container()
+    container = build_base_container()
     container.register(
         DBAdminService,
         lambda c: DBAdminService(c.resolve(Settings), c.resolve(DBConnectionManager)),

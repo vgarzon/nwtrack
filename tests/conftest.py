@@ -9,10 +9,11 @@ import pytest
 from nwtrack.application.ports.db import DBConnectionManager
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.data_loader import InitDataService
-from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
+from nwtrack.bootstrap.composition import build_base_container
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.infra.config.settings import Settings
 from nwtrack.infra.fileio.csv_io import csv_to_records
+from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
 
 
 @pytest.fixture(scope="module")
@@ -26,24 +27,29 @@ def base_config() -> Settings:
 
 @pytest.fixture(scope="function")
 def base_container(base_config) -> Container:
-    """Base container with config, repo registry, and unit of work.
+    """Base container with config and unit of work (SQLAlchemy-based).
 
     Registered components:
         - Settings
-        - DBConnectionManager
-        - MapperRegistry
-        - RepositoryRegistry
-        - UnitOfWork,
+        - SQLAlchemySessionManager
+        - UnitOfWork (SQLAlchemy-based)
 
     Returns:
-        Container: Configured DI container.
+        Container: Configured DI container with SQLAlchemy ORM
     """
-    container = build_base_sqlite_uow_container()
+    container = build_base_container()
     container.register(
         Settings,
         lambda _: base_config,
         lifetime=Lifetime.SINGLETON,
     )
+
+    # Initialize database schema
+    from nwtrack.infra.sqlite.orm_models import Base
+
+    session_manager = container.resolve(SQLAlchemySessionManager)
+    Base.metadata.create_all(session_manager.engine)
+
     return container
 
 

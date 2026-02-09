@@ -3,7 +3,7 @@
 from rich.console import Console
 from rich.prompt import Confirm, IntPrompt, Prompt
 
-from nwtrack.domain.models import Month
+from nwtrack.domain.value_objects import Month
 
 
 def prompt_for_month(console: Console) -> Month:

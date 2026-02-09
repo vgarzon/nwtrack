@@ -170,12 +170,12 @@ def bootstrap() -> Container:
     from dotenv import load_dotenv
 
     from nwtrack.application.ports.uow import UnitOfWork
-    from nwtrack.bootstrap.composition import build_base_sqlite_uow_container
+    from nwtrack.bootstrap.composition import build_base_container
     from nwtrack.bootstrap.logging_config import setup_logging
 
     load_dotenv()
     setup_logging()
-    container = build_base_sqlite_uow_container()
+    container = build_base_container()
     container.register(
         Console,
         lambda c: Console(),

@@ -1,64 +1,28 @@
 """
-Primary data models
+Primary data models - now using SQLAlchemy ORM integration.
+
+The entities are defined in infra.sqlite.orm_models but imported here
+to maintain backward compatibility with existing code.
 """
 
-from dataclasses import dataclass
-from enum import StrEnum
+from nwtrack.infra.sqlite.orm_models import (
+    Account,
+    Balance,
+    Category,
+    Currency,
+    ExchangeRate,
+    NetWorth,
+    Side,
+    Status,
+)
 
-from nwtrack.domain.value_objects import Month
-
-
-class Side(StrEnum):
-    ASSET = "asset"
-    LIABILITY = "liability"
-
-
-class Status(StrEnum):
-    ACTIVE = "active"
-    INACTIVE = "inactive"
-
-
-@dataclass
-class Currency:
-    code: str
-    description: str
-
-
-@dataclass
-class Category:
-    name: str
-    side: Side
-
-
-@dataclass
-class Account:
-    id: int
-    name: str
-    description: str
-    category_name: str
-    currency_code: str
-    status: Status
-
-
-@dataclass
-class Balance:
-    id: int
-    account_id: int
-    month: Month
-    amount: int
-
-
-@dataclass
-class ExchangeRate:
-    currency_code: str
-    month: Month
-    rate: float
-
-
-@dataclass
-class NetWorth:
-    month: Month
-    assets: int
-    liabilities: int
-    net_worth: int
-    currency_code: str
+__all__ = [
+    "Account",
+    "Balance",
+    "Category",
+    "Currency",
+    "ExchangeRate",
+    "NetWorth",
+    "Side",
+    "Status",
+]
