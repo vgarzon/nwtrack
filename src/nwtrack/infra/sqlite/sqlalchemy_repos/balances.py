@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -239,12 +239,12 @@ class SQLAlchemyBalancesRepository(BalancesRepository):
         next_month = month.increment()
 
         # Use raw SQL for INSERT OR IGNORE with SELECT
-        sql = """
+        sql = text("""
         INSERT OR IGNORE INTO balances (account_id, month, amount)
         SELECT account_id, :next_month, amount
         FROM balances
         WHERE month = :month
-        """
+        """)
         result = self._session.execute(
             sql, {"month": str(month), "next_month": str(next_month)}
         )
@@ -266,12 +266,12 @@ class SQLAlchemyBalancesRepository(BalancesRepository):
             Number of copied balance records
         """
         # Use raw SQL for INSERT OR IGNORE with SELECT
-        sql = """
+        sql = text("""
         INSERT OR IGNORE INTO balances (account_id, month, amount)
         SELECT account_id, :target_month, amount
         FROM balances
         WHERE month = :source_month
-        """
+        """)
         result = self._session.execute(
             sql,
             {"source_month": str(source_month), "target_month": str(target_month)},
