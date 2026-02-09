@@ -235,10 +235,14 @@ The application uses:
 - NetWorth aggregations computed via SQLAlchemy queries (replaces previous networth_history view)
 
 Environment variables are loaded from `.env` (see `.env_example` for template):
-- `NWTRACK_DB_FILE_PATH`: Database file location
+- `NWTRACK_DB_FILE_PATH`: Database file location (default: `data/sqlite/nwtrack.db`)
 - ~~`NWTRACK_DB_DDL_PATH`~~: (Deprecated - no longer used)
-- `NWTRACK_LOG_FILE`: Log file location
-- `NWTRACK_LOG_FILE_LEVEL`: Logging level
+- `NWTRACK_LOG_FILE`: Log file location (default: `./logs/nwtrack.log`)
+- `NWTRACK_LOG_FILE_LEVEL`: Logging level (default: `INFO`)
+- `NWTRACK_LOG_ROTATION_MB`: Log file rotation size in MB (default: `10`)
+- `NWTRACK_LOG_BACKUP_COUNT`: Number of backup log files to keep (default: `7`)
+
+**Note**: File logging is enabled by default. The application automatically creates the log directory if it doesn't exist and uses rotating file handlers to prevent unbounded log growth.
 
 ## Code Conventions
 
