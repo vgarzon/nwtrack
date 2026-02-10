@@ -6,8 +6,7 @@ from __future__ import annotations
 
 from typing import Protocol, TypeVar
 
-from nwtrack.application.ports.db import DBConnectionManager
-from nwtrack.application.ports.mappers import DBRecord, Mapper
+from nwtrack.application.ports.mappers import DBRecord
 from nwtrack.domain.models import (
     Account,
     Balance,
@@ -35,64 +34,6 @@ class Repository(Protocol[TEntity]):
     def hydrate(self, data: DBRecord) -> TEntity: ...
 
     def hydrate_many(self, data: list[DBRecord]) -> list[TEntity]: ...
-
-
-class BaseRepository[TEntity]:
-    """Base repository class implementing common methods."""
-
-    def __init__(self, db: DBConnectionManager, mapper: Mapper[TEntity]) -> None:
-        self._db: DBConnectionManager = db
-        self._mapper: Mapper = mapper
-
-    def insert_many(self, data: list[TEntity]) -> None:
-        """Insert list of entities into the corresponding table.
-
-        Args:
-            data (list[Entity]): List of entity objects.
-        """
-        raise NotImplementedError
-
-    def get_all(self) -> list[TEntity]:
-        """Get all entities.
-
-        Returns:
-            list[Entity]: List of entity objects.
-        """
-        raise NotImplementedError
-
-    def count(self) -> int:
-        """Count the number of records.
-
-        Returns:
-            int: Number of records.
-        """
-        raise NotImplementedError
-
-    def delete_all(self) -> None:
-        """Delete all records."""
-        raise NotImplementedError
-
-    def hydrate(self, record: dict) -> TEntity:
-        """Hydrate record to Entity.
-
-        Args:
-            record (dict): data dictionary
-
-        Returns:
-            Entity: Entity object.
-        """
-        return self._mapper.to_entity(record)
-
-    def hydrate_many(self, data: list[dict]) -> list[TEntity]:
-        """Hydrate list of records to list of Entities.
-
-        Args:
-            data (list[dict]): list of data dictionaries.
-
-        Returns:
-            list[Entity]: list of Entity objects.
-        """
-        return [self.hydrate(record) for record in data]
 
 
 class CurrenciesRepository(Repository[Currency], Protocol):

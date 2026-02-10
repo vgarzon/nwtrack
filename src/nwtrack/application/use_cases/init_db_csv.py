@@ -41,8 +41,7 @@ class DBInitializerCSV:
         """Run the database initialization process."""
         logger.info("Starting database initialization from CSV files.")
         logger.info("Database file path: %s", self._config.db_file_path)
-        logger.info("DDL script path: %s", self._config.db_ddl_path)
-        self._presenter.show_header(self._config.db_file_path, self._config.db_ddl_path)
+        self._presenter.show_header(self._config.db_file_path)
         try:
             self._file_paths = self._presenter.prompt_for_file_paths(
                 self._required_keys
@@ -88,6 +87,7 @@ def main() -> int:
     from rich.console import Console
 
     from nwtrack.application.ports.presentation import DBInitCSVPresenter
+    from nwtrack.application.ports.schema import SchemaManager
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.bootstrap.composition import Lifetime, build_base_container
     from nwtrack.bootstrap.logging_config import setup_logging
@@ -97,6 +97,7 @@ def main() -> int:
     from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
     from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
     from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
+    from nwtrack.infra.sqlite.sqlalchemy_schema_manager import SQLAlchemySchemaManager
 
     load_dotenv()
     setup_logging()
@@ -105,10 +106,13 @@ def main() -> int:
 
     container = build_base_container()
     container.register(
-        DBAdminService,
-        lambda c: DBAdminService(
-            c.resolve(Settings), c.resolve(SQLAlchemySessionManager)
+        SchemaManager,
+        lambda c: SQLAlchemySchemaManager(
+            engine=c.resolve(SQLAlchemySessionManager).engine
         ),
+    ).register(
+        DBAdminService,
+        lambda c: DBAdminService(c.resolve(Settings), c.resolve(SchemaManager)),
     ).register(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),

@@ -60,10 +60,12 @@ src/nwtrack/
 
 **Infrastructure Layer**:
 - Uses SQLAlchemy 2.0 ORM with declarative mapping via `MappedAsDataclass`
+- All database queries use SQLAlchemy ORM exclusively (no raw SQL)
 - ORM models (`infra/sqlite/orm_models.py`) define entity-to-table mappings
 - Repositories (`infra/sqlite/sqlalchemy_repos/`) use SQLAlchemy Session for queries
 - `SQLAlchemyUnitOfWork` implements the UoW pattern, wrapping SQLAlchemy Session
 - Repositories are instantiated on UoW entry and share the same session for atomic transactions
+- `SchemaManager` protocol abstracts schema operations (create/drop tables) from application layer
 - Custom `MonthType` TypeDecorator handles Month value object persistence
 - Entity IDs use `init=False` for auto-increment primary keys
 
@@ -92,6 +94,8 @@ src/nwtrack/
    - Custom `MonthType` TypeDecorator converts between Month objects and string storage
    - Session configured with `expire_on_commit=False` to allow entity usage after commit
    - CSV export uses SQLAlchemy's mapper inspection to get correct database column names
+
+8. **Schema Management Port**: Schema operations (create/drop tables) are abstracted via `SchemaManager` protocol, with SQLAlchemy implementation in infrastructure. Follows ports-and-adapters pattern keeping application layer independent of SQLAlchemy engine details.
 
 ## Development Commands
 
@@ -236,7 +240,6 @@ The application uses:
 
 Environment variables are loaded from `.env` (see `.env_example` for template):
 - `NWTRACK_DB_FILE_PATH`: Database file location (default: `data/sqlite/nwtrack.db`)
-- ~~`NWTRACK_DB_DDL_PATH`~~: (Deprecated - no longer used)
 - `NWTRACK_LOG_FILE`: Log file location (default: `./logs/nwtrack.log`)
 - `NWTRACK_LOG_FILE_LEVEL`: Logging level (default: `INFO`)
 - `NWTRACK_LOG_ROTATION_MB`: Log file rotation size in MB (default: `10`)
@@ -319,7 +322,7 @@ class MyUseCase:
         return OperationResult(success=True, data=entity.id)
 ```
 
-**Testing Pattern**: Use pytest fixtures for container setup and sample data. Tests use temporary file SQLite databases (not `:memory:`) to allow both SQLAlchemy and legacy DBConnectionManager to access the same database. UoW factory pattern: `lambda: container.resolve(UnitOfWork)` creates new UoW instances per test operation.
+**Testing Pattern**: Use pytest fixtures for container setup and sample data. Tests use `:memory:` SQLite databases for fast execution. UoW factory pattern: `lambda: container.resolve(UnitOfWork)` creates new UoW instances per test operation.
 
 **Dependency Flow**: The application follows strict dependency direction:
 - **CLI Commands** → **Use Cases** → **Services/Repositories** → **Database**

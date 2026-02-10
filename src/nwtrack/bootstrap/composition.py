@@ -4,15 +4,15 @@ Common dependency injection container setup for NWTrack application.
 
 import logging
 
-from nwtrack.application.ports.db import DBConnectionManager
+from nwtrack.application.ports.schema import SchemaManager
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.infra.config.load import load_settings
 from nwtrack.infra.config.settings import Settings
-from nwtrack.infra.sqlite.db_manager import SQLiteConnectionManager
 from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
+from nwtrack.infra.sqlite.sqlalchemy_schema_manager import SQLAlchemySchemaManager
 from nwtrack.infra.sqlite.sqlalchemy_uow import SQLAlchemyUnitOfWork
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,6 @@ def build_sqlalchemy_uow_container() -> Container:
     """Build container with SQLAlchemy Unit of Work.
 
     This is now the default container using SQLAlchemy ORM.
-    Also provides DBConnectionManager for legacy reporting queries.
 
     Returns:
         Container: Configured DI container with SQLAlchemy
@@ -34,10 +33,6 @@ def build_sqlalchemy_uow_container() -> Container:
         lambda _: load_settings(),
         lifetime=Lifetime.SINGLETON,
     ).register(
-        DBConnectionManager,
-        lambda c: SQLiteConnectionManager(c.resolve(Settings)),
-        lifetime=Lifetime.SINGLETON,
-    ).register(
         SQLAlchemySessionManager,
         lambda c: SQLAlchemySessionManager(c.resolve(Settings)),
         lifetime=Lifetime.SINGLETON,
@@ -47,7 +42,6 @@ def build_sqlalchemy_uow_container() -> Container:
             session_factory=lambda: c.resolve(
                 SQLAlchemySessionManager
             ).create_session(),
-            db_manager=c.resolve(DBConnectionManager),
         ),
     )
     return container
@@ -66,7 +60,8 @@ def build_data_services_container(container: Container) -> Container:
     """Build basic data services container.
 
     Adds:
-        - DBAdminService (requires SQLAlchemySessionManager for schema operations)
+        - SchemaManager (for database schema operations)
+        - DBAdminService (uses SchemaManager for schema operations)
         - InitDataService
 
     Args:
@@ -78,10 +73,13 @@ def build_data_services_container(container: Container) -> Container:
     logger.info("Adding DB Admin and Init Data services to DI container.")
 
     container.register(
-        DBAdminService,
-        lambda c: DBAdminService(
-            c.resolve(Settings), c.resolve(SQLAlchemySessionManager)
+        SchemaManager,
+        lambda c: SQLAlchemySchemaManager(
+            engine=c.resolve(SQLAlchemySessionManager).engine
         ),
+    ).register(
+        DBAdminService,
+        lambda c: DBAdminService(c.resolve(Settings), c.resolve(SchemaManager)),
     ).register(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),

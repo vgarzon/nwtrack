@@ -28,7 +28,6 @@ def test_resolve_config(configured_container, base_config):
     assert config is not None
     assert isinstance(config, Settings)
     assert config.db_file_path == base_config.db_file_path
-    assert config.db_ddl_path == base_config.db_ddl_path
 
 
 def test_overwrite_config(configured_container, base_config: Settings):
@@ -42,7 +41,6 @@ def test_overwrite_config(configured_container, base_config: Settings):
     assert settings is not None
     assert isinstance(settings, Settings)
     assert settings.db_file_path == base_config.db_file_path
-    assert settings.db_ddl_path == base_config.db_ddl_path
 
 
 def test_resolve_uow(configured_container):
@@ -51,7 +49,6 @@ def test_resolve_uow(configured_container):
     assert uow is not None
     assert isinstance(uow, SQLAlchemyUnitOfWork)
     assert hasattr(uow, "_session_factory")
-    assert hasattr(uow, "_db_manager")
 
 
 def test_uow_has_repositories(configured_container):

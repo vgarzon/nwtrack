@@ -2,37 +2,26 @@
 Pytest fixtures and test container setup for nwtrack application.
 """
 
-from unittest.mock import Mock
-
 import pytest
 
-from nwtrack.application.ports.db import DBConnectionManager
+from nwtrack.application.ports.schema import SchemaManager
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.bootstrap.composition import build_base_container
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.infra.config.settings import Settings
 from nwtrack.infra.fileio.csv_io import csv_to_records
-from nwtrack.infra.sqlite.orm_models import Base
 from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
+from nwtrack.infra.sqlite.sqlalchemy_schema_manager import SQLAlchemySchemaManager
 
 
 @pytest.fixture(scope="module")
-def base_config(tmp_path_factory) -> Settings:
-    """Test configuration with temporary file database.
+def base_config() -> Settings:
+    """Test configuration with in-memory database.
 
-    Uses a temp file instead of :memory: so that both SQLAlchemy
-    and SQLiteConnectionManager can access the same database.
+    Uses :memory: for fast test execution with SQLAlchemy.
     """
-
-    # Create a temporary database file
-    temp_dir = tmp_path_factory.mktemp("db")
-    db_file = temp_dir / "test.db"
-
-    return Settings(
-        db_file_path=str(db_file),
-        db_ddl_path="sql/nwtrack_ddl.sql",
-    )
+    return Settings(db_file_path=":memory:")
 
 
 @pytest.fixture(scope="function")
@@ -42,6 +31,7 @@ def base_container(base_config) -> Container:
     Registered components:
         - Settings
         - SQLAlchemySessionManager
+        - SchemaManager
         - UnitOfWork (SQLAlchemy-based)
 
     Returns:
@@ -54,13 +44,19 @@ def base_container(base_config) -> Container:
         lifetime=Lifetime.SINGLETON,
     )
 
-    # Drop and recreate database schema using SQLAlchemy metadata
-    # This ensures each test function starts with a clean database
-    session_manager: SQLAlchemySessionManager = container.resolve(
-        SQLAlchemySessionManager
+    # Register SchemaManager for schema operations
+    container.register(
+        SchemaManager,
+        lambda c: SQLAlchemySchemaManager(
+            engine=c.resolve(SQLAlchemySessionManager).engine
+        ),
     )
-    Base.metadata.drop_all(session_manager.engine)
-    Base.metadata.create_all(session_manager.engine)
+
+    # Drop and recreate database schema using SchemaManager
+    # This ensures each test function starts with a clean database
+    schema_manager: SchemaManager = container.resolve(SchemaManager)
+    schema_manager.drop_all_tables()
+    schema_manager.create_all_tables()
 
     return container
 
@@ -110,8 +106,3 @@ def sample_entities(
     entities = data_svc._records_to_entities(records)
 
     return entities
-
-
-@pytest.fixture(scope="module")
-def mock_db_manager() -> Mock:
-    return Mock(spec=DBConnectionManager)

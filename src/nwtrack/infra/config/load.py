@@ -26,13 +26,4 @@ def load_settings() -> Settings:
         )
         db_file_path = ":memory:"
 
-    if "NWTRACK_DB_DDL_PATH" in os.environ:
-        db_ddl_path = os.environ["NWTRACK_DB_DDL_PATH"]
-    else:
-        logger.info(
-            "Environment variable 'NWTRACK_DB_DDL_PATH' not set. "
-            "Using default DDL path 'sql/nwtrack_ddl.sql'."
-        )
-        db_ddl_path = "sql/nwtrack_ddl.sql"
-
-    return Settings(db_file_path=db_file_path, db_ddl_path=db_ddl_path)
+    return Settings(db_file_path=db_file_path)
