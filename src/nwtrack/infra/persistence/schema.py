@@ -4,12 +4,12 @@ import logging
 
 from sqlalchemy.engine import Engine
 
-from nwtrack.infra.sqlite.orm_models import Base
+from nwtrack.infra.persistence.orm.base import Base
 
 logger = logging.getLogger(__name__)
 
 
-class SQLAlchemySchemaManager:
+class SchemaManager:
     """SQLAlchemy implementation of SchemaManager protocol."""
 
     def __init__(self, engine: Engine) -> None:

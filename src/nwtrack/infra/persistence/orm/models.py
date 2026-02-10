@@ -9,7 +9,7 @@ dataclasses and SQLAlchemy models.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from enum import StrEnum
 
 from sqlalchemy import (
     CheckConstraint,
@@ -17,19 +17,14 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
-    TypeDecorator,
     UniqueConstraint,
 )
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
-
-if TYPE_CHECKING:
-    from sqlalchemy.engine import Dialect
-
-# Import enums from domain
-from enum import StrEnum
+from sqlalchemy.orm import Mapped, MappedAsDataclass, mapped_column
 
 from nwtrack.domain.value_objects import Month
+from nwtrack.infra.persistence.orm.base import Base
+from nwtrack.infra.persistence.orm.types import MonthType
 
 
 class Side(StrEnum):
@@ -44,34 +39,6 @@ class Status(StrEnum):
 
     ACTIVE = "active"
     INACTIVE = "inactive"
-
-
-class Base(DeclarativeBase):
-    """Base class for all ORM models."""
-
-    pass
-
-
-class MonthType(TypeDecorator):
-    """Custom type for Month value object.
-
-    Stores Month as 'YYYY-MM' string in database, converts to/from Month object.
-    """
-
-    impl = String
-    cache_ok = True
-
-    def process_bind_param(
-        self, value: Month | None, dialect: Dialect
-    ) -> str | None:
-        """Convert Month to string for database storage."""
-        return str(value) if value else None
-
-    def process_result_value(
-        self, value: str | None, dialect: Dialect
-    ) -> Month | None:
-        """Convert string from database to Month object."""
-        return Month.parse(value) if value else None
 
 
 class Currency(MappedAsDataclass, Base):

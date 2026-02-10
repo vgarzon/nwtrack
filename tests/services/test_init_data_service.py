@@ -15,8 +15,8 @@ from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.bootstrap.container import Container
 from nwtrack.infra.config.settings import Settings
-from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
-from nwtrack.infra.sqlite.sqlalchemy_schema_manager import SQLAlchemySchemaManager
+from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
+from nwtrack.infra.persistence.schema import SchemaManager as SchemaManagerImpl
 
 
 @pytest.fixture
@@ -24,8 +24,8 @@ def configured_container(base_container: Container) -> Container:
     """Configure container for tests."""
     return base_container.register(
         SchemaManager,
-        lambda c: SQLAlchemySchemaManager(
-            engine=c.resolve(SQLAlchemySessionManager).engine
+        lambda c: SchemaManagerImpl(
+            engine=c.resolve(SQLiteSessionManager).engine
         ),
     ).register(
         DBAdminService,

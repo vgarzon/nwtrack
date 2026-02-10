@@ -12,13 +12,15 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from nwtrack.application.ports.repos import AccountsRepository
-from nwtrack.infra.sqlite.orm_models import Account, Status
+from nwtrack.application.ports.repos import (
+    AccountsRepository as AccountsRepositoryProtocol,
+)
+from nwtrack.infra.persistence.orm.models import Account, Status
 
 logger = logging.getLogger(__name__)
 
 
-class SQLAlchemyAccountsRepository(AccountsRepository):
+class AccountsRepository(AccountsRepositoryProtocol):
     """SQLAlchemy-based repository for accounts operations."""
 
     def __init__(self, session: Session):

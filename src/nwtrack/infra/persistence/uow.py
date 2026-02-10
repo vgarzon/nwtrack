@@ -35,36 +35,36 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         self._session = self._session_factory()
 
         # Import repository implementations here to avoid circular imports
-        from nwtrack.infra.sqlite.sqlalchemy_repos.accounts import (
-            SQLAlchemyAccountsRepository,
+        from nwtrack.infra.persistence.repositories.accounts import (
+            AccountsRepository,
         )
-        from nwtrack.infra.sqlite.sqlalchemy_repos.balances import (
-            SQLAlchemyBalancesRepository,
+        from nwtrack.infra.persistence.repositories.balances import (
+            BalancesRepository,
         )
-        from nwtrack.infra.sqlite.sqlalchemy_repos.categories import (
-            SQLAlchemyCategoriesRepository,
+        from nwtrack.infra.persistence.repositories.categories import (
+            CategoriesRepository,
         )
-        from nwtrack.infra.sqlite.sqlalchemy_repos.currencies import (
-            SQLAlchemyCurrenciesRepository,
+        from nwtrack.infra.persistence.repositories.currencies import (
+            CurrenciesRepository,
         )
-        from nwtrack.infra.sqlite.sqlalchemy_repos.exchange_rates import (
-            SQLAlchemyExchangeRatesRepository,
+        from nwtrack.infra.persistence.repositories.exchange_rates import (
+            ExchangeRatesRepository,
         )
-        from nwtrack.infra.sqlite.sqlalchemy_repos.networth import (
-            SQLAlchemyNetWorthRepository,
+        from nwtrack.infra.persistence.repositories.networth import (
+            NetWorthRepository,
         )
-        from nwtrack.infra.sqlite.sqlalchemy_repos.reporting import (
-            SQLAlchemyReportingQueries,
+        from nwtrack.infra.persistence.repositories.reporting import (
+            ReportingQueries,
         )
 
         # Instantiate repositories with shared session
-        self.currencies = SQLAlchemyCurrenciesRepository(self._session)
-        self.categories = SQLAlchemyCategoriesRepository(self._session)
-        self.accounts = SQLAlchemyAccountsRepository(self._session)
-        self.balances = SQLAlchemyBalancesRepository(self._session)
-        self.exchange_rates = SQLAlchemyExchangeRatesRepository(self._session)
-        self.net_worth = SQLAlchemyNetWorthRepository(self._session)
-        self._reporting = SQLAlchemyReportingQueries(self._session)
+        self.currencies = CurrenciesRepository(self._session)
+        self.categories = CategoriesRepository(self._session)
+        self.accounts = AccountsRepository(self._session)
+        self.balances = BalancesRepository(self._session)
+        self.exchange_rates = ExchangeRatesRepository(self._session)
+        self.net_worth = NetWorthRepository(self._session)
+        self._reporting = ReportingQueries(self._session)
 
         return self
 

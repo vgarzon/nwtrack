@@ -1,10 +1,14 @@
 """
-SQLAlchemy engine and session management.
+SQLite-specific session management.
+
+This module contains SQLite dialect-specific code (PRAGMA commands, connection
+parameters, etc.). The session manager can be replaced with PostgreSQL/MySQL
+equivalents without affecting the ORM layer.
 """
 
 import logging
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -13,8 +17,8 @@ from nwtrack.infra.config.settings import Settings
 logger = logging.getLogger(__name__)
 
 
-class SQLAlchemySessionManager:
-    """Manages SQLAlchemy engine and session factory."""
+class SQLiteSessionManager:
+    """Manages SQLAlchemy engine and session factory for SQLite database."""
 
     def __init__(self, config: Settings):
         """Initialize session manager with configuration.
@@ -27,15 +31,14 @@ class SQLAlchemySessionManager:
 
         logger.info("Creating SQLAlchemy engine with URL: %s", url)
 
+        # SQLite-specific: check_same_thread=False allows multi-threaded access
         self.engine: Engine = create_engine(
             url,
             echo=False,  # Set True for SQL logging during development
             connect_args={"check_same_thread": False},
         )
 
-        # Enable foreign keys for SQLite
-        from sqlalchemy import event
-
+        # SQLite-specific: Enable foreign keys via PRAGMA
         @event.listens_for(self.engine, "connect")
         def set_sqlite_pragma(dbapi_conn, connection_record):
             cursor = dbapi_conn.cursor()

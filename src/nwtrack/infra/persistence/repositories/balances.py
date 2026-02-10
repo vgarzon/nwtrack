@@ -12,14 +12,16 @@ from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from nwtrack.application.ports.repos import BalancesRepository
+from nwtrack.application.ports.repos import (
+    BalancesRepository as BalancesRepositoryProtocol,
+)
 from nwtrack.domain.value_objects import Month
-from nwtrack.infra.sqlite.orm_models import Account, Balance, Status
+from nwtrack.infra.persistence.orm.models import Account, Balance, Status
 
 logger = logging.getLogger(__name__)
 
 
-class SQLAlchemyBalancesRepository(BalancesRepository):
+class BalancesRepository(BalancesRepositoryProtocol):
     """SQLAlchemy-based repository for balances operations."""
 
     def __init__(self, session: Session):

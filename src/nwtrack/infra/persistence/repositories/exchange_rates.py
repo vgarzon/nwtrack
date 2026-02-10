@@ -11,14 +11,16 @@ from typing import Any
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from nwtrack.application.ports.repos import ExchangeRatesRepository
+from nwtrack.application.ports.repos import (
+    ExchangeRatesRepository as ExchangeRatesRepositoryProtocol,
+)
 from nwtrack.domain.value_objects import Month
-from nwtrack.infra.sqlite.orm_models import ExchangeRate
+from nwtrack.infra.persistence.orm.models import ExchangeRate
 
 logger = logging.getLogger(__name__)
 
 
-class SQLAlchemyExchangeRatesRepository(ExchangeRatesRepository):
+class ExchangeRatesRepository(ExchangeRatesRepositoryProtocol):
     """SQLAlchemy-based repository for exchange rates operations."""
 
     def __init__(self, session: Session):

@@ -11,13 +11,15 @@ from typing import Any
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from nwtrack.application.ports.repos import CategoriesRepository
-from nwtrack.infra.sqlite.orm_models import Category
+from nwtrack.application.ports.repos import (
+    CategoriesRepository as CategoriesRepositoryProtocol,
+)
+from nwtrack.infra.persistence.orm.models import Category
 
 logger = logging.getLogger(__name__)
 
 
-class SQLAlchemyCategoriesRepository(CategoriesRepository):
+class CategoriesRepository(CategoriesRepositoryProtocol):
     """SQLAlchemy-based repository for categories operations."""
 
     def __init__(self, session: Session):
@@ -108,7 +110,7 @@ class SQLAlchemyCategoriesRepository(CategoriesRepository):
         Returns:
             Category object
         """
-        from nwtrack.infra.sqlite.orm_models import Side
+        from nwtrack.infra.persistence.orm.models import Side
 
         return Category(name=record["name"], side=Side(record["side"]))
 

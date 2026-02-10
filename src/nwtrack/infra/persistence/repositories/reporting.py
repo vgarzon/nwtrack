@@ -10,15 +10,14 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from nwtrack.application.dto import MonthlyCategoryBalance
-from nwtrack.domain.models import Category as CategoryModel
-from nwtrack.domain.models import Side
 from nwtrack.domain.value_objects import Month
-from nwtrack.infra.sqlite.orm_models import Account, Balance, Category
+from nwtrack.infra.persistence.orm.models import Account, Balance, Category, Side
+from nwtrack.infra.persistence.orm.models import Category as CategoryModel
 
 logger = logging.getLogger(__name__)
 
 
-class SQLAlchemyReportingQueries:
+class ReportingQueries:
     """SQLAlchemy-based implementation of reporting queries.
 
     Provides aggregate queries for generating summary reports.
