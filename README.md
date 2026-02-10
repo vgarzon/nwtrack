@@ -47,10 +47,13 @@ uv run nwtrack export csv
 Built with clean architecture principles:
 - **Domain Layer**: Core entities (Account, Balance, Currency, etc.)
 - **Application Layer**: Use cases and business logic with dependency injection
-- **Infrastructure Layer**: SQLAlchemy ORM with SQLite backend
-- **Entrypoints**: Typer-based CLI
+- **Infrastructure Layer**: 
+  - Database-agnostic ORM layer using SQLAlchemy 2.0
+  - SQLite dialect-specific session management
+  - Repository pattern with Unit of Work for transaction management
+- **Entrypoints**: Typer-based CLI with Rich UI components
 
-Data is stored in a local SQLite database with tables for currencies, categories, accounts, balances, and exchange rates. The application uses SQLAlchemy 2.0 ORM for database operations with the Unit of Work pattern for transaction management.
+Data is stored in a local SQLite database with tables for currencies, categories, accounts, balances, and exchange rates. The architecture separates persistence concerns (ORM models, repositories) from database dialect specifics (SQLite connection settings), making it easy to support additional databases in the future.
 
 ## Quick start:
 ```bash
