@@ -21,12 +21,18 @@ src/nwtrack/
 │   ├── services/     # Application services
 │   └── use_cases/    # Entry points for business operations
 ├── bootstrap/        # Dependency injection and composition
-├── infra/           # Infrastructure implementations
-│   ├── config/      # Settings and configuration
-│   ├── fileio/      # CSV file operations
-│   └── sqlite/      # SQLite-specific implementations
-└── entrypoints/     # External interfaces
-    └── cli/         # Typer-based CLI application
+├── infra/            # Infrastructure implementations
+│   ├── config/       # Settings and configuration
+│   ├── fileio/       # CSV file operations
+│   ├── persistence/  # Database-agnostic ORM layer
+│   │   ├── orm/      # ORM models (base, types, entity mappings)
+│   │   ├── repositories/  # SQLAlchemy repository implementations
+│   │   ├── uow.py    # Unit of Work implementation
+│   │   └── schema.py # Schema manager
+│   └── db/           # Database dialect-specific implementations
+│       └── sqlite/   # SQLite session manager with PRAGMAs
+└── entrypoints/      # External interfaces
+    └── cli/          # Typer-based CLI application
 ```
 
 ### Key Architectural Patterns
@@ -59,15 +65,19 @@ src/nwtrack/
   - **Not yet refactored**: `delete_balance`, `roll_balances_forward` (still use direct console access)
 
 **Infrastructure Layer**:
-- Uses SQLAlchemy 2.0 ORM with declarative mapping via `MappedAsDataclass`
+- **Persistence Layer** (`infra/persistence/`) - Database-agnostic ORM components:
+  - ORM models split into focused modules: `base.py` (Declarative Base), `types.py` (custom TypeDecorators), `models.py` (entity mappings)
+  - Uses SQLAlchemy 2.0 ORM with declarative mapping via `MappedAsDataclass`
+  - Repositories (`repositories/`) implement protocol interfaces using SQLAlchemy Session
+  - `SQLAlchemyUnitOfWork` implements UoW pattern, wrapping SQLAlchemy Session
+  - Repositories instantiated on UoW entry and share the same session for atomic transactions
+  - Custom `MonthType` TypeDecorator handles Month value object persistence
+  - Entity IDs use `init=False` for auto-increment primary keys
+- **Database Dialect Layer** (`infra/db/`):
+  - SQLite-specific session manager with PRAGMA commands and connection settings
+  - `SQLiteSessionManager` creates engine and session factory with SQLite-specific configuration
 - All database queries use SQLAlchemy ORM exclusively (no raw SQL)
-- ORM models (`infra/sqlite/orm_models.py`) define entity-to-table mappings
-- Repositories (`infra/sqlite/sqlalchemy_repos/`) use SQLAlchemy Session for queries
-- `SQLAlchemyUnitOfWork` implements the UoW pattern, wrapping SQLAlchemy Session
-- Repositories are instantiated on UoW entry and share the same session for atomic transactions
-- `SchemaManager` protocol abstracts schema operations (create/drop tables) from application layer
-- Custom `MonthType` TypeDecorator handles Month value object persistence
-- Entity IDs use `init=False` for auto-increment primary keys
+- `SchemaManager` implementation abstracts schema operations (create/drop tables) from application layer
 
 **Dependency Injection**: A custom lightweight DI container (`bootstrap/container.py`) supports singleton and transient lifetimes. Each use case's `main()` function extends the base container from `bootstrap/composition.py` with its specific dependencies.
 
@@ -230,7 +240,7 @@ just check
 
 ### Database Operations
 
-The database schema is managed entirely through SQLAlchemy ORM models in `src/nwtrack/infra/sqlite/orm_models.py`. Schema creation is handled by `Base.metadata.create_all()`.
+The database schema is managed entirely through SQLAlchemy ORM models in `src/nwtrack/infra/persistence/orm/models.py`. Schema creation is handled by `Base.metadata.create_all()` via the `SchemaManager` implementation.
 
 The application uses:
 - SQLite database (default: `data/sqlite/nwtrack.db`)
