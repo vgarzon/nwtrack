@@ -11,9 +11,9 @@ from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.infra.config.load import load_settings
 from nwtrack.infra.config.settings import Settings
-from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
-from nwtrack.infra.sqlite.sqlalchemy_schema_manager import SQLAlchemySchemaManager
-from nwtrack.infra.sqlite.sqlalchemy_uow import SQLAlchemyUnitOfWork
+from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
+from nwtrack.infra.persistence.schema import SchemaManager as SchemaManagerImpl
+from nwtrack.infra.persistence.uow import SQLAlchemyUnitOfWork
 
 logger = logging.getLogger(__name__)
 
@@ -33,14 +33,14 @@ def build_sqlalchemy_uow_container() -> Container:
         lambda _: load_settings(),
         lifetime=Lifetime.SINGLETON,
     ).register(
-        SQLAlchemySessionManager,
-        lambda c: SQLAlchemySessionManager(c.resolve(Settings)),
+        SQLiteSessionManager,
+        lambda c: SQLiteSessionManager(c.resolve(Settings)),
         lifetime=Lifetime.SINGLETON,
     ).register(
         UnitOfWork,
         lambda c: SQLAlchemyUnitOfWork(
             session_factory=lambda: c.resolve(
-                SQLAlchemySessionManager
+                SQLiteSessionManager
             ).create_session(),
         ),
     )
@@ -74,8 +74,8 @@ def build_data_services_container(container: Container) -> Container:
 
     container.register(
         SchemaManager,
-        lambda c: SQLAlchemySchemaManager(
-            engine=c.resolve(SQLAlchemySessionManager).engine
+        lambda c: SchemaManagerImpl(
+            engine=c.resolve(SQLiteSessionManager).engine
         ),
     ).register(
         DBAdminService,

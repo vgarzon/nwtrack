@@ -10,7 +10,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from nwtrack.domain.value_objects import Month
-from nwtrack.infra.sqlite.orm_models import Account, Balance, Category, NetWorth
+from nwtrack.infra.persistence.orm.models import Account, Balance, Category, NetWorth
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ def _build_networth_query(session: Session):
     )
 
 
-class SQLAlchemyNetWorthRepository:
+class NetWorthRepository:
     """SQLAlchemy-based repository for net worth operations.
 
     Computes net worth by aggregating balance data through Account and Category joins.

@@ -11,13 +11,15 @@ from typing import Any
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from nwtrack.application.ports.repos import CurrenciesRepository
-from nwtrack.infra.sqlite.orm_models import Currency
+from nwtrack.application.ports.repos import (
+    CurrenciesRepository as CurrenciesRepositoryProtocol,
+)
+from nwtrack.infra.persistence.orm.models import Currency
 
 logger = logging.getLogger(__name__)
 
 
-class SQLAlchemyCurrenciesRepository(CurrenciesRepository):
+class CurrenciesRepository(CurrenciesRepositoryProtocol):
     """SQLAlchemy-based repository for currencies operations."""
 
     def __init__(self, session: Session):

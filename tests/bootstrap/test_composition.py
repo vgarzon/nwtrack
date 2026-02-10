@@ -7,7 +7,7 @@ import pytest
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.infra.config.settings import Settings
-from nwtrack.infra.sqlite.sqlalchemy_uow import SQLAlchemyUnitOfWork
+from nwtrack.infra.persistence.uow import SQLAlchemyUnitOfWork
 
 
 @pytest.fixture

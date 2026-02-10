@@ -96,8 +96,8 @@ def main() -> int:
     )
     from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
     from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
-    from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
-    from nwtrack.infra.sqlite.sqlalchemy_schema_manager import SQLAlchemySchemaManager
+    from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
+    from nwtrack.infra.persistence.schema import SchemaManager as SchemaManagerImpl
 
     load_dotenv()
     setup_logging()
@@ -107,8 +107,8 @@ def main() -> int:
     container = build_base_container()
     container.register(
         SchemaManager,
-        lambda c: SQLAlchemySchemaManager(
-            engine=c.resolve(SQLAlchemySessionManager).engine
+        lambda c: SchemaManagerImpl(
+            engine=c.resolve(SQLiteSessionManager).engine
         ),
     ).register(
         DBAdminService,

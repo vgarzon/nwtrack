@@ -10,9 +10,9 @@ from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.bootstrap.composition import build_base_container
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.infra.config.settings import Settings
+from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
 from nwtrack.infra.fileio.csv_io import csv_to_records
-from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
-from nwtrack.infra.sqlite.sqlalchemy_schema_manager import SQLAlchemySchemaManager
+from nwtrack.infra.persistence.schema import SchemaManager as SchemaManagerImpl
 
 
 @pytest.fixture(scope="module")
@@ -30,7 +30,7 @@ def base_container(base_config) -> Container:
 
     Registered components:
         - Settings
-        - SQLAlchemySessionManager
+        - SQLiteSessionManager
         - SchemaManager
         - UnitOfWork (SQLAlchemy-based)
 
@@ -47,8 +47,8 @@ def base_container(base_config) -> Container:
     # Register SchemaManager for schema operations
     container.register(
         SchemaManager,
-        lambda c: SQLAlchemySchemaManager(
-            engine=c.resolve(SQLAlchemySessionManager).engine
+        lambda c: SchemaManagerImpl(
+            engine=c.resolve(SQLiteSessionManager).engine
         ),
     )
 
