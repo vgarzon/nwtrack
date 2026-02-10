@@ -16,18 +16,14 @@ class RichDBInitCSVPresenter:
         self._prompt = Prompt(console=self._console)
         self._confirm = Confirm(console=self._console)
 
-    def show_header(self, db_file_path: str, db_ddl_path: str) -> None:
+    def show_header(self, db_file_path: str) -> None:
         """Display workflow header using Rich.
 
         Args:
             db_file_path: Path to the SQLite database file
-            db_ddl_path: Path to the DDL script file
         """
         self._console.rule("[bold green]Initialize DB from CSV Files[/bold green]")
-        self._console.print(
-            f"[bold]SQLite db file path:[/bold] {db_file_path}\n"
-            f"[bold]DDL script path:[/bold] {db_ddl_path}"
-        )
+        self._console.print(f"[bold]SQLite db file path:[/bold] {db_file_path}")
 
     def prompt_for_file_paths(self, table_names: list[str]) -> dict[str, str]:
         """Prompt user to input CSV file paths for required tables.

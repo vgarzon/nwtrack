@@ -424,12 +424,11 @@ class BalanceUpdatePresenter(Protocol):
 class DBInitCSVPresenter(Protocol):
     """Presenter for DB initialization from CSV workflow."""
 
-    def show_header(self, db_file_path: str, db_ddl_path: str) -> None:
+    def show_header(self, db_file_path: str) -> None:
         """Display workflow header.
 
         Args:
             db_file_path: Path to the SQLite database file
-            db_ddl_path: Path to the DDL script file
         """
         ...
 

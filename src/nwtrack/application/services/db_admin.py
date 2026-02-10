@@ -4,9 +4,8 @@ Database admin service to manage initialization and setup
 
 import logging
 
+from nwtrack.application.ports.schema import SchemaManager
 from nwtrack.infra.config.settings import Settings
-from nwtrack.infra.sqlite.orm_models import Base
-from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
 
 logger = logging.getLogger(__name__)
 
@@ -14,22 +13,24 @@ logger = logging.getLogger(__name__)
 class DBAdminService:
     """Database initialization and maintenance tasks."""
 
-    def __init__(
-        self, config: Settings, session_manager: SQLAlchemySessionManager
-    ) -> None:
+    def __init__(self, config: Settings, schema_manager: SchemaManager) -> None:
+        """Initialize service with configuration and schema manager.
+
+        Args:
+            config: Application settings
+            schema_manager: Schema management protocol implementation
+        """
         self._config = config
-        self._session_manager = session_manager
+        self._schema_manager = schema_manager
 
     def init_database(self) -> None:
-        """Initialize the database schema using SQLAlchemy metadata.
+        """Initialize the database schema.
 
         Drops all existing tables and recreates them from scratch.
         """
         logger.info(
-            "Initializing database schema at '%s' using SQLAlchemy",
+            "Initializing database schema at '%s'",
             self._config.db_file_path,
         )
-        logger.info("Dropping existing tables...")
-        Base.metadata.drop_all(self._session_manager.engine)
-        logger.info("Creating tables from ORM models...")
-        Base.metadata.create_all(self._session_manager.engine)
+        self._schema_manager.drop_all_tables()
+        self._schema_manager.create_all_tables()

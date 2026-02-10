@@ -18,6 +18,7 @@ from nwtrack.entrypoints.cli.ui.factory import Console
 def configured_container(base_container: Container) -> Container:
     """Register services in the container."""
     from nwtrack.application.ports.presentation import NetworthHistoryPresenter
+    from nwtrack.application.ports.schema import SchemaManager
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.application.services.db_admin import DBAdminService
     from nwtrack.application.services.fetch import FetchService
@@ -28,6 +29,7 @@ def configured_container(base_container: Container) -> Container:
     from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory, ConsoleSettings
     from nwtrack.infra.config.settings import Settings
     from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
+    from nwtrack.infra.sqlite.sqlalchemy_schema_manager import SQLAlchemySchemaManager
 
     console_default = ConsoleSettings(record=True)
 
@@ -38,10 +40,13 @@ def configured_container(base_container: Container) -> Container:
             lifetime=Lifetime.SINGLETON,
         )
         .register(
-            DBAdminService,
-            lambda c: DBAdminService(
-                c.resolve(Settings), c.resolve(SQLAlchemySessionManager)
+            SchemaManager,
+            lambda c: SQLAlchemySchemaManager(
+                engine=c.resolve(SQLAlchemySessionManager).engine
             ),
+        ).register(
+            DBAdminService,
+            lambda c: DBAdminService(c.resolve(Settings), c.resolve(SchemaManager)),
         )
         .register(
             FetchService,

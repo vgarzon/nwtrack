@@ -17,6 +17,7 @@ from nwtrack.bootstrap.container import Container, Lifetime
 @pytest.fixture
 def configured_container(base_container: Container) -> Container:
     """Register services in the container."""
+    from nwtrack.application.ports.schema import SchemaManager
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.application.services.db_admin import DBAdminService
     from nwtrack.application.use_cases.export_tables_csv import (
@@ -25,6 +26,7 @@ def configured_container(base_container: Container) -> Container:
     )
     from nwtrack.infra.config.settings import Settings
     from nwtrack.infra.sqlite.sqlalchemy_manager import SQLAlchemySessionManager
+    from nwtrack.infra.sqlite.sqlalchemy_schema_manager import SQLAlchemySchemaManager
 
     return (
         base_container.register(
@@ -33,10 +35,13 @@ def configured_container(base_container: Container) -> Container:
             lifetime=Lifetime.SINGLETON,
         )
         .register(
-            DBAdminService,
-            lambda c: DBAdminService(
-                c.resolve(Settings), c.resolve(SQLAlchemySessionManager)
+            SchemaManager,
+            lambda c: SQLAlchemySchemaManager(
+                engine=c.resolve(SQLAlchemySessionManager).engine
             ),
+        ).register(
+            DBAdminService,
+            lambda c: DBAdminService(c.resolve(Settings), c.resolve(SchemaManager)),
         )
         .register(
             ExportCSV,
