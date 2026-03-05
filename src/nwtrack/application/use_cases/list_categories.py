@@ -15,9 +15,7 @@ logger = logging.getLogger(__name__)
 class ListCategories:
     """List categories."""
 
-    def __init__(
-        self, fetcher: FetchService, presenter: CategoryListPresenter
-    ) -> None:
+    def __init__(self, fetcher: FetchService, presenter: CategoryListPresenter) -> None:
         self._fetcher = fetcher
         self._presenter = presenter
 

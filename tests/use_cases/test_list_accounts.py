@@ -2,7 +2,6 @@
 Tests for list accounts service
 """
 
-
 import pytest
 from tests.helpers import init_db_tables_w_entities
 
@@ -11,7 +10,7 @@ from nwtrack.application.use_cases.list_accounts import (
     ListAccounts,
 )
 from nwtrack.bootstrap.container import Container
-from nwtrack.domain.models import Account, Category
+from nwtrack.domain.models import Account
 from nwtrack.infra.config.settings import Settings
 
 
@@ -21,19 +20,16 @@ class MockAccountListPresenter:
     def __init__(self) -> None:
         self.calls: list[str] = []
         self.displayed_accounts: list[Account] = []
-        self.displayed_categories: dict[int, Category | None] = {}
         self.active_only_flag: bool = True
 
     def display_accounts(
         self,
         accounts: list[Account],
-        categories: dict[int, Category | None],
         active_only: bool = True,
     ) -> None:
         """Capture display call and store data for assertions."""
         self.calls.append("display_accounts")
         self.displayed_accounts = accounts
-        self.displayed_categories = categories
         self.active_only_flag = active_only
 
 
@@ -52,10 +48,9 @@ def configured_container(base_container: Container) -> Container:
     return (
         base_container.register(
             SchemaManager,
-            lambda c: SchemaManagerImpl(
-                engine=c.resolve(SQLiteSessionManager).engine
-            ),
-        ).register(
+            lambda c: SchemaManagerImpl(engine=c.resolve(SQLiteSessionManager).engine),
+        )
+        .register(
             DBAdminService,
             lambda c: DBAdminService(c.resolve(Settings), c.resolve(SchemaManager)),
         )

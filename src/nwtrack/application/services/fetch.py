@@ -53,23 +53,6 @@ class FetchService:
             currencies = uow.currencies.get_all()
         return currencies
 
-    def get_category_by_account_id(self, account_id: int) -> Category | None:
-        """Get category side for a given account ID.
-
-        Args:
-            account_id (int): Account ID
-
-        Returns:
-            Category | None: Category instance if found, else None.
-        """
-        with self._uow() as uow:
-            account = uow.accounts.get_by_id(account_id)
-        if not account:
-            return None
-        with self._uow() as uow:
-            category = uow.categories.get(account.category_name)
-        return category
-
     def get_account_by_id(self, account_id: int) -> Account | None:
         """Get account by ID.
 

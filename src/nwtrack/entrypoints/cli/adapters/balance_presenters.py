@@ -7,7 +7,7 @@ from datetime import date
 from rich.console import Console
 from rich.prompt import Confirm, IntPrompt, Prompt
 
-from nwtrack.domain.models import Account, Balance, Category, NetWorth
+from nwtrack.domain.models import Account, Balance, NetWorth
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.ui.prompts import (
     prompt_for_account_id,
@@ -92,16 +92,13 @@ class RichBalanceUpdatePresenter(SelectableMonthMixin):
         """Display workflow header using Rich."""
         self._console.rule("[bold green]Balance Updater[/bold green]")
 
-    def display_active_accounts(
-        self, accounts: list[Account], category_map: dict[int, Category | None]
-    ) -> None:
+    def display_active_accounts(self, accounts: list[Account]) -> None:
         """Display active accounts table.
 
         Args:
             accounts: List of active accounts to display
-            category_map: Mapping of account IDs to their categories
         """
-        table = build_accounts_table(accounts, category_map, title_prefix="Active")
+        table = build_accounts_table(accounts, title_prefix="Active")
         self._console.print(table)
 
     def show_no_balances_warning(self, month: Month) -> None:
@@ -120,7 +117,6 @@ class RichBalanceUpdatePresenter(SelectableMonthMixin):
         self,
         balances: list[Balance],
         account_map: dict[int, Account],
-        category_map: dict[int, Category | None],
         month: Month,
     ) -> None:
         """Display balances table for a specific month.
@@ -128,12 +124,9 @@ class RichBalanceUpdatePresenter(SelectableMonthMixin):
         Args:
             balances: List of balances to display
             account_map: Mapping of account IDs to Account objects
-            category_map: Mapping of account IDs to Category objects
             month: Month for the balances
         """
-        table = build_balances_table(
-            balances, account_map, category_map, title_suffix=str(month)
-        )
+        table = build_balances_table(balances, account_map, title_suffix=str(month))
         self._console.print(table)
 
     def prompt_for_account_id(self) -> int | None:
@@ -325,12 +318,9 @@ class RichBalanceDeleterPresenter(SelectableMonthMixin):
         self,
         balances: list[Balance],
         account_map: dict[int, Account],
-        category_map: dict[int, Category | None],
         title_suffix: str = "",
     ) -> None:
-        table = build_balances_table(
-            balances, account_map, category_map, title_suffix=title_suffix
-        )
+        table = build_balances_table(balances, account_map, title_suffix=title_suffix)
         self._console.print(table)
 
     def show_cancellation(self) -> None:

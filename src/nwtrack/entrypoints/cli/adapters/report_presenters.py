@@ -7,7 +7,7 @@ from rich.prompt import IntPrompt, Prompt
 
 from nwtrack.application.dto import MonthlyCategoryBalance
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.domain.models import Account, Balance, Category, NetWorth
+from nwtrack.domain.models import Account, Balance, NetWorth
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.ui.renderers import (
     build_accounts_table,
@@ -107,18 +107,16 @@ class RichBalancesByCategoryPresenter:
     def show_accounts_table(
         self,
         accounts: list[Account],
-        category_map: dict[int, Category | None],
         title_prefix: str = "",
     ) -> None:
         """Show active accounts."""
-        table = build_accounts_table(accounts, category_map, title_prefix)
+        table = build_accounts_table(accounts, title_prefix)
         self._console.print(table)
 
     def show_balances_table(
         self,
         balances: list[Balance],
         account_map: dict[int, Account],
-        category_map: dict[int, Category | None],
         title_suffix: str = "",
     ) -> None:
         """Show balances table with account and category information.
@@ -126,15 +124,12 @@ class RichBalancesByCategoryPresenter:
         Args:
             balances: List of balances
             account_map: Mapping of account IDs to Account objects
-            category_map: Mapping of account IDs to Category objects
             title_suffix: Suffix for the table title
 
         Returns:
             None
         """
-        table = build_balances_table(
-            balances, account_map, category_map, title_suffix=title_suffix
-        )
+        table = build_balances_table(balances, account_map, title_suffix=title_suffix)
         self._console.print(table)
 
     def show_summary_by_category(

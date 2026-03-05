@@ -21,14 +21,10 @@ class MonthType(TypeDecorator):
     impl = String
     cache_ok = True
 
-    def process_bind_param(
-        self, value: Month | None, dialect: Dialect
-    ) -> str | None:
+    def process_bind_param(self, value: Month | None, dialect: Dialect) -> str | None:
         """Convert Month to string for database storage."""
         return str(value) if value else None
 
-    def process_result_value(
-        self, value: str | None, dialect: Dialect
-    ) -> Month | None:
+    def process_result_value(self, value: str | None, dialect: Dialect) -> Month | None:
         """Convert string from database to Month object."""
         return Month.parse(value) if value else None

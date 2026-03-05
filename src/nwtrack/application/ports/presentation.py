@@ -19,14 +19,12 @@ class AccountListPresenter(Protocol):
     def display_accounts(
         self,
         accounts: list[Account],
-        categories: dict[int, Category | None],
         active_only: bool = True,
     ) -> None:
         """Display accounts table.
 
         Args:
             accounts: List of accounts to display
-            categories: Mapping of account IDs to their categories
             active_only: Whether only active accounts are shown
         """
         ...
@@ -163,14 +161,12 @@ class AccountCreationPresenter(Protocol):
     def display_accounts(
         self,
         accounts: list[Account],
-        categories: dict[int, Category | None],
         active_only: bool = True,
     ) -> None:
         """Display existing accounts table.
 
         Args:
             accounts: List of accounts to display
-            categories: Mapping of account IDs to their categories
             active_only: Whether only active accounts are shown
         """
         ...
@@ -217,13 +213,11 @@ class AccountCreationPresenter(Protocol):
     def show_success(
         self,
         accounts: list[Account],
-        categories: dict[int, Category | None],
     ) -> None:
         """Display success message and updated accounts list.
 
         Args:
             accounts: Updated list of all accounts
-            categories: Mapping of account IDs to their categories
         """
         ...
 
@@ -238,14 +232,12 @@ class AccountUpdatePresenter(Protocol):
     def display_accounts(
         self,
         accounts: list[Account],
-        categories: dict[int, Category | None],
         active_only: bool = False,
     ) -> None:
         """Display accounts table.
 
         Args:
             accounts: List of accounts to display
-            categories: Mapping of account IDs to their categories
             active_only: Whether only active accounts are shown
         """
         ...
@@ -316,14 +308,11 @@ class BalanceUpdatePresenter(Protocol):
         """Display workflow header."""
         ...
 
-    def display_active_accounts(
-        self, accounts: list[Account], category_map: dict[int, Category | None]
-    ) -> None:
+    def display_active_accounts(self, accounts: list[Account]) -> None:
         """Display active accounts table.
 
         Args:
             accounts: List of active accounts to display
-            category_map: Mapping of account IDs to their categories
         """
         ...
 
@@ -358,7 +347,6 @@ class BalanceUpdatePresenter(Protocol):
         self,
         balances: list[Balance],
         account_map: dict[int, Account],
-        category_map: dict[int, Category | None],
         month: Month,
     ) -> None:
         """Display balances table for a specific month.
@@ -366,7 +354,6 @@ class BalanceUpdatePresenter(Protocol):
         Args:
             balances: List of balances to display
             account_map: Mapping of account IDs to Account objects
-            category_map: Mapping of account IDs to Category objects
             month: Month for the balances
         """
         ...
@@ -482,7 +469,6 @@ class BalancesByCategoryPresenter(Protocol):
     def show_accounts_table(
         self,
         accounts: list[Account],
-        category_map: dict[int, Category | None],
         title_prefix: str = "",
     ) -> None: ...
 
@@ -490,7 +476,6 @@ class BalancesByCategoryPresenter(Protocol):
         self,
         balances: list[Balance],
         account_map: dict[int, Account],
-        category_map: dict[int, Category | None],
         title_suffix: str = "",
     ) -> None:
         """Show balances table with account and category information.
@@ -498,7 +483,6 @@ class BalancesByCategoryPresenter(Protocol):
         Args:
             balances: List of balances
             account_map: Mapping of account IDs to Account objects
-            category_map: Mapping of account IDs to Category objects
             title_suffix: Suffix for the table title
 
         Returns:
@@ -720,7 +704,6 @@ class BalanceDeleterPresenter(Protocol):
         self,
         balances: list[Balance],
         account_map: dict[int, Account],
-        category_map: dict[int, Category | None],
         title_suffix: str = "",
     ) -> None:
         """Show balances table with account and category information.
@@ -728,7 +711,6 @@ class BalanceDeleterPresenter(Protocol):
         Args:
             balances: List of balances
             account_map: Mapping of account IDs to Account objects
-            category_map: Mapping of account IDs to Category objects
             title_suffix: Suffix for the table title
         """
         ...

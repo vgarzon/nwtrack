@@ -107,9 +107,7 @@ def main() -> int:
     container = build_base_container()
     container.register(
         SchemaManager,
-        lambda c: SchemaManagerImpl(
-            engine=c.resolve(SQLiteSessionManager).engine
-        ),
+        lambda c: SchemaManagerImpl(engine=c.resolve(SQLiteSessionManager).engine),
     ).register(
         DBAdminService,
         lambda c: DBAdminService(c.resolve(Settings), c.resolve(SchemaManager)),

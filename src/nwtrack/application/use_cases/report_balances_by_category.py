@@ -7,7 +7,6 @@ import logging
 from nwtrack.application.dto import OperationResult
 from nwtrack.application.ports.presentation import BalancesByCategoryPresenter
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.domain.models import Account, Category
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +27,9 @@ class ReportBalancesByCategory:
         logger.info("Starting Print Summary Service")
         self._presenter.show_header()
 
-        active_accounts, category_map = self._fetch_account_data(active_only=True)
+        active_accounts = self._fetcher.get_accounts(active_only=True)
 
-        self._presenter.show_accounts_table(
-            active_accounts, category_map, title_prefix="Active"
-        )
+        self._presenter.show_accounts_table(active_accounts, title_prefix="Active")
 
         balance_counts = self._fetcher.get_balance_count_per_month()
         balance_counts.sort(key=lambda x: x[0], reverse=True)
@@ -47,12 +44,8 @@ class ReportBalancesByCategory:
 
         balances = self._fetcher.get_month_balances(month, active_only=True)
         account_map = self._fetcher.get_map_id_to_account()
-        category_map = {
-            b.account_id: self._fetcher.get_category_by_account_id(b.account_id)
-            for b in balances
-        }
         self._presenter.show_balances_table(
-            balances, account_map, category_map, title_suffix=str(month)
+            balances, account_map, title_suffix=str(month)
         )
         monthly_balances = self._fetcher.get_monthly_balance_total_by_category(month)
         self._presenter.show_summary_by_category(monthly_balances, str(month))
@@ -72,25 +65,6 @@ class ReportBalancesByCategory:
 
         logger.info("Finished Print Summary Service")
         return OperationResult(success=True)
-
-    def _fetch_account_data(
-        self, active_only: bool = True
-    ) -> tuple[list[Account], dict[int, Category | None]]:
-        """Build the accounts table.
-
-        Args:
-            active_only (bool): Whether to print only active accounts.
-
-        Returns:
-            tuple[list[Account], dict[int, Category]]: List of accounts and
-                mapping of account IDs to categories.
-        """
-        accounts = self._fetcher.get_accounts(active_only=active_only)
-        categories_map = {
-            account.id: self._fetcher.get_category_by_account_id(account.id)
-            for account in accounts
-        }
-        return accounts, categories_map
 
 
 def main() -> int:

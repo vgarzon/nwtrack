@@ -9,7 +9,7 @@ from nwtrack.application.dto import NewAccountData, OperationResult
 from nwtrack.application.ports.presentation import AccountCreationPresenter
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.domain.models import Account, Balance, Category
+from nwtrack.domain.models import Account, Balance
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,8 @@ class AccountCreator:
 
         # Show header and existing accounts
         self._presenter.show_header()
-        accounts, categories_map = self._fetch_account_data(active_only=True)
-        self._presenter.display_accounts(accounts, categories_map, active_only=True)
+        accounts = self._fetcher.get_accounts(active_only=True)
+        self._presenter.display_accounts(accounts, active_only=True)
 
         # Collect account data
         data = self._presenter.collect_account_data()
@@ -83,8 +83,8 @@ class AccountCreator:
             return OperationResult(success=False, error_message=message)
 
         # Show success
-        accounts, categories_map = self._fetch_account_data(active_only=False)
-        self._presenter.show_success(accounts, categories_map)
+        accounts = self._fetcher.get_accounts(active_only=False)
+        self._presenter.show_success(accounts)
         logger.info("Finished Account Creator")
 
         return OperationResult(success=True, data=(account_id, balance_id))
@@ -128,24 +128,6 @@ class AccountCreator:
                 uow.rollback()
                 return None
         return account_id, balance_id
-
-    def _fetch_account_data(
-        self, active_only: bool = True
-    ) -> tuple[list[Account], dict[int, Category | None]]:
-        """Fetch accounts and their categories.
-
-        Args:
-            active_only: Whether to fetch only active accounts
-
-        Returns:
-            Tuple of accounts list and mapping of account IDs to categories
-        """
-        accounts = self._fetcher.get_accounts(active_only=active_only)
-        categories_map = {
-            account.id: self._fetcher.get_category_by_account_id(account.id)
-            for account in accounts
-        }
-        return accounts, categories_map
 
     def _validate_created_account(
         self, data: NewAccountData, account_id: int, balance_id: int

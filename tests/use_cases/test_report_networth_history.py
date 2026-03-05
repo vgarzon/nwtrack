@@ -41,10 +41,9 @@ def configured_container(base_container: Container) -> Container:
         )
         .register(
             SchemaManager,
-            lambda c: SchemaManagerImpl(
-                engine=c.resolve(SQLiteSessionManager).engine
-            ),
-        ).register(
+            lambda c: SchemaManagerImpl(engine=c.resolve(SQLiteSessionManager).engine),
+        )
+        .register(
             DBAdminService,
             lambda c: DBAdminService(c.resolve(Settings), c.resolve(SchemaManager)),
         )

@@ -22,17 +22,19 @@ from nwtrack.infra.persistence.schema import SchemaManager as SchemaManagerImpl
 @pytest.fixture
 def configured_container(base_container: Container) -> Container:
     """Configure container for tests."""
-    return base_container.register(
-        SchemaManager,
-        lambda c: SchemaManagerImpl(
-            engine=c.resolve(SQLiteSessionManager).engine
-        ),
-    ).register(
-        DBAdminService,
-        lambda c: DBAdminService(c.resolve(Settings), c.resolve(SchemaManager)),
-    ).register(
-        InitDataService,
-        lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
+    return (
+        base_container.register(
+            SchemaManager,
+            lambda c: SchemaManagerImpl(engine=c.resolve(SQLiteSessionManager).engine),
+        )
+        .register(
+            DBAdminService,
+            lambda c: DBAdminService(c.resolve(Settings), c.resolve(SchemaManager)),
+        )
+        .register(
+            InitDataService,
+            lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
+        )
     )
 
 

@@ -57,8 +57,12 @@ class ExportCSV:
             # Get the database column name (may differ from Python attribute name)
             column_name = field.name
             if field.name in mapper.attrs:
+                from sqlalchemy.orm import RelationshipProperty
+
                 column = mapper.attrs[field.name]
-                if hasattr(column, 'columns'):
+                if isinstance(column, RelationshipProperty):
+                    continue  # Skip relationship fields - not CSV columns
+                if hasattr(column, "columns"):
                     # Get the actual column name from the first column
                     column_name = list(column.columns)[0].name
 

@@ -149,9 +149,7 @@ class AccountsRepository(AccountsRepositoryProtocol):
         Returns:
             Number of deleted account entries
         """
-        result = self._session.execute(
-            delete(Account).where(Account.id == account_id)
-        )
+        result = self._session.execute(delete(Account).where(Account.id == account_id))
         rowcount = result.rowcount or 0  # type: ignore[attr-defined]
         if rowcount != 1:
             logger.warning(
@@ -189,9 +187,7 @@ class AccountsRepository(AccountsRepositoryProtocol):
             Number of updated account entries
         """
         result = self._session.execute(
-            update(Account)
-            .where(Account.id == account_id)
-            .values(name=new_name)
+            update(Account).where(Account.id == account_id).values(name=new_name)
         )
         rowcount = result.rowcount or 0  # type: ignore[attr-defined]
         if rowcount != 1:

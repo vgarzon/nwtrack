@@ -9,7 +9,7 @@ from nwtrack.application.dto import OperationResult
 from nwtrack.application.ports.presentation import AccountUpdatePresenter
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.domain.models import Account, Category
+from nwtrack.domain.models import Account
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,8 @@ class UpdateAccountInfo:
 
         # Show header and all accounts
         self._presenter.show_header()
-        accounts, categories_map = self._fetch_account_data(active_only=False)
-        self._presenter.display_accounts(accounts, categories_map, active_only=False)
+        accounts = self._fetcher.get_accounts(active_only=False)
+        self._presenter.display_accounts(accounts, active_only=False)
 
         # Select account to update
         account_id = self._presenter.select_account()
@@ -93,24 +93,6 @@ class UpdateAccountInfo:
         """
         with self._uow() as uow:
             uow.accounts.update(updated_account)
-
-    def _fetch_account_data(
-        self, active_only: bool = False
-    ) -> tuple[list[Account], dict[int, Category | None]]:
-        """Fetch accounts and their categories.
-
-        Args:
-            active_only: Whether to fetch only active accounts
-
-        Returns:
-            Tuple of accounts list and mapping of account IDs to categories
-        """
-        accounts = self._fetcher.get_accounts(active_only=active_only)
-        categories_map = {
-            account.id: self._fetcher.get_category_by_account_id(account.id)
-            for account in accounts
-        }
-        return accounts, categories_map
 
     def _verify_update(self, account_id: int, update_data: Account) -> bool:
         """Verify that the account was updated correctly.

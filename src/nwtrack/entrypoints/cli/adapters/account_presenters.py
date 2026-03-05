@@ -38,18 +38,16 @@ class RichAccountListPresenter:
     def display_accounts(
         self,
         accounts: list[Account],
-        categories: dict[int, Category | None],
         active_only: bool = True,
     ) -> None:
         """Display accounts table using Rich.
 
         Args:
             accounts: List of accounts to display
-            categories: Mapping of account IDs to their categories
             active_only: Whether only active accounts are shown
         """
         title_prefix = "Active" if active_only else "All"
-        table = build_accounts_table(accounts, categories, title_prefix)
+        table = build_accounts_table(accounts, title_prefix)
         self._console.print(table)
 
 
@@ -67,18 +65,16 @@ class RichAccountCreationPresenter:
     def display_accounts(
         self,
         accounts: list[Account],
-        categories: dict[int, Category | None],
         active_only: bool = True,
     ) -> None:
         """Display existing accounts table.
 
         Args:
             accounts: List of accounts to display
-            categories: Mapping of account IDs to their categories
             active_only: Whether only active accounts are shown
         """
         title_prefix = "Active" if active_only else "All"
-        table = build_accounts_table(accounts, categories, title_prefix)
+        table = build_accounts_table(accounts, title_prefix)
         self._console.print(table)
 
     def collect_account_data(self) -> NewAccountData | None:
@@ -195,16 +191,14 @@ class RichAccountCreationPresenter:
     def show_success(
         self,
         accounts: list[Account],
-        categories: dict[int, Category | None],
     ) -> None:
         """Display success message and updated accounts list.
 
         Args:
             accounts: Updated list of all accounts
-            categories: Mapping of account IDs to their categories
         """
         self._console.print("[bold green]Account created successfully.[/bold green]")
-        self.display_accounts(accounts, categories, active_only=False)
+        self.display_accounts(accounts, active_only=False)
 
 
 class RichAccountUpdatePresenter:
@@ -224,18 +218,16 @@ class RichAccountUpdatePresenter:
     def display_accounts(
         self,
         accounts: list[Account],
-        categories: dict[int, Category | None],
         active_only: bool = False,
     ) -> None:
         """Display accounts table.
 
         Args:
             accounts: List of accounts to display
-            categories: Mapping of account IDs to their categories
             active_only: Whether only active accounts are shown
         """
         title_prefix = "Active" if active_only else "All"
-        table = build_accounts_table(accounts, categories, title_prefix)
+        table = build_accounts_table(accounts, title_prefix)
         self._console.print(table)
 
     def select_account(self) -> int | None:

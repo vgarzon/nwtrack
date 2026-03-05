@@ -12,14 +12,12 @@ from nwtrack.domain.value_objects import Month
 
 def build_accounts_table(
     accounts: list[Account],
-    categories_map: dict[int, Category | None],
     title_prefix: str = "",
 ) -> Table:
     """Build a Rich Table of active accounts.
 
     Args:
         accounts (list[Account]): List of Account objects
-        categories_map (dict[int, Category]): Mapping of account IDs to Category objects
         title_prefix (str): Optional prefix for the table title.
 
     Returns:
@@ -32,7 +30,7 @@ def build_accounts_table(
     table.add_column("Category", style="green")
     table.add_column("Side", style="yellow")
     for account in accounts:
-        category = categories_map.get(account.id)
+        category = account.category
         category_name = category.name if category else "Unknown"
         side = category.side.value if category else "Unknown"
         table.add_row(
@@ -147,7 +145,6 @@ def build_category_summary_table(
 def build_balances_table(
     balances: list[Balance],
     account_map: dict[int, Account],
-    category_map: dict[int, Category | None],
     title_suffix: str = "",
 ) -> Table:
     """Build a Rich Table of balances.
@@ -155,7 +152,6 @@ def build_balances_table(
     Args:
         balances (list[Balance]): List of Balance objects
         account_map (dict[int, Account]): Map of account IDs to Account objects
-        category_map (dict[int, Category]): Map of account IDs to Category objects
         title_suffix (str): Suffix for table title
 
     Returns:
@@ -170,14 +166,13 @@ def build_balances_table(
     table.add_column("Amount", justify="right", style="red")
     for balance in balances:
         account_id = balance.account_id
-        account_name = account_map[account_id].name
-        category: Category | None = category_map.get(account_id, None)
-        assert category is not None, f"Category not found for account ID {account_id}"
+        account = account_map[account_id]
+        category = account.category
         category_name = category.name if category else "Unknown"
         side = category.side.value if category else "Unknown"
         table.add_row(
             str(account_id),
-            account_name,
+            account.name,
             category_name,
             side,
             f"{balance.amount:8,}",

@@ -39,9 +39,7 @@ def build_sqlalchemy_uow_container() -> Container:
     ).register(
         UnitOfWork,
         lambda c: SQLAlchemyUnitOfWork(
-            session_factory=lambda: c.resolve(
-                SQLiteSessionManager
-            ).create_session(),
+            session_factory=lambda: c.resolve(SQLiteSessionManager).create_session(),
         ),
     )
     return container
@@ -74,9 +72,7 @@ def build_data_services_container(container: Container) -> Container:
 
     container.register(
         SchemaManager,
-        lambda c: SchemaManagerImpl(
-            engine=c.resolve(SQLiteSessionManager).engine
-        ),
+        lambda c: SchemaManagerImpl(engine=c.resolve(SQLiteSessionManager).engine),
     ).register(
         DBAdminService,
         lambda c: DBAdminService(c.resolve(Settings), c.resolve(SchemaManager)),

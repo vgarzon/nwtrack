@@ -20,7 +20,7 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.orm import Mapped, MappedAsDataclass, mapped_column
+from sqlalchemy.orm import Mapped, MappedAsDataclass, mapped_column, relationship
 
 from nwtrack.domain.value_objects import Month
 from nwtrack.infra.persistence.orm.base import Base
@@ -87,6 +87,16 @@ class Account(MappedAsDataclass, Base):
         SQLEnum(Status, values_callable=lambda x: [e.value for e in x]),
         default=Status.ACTIVE,
     )
+    category: Mapped[Category] = relationship(
+        "Category",
+        foreign_keys="[Account.category_name]",
+        lazy="selectin",
+        viewonly=True,
+        init=False,
+        default=None,
+        compare=False,
+        repr=False,
+    )
 
 
 class Balance(MappedAsDataclass, Base):
@@ -98,9 +108,7 @@ class Balance(MappedAsDataclass, Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
-    account_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("accounts.id")
-    )
+    account_id: Mapped[int] = mapped_column(Integer, ForeignKey("accounts.id"))
     month: Mapped[Month] = mapped_column(MonthType)
     amount: Mapped[int] = mapped_column(Integer)
 

@@ -47,9 +47,7 @@ def base_container(base_config) -> Container:
     # Register SchemaManager for schema operations
     container.register(
         SchemaManager,
-        lambda c: SchemaManagerImpl(
-            engine=c.resolve(SQLiteSessionManager).engine
-        ),
+        lambda c: SchemaManagerImpl(engine=c.resolve(SQLiteSessionManager).engine),
     )
 
     # Drop and recreate database schema using SchemaManager

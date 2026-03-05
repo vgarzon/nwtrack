@@ -8,7 +8,6 @@ from nwtrack.application.dto import OperationResult
 from nwtrack.application.ports.presentation import AccountListPresenter
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.bootstrap.composition import build_base_container
-from nwtrack.domain.models import Account, Category
 
 logger = logging.getLogger(__name__)
 
@@ -30,28 +29,10 @@ class ListAccounts:
             OperationResult indicating success/failure
         """
         logger.info("Starting List Accounts use case")
-        accounts, category_map = self._fetch_account_data(active_only=active_only)
-        self._presenter.display_accounts(accounts, category_map, active_only)
+        accounts = self._fetcher.get_accounts(active_only=active_only)
+        self._presenter.display_accounts(accounts, active_only)
         logger.info("Finished List Account")
         return OperationResult(success=True)
-
-    def _fetch_account_data(
-        self, active_only: bool = True
-    ) -> tuple[list[Account], dict[int, Category | None]]:
-        """Fetch accounts and their categories.
-
-        Args:
-            active_only: Whether to fetch only active accounts.
-
-        Returns:
-            Tuple of accounts list and mapping of account IDs to categories.
-        """
-        accounts = self._fetcher.get_accounts(active_only=active_only)
-        categories_map = {
-            account.id: self._fetcher.get_category_by_account_id(account.id)
-            for account in accounts
-        }
-        return accounts, categories_map
 
 
 def main(active_only: bool = True) -> int:

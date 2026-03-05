@@ -66,11 +66,7 @@ class BalanceUpdater:
     def _display_active_accounts(self) -> None:
         """Display a list of active accounts."""
         active_accounts = self._fetcher.get_accounts(active_only=True)
-        category_map = {
-            account.id: self._fetcher.get_category_by_account_id(account.id)
-            for account in active_accounts
-        }
-        self._presenter.display_active_accounts(active_accounts, category_map)
+        self._presenter.display_active_accounts(active_accounts)
 
     def _select_month(self, n_months: int = 3) -> Month | None:
         """Select a month from recent months or input a specific month.
@@ -117,13 +113,7 @@ class BalanceUpdater:
         """
         balances = self._fetcher.get_month_balances(month, active_only=True)
         account_map = self._fetcher.get_map_id_to_account()
-        category_map = {
-            balance.account_id: self._fetcher.get_category_by_account_id(
-                balance.account_id
-            )
-            for balance in balances
-        }
-        self._presenter.display_balances(balances, account_map, category_map, month)
+        self._presenter.display_balances(balances, account_map, month)
 
     def _update_single_balance(self, account_id: int, month: Month) -> None:
         """Update balance for a single account.
