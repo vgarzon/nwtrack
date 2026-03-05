@@ -144,14 +144,12 @@ def build_category_summary_table(
 
 def build_balances_table(
     balances: list[Balance],
-    account_map: dict[int, Account],
     title_suffix: str = "",
 ) -> Table:
     """Build a Rich Table of balances.
 
     Args:
         balances (list[Balance]): List of Balance objects
-        account_map (dict[int, Account]): Map of account IDs to Account objects
         title_suffix (str): Suffix for table title
 
     Returns:
@@ -165,14 +163,14 @@ def build_balances_table(
     table.add_column("Side", style="yellow")
     table.add_column("Amount", justify="right", style="red")
     for balance in balances:
-        account_id = balance.account_id
-        account = account_map[account_id]
-        category = account.category
+        account = balance.account
+        category = account.category if account else None
+        account_name = account.name if account else "Unknown"
         category_name = category.name if category else "Unknown"
         side = category.side.value if category else "Unknown"
         table.add_row(
-            str(account_id),
-            account.name,
+            str(balance.account_id),
+            account_name,
             category_name,
             side,
             f"{balance.amount:8,}",

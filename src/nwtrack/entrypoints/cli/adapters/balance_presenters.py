@@ -116,17 +116,15 @@ class RichBalanceUpdatePresenter(SelectableMonthMixin):
     def display_balances(
         self,
         balances: list[Balance],
-        account_map: dict[int, Account],
         month: Month,
     ) -> None:
         """Display balances table for a specific month.
 
         Args:
             balances: List of balances to display
-            account_map: Mapping of account IDs to Account objects
             month: Month for the balances
         """
-        table = build_balances_table(balances, account_map, title_suffix=str(month))
+        table = build_balances_table(balances, title_suffix=str(month))
         self._console.print(table)
 
     def prompt_for_account_id(self) -> int | None:
@@ -317,10 +315,9 @@ class RichBalanceDeleterPresenter(SelectableMonthMixin):
     def display_balances(
         self,
         balances: list[Balance],
-        account_map: dict[int, Account],
         title_suffix: str = "",
     ) -> None:
-        table = build_balances_table(balances, account_map, title_suffix=title_suffix)
+        table = build_balances_table(balances, title_suffix=title_suffix)
         self._console.print(table)
 
     def show_cancellation(self) -> None:

@@ -43,10 +43,7 @@ class ReportBalancesByCategory:
             return OperationResult(success=False, error_message="No month selected.")
 
         balances = self._fetcher.get_month_balances(month, active_only=True)
-        account_map = self._fetcher.get_map_id_to_account()
-        self._presenter.show_balances_table(
-            balances, account_map, title_suffix=str(month)
-        )
+        self._presenter.show_balances_table(balances, title_suffix=str(month))
         monthly_balances = self._fetcher.get_monthly_balance_total_by_category(month)
         self._presenter.show_summary_by_category(monthly_balances, str(month))
 

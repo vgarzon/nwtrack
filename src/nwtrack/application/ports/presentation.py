@@ -346,14 +346,12 @@ class BalanceUpdatePresenter(Protocol):
     def display_balances(
         self,
         balances: list[Balance],
-        account_map: dict[int, Account],
         month: Month,
     ) -> None:
         """Display balances table for a specific month.
 
         Args:
             balances: List of balances to display
-            account_map: Mapping of account IDs to Account objects
             month: Month for the balances
         """
         ...
@@ -475,14 +473,12 @@ class BalancesByCategoryPresenter(Protocol):
     def show_balances_table(
         self,
         balances: list[Balance],
-        account_map: dict[int, Account],
         title_suffix: str = "",
     ) -> None:
         """Show balances table with account and category information.
 
         Args:
             balances: List of balances
-            account_map: Mapping of account IDs to Account objects
             title_suffix: Suffix for the table title
 
         Returns:
@@ -703,14 +699,12 @@ class BalanceDeleterPresenter(Protocol):
     def display_balances(
         self,
         balances: list[Balance],
-        account_map: dict[int, Account],
         title_suffix: str = "",
     ) -> None:
         """Show balances table with account and category information.
 
         Args:
             balances: List of balances
-            account_map: Mapping of account IDs to Account objects
             title_suffix: Suffix for the table title
         """
         ...

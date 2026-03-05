@@ -9,7 +9,7 @@ from nwtrack.application.dto import OperationResult
 from nwtrack.application.ports.presentation import BalanceUpdatePresenter
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.domain.models import Account, NetWorth
+from nwtrack.domain.models import NetWorth
 from nwtrack.domain.value_objects import Month
 
 logger = logging.getLogger(__name__)
@@ -112,8 +112,7 @@ class BalanceUpdater:
             month (Month): Month object
         """
         balances = self._fetcher.get_month_balances(month, active_only=True)
-        account_map = self._fetcher.get_map_id_to_account()
-        self._presenter.display_balances(balances, account_map, month)
+        self._presenter.display_balances(balances, month)
 
     def _update_single_balance(self, account_id: int, month: Month) -> None:
         """Update balance for a single account.
@@ -126,13 +125,10 @@ class BalanceUpdater:
             ValueError: If account ID is not found
         """
         # Get account info
-        accounts_map_id = self._fetcher.get_map_id_to_account()
-        if account_id not in accounts_map_id:
+        account = self._fetcher.get_account_by_id(account_id)
+        if account is None:
             logger.error(f"Account id '{account_id}' not found")
             raise ValueError(f"Account id '{account_id}' not found")
-
-        account: Account | None = accounts_map_id.get(account_id)
-        assert account is not None
 
         # Get current balance
         balance = self._fetcher.get_balance_for_account_id(month, account_id)

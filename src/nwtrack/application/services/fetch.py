@@ -134,16 +134,6 @@ class FetchService:
             last_n = uow.net_worth.get_last_n(n, currency_code)
         return last_n
 
-    def get_map_id_to_account(self) -> dict[int, Account]:
-        """Get a map of account id to Account objects.
-
-        Returns:
-            dict[int, Account]: Map of account id to Account objects.
-        """
-        with self._uow() as uow:
-            accounts = uow.accounts.get_all()
-        return {acc.id: acc for acc in accounts}
-
     def get_balance_count_per_month(self) -> list[tuple[Month, int]]:
         """Get count of balance entries per month.
 

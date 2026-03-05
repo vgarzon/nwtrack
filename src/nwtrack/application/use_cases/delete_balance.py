@@ -132,8 +132,7 @@ class BalanceDeleter:
             month (Month): Month object
         """
         balances = self._fetcher.get_month_balances(month, active_only=True)
-        account_map = self._fetcher.get_map_id_to_account()
-        self._presenter.display_balances(balances, account_map, title_suffix=str(month))
+        self._presenter.display_balances(balances, title_suffix=str(month))
 
 
 def main() -> int:

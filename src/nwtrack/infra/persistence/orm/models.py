@@ -111,6 +111,16 @@ class Balance(MappedAsDataclass, Base):
     account_id: Mapped[int] = mapped_column(Integer, ForeignKey("accounts.id"))
     month: Mapped[Month] = mapped_column(MonthType)
     amount: Mapped[int] = mapped_column(Integer)
+    account: Mapped[Account] = relationship(
+        "Account",
+        foreign_keys="[Balance.account_id]",
+        lazy="selectin",
+        viewonly=True,
+        init=False,
+        default=None,
+        compare=False,
+        repr=False,
+    )
 
 
 class ExchangeRate(MappedAsDataclass, Base):

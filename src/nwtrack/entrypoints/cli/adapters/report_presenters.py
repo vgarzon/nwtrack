@@ -116,20 +116,18 @@ class RichBalancesByCategoryPresenter:
     def show_balances_table(
         self,
         balances: list[Balance],
-        account_map: dict[int, Account],
         title_suffix: str = "",
     ) -> None:
         """Show balances table with account and category information.
 
         Args:
             balances: List of balances
-            account_map: Mapping of account IDs to Account objects
             title_suffix: Suffix for the table title
 
         Returns:
             None
         """
-        table = build_balances_table(balances, account_map, title_suffix=title_suffix)
+        table = build_balances_table(balances, title_suffix=title_suffix)
         self._console.print(table)
 
     def show_summary_by_category(

@@ -11,6 +11,7 @@ from tests.helpers import init_db_tables_w_entities
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.application.use_cases.update_balances import BalanceUpdater
 from nwtrack.bootstrap.container import Container
+from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.adapters.balance_presenters import (
     RichBalanceUpdatePresenter,
 )
@@ -124,3 +125,18 @@ def test_update_balances_run(
     assert re.search(r"800.+500.+300", captured_output)
 
     # TODO: Test other interactions
+
+
+def test_balance_account_relationship_loads(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+) -> None:
+    """Verify Balance.account and Balance.account.category load outside session."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    fetcher: FetchService = configured_container.resolve(FetchService)
+    balances = fetcher.get_month_balances(Month(2025, 11))
+
+    assert len(balances) > 0
+    assert balances[0].account is not None
+    assert balances[0].account.category is not None
