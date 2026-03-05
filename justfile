@@ -69,7 +69,7 @@ report-networth:
 
 # Export data to CSV
 export-csv:
-    uv run nwtrack export csv
+    uv run nwtrack export tables-csv
 
 # Clean up Python cache files
 clean:
