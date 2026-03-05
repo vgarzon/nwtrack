@@ -61,8 +61,8 @@ src/nwtrack/
   - Handle all console UI interactions (tables, prompts, formatting)
   - Injected into use cases via DI, enabling clean separation and testability
 - **Migration Status**: Ongoing refactoring to apply presentation layer to all interactive use cases
-  - **Refactored**: `create_account`, `update_account_info`, `create_category`, `update_balances`
-  - **Not yet refactored**: `delete_balance`, `roll_balances_forward` (still use direct console access)
+  - **Refactored**: `create_account`, `update_account_info`, `create_category`, `update_balances`, `delete_balance`
+  - **Not yet refactored**: `roll_balances_forward` (still uses direct console access)
 
 **Infrastructure Layer**:
 - **Persistence Layer** (`infra/persistence/`) - Database-agnostic ORM components:
@@ -104,6 +104,7 @@ src/nwtrack/
    - Custom `MonthType` TypeDecorator converts between Month objects and string storage
    - Session configured with `expire_on_commit=False` to allow entity usage after commit
    - CSV export uses SQLAlchemy's mapper inspection to get correct database column names
+   - ORM relationships use `viewonly=True` + `lazy="selectin"` + `init=False, default=None, compare=False, repr=False`: `Account.category` and `Balance.account` are loaded in a batched SELECT before session closes, making `balance.account.category` accessible after the UoW context exits. `viewonly=True` is critical — omitting it causes SQLAlchemy to null out the FK column when the relationship field is `None` at construction time.
 
 8. **Schema Management Port**: Schema operations (create/drop tables) are abstracted via `SchemaManager` protocol, with SQLAlchemy implementation in infrastructure. Follows ports-and-adapters pattern keeping application layer independent of SQLAlchemy engine details.
 
