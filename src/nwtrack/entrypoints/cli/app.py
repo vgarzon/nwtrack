@@ -8,13 +8,14 @@ app = typer.Typer(
     name="nwtrack",
     help="nwtrack - net worth tracker",
     add_completion=False,
+    no_args_is_help=True,
 )
 
-accounts_app = typer.Typer(help="Account commands")
-balances_app = typer.Typer(help="Balance commands")
-categories_app = typer.Typer(help="Categories commands")
-reports_app = typer.Typer(help="Report commands")
-export_app = typer.Typer(help="Export commands")
+accounts_app = typer.Typer(help="Account commands", no_args_is_help=True)
+balances_app = typer.Typer(help="Balance commands", no_args_is_help=True)
+categories_app = typer.Typer(help="Categories commands", no_args_is_help=True)
+reports_app = typer.Typer(help="Report commands", no_args_is_help=True)
+export_app = typer.Typer(help="Export commands", no_args_is_help=True)
 
 app.add_typer(accounts_app, name="accounts")
 app.add_typer(balances_app, name="balances")
