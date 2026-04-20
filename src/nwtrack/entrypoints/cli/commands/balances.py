@@ -35,3 +35,13 @@ def delete_balance_interactive():
     import nwtrack.application.use_cases.delete_balance as delete_balance
 
     sys.exit(delete_balance.main())
+
+
+@balances_app.command("transfer")
+def transfer_balance_interactive():
+    """
+    Transfer funds between accounts for a selected month.
+    """
+    import nwtrack.application.use_cases.transfer_balance as transfer_balance
+
+    sys.exit(transfer_balance.main())
