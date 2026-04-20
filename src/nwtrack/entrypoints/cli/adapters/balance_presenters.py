@@ -357,3 +357,127 @@ class RichBalanceDeleterPresenter(SelectableMonthMixin):
         """
         _text = "Operation successful." if not message else message
         self._console.print(f"[green]{_text}[/green]")
+
+
+class RichBalanceTransferPresenter(SelectableMonthMixin):
+    """Rich-based implementation of BalanceTransferPresenter."""
+
+    def __init__(self, console: Console) -> None:
+        self._console = console
+        self._prompt = Prompt(console=self._console)
+        self._int_prompt = IntPrompt(console=self._console)
+        self._confirm = Confirm(console=self._console)
+
+    def show_header(self) -> None:
+        """Display workflow header using Rich."""
+        self._console.rule("[bold cyan]Balance Transfer[/bold cyan]")
+
+    def show_no_balances_warning(self, month: Month) -> None:
+        """Display warning when no balances found for month.
+
+        Args:
+            month: The month that has no balances
+        """
+        self._console.print(f"[orange3]No balance entries found in {month}.[/orange3]")
+
+    def display_balances(
+        self,
+        balances: list[Balance],
+        title_suffix: str = "",
+    ) -> None:
+        table = build_balances_table(balances, title_suffix=title_suffix)
+        self._console.print(table)
+
+    def select_from_account(self, month: Month) -> int | None:
+        """Prompt for source account ID.
+
+        Args:
+            month: Month for context
+
+        Returns:
+            Account ID or None if user cancelled
+        """
+        self._console.print(f"\n[bold]Select source (FROM) account for {month}:[/bold]")
+        return prompt_for_account_id(self._console)
+
+    def select_to_account(self, month: Month) -> int | None:
+        """Prompt for destination account ID.
+
+        Args:
+            month: Month for context
+
+        Returns:
+            Account ID or None if user cancelled
+        """
+        self._console.print(
+            f"\n[bold]Select destination (TO) account for {month}:[/bold]"
+        )
+        return prompt_for_account_id(self._console)
+
+    def prompt_for_transfer_amount(self) -> int:
+        """Prompt for the transfer amount.
+
+        Returns:
+            Transfer amount as an integer
+        """
+        return self._int_prompt.ask("Enter [bold]transfer amount[/bold]")
+
+    def show_transfer_preview(
+        self,
+        from_account: Account,
+        to_account: Account,
+        month: Month,
+        amount: int,
+        from_delta: int,
+        to_delta: int,
+    ) -> None:
+        """Display a preview of the transfer effect on both balances.
+
+        Args:
+            from_account: Source account
+            to_account: Destination account
+            month: Month for the transfer
+            amount: Transfer amount
+            from_delta: Change applied to from_account balance
+            to_delta: Change applied to to_account balance
+        """
+        self._console.print("\n[bold]Transfer Preview:[/bold]")
+        self._console.print(f"  Month  : {month}")
+        self._console.print(f"  Amount : {amount:,}")
+        self._console.print(
+            f"  FROM   : {from_account.name} (ID: {from_account.id})"
+            f"  [red]delta: {from_delta:+,}[/red]"
+        )
+        self._console.print(
+            f"  TO     : {to_account.name} (ID: {to_account.id})"
+            f"  [green]delta: {to_delta:+,}[/green]"
+        )
+
+    def prompt_to_confirm_transfer(self) -> bool:
+        """Prompt user to confirm the transfer.
+
+        Returns:
+            True if confirmed, False otherwise
+        """
+        return prompt_to_confirm_action(self._console, "Proceed with this transfer?")
+
+    def show_cancellation(self) -> None:
+        """Display user cancellation message."""
+        self._console.print("[red]Operation canceled by user.[/red]")
+
+    def show_error(self, message: str = "") -> None:
+        """Display error message.
+
+        Args:
+            message: Error message string
+        """
+        self._console.print(f"[red]Error: {message}[/red]")
+
+    def show_success(self, message: str = "") -> None:
+        """Display success message.
+
+        Args:
+            message: Success message string
+        """
+        _text = "Operation successful." if not message else message
+        self._console.print(f"[green]{_text}[/green]")

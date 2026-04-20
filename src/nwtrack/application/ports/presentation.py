@@ -742,3 +742,130 @@ class BalanceDeleterPresenter(Protocol):
             message: Success message string
         """
         ...
+
+
+class BalanceTransferPresenter(Protocol):
+    """Presenter for BalanceTransfer workflow."""
+
+    def show_header(self) -> None:
+        """Display workflow header."""
+        ...
+
+    def select_month(self, balance_counts: list[tuple[Month, int]]) -> Month | None:
+        """Present month selection with recent months or custom input.
+
+        Args:
+            balance_counts: List of (Month, count) tuples for recent months
+
+        Returns:
+            Selected Month or None if cancelled
+        """
+        ...
+
+    def _input_custom_month(self) -> Month | None:
+        """Input a specific month from user."""
+        ...
+
+    def show_invalid_month_error(self) -> None:
+        """Display error for invalid month input."""
+        ...
+
+    def show_no_balances_warning(self, month: Month) -> None:
+        """Display warning when no balances found for month.
+
+        Args:
+            month: The month that has no balances
+        """
+        ...
+
+    def display_balances(
+        self,
+        balances: list[Balance],
+        title_suffix: str = "",
+    ) -> None:
+        """Show balances table.
+
+        Args:
+            balances: List of balances
+            title_suffix: Suffix for the table title
+        """
+        ...
+
+    def select_from_account(self, month: Month) -> int | None:
+        """Prompt for source account ID.
+
+        Args:
+            month: Month for context
+
+        Returns:
+            Account ID or None if user cancelled
+        """
+        ...
+
+    def select_to_account(self, month: Month) -> int | None:
+        """Prompt for destination account ID.
+
+        Args:
+            month: Month for context
+
+        Returns:
+            Account ID or None if user cancelled
+        """
+        ...
+
+    def prompt_for_transfer_amount(self) -> int:
+        """Prompt for the transfer amount (positive integer).
+
+        Returns:
+            Transfer amount as a positive integer
+        """
+        ...
+
+    def show_transfer_preview(
+        self,
+        from_account: Account,
+        to_account: Account,
+        month: Month,
+        amount: int,
+        from_delta: int,
+        to_delta: int,
+    ) -> None:
+        """Display a preview of the transfer effect on both balances.
+
+        Args:
+            from_account: Source account
+            to_account: Destination account
+            month: Month for the transfer
+            amount: Transfer amount
+            from_delta: Change applied to from_account balance
+            to_delta: Change applied to to_account balance
+        """
+        ...
+
+    def prompt_to_confirm_transfer(self) -> bool:
+        """Prompt user to confirm the transfer.
+
+        Returns:
+            True if confirmed, False otherwise
+        """
+        ...
+
+    def show_cancellation(self) -> None:
+        """Display user cancellation message."""
+        ...
+
+    def show_error(self, message: str = "") -> None:
+        """Display error message.
+
+        Args:
+            message: Error message string
+        """
+        ...
+
+    def show_success(self, message: str = "") -> None:
+        """Display success message.
+
+        Args:
+            message: Success message string
+        """
+        ...
