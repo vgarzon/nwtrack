@@ -81,6 +81,7 @@ def main(n_months: int = 12, currency_code: str = "USD") -> int:
     from nwtrack.entrypoints.cli.adapters.report_presenters import (
         RichNetworthHistoryPresenter,
     )
+    from nwtrack.entrypoints.cli.ui.console import build_console
 
     load_dotenv()
     setup_logging()
@@ -88,7 +89,7 @@ def main(n_months: int = 12, currency_code: str = "USD") -> int:
     container = build_base_container()
     container.register(
         Console,
-        lambda _: Console(),
+        lambda _: build_console(),
         lifetime=Lifetime.SINGLETON,
     ).register(
         FetchService,

@@ -48,6 +48,7 @@ def bootstrap() -> Container:
     from nwtrack.entrypoints.cli.adapters.category_presenters import (
         RichCategoryListPresenter,
     )
+    from nwtrack.entrypoints.cli.ui.console import build_console
 
     load_dotenv()
     setup_logging()
@@ -55,7 +56,7 @@ def bootstrap() -> Container:
     container = build_base_container()
     container.register(
         Console,
-        lambda _: Console(),
+        lambda _: build_console(),
         lifetime=Lifetime.SINGLETON,
     ).register(
         FetchService,

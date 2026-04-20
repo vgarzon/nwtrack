@@ -60,7 +60,7 @@ class RichAccountCreationPresenter:
 
     def show_header(self) -> None:
         """Display workflow header using Rich."""
-        self._console.rule("[bold green]Account Creation[/bold green]")
+        self._console.rule("[header]Account Creation[/header]")
 
     def display_accounts(
         self,
@@ -105,7 +105,8 @@ class RichAccountCreationPresenter:
             if name:
                 return name
             self._console.print(
-                "[magenta]Account name cannot be empty.[/magenta] Please try again."
+                "[validation]Account name cannot be empty.[/validation]"
+                " Please try again."
             )
 
     def _collect_description(self) -> str:
@@ -165,7 +166,7 @@ class RichAccountCreationPresenter:
         Returns:
             True if user confirms, False otherwise
         """
-        self._console.print("\n[bold green]New account data:[/bold green]")
+        self._console.print("\n[bold]New account data:[/bold]")
         render_new_account_info(self._console, account, balance)
         return prompt_to_confirm_action(self._console, "Create account?")
 
@@ -175,7 +176,7 @@ class RichAccountCreationPresenter:
         Args:
             message: Optional additional context
         """
-        msg = "[red]Account creation cancelled.[/red]"
+        msg = "[cancel]Account creation cancelled.[/cancel]"
         if message:
             msg += f" {message}"
         self._console.print(msg)
@@ -186,7 +187,7 @@ class RichAccountCreationPresenter:
         Args:
             message: Error message to display
         """
-        self._console.print(f"[red]{message}[/red]")
+        self._console.print(f"[error]{message}[/error]")
 
     def show_success(
         self,
@@ -197,7 +198,7 @@ class RichAccountCreationPresenter:
         Args:
             accounts: Updated list of all accounts
         """
-        self._console.print("[bold green]Account created successfully.[/bold green]")
+        self._console.print("[success]Account created successfully.[/success]")
         self.display_accounts(accounts, active_only=False)
 
 
@@ -213,7 +214,7 @@ class RichAccountUpdatePresenter:
 
     def show_header(self) -> None:
         """Display workflow header using Rich."""
-        self._console.rule("[bold green]Update Account Info[/bold green]")
+        self._console.rule("[header]Update Account Info[/header]")
 
     def display_accounts(
         self,
@@ -257,7 +258,8 @@ class RichAccountUpdatePresenter:
             account_id: The account ID that was not found
         """
         self._console.print(
-            f"[magenta]Account ID {account_id} not found.[/magenta] Please try again."
+            f"[validation]Account ID {account_id} not found.[/validation]"
+            " Please try again."
         )
 
     def collect_updated_data(self, current_account: Account) -> Account | None:
@@ -313,7 +315,8 @@ class RichAccountUpdatePresenter:
             if name:
                 return name
             self._console.print(
-                "[magenta]Account name cannot be empty.[/magenta] Please try again."
+                "[validation]Account name cannot be empty.[/validation]"
+                " Please try again."
             )
 
     def _collect_description(self, default: str = "") -> str:
@@ -353,15 +356,15 @@ class RichAccountUpdatePresenter:
                 return categories[index].name
             else:
                 self._console.print(
-                    "[magenta]Invalid choice.[/magenta] Please try again."
+                    "[validation]Invalid choice.[/validation] Please try again."
                 )
 
     def _build_categories_table(self, categories: list[Category]) -> Table:
         """Build categories selection table."""
         table = Table(title="Categories")
-        table.add_column("Index", justify="right", style="cyan", no_wrap=True)
-        table.add_column("Name", style="magenta")
-        table.add_column("Side", style="green")
+        table.add_column("Index", justify="right", style="col.id", no_wrap=True)
+        table.add_column("Name", style="col.name")
+        table.add_column("Side", style="col.side")
         for k, category in enumerate(categories):
             table.add_row(
                 str(k + 1),
@@ -397,15 +400,15 @@ class RichAccountUpdatePresenter:
                 return currencies[index].code
             else:
                 self._console.print(
-                    "[magenta]Invalid choice.[/magenta] Please try again."
+                    "[validation]Invalid choice.[/validation] Please try again."
                 )
 
     def _build_currencies_table(self, currencies: list[Currency]) -> Table:
         """Build currencies selection table."""
         table = Table(title="Currencies")
-        table.add_column("Index", justify="right", style="cyan", no_wrap=True)
-        table.add_column("Code", style="magenta")
-        table.add_column("Description", style="green")
+        table.add_column("Index", justify="right", style="col.id", no_wrap=True)
+        table.add_column("Code", style="col.code")
+        table.add_column("Description", style="col.desc")
         for k, currency in enumerate(currencies):
             table.add_row(
                 str(k + 1),
@@ -435,8 +438,8 @@ class RichAccountUpdatePresenter:
     def _build_status_table(self, status_options: list[Status]) -> Table:
         """Build status selection table."""
         table = Table(title="Status Options")
-        table.add_column("Index", justify="right", style="cyan", no_wrap=True)
-        table.add_column("Status", style="magenta")
+        table.add_column("Index", justify="right", style="col.id", no_wrap=True)
+        table.add_column("Status", style="col.status")
         for k, status in enumerate(status_options):
             table.add_row(
                 str(k + 1),
@@ -455,12 +458,12 @@ class RichAccountUpdatePresenter:
         """
         self._console.print("[bold]Updated account data[/bold]")
         self._console.print(
-            f"[yellow]Account ID:[/yellow] {updated_account.id}\n"
-            f"[yellow]Account name:[/yellow] {updated_account.name}\n"
-            f"[yellow]Description:[/yellow] {updated_account.description}\n"
-            f"[yellow]Currency:[/yellow] {updated_account.currency_code}\n"
-            f"[yellow]Category:[/yellow] {updated_account.category_name}\n"
-            f"[yellow]Status:[/yellow] {updated_account.status}"
+            f"[label]Account ID:[/label] {updated_account.id}\n"
+            f"[label]Account name:[/label] {updated_account.name}\n"
+            f"[label]Description:[/label] {updated_account.description}\n"
+            f"[label]Currency:[/label] {updated_account.currency_code}\n"
+            f"[label]Category:[/label] {updated_account.category_name}\n"
+            f"[label]Status:[/label] {updated_account.status}"
         )
         return self._confirm.ask("Proceed with update", default=False)
 
@@ -470,7 +473,7 @@ class RichAccountUpdatePresenter:
         Args:
             message: Optional additional context
         """
-        msg = "[magenta]Account update cancelled.[/magenta]"
+        msg = "[cancel]Account update cancelled.[/cancel]"
         if message:
             msg += f" {message}"
         self._console.print(msg)
@@ -481,8 +484,8 @@ class RichAccountUpdatePresenter:
         Args:
             message: Error message to display
         """
-        self._console.print(f"[red]{message}[/red]")
+        self._console.print(f"[error]{message}[/error]")
 
     def show_success(self) -> None:
         """Display success message."""
-        self._console.print("\n[bold green]Account updated successfully.[/bold green]")
+        self._console.print("\n[success]Account updated successfully.[/success]")

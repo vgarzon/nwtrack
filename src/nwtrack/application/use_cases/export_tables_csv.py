@@ -10,6 +10,7 @@ from rich.prompt import Confirm, Prompt
 
 from nwtrack.application.services.export_csv import ExportCSV
 from nwtrack.bootstrap.container import Container
+from nwtrack.entrypoints.cli.ui.console import build_console
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +32,13 @@ class ExportTablesCSVBase:
             bool: Success flag.
         """
         logger.info("Creating directory %s.", target_path)
-        self._console.print(f"[yellow]Creating directory[/yellow]: {target_path}")
+        self._console.print(f"[label]Creating directory[/label]: {target_path}")
         try:
             target_path.mkdir(parents=True, exist_ok=True)
         except Exception as e:
             logger.error("Failed to create directory %s: %s", target_path, str(e))
             self._console.print(
-                f"[red bold]Error:[/red bold] Failed to create directory "
+                f"[error]Error:[/error] Failed to create directory "
                 f"{target_path}. Aborting export."
             )
             return False
@@ -52,8 +53,8 @@ class ExportTablesCSVBase:
         export_summary = self._exporter.export_tables_to_dir(target_dir)
         for table_name, csv_path, n_records in export_summary:
             self._console.print(
-                f"[green]Exported[/green] {n_records} '[bold]{table_name}[/bold]' "
-                f"[green]records to[/green] [bold]{csv_path}[/bold]"
+                f"[success]Exported[/success] {n_records} '[bold]{table_name}[/bold]' "
+                f"[success]records to[/success] [bold]{csv_path}[/bold]"
             )
 
 
@@ -68,11 +69,11 @@ class ExportTablesCSVInteractive(ExportTablesCSVBase):
     def run(self, defaults: dict) -> None:
         """Run the export process."""
         logger.info("Starting Export Tables to CSV files.")
-        self._console.rule("[bold green]Export Tables to CSV[/bold green]")
+        self._console.rule("[header]Export Tables to CSV[/header]")
         try:
             target_dir = self.collect_target_dir(defaults=defaults)
         except KeyboardInterrupt:
-            self._console.print("[red]CSV export aborted by user.[/red]")
+            self._console.print("[cancel]CSV export aborted by user.[/cancel]")
             return
         self.export_tables_to_dir(target_dir)
         logger.info("Finished exporting tables to CSV files.")
@@ -91,7 +92,7 @@ class ExportTablesCSVInteractive(ExportTablesCSVBase):
         """
         while True:
             target_dir = self._prompt.ask(
-                "[yellow]Please enter target directory or 'q' to quit[/yellow]",
+                "[label]Please enter target directory or 'q' to quit[/label]",
                 default=defaults.get("target_dir", ""),
             ).strip()
             if target_dir.lower() == "q":
@@ -102,8 +103,8 @@ class ExportTablesCSVInteractive(ExportTablesCSVBase):
                 return target_path
 
             create = self._confirm.ask(
-                f"[red]Directory [/red][bold]{target_dir}[/bold] "
-                "[red]does not exist. Create it?[/red]",
+                f"[warning]Directory[/warning] [bold]{target_dir}[/bold] "
+                "[warning]does not exist. Create it?[/warning]",
                 default=defaults.get("create", False),
             )
             if create:
@@ -128,7 +129,7 @@ class ExportTablesCSVCLI(ExportTablesCSVBase):
             create (bool): Whether to create the directory if it does not exist.
         """
         logger.info("Starting Export Tables to CSV files.")
-        self._console.rule("[bold green]Export Tables to CSV[/bold green]")
+        self._console.rule("[header]Export Tables to CSV[/header]")
         target_path, valid = self.check_or_create_target_dir(target_dir, create)
         if not valid:
             logger.error("Invalid target directory %s. Aborting export.", target_dir)
@@ -152,13 +153,13 @@ class ExportTablesCSVCLI(ExportTablesCSVBase):
         if target_path.exists() and not target_path.is_dir():
             logger.error("Target path %s is not a directory.", target_path)
             self._console.print(
-                f"[red]Error:[/red] Target path {target_path} is not a directory."
+                f"[error]Error:[/error] Target path {target_path} is not a directory."
             )
             return target_path, False
         if not target_path.exists() and not create:
             logger.error("Target directory %s does not exist.", target_path)
             self._console.print(
-                f"[red]Error:[/red] Target directory {target_path} does not exist. "
+                f"[error]Error:[/error] Target directory {target_path} does not exist. "
                 "Use --create to create it."
             )
             return target_path, False
@@ -178,7 +179,7 @@ def bootstrap() -> Container:
     container = build_base_container()
     container.register(
         Console,
-        lambda c: Console(),
+        lambda c: build_console(),
     ).register(
         ExportCSV,
         lambda c: ExportCSV(uow=lambda: c.resolve(UnitOfWork)),
@@ -225,8 +226,8 @@ if __name__ == "__main__":
     argv = sys.argv[1:]
     if not argv:
         console.print(
-            "[yellow]No command line arguments provided. "
-            "Running in interactive mode.[/yellow]"
+            "[info]No command line arguments provided. "
+            "Running in interactive mode.[/info]"
         )
         mode = "interactive"
     else:
@@ -234,8 +235,8 @@ if __name__ == "__main__":
         target_dir = argv[0]
         create_flag = "--create" in argv
         console.print(
-            f"[yellow]Running in CLI mode. Target directory: {target_dir} "
-            f"Create flag: {create_flag}[/yellow]"
+            f"[info]Running in CLI mode. Target directory: {target_dir} "
+            f"Create flag: {create_flag}[/info]"
         )
 
     if mode == "interactive":

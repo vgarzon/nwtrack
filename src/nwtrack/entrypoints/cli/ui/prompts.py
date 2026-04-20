@@ -26,7 +26,7 @@ def prompt_for_month(console: Console) -> Month:
         try:
             month = Month(year=_year, month=_month)
         except ValueError:
-            console.print("[red]Invalid month format. Please use YYYY-MM.[/red]")
+            console.print("[error]Invalid month format. Please use YYYY-MM.[/error]")
             continue
         break
     return month
@@ -108,7 +108,9 @@ def prompt_for_account_id(console: Console) -> int | None:
             account_id = int(response)
             return account_id
         except ValueError:
-            console.print("[red]Invalid input. Please enter a valid account ID.[/red]")
+            console.print(
+                "[error]Invalid input. Please enter a valid account ID.[/error]"
+            )
 
 
 def prompt_for_category_choice(console: Console, n_categories: int = 0) -> int:

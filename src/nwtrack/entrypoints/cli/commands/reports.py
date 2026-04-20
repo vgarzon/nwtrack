@@ -4,11 +4,10 @@ CLI reporting commands
 
 import sys
 
-from rich.console import Console
-
 from nwtrack.entrypoints.cli.app import reports_app
+from nwtrack.entrypoints.cli.ui.console import build_console
 
-console = Console()
+console = build_console()
 
 
 @reports_app.command("balances-category")
@@ -38,8 +37,8 @@ def networth_history_report_interactive(n_months: int = 12, n_years: int | None 
 
     if n_months <= 0:
         console.print(
-            "[orange3]Number of months must be strictly positive. "
-            "Using default of 12 months.[/orange3]"
+            "[warning]Number of months must be strictly positive. "
+            "Using default of 12 months.[/warning]"
         )
         n_months = 12
 
