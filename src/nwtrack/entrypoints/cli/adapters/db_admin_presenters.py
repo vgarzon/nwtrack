@@ -22,7 +22,7 @@ class RichDBInitCSVPresenter:
         Args:
             db_file_path: Path to the SQLite database file
         """
-        self._console.rule("[bold green]Initialize DB from CSV Files[/bold green]")
+        self._console.rule("[header]Initialize DB from CSV Files[/header]")
         self._console.print(f"[bold]SQLite db file path:[/bold] {db_file_path}")
 
     def prompt_for_file_paths(self, table_names: list[str]) -> dict[str, str]:
@@ -38,7 +38,7 @@ class RichDBInitCSVPresenter:
 
         file_paths = {}
         self._console.print(
-            "[yellow]Please enter CSV file paths or 'q' to quit:[/yellow]"
+            "[label]Please enter CSV file paths or 'q' to quit:[/label]"
         )
         for table_name in table_names:
             while True:
@@ -47,7 +47,7 @@ class RichDBInitCSVPresenter:
                     raise KeyboardInterrupt
                 if not Path(path_str).is_file():
                     self._console.print(
-                        f"[red bold]Error: File not found[/red bold]: {path_str}. "
+                        f"[error]Error: File not found[/error]: {path_str}. "
                         "Please try again."
                     )
                     continue
@@ -72,18 +72,18 @@ class RichDBInitCSVPresenter:
             True if user confirms, False otherwise
         """
         self._console.print(
-            "\n[bold orange3]WARNING:[/bold orange3] This script will "
+            "\n[warning]WARNING:[/warning] This script will "
             "[bold]DELETE and RE-CREATE[/bold] the database.\n"
         )
         return self._confirm.ask("Do you want to continue?", default=False)
 
     def show_cancellation(self) -> None:
         """Display user cancellation message."""
-        self._console.print("[orange]Database initialization aborted by user.[/orange]")
+        self._console.print("[cancel]Database initialization aborted by user.[/cancel]")
 
     def show_success(self) -> None:
         """Display successful completion message."""
-        self._console.print("[green]Database initialized successfully.[/green]")
+        self._console.print("[success]Database initialized successfully.[/success]")
 
     def show_error(self, message: str) -> None:
         """Display error message.
@@ -91,4 +91,4 @@ class RichDBInitCSVPresenter:
         Args:
             message: Error message string
         """
-        self._console.print(f"[red bold]Error:[/red bold] {message}")
+        self._console.print(f"[error]Error:[/error] {message}")

@@ -14,10 +14,36 @@ class ConsoleSettings:
 
     theme: Theme = Theme(
         {
+            # Status messages
             "success": "green",
             "info": "dim cyan",
-            "warning": "magenta",
+            "warning": "yellow",
             "error": "bold red",
+            "cancel": "yellow",
+            "label": "yellow",
+            "validation": "magenta",
+            # Section headers (used in Rule() titles)
+            "header": "bold green",
+            "header.danger": "bold red",
+            "header.info": "bold cyan",
+            # Table column styles
+            "col.id": "cyan",
+            "col.name": "magenta",
+            "col.category": "green",
+            "col.side": "yellow",
+            "col.amount": "bright_white",
+            "col.asset": "green",
+            "col.liability": "yellow",
+            "col.networth": "bold cyan",
+            "col.total": "bold",
+            "col.month": "cyan",
+            "col.count": "magenta",
+            "col.code": "magenta",
+            "col.desc": "green",
+            "col.status": "magenta",
+            # Inline delta indicators (transfer preview)
+            "delta.positive": "green",
+            "delta.negative": "red",
         }
     )
     width: int | None = None

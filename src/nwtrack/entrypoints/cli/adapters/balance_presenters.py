@@ -77,7 +77,7 @@ class SelectableMonthMixin:
 
     def show_invalid_month_error(self) -> None:
         """Display error for invalid month input."""
-        self._console.print("[red]Invalid month format. Please use YYYY-MM.[/red]")
+        self._console.print("[error]Invalid month format. Please use YYYY-MM.[/error]")
 
 
 class RichBalanceUpdatePresenter(SelectableMonthMixin):
@@ -90,7 +90,7 @@ class RichBalanceUpdatePresenter(SelectableMonthMixin):
 
     def show_header(self) -> None:
         """Display workflow header using Rich."""
-        self._console.rule("[bold green]Balance Updater[/bold green]")
+        self._console.rule("[header]Balance Updater[/header]")
 
     def display_active_accounts(self, accounts: list[Account]) -> None:
         """Display active accounts table.
@@ -107,11 +107,11 @@ class RichBalanceUpdatePresenter(SelectableMonthMixin):
         Args:
             month: The month that has no balances
         """
-        self._console.print(f"[orange3]No balance entries found in {month}.[/orange3]")
+        self._console.print(f"[warning]No balance entries found in {month}.[/warning]")
 
     def show_no_month_selected(self) -> None:
         """Display message when no month is selected."""
-        self._console.print("[orange]No month selected. Exiting.[/orange]")
+        self._console.print("[warning]No month selected. Exiting.[/warning]")
 
     def display_balances(
         self,
@@ -145,7 +145,7 @@ class RichBalanceUpdatePresenter(SelectableMonthMixin):
     def show_invalid_account_id(self) -> None:
         """Display error for invalid account ID input."""
         self._console.print(
-            "[magenta bold]Invalid input.[/magenta bold] "
+            "[validation]Invalid input.[/validation] "
             "Please enter a valid account ID or 'q' to quit."
         )
 
@@ -165,7 +165,7 @@ class RichBalanceUpdatePresenter(SelectableMonthMixin):
         """
         self._console.print(
             f"Account [bold]{account_name}[/bold] ({account_id}) balance on "
-            f"{month}: [bold green]{current_balance:8,}[/bold green]"
+            f"{month}: [bold]{current_balance:8,}[/bold]"
         )
         return self._int_prompt.ask("Enter [bold]new balance[/bold] amount")
 
@@ -193,7 +193,7 @@ class RichBalancesRollForwardPresenter(SelectableMonthMixin):
 
     def show_header(self) -> None:
         """Display workflow header using Rich."""
-        self._console.rule("[bold green]Roll Balances Forward[/bold green]")
+        self._console.rule("[header]Roll Balances Forward[/header]")
 
     def show_no_balances_warning(self, month: Month) -> None:
         """Display warning when no balances found for month.
@@ -201,7 +201,7 @@ class RichBalancesRollForwardPresenter(SelectableMonthMixin):
         Args:
             month: The month that has no balances
         """
-        self._console.print(f"[orange3]No balance entries found in {month}.[/orange3]")
+        self._console.print(f"[warning]No balance entries found in {month}.[/warning]")
 
     def confirm_target_month(self, target_month: Month) -> bool:
         """Prompt user to confirm rolling balances forward.
@@ -238,7 +238,7 @@ class RichBalancesRollForwardPresenter(SelectableMonthMixin):
 
     def show_cancellation(self) -> None:
         """Display user cancellation message."""
-        self._console.print("[red]Operation canceled by user.[/red]")
+        self._console.print("[cancel]Operation canceled by user.[/cancel]")
 
     def show_success(self, message: str = "") -> None:
         """Display success message.
@@ -247,7 +247,7 @@ class RichBalancesRollForwardPresenter(SelectableMonthMixin):
             message: Success message string
         """
         _text = "Operation successful." if not message else message
-        self._console.print(f"[green]{_text}[/green]")
+        self._console.print(f"[success]{_text}[/success]")
 
     def show_info(self, message: str) -> None:
         """Display informational message.
@@ -263,7 +263,7 @@ class RichBalancesRollForwardPresenter(SelectableMonthMixin):
         Args:
             message: Error message string
         """
-        self._console.print(f"[bold red]Error:[/bold] {message}[/red]")
+        self._console.print(f"[error]Error: {message}[/error]")
 
     def display_networth(self, nw: NetWorth, title_suffix: str = "") -> None:
         """Display worth on a specific month.
@@ -290,7 +290,7 @@ class RichBalanceDeleterPresenter(SelectableMonthMixin):
 
     def show_header(self) -> None:
         """Display workflow header using Rich."""
-        self._console.rule("[bold red]Balance Deletion[/bold red]")
+        self._console.rule("[header.danger]Balance Deletion[/header.danger]")
 
     def show_no_balances_warning(self, month: Month) -> None:
         """Display warning when no balances found for month.
@@ -298,7 +298,7 @@ class RichBalanceDeleterPresenter(SelectableMonthMixin):
         Args:
             month: The month that has no balances
         """
-        self._console.print(f"[orange3]No balance entries found in {month}.[/orange3]")
+        self._console.print(f"[warning]No balance entries found in {month}.[/warning]")
 
     def select_account(self, month: Month) -> int | None:
         """Prompt for account ID and validate it exists.
@@ -322,7 +322,7 @@ class RichBalanceDeleterPresenter(SelectableMonthMixin):
 
     def show_cancellation(self) -> None:
         """Display user cancellation message."""
-        self._console.print("[red]Operation canceled by user.[/red]")
+        self._console.print("[cancel]Operation canceled by user.[/cancel]")
 
     def show_error(self, message: str = "") -> None:
         """Display error message.
@@ -330,7 +330,7 @@ class RichBalanceDeleterPresenter(SelectableMonthMixin):
         Args:
             message: Error message string
         """
-        self._console.print(f"[red]Error: {message}[/red]")
+        self._console.print(f"[error]Error: {message}[/error]")
 
     def show_balance_details(
         self, account: Account, balance: Balance, month: Month
@@ -356,7 +356,7 @@ class RichBalanceDeleterPresenter(SelectableMonthMixin):
             message: Success message string
         """
         _text = "Operation successful." if not message else message
-        self._console.print(f"[green]{_text}[/green]")
+        self._console.print(f"[success]{_text}[/success]")
 
 
 class RichBalanceTransferPresenter(SelectableMonthMixin):
@@ -370,7 +370,7 @@ class RichBalanceTransferPresenter(SelectableMonthMixin):
 
     def show_header(self) -> None:
         """Display workflow header using Rich."""
-        self._console.rule("[bold cyan]Balance Transfer[/bold cyan]")
+        self._console.rule("[header.info]Balance Transfer[/header.info]")
 
     def show_no_balances_warning(self, month: Month) -> None:
         """Display warning when no balances found for month.
@@ -378,7 +378,7 @@ class RichBalanceTransferPresenter(SelectableMonthMixin):
         Args:
             month: The month that has no balances
         """
-        self._console.print(f"[orange3]No balance entries found in {month}.[/orange3]")
+        self._console.print(f"[warning]No balance entries found in {month}.[/warning]")
 
     def display_balances(
         self,
@@ -446,11 +446,11 @@ class RichBalanceTransferPresenter(SelectableMonthMixin):
         self._console.print(f"  Amount : {amount:,}")
         self._console.print(
             f"  FROM   : {from_account.name} (ID: {from_account.id})"
-            f"  [red]delta: {from_delta:+,}[/red]"
+            f"  [delta.negative]delta: {from_delta:+,}[/delta.negative]"
         )
         self._console.print(
             f"  TO     : {to_account.name} (ID: {to_account.id})"
-            f"  [green]delta: {to_delta:+,}[/green]"
+            f"  [delta.positive]delta: {to_delta:+,}[/delta.positive]"
         )
 
     def prompt_to_confirm_transfer(self) -> bool:
@@ -463,7 +463,7 @@ class RichBalanceTransferPresenter(SelectableMonthMixin):
 
     def show_cancellation(self) -> None:
         """Display user cancellation message."""
-        self._console.print("[red]Operation canceled by user.[/red]")
+        self._console.print("[cancel]Operation canceled by user.[/cancel]")
 
     def show_error(self, message: str = "") -> None:
         """Display error message.
@@ -471,7 +471,7 @@ class RichBalanceTransferPresenter(SelectableMonthMixin):
         Args:
             message: Error message string
         """
-        self._console.print(f"[red]Error: {message}[/red]")
+        self._console.print(f"[error]Error: {message}[/error]")
 
     def show_success(self, message: str = "") -> None:
         """Display success message.
@@ -480,4 +480,4 @@ class RichBalanceTransferPresenter(SelectableMonthMixin):
             message: Success message string
         """
         _text = "Operation successful." if not message else message
-        self._console.print(f"[green]{_text}[/green]")
+        self._console.print(f"[success]{_text}[/success]")

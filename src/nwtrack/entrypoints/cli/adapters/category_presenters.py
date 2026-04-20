@@ -40,7 +40,7 @@ class RichCategoryCreationPresenter:
 
     def show_header(self) -> None:
         """Display workflow header using Rich."""
-        self._console.rule("[bold green]Create Category[/bold green]")
+        self._console.rule("[header]Create Category[/header]")
 
     def display_categories(self, categories: list[Category]) -> None:
         """Display existing categories table.
@@ -73,7 +73,8 @@ class RichCategoryCreationPresenter:
             if name:
                 return name
             self._console.print(
-                "[magenta]Category name cannot be empty.[/magenta] Please try again."
+                "[validation]Category name cannot be empty.[/validation]"
+                " Please try again."
             )
 
     def _collect_side(self) -> Side:
@@ -94,7 +95,7 @@ class RichCategoryCreationPresenter:
             category_name: The duplicate category name
         """
         self._console.print(
-            f"[red]Error:[/red] Category name "
+            f"[error]Error:[/error] Category name "
             f"[bold]'{category_name}'[/bold] already exists."
         )
 
@@ -113,7 +114,7 @@ class RichCategoryCreationPresenter:
 
     def show_cancellation(self) -> None:
         """Display cancellation message."""
-        self._console.print("[yellow]Category creation cancelled.[/yellow]")
+        self._console.print("[cancel]Category creation cancelled.[/cancel]")
 
     def show_error(self, message: str) -> None:
         """Display error message.
@@ -121,7 +122,7 @@ class RichCategoryCreationPresenter:
         Args:
             message: Error message to display
         """
-        self._console.print(f"[red]{message}[/red]")
+        self._console.print(f"[error]{message}[/error]")
 
     def show_success(self, category_name: str, categories: list[Category]) -> None:
         """Display success message and updated categories list.
@@ -131,6 +132,6 @@ class RichCategoryCreationPresenter:
             categories: Updated list of all categories
         """
         self._console.print(
-            f"[bold green]Category '{category_name}' created successfully.[/bold green]"
+            f"[success]Category '{category_name}' created successfully.[/success]"
         )
         self.display_categories(categories)

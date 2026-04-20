@@ -28,7 +28,7 @@ class RichNetworthHistoryPresenter:
 
     def show_header(self) -> None:
         """Display report header using Rich."""
-        self._console.rule("[bold green]Networth History Report", align="center")
+        self._console.rule("[header]Networth History Report[/header]", align="center")
 
     def display_networth_history(
         self, networth_records: list[NetWorth], currency_code: str
@@ -48,7 +48,9 @@ class RichNetworthHistoryPresenter:
         Args:
             currency_code: Currency code that was searched
         """
-        self._console.print(f"[red]No net worth data found in {currency_code}[/red]")
+        self._console.print(
+            f"[error]No net worth data found in {currency_code}[/error]"
+        )
 
     def show_partial_data_warning(
         self, requested: int, found: int, currency_code: str
@@ -61,8 +63,8 @@ class RichNetworthHistoryPresenter:
             currency_code: Currency code for the report
         """
         self._console.print(
-            f"[yellow]Only {found} months of net worth data found in "
-            f"{currency_code}[/yellow]"
+            f"[warning]Only {found} months of net worth data found in "
+            f"{currency_code}[/warning]"
         )
 
     def display_total_change(
@@ -102,7 +104,9 @@ class RichBalancesByCategoryPresenter:
 
     def show_header(self) -> None:
         """Display report header using Rich."""
-        self._console.rule("[bold green]Balance Summary by Category", align="center")
+        self._console.rule(
+            "[header]Balance Summary by Category[/header]", align="center"
+        )
 
     def show_accounts_table(
         self,
@@ -217,7 +221,7 @@ class RichBalancesByCategoryPresenter:
 
     def show_invalid_month_error(self) -> None:
         """Display error for invalid month input."""
-        self._console.print("[red]Invalid month format. Please use YYYY-MM.[/red]")
+        self._console.print("[error]Invalid month format. Please use YYYY-MM.[/error]")
 
     def show_no_balances_warning(self, month: Month) -> None:
         """Display warning when no balances found for month.
@@ -225,11 +229,11 @@ class RichBalancesByCategoryPresenter:
         Args:
             month: The month that has no balances
         """
-        self._console.print(f"[orange3]No balance entries found in {month}.[/orange3]")
+        self._console.print(f"[warning]No balance entries found in {month}.[/warning]")
 
     def show_no_month_selected_message(self) -> None:
         """Display messag3 when no month is selected."""
-        self._console.print("[orange3]No month selected. Exiting report.[/orange3]")
+        self._console.print("[warning]No month selected. Exiting report.[/warning]")
 
     def show_no_networth_data_warning(self, month: Month, currency_code: str) -> None:
         """Display warning when no net worth data found for month and currency.
@@ -239,5 +243,5 @@ class RichBalancesByCategoryPresenter:
             currency_code: The currency code that was searched
         """
         self._console.print(
-            f"[red]No net worth data found for {month} in {currency_code}[/red]"
+            f"[error]No net worth data found for {month} in {currency_code}[/error]"
         )

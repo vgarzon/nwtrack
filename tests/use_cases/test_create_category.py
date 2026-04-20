@@ -15,6 +15,7 @@ from nwtrack.bootstrap.container import Container
 from nwtrack.entrypoints.cli.adapters.category_presenters import (
     RichCategoryCreationPresenter,
 )
+from nwtrack.entrypoints.cli.ui.console import ConsoleSettings, build_console
 
 
 @pytest.fixture
@@ -39,7 +40,7 @@ def configured_container(base_container: Container) -> Container:
         )
         .register(
             Console,
-            lambda _: Console(record=True),
+            lambda _: build_console(ConsoleSettings(record=True)),
             lifetime=Lifetime.SINGLETON,
         )
         .register(

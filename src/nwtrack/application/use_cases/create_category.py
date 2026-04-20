@@ -159,6 +159,7 @@ def main() -> None:
     from nwtrack.entrypoints.cli.adapters.category_presenters import (
         RichCategoryCreationPresenter,
     )
+    from nwtrack.entrypoints.cli.ui.console import build_console
 
     load_dotenv()
     setup_logging()
@@ -166,7 +167,7 @@ def main() -> None:
     container = build_base_container()
     container.register(
         Console,
-        lambda _: Console(),
+        lambda _: build_console(),
         lifetime=Lifetime.SINGLETON,
     ).register(
         FetchService,

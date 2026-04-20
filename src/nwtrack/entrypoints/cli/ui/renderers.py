@@ -25,10 +25,10 @@ def build_accounts_table(
     """
     _title = f"{title_prefix} Accounts" if title_prefix else "Accounts"
     table = Table(title=_title)
-    table.add_column("ID", justify="right", style="cyan", no_wrap=True)
-    table.add_column("Name", style="magenta")
-    table.add_column("Category", style="green")
-    table.add_column("Side", style="yellow")
+    table.add_column("ID", justify="right", style="col.id", no_wrap=True)
+    table.add_column("Name", style="col.name")
+    table.add_column("Category", style="col.category")
+    table.add_column("Side", style="col.side")
     for account in accounts:
         category = account.category
         category_name = category.name if category else "Unknown"
@@ -44,12 +44,12 @@ def build_accounts_table(
 
 def render_account_data(console: Console, account: Account) -> None:
     console.print(
-        f"[yellow]Account ID:[/yellow] {account.id}\n"
-        f"[yellow]Account name:[/yellow] {account.name}\n"
-        f"[yellow]Description:[/yellow] {account.description}\n"
-        f"[yellow]Currency:[/yellow] {account.currency_code}\n"
-        f"[yellow]Category:[/yellow] {account.category_name}\n"
-        f"[yellow]Status:[/yellow] {account.status}"
+        f"[label]Account ID:[/label] {account.id}\n"
+        f"[label]Account name:[/label] {account.name}\n"
+        f"[label]Description:[/label] {account.description}\n"
+        f"[label]Currency:[/label] {account.currency_code}\n"
+        f"[label]Category:[/label] {account.category_name}\n"
+        f"[label]Status:[/label] {account.status}"
     )
 
 
@@ -63,8 +63,8 @@ def build_categories_table(categories: list[Category]) -> Table:
         Table: Rich Table object
     """
     table = Table(title="Categories")
-    table.add_column("Name", style="magenta")
-    table.add_column("Side", style="yellow")
+    table.add_column("Name", style="col.name")
+    table.add_column("Side", style="col.side")
     for category in categories:
         category_name = category.name if category else "Unknown"
         side_value = category.side.value if category else "Unknown"
@@ -82,9 +82,9 @@ def build_indexed_categories_table(categories: list[Category]) -> Table:
         Table: Rich Table object
     """
     table = Table(title="Categories")
-    table.add_column("Index", justify="right", style="cyan", no_wrap=True)
-    table.add_column("Name", style="magenta")
-    table.add_column("Side", style="green")
+    table.add_column("Index", justify="right", style="col.id", no_wrap=True)
+    table.add_column("Name", style="col.name")
+    table.add_column("Side", style="col.side")
     for k, category in enumerate(categories):
         table.add_row(
             str(k + 1),
@@ -105,9 +105,9 @@ def build_balance_counts_table(balance_counts: list[tuple[Month, int]]) -> Table
             idx (starts at 1) | month | count
     """
     table = Table(title="Balance Entries per Month")
-    table.add_column("Index", justify="right", style="green")
-    table.add_column("Month", style="cyan")
-    table.add_column("Balances", justify="right", style="magenta")
+    table.add_column("Index", justify="right", style="col.id")
+    table.add_column("Month", style="col.month")
+    table.add_column("Balances", justify="right", style="col.count")
     for idx, (month, count) in enumerate(balance_counts):
         table.add_row(str(idx + 1), str(month), str(count))
     return table
@@ -127,9 +127,9 @@ def build_category_summary_table(
     """
     _title = "Summary by Category" + (f" {title_suffix}" if title_suffix else "")
     table = Table(title=_title)
-    table.add_column("Category", style="magenta")
-    table.add_column("Side", style="green")
-    table.add_column("Total", justify="right", style="red")
+    table.add_column("Category", style="col.category")
+    table.add_column("Side", style="col.side")
+    table.add_column("Total", justify="right", style="col.total")
     for mb in monthly_balances:
         category_name = mb.category.name
         category_side = mb.category.side.value
@@ -157,11 +157,11 @@ def build_balances_table(
     """
     _title = "Balances" + (f" {title_suffix}" if title_suffix else "")
     table = Table(title=_title)
-    table.add_column("Acct_ID", justify="right", style="cyan", no_wrap=True)
-    table.add_column("Account Name", style="magenta")
-    table.add_column("Category", style="green")
-    table.add_column("Side", style="yellow")
-    table.add_column("Amount", justify="right", style="red")
+    table.add_column("Acct_ID", justify="right", style="col.id", no_wrap=True)
+    table.add_column("Account Name", style="col.name")
+    table.add_column("Category", style="col.category")
+    table.add_column("Side", style="col.side")
+    table.add_column("Amount", justify="right", style="col.amount")
     for balance in balances:
         account = balance.account
         category = account.category if account else None
@@ -192,15 +192,15 @@ def build_networth_table(nw: NetWorth, title_suffix: str = "", form="wide") -> T
     _title = "Net Worth Summary" + (f" {title_suffix}" if title_suffix else "")
     table = Table(title=_title)
     if form == "long":
-        table.add_column("Side", style="magenta")
-        table.add_column("Total", justify="right", style="red")
+        table.add_column("Side", style="col.name")
+        table.add_column("Total", justify="right", style="col.total")
         table.add_row("Assets", f"{nw.assets:9,}")
         table.add_row("Liabilities", f"{nw.liabilities:9,}")
         table.add_row("Net Worth", f"{nw.net_worth:9,}")
     elif form == "wide":
-        table.add_column("Assets", justify="right", style="green")
-        table.add_column("Liabilities", justify="right", style="yellow")
-        table.add_column("Net Worth", justify="right", style="red")
+        table.add_column("Assets", justify="right", style="col.asset")
+        table.add_column("Liabilities", justify="right", style="col.liability")
+        table.add_column("Net Worth", justify="right", style="col.networth")
         table.add_row(
             f"{nw.assets:9,}",
             f"{nw.liabilities:9,}",
@@ -222,9 +222,9 @@ def build_currencies_table(currencies: list[Currency]) -> Table:
         Table: Rich Table object
     """
     table = Table(title="Currencies")
-    table.add_column("Index", justify="right", style="cyan", no_wrap=True)
-    table.add_column("Code", style="magenta")
-    table.add_column("Description", style="green")
+    table.add_column("Index", justify="right", style="col.id", no_wrap=True)
+    table.add_column("Code", style="col.code")
+    table.add_column("Description", style="col.desc")
     for k, currency in enumerate(currencies):
         table.add_row(
             str(k + 1),
@@ -244,8 +244,8 @@ def build_status_table(status_options: list[Status]) -> Table:
         Table: Rich Table object
     """
     table = Table(title="Status Options")
-    table.add_column("Index", justify="right", style="cyan", no_wrap=True)
-    table.add_column("Status", style="magenta")
+    table.add_column("Index", justify="right", style="col.id", no_wrap=True)
+    table.add_column("Status", style="col.status")
     for k, status in enumerate(status_options):
         table.add_row(
             str(k + 1),
@@ -265,21 +265,21 @@ def render_new_account_info(
         balance: Balance object
     """
     console.print(
-        f"[yellow]Account name:[/yellow] {account.name}\n"
-        f"[yellow]Account ID:[/yellow] {account.id}\n"
-        f"[yellow]Description:[/yellow] {account.description}\n"
-        f"[yellow]Currency:[/yellow] {account.currency_code}\n"
-        f"[yellow]Category:[/yellow] {account.category_name}\n"
-        f"[yellow]Status:[/yellow] {account.status.value}\n"
-        f"[yellow]Initial month:[/yellow] {balance.month}\n"
-        f"[yellow]Initial balance:[/yellow] {balance.amount}\n"
+        f"[label]Account name:[/label] {account.name}\n"
+        f"[label]Account ID:[/label] {account.id}\n"
+        f"[label]Description:[/label] {account.description}\n"
+        f"[label]Currency:[/label] {account.currency_code}\n"
+        f"[label]Category:[/label] {account.category_name}\n"
+        f"[label]Status:[/label] {account.status.value}\n"
+        f"[label]Initial month:[/label] {balance.month}\n"
+        f"[label]Initial balance:[/label] {balance.amount}\n"
     )
 
 
 def render_category_data(console: Console, category: Category) -> None:
     console.print(
-        f"[yellow]Category name:[/yellow] {category.name}\n"
-        f"[yellow]Category side:[/yellow] {category.side.value}\n"
+        f"[label]Category name:[/label] {category.name}\n"
+        f"[label]Category side:[/label] {category.side.value}\n"
     )
 
 
@@ -295,8 +295,8 @@ def build_file_paths_table(file_paths: dict[str, str], title_prefix: str = "") -
     """
     title = f"{title_prefix} File Paths" if title_prefix else "File Paths"
     table = Table(title=title)
-    table.add_column("Repo", style="cyan", no_wrap=True)
-    table.add_column("Path", style="magenta")
+    table.add_column("Repo", style="col.code", no_wrap=True)
+    table.add_column("Path", style="col.name")
     for key, path in file_paths.items():
         table.add_row(key, path)
     return table
@@ -315,16 +315,16 @@ def build_networth_history_table(nws: list[NetWorth]) -> Table:
     _first_month = nws[0].month if nws else ""
     _last_month = nws[-1].month if nws else ""
     _title = f"Net Worth History {_first_month} to {_last_month}"
-    table = Table(title=f"[green]{_title}[/green]")
+    table = Table(title=f"[header]{_title}[/header]")
     table.add_column("Month", justify="right")
-    table.add_column("Assets", justify="right", style="green")
-    table.add_column("Liabilities", justify="right", style="yellow")
-    table.add_column("Net Worth", justify="right", style="red")
+    table.add_column("Assets", justify="right", style="col.asset")
+    table.add_column("Liabilities", justify="right", style="col.liability")
+    table.add_column("Net Worth", justify="right", style="col.networth")
     table.add_column("Change", justify="right")
     for k, nw in enumerate(nws):
         if k > 0:
             change = nw.net_worth - nws[k - 1].net_worth
-            color_str = "red" if change < 0 else "green"
+            color_str = "delta.negative" if change < 0 else "delta.positive"
             change_str = f"[{color_str}]{change:7,}[/{color_str}]"
         else:
             change_str = ""
@@ -348,9 +348,9 @@ def build_month_balances_table(balance_counts: list[tuple[Month, int]]) -> Table
         Table: Rich Table object
     """
     table = Table(title="Balance Entries per Month")
-    table.add_column("Index", justify="right", style="green")
-    table.add_column("Month", style="cyan")
-    table.add_column("Balances", justify="right", style="magenta")
+    table.add_column("Index", justify="right", style="col.id")
+    table.add_column("Month", style="col.month")
+    table.add_column("Balances", justify="right", style="col.count")
     for idx, (month, count) in enumerate(balance_counts):
         table.add_row(str(idx + 1), str(month), str(count))
     return table
@@ -366,9 +366,9 @@ def build_networth_history_total_change_table(changes: dict) -> Table:
         Table: Rich Table object
     """
     table = Table(title="Total Change")
-    table.add_column("Assets", justify="right", style="green")
-    table.add_column("Liabilities", justify="right", style="orange3")
-    table.add_column("Net Worth", justify="right", style="bold")
+    table.add_column("Assets", justify="right", style="col.asset")
+    table.add_column("Liabilities", justify="right", style="col.liability")
+    table.add_column("Net Worth", justify="right", style="col.networth")
 
     changes_abs = (f"{changes[k][0]:,}" for k in ["assets", "liabilities", "net_worth"])
     changes_pct = (
