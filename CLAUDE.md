@@ -161,6 +161,14 @@ just report-networth   # Show networth report
 just clean             # Remove Python cache files
 ```
 
+### Git Workflow
+
+- Treat `devel` as the default integration branch.
+- Create new feature branches from `devel`.
+- Open feature pull requests against `devel`.
+- Promote `devel` to `main` through separate pull requests after changes are validated.
+- Do not merge routine feature work directly into `main`.
+
 ### Running the Application
 
 ```bash

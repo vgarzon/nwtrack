@@ -14,6 +14,7 @@ Read `specs/roadmap.md`. The next phase is the first section whose items are all
 ### 2. Create the branch
 
 ```
+git checkout devel
 git checkout -b phase-NN-<kebab-name>
 ```
 
