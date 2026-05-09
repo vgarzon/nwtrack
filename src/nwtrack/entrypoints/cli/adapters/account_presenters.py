@@ -25,6 +25,7 @@ from nwtrack.entrypoints.cli.ui.renderers import (
     build_currencies_table,
     build_indexed_categories_table,
     build_status_table,
+    render_account_data,
     render_new_account_info,
 )
 
@@ -295,6 +296,7 @@ class RichAccountUpdatePresenter:
                 description=new_description,
                 category_name=new_category_name,
                 currency_code=new_currency_code,
+                institution_id=current_account.institution_id,
                 status=new_status,
             )
             # Set id after construction
@@ -457,14 +459,7 @@ class RichAccountUpdatePresenter:
             True if user confirms, False otherwise
         """
         self._console.print("[bold]Updated account data[/bold]")
-        self._console.print(
-            f"[label]Account ID:[/label] {updated_account.id}\n"
-            f"[label]Account name:[/label] {updated_account.name}\n"
-            f"[label]Description:[/label] {updated_account.description}\n"
-            f"[label]Currency:[/label] {updated_account.currency_code}\n"
-            f"[label]Category:[/label] {updated_account.category_name}\n"
-            f"[label]Status:[/label] {updated_account.status}"
-        )
+        render_account_data(self._console, updated_account)
         return self._confirm.ask("Proceed with update", default=False)
 
     def show_cancellation(self, message: str = "") -> None:

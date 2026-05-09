@@ -17,6 +17,16 @@ from nwtrack.domain.models import (
 )
 from nwtrack.domain.value_objects import Month
 
+UNASSIGNED_INSTITUTION_LABEL = "None"
+
+
+def format_institution_name(account: Account) -> str:
+    """Return the display label for an account institution."""
+    institution = account.institution
+    if institution is not None:
+        return institution.name
+    return UNASSIGNED_INSTITUTION_LABEL
+
 
 def build_accounts_table(
     accounts: list[Account],
@@ -57,6 +67,7 @@ def render_account_data(console: Console, account: Account) -> None:
         f"[label]Description:[/label] {account.description}\n"
         f"[label]Currency:[/label] {account.currency_code}\n"
         f"[label]Category:[/label] {account.category_name}\n"
+        f"[label]Institution:[/label] {format_institution_name(account)}\n"
         f"[label]Status:[/label] {account.status}"
     )
 
@@ -310,6 +321,7 @@ def render_new_account_info(
         f"[label]Description:[/label] {account.description}\n"
         f"[label]Currency:[/label] {account.currency_code}\n"
         f"[label]Category:[/label] {account.category_name}\n"
+        f"[label]Institution:[/label] {format_institution_name(account)}\n"
         f"[label]Status:[/label] {account.status.value}\n"
         f"[label]Initial month:[/label] {balance.month}\n"
         f"[label]Initial balance:[/label] {balance.amount}\n"
