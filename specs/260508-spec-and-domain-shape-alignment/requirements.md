@@ -25,6 +25,13 @@ Not included in this phase:
 
 An institution is a financial institution where an account is held.
 
+Initial institution baseline:
+
+- `Institution` is first-class reference data, not an unchecked account text field.
+- The baseline institution shape is intentionally small: `id`, `name`, and optional `description`.
+- Institution `name` must be unique so accounts can reference one unambiguous institution record.
+- Additional institution attributes remain out of scope until a later feature phase explicitly adds them.
+
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
 | `id` | `int` | Primary key, unique | Internal identifier |
@@ -36,6 +43,13 @@ Initial account relationship:
 - An account may reference zero or one institution in the initial rollout.
 - Institution assignment remains optional during the early institution phases.
 - Existing accounts must remain valid without an institution until a later migration phase explicitly changes that rule.
+- The initial account model should use an optional institution reference rather than duplicating institution names on accounts.
+
+Initial migration posture:
+
+- Existing accounts are not reassigned automatically during this phase.
+- Institutions will be attached manually to active accounts during later implementation phases.
+- Schema and workflow changes must preserve current accounts that do not yet have an institution.
 
 ### Tag
 

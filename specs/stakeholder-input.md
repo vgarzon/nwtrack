@@ -60,16 +60,29 @@ Currencies are reference data. They are not created interactively; they are load
 
 Categories classify accounts for accounting purposes. The `side` field determines whether an account's balance contributes positively (asset) or negatively (liability) to net worth.
 
+### Institutions
+
+| Field | Type   | Constraints                    |
+|-------|--------|--------------------------------|
+| id    | int    | Primary key, unique            |
+| name  | string | Short label, unique            |
+| description | string | Optional free-text description |
+
+Institutions are first-class reference data representing the financial institution where an account is held.
+
 ### Accounts
 
-| Field         | Type   | Constraints                            |
-|---------------|--------|----------------------------------------|
-| id            | int    | Primary key, auto-generated            |
-| name          | string | Unique across all accounts             |
-| description   | string | Free-text label                        |
-| category_name | string | FK → categories.name                   |
-| currency_code | string | FK → currencies.code, default "USD"    |
-| status        | enum   | `"active"` or `"inactive"`, default "active" |
+| Field          | Type   | Constraints                            |
+|----------------|--------|----------------------------------------|
+| id             | int    | Primary key, auto-generated            |
+| name           | string | Unique across all accounts             |
+| description    | string | Free-text label                        |
+| category_name  | string | FK → categories.name                   |
+| institution_id | int    | Optional FK → institutions.id          |
+| currency_code  | string | FK → currencies.code, default "USD"    |
+| status         | enum   | `"active"` or `"inactive"`, default "active" |
+
+Accounts may initially reference zero or one institution. Existing accounts remain valid without an institution during the initial rollout, and institution assignment is expected to be added manually rather than through disruptive bulk reassignment.
 
 ### Balances
 
