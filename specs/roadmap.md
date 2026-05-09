@@ -47,7 +47,7 @@ Expected outcomes:
 - Database migration path preserves existing account records
 - CSV import/export behavior is updated or explicitly deferred in the feature spec
 
-### [ ] Phase 11: Institution CLI CRUD
+### [X] Phase 11: Institution CLI CRUD
 
 Goal:
 Make institutions user-manageable from the CLI before deeper account workflow changes.
