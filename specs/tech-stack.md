@@ -116,13 +116,16 @@ Additional implementation standards:
 
 The default workflow for new work is:
 
-1. Write or update a spec in `specs/`.
-2. Define phase validation, including feature-specific tests, manual checks, and quality gates.
-3. Confirm domain rules and user-facing behavior.
-4. Implement the smallest viable slice.
-5. Add or update tests.
-6. Run lint, type checks, and tests.
-7. Update the constitution or feature spec if the design changed during implementation.
+1. Start from `devel` and create a feature branch from `devel`.
+2. Write or update a spec in `specs/`.
+3. Define phase validation, including feature-specific tests, manual checks, and quality gates.
+4. Confirm domain rules and user-facing behavior.
+5. Implement the smallest viable slice.
+6. Add or update tests.
+7. Run lint, type checks, and tests.
+8. Merge feature pull requests into `devel`.
+9. Promote validated `devel` changes to `main` through separate pull requests.
+10. Update the constitution or feature spec if the design changed during implementation.
 
 ## Documentation Rules
 
