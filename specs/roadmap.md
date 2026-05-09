@@ -70,7 +70,7 @@ Expected outcomes:
 - Existing accounts remain valid without an institution during this phase
 - Tests cover interactive and non-interactive institution assignment paths
 
-### [ ] Phase 12b: Interactive Balance Creation
+### [X] Phase 12b: Interactive Balance Creation
 
 Goal:
 Add an interactive CLI command for creating one missing balance entry without changing the existing balance update and delete workflows.
