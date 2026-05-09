@@ -64,6 +64,16 @@ class Category(MappedAsDataclass, Base):
     )
 
 
+class Institution(MappedAsDataclass, Base):
+    """Institution entity."""
+
+    __tablename__ = "institutions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    name: Mapped[str] = mapped_column(String, unique=True)
+    description: Mapped[str | None] = mapped_column(String, nullable=True, default=None)
+
+
 class Account(MappedAsDataclass, Base):
     """Account entity."""
 
@@ -80,6 +90,12 @@ class Account(MappedAsDataclass, Base):
     category_name: Mapped[str] = mapped_column(
         "category", String, ForeignKey("categories.name")
     )
+    institution_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("institutions.id"),
+        nullable=True,
+        default=None,
+    )
     currency_code: Mapped[str] = mapped_column(
         "currency", String, ForeignKey("currencies.code"), default="USD"
     )
@@ -90,6 +106,16 @@ class Account(MappedAsDataclass, Base):
     category: Mapped[Category] = relationship(
         "Category",
         foreign_keys="[Account.category_name]",
+        lazy="selectin",
+        viewonly=True,
+        init=False,
+        default=None,
+        compare=False,
+        repr=False,
+    )
+    institution: Mapped[Institution | None] = relationship(
+        "Institution",
+        foreign_keys="[Account.institution_id]",
         lazy="selectin",
         viewonly=True,
         init=False,
