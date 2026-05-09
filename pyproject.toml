@@ -38,3 +38,5 @@ target-version = "py312"
 select = ["E", "F", "I", "N", "W", "UP"]
 ignore = []
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]

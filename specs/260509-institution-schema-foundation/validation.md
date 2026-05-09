@@ -4,11 +4,11 @@
 
 Update this checklist as task groups in `plan.md` are completed.
 
-- [ ] Institution Persistence Baseline
-- [ ] Account Schema Integration
-- [ ] Repository And Unit Of Work Support
-- [ ] Compatibility Boundaries
-- [ ] Validation
+- [X] Institution Persistence Baseline
+- [X] Account Schema Integration
+- [X] Repository And Unit Of Work Support
+- [X] Compatibility Boundaries
+- [X] Validation
 
 ## Automated
 
