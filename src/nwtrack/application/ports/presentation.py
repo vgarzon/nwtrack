@@ -8,8 +8,12 @@ protocols, not on concrete UI implementations like Rich.
 
 from typing import Protocol
 
-from nwtrack.application.dto import MonthlyCategoryBalance, NewAccountData
-from nwtrack.domain.models import Account, Balance, Category, NetWorth
+from nwtrack.application.dto import (
+    InstitutionListItem,
+    MonthlyCategoryBalance,
+    NewAccountData,
+)
+from nwtrack.domain.models import Account, Balance, Category, Institution, NetWorth
 from nwtrack.domain.value_objects import Month
 
 
@@ -39,6 +43,14 @@ class CategoryListPresenter(Protocol):
         Args:
             categories: List of categories to display
         """
+        ...
+
+
+class InstitutionListPresenter(Protocol):
+    """Presenter for institution listing workflow."""
+
+    def display_institutions(self, institutions: list[InstitutionListItem]) -> None:
+        """Display institutions table."""
         ...
 
 
@@ -149,6 +161,30 @@ class CategoryCreationPresenter(Protocol):
             categories: Updated list of all categories
         """
         ...
+
+
+class InstitutionCreationPresenter(Protocol):
+    """Presenter for institution creation workflow."""
+
+    def show_header(self) -> None: ...
+
+    def display_institutions(self, institutions: list[InstitutionListItem]) -> None: ...
+
+    def collect_institution_data(self) -> Institution | None: ...
+
+    def show_duplicate_error(self, institution_name: str) -> None: ...
+
+    def show_preview_and_confirm(self, institution: Institution) -> bool: ...
+
+    def show_cancellation(self) -> None: ...
+
+    def show_error(self, message: str) -> None: ...
+
+    def show_success(
+        self,
+        institution_name: str,
+        institutions: list[InstitutionListItem],
+    ) -> None: ...
 
 
 class AccountCreationPresenter(Protocol):
@@ -299,6 +335,61 @@ class AccountUpdatePresenter(Protocol):
     def show_success(self) -> None:
         """Display success message."""
         ...
+
+
+class InstitutionUpdatePresenter(Protocol):
+    """Presenter for institution update workflow."""
+
+    def show_header(self) -> None: ...
+
+    def display_institutions(self, institutions: list[InstitutionListItem]) -> None: ...
+
+    def show_no_institutions(self) -> None: ...
+
+    def select_institution(self) -> int | None: ...
+
+    def show_institution_not_found(self, institution_id: int) -> None: ...
+
+    def collect_updated_data(
+        self, current_institution: Institution
+    ) -> Institution | None: ...
+
+    def show_duplicate_error(self, institution_name: str) -> None: ...
+
+    def show_preview_and_confirm(self, institution: Institution) -> bool: ...
+
+    def show_cancellation(self, message: str = "") -> None: ...
+
+    def show_error(self, message: str) -> None: ...
+
+    def show_success(self, institutions: list[InstitutionListItem]) -> None: ...
+
+
+class InstitutionDeletePresenter(Protocol):
+    """Presenter for institution delete workflow."""
+
+    def show_header(self) -> None: ...
+
+    def display_institutions(self, institutions: list[InstitutionListItem]) -> None: ...
+
+    def show_no_institutions(self) -> None: ...
+
+    def select_institution(self) -> int | None: ...
+
+    def show_institution_not_found(self, institution_id: int) -> None: ...
+
+    def show_preview_and_confirm(
+        self, institution: Institution, account_count: int
+    ) -> bool: ...
+
+    def show_delete_blocked(self, institution: Institution, account_count: int) -> None:
+        ...
+
+    def show_cancellation(self, message: str = "") -> None: ...
+
+    def show_error(self, message: str) -> None: ...
+
+    def show_success(self, institutions: list[InstitutionListItem]) -> None: ...
 
 
 class BalanceUpdatePresenter(Protocol):

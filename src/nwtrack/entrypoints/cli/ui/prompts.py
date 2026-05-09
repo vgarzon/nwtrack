@@ -207,6 +207,42 @@ def prompt_for_category_name(console: Console) -> str:
     return name.strip()
 
 
+def prompt_for_institution_name(console: Console, default: str = "") -> str:
+    """Prompt user for institution name."""
+    prompt = Prompt(console=console)
+    name = prompt.ask(
+        "Enter [bold]institution name[/bold] or 'q' to quit",
+        default=default,
+    )
+    return name.strip()
+
+
+def prompt_for_institution_description(console: Console, default: str = "") -> str:
+    """Prompt user for institution description."""
+    prompt = Prompt(console=console)
+    description = prompt.ask(
+        "Enter optional [bold]description[/bold] or 'q' to quit",
+        default=default,
+    )
+    return description.strip()
+
+
+def prompt_for_institution_id(console: Console) -> int | None:
+    """Prompt user for institution ID."""
+    prompt = Prompt(console=console)
+    while True:
+        response = prompt.ask("Enter [bold]institution ID[/bold] or 'q' to quit")
+        if response.lower().strip() == "q":
+            return None
+        try:
+            institution_id = int(response)
+            return institution_id
+        except ValueError:
+            console.print(
+                "[error]Invalid input. Please enter a valid institution ID.[/error]"
+            )
+
+
 def prompt_for_category_side(console: Console) -> str:
     """Prompt user for category side.
 
