@@ -211,7 +211,7 @@ class AccountCreationPresenter(Protocol):
         """Interactively collect all account data from user.
 
         This includes: name, description, category, currency, status,
-        initial month, and initial balance amount.
+        initial month, initial balance amount, and optional institution.
 
         Returns:
             NewAccountData or None if cancelled by user
@@ -301,7 +301,8 @@ class AccountUpdatePresenter(Protocol):
             current_account: Current account data to use as defaults
 
         Returns:
-            Updated Account or None if cancelled by user
+            Updated Account with preserved or updated institution assignment,
+            or None if cancelled by user
         """
         ...
 
