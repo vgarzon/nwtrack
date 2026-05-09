@@ -50,6 +50,9 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         from nwtrack.infra.persistence.repositories.exchange_rates import (
             ExchangeRatesRepository,
         )
+        from nwtrack.infra.persistence.repositories.institutions import (
+            InstitutionsRepository,
+        )
         from nwtrack.infra.persistence.repositories.networth import (
             NetWorthRepository,
         )
@@ -60,6 +63,7 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         # Instantiate repositories with shared session
         self.currencies = CurrenciesRepository(self._session)
         self.categories = CategoriesRepository(self._session)
+        self.institutions = InstitutionsRepository(self._session)
         self.accounts = AccountsRepository(self._session)
         self.balances = BalancesRepository(self._session)
         self.exchange_rates = ExchangeRatesRepository(self._session)

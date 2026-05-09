@@ -13,6 +13,7 @@ from nwtrack.domain.models import (
     Category,
     Currency,
     ExchangeRate,
+    Institution,
     NetWorth,
 )
 from nwtrack.domain.value_objects import Month
@@ -137,6 +138,22 @@ class AccountsRepository(Repository[Account], Protocol):
 
     def update_description(self, account_id: int, new_description: str) -> int:
         """Update account description."""
+        ...
+
+
+class InstitutionsRepository(Repository[Institution], Protocol):
+    """Protocol for institution repository operations."""
+
+    def insert(self, data: Institution) -> int:
+        """Insert institution object in respective table."""
+        ...
+
+    def get_by_id(self, institution_id: int) -> Institution | None:
+        """Get institution by ID."""
+        ...
+
+    def get_by_name(self, institution_name: str) -> Institution | None:
+        """Get institution by name."""
         ...
 
 
