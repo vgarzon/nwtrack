@@ -19,7 +19,9 @@ git checkout -b phase-NN-<kebab-name>
 
 ### 3. Interview the user — BEFORE writing any files
 
-Use `Ask User Question` tool with the following questions:
+Enter /plan mode to interview the user about the feature and gather information for the spec.
+
+Use `Ask User Question` tool with questions in the following categories:
 
 
 | Header | Question focus |
@@ -29,7 +31,7 @@ Use `Ask User Question` tool with the following questions:
 | **Context** | Tone, constraints, or anything shaping the spec — copy style, stack limits, open questions |
 
 
-Do **not** write any files until the user has answered all three questions.
+Wite files to disk after he user has answered the questions.
 
 ### 4. Read guidance files
 
@@ -37,7 +39,7 @@ Read `specs/mission.md` and `specs/tech-stack.md` before drafting.
 
 ### 5. Create the spec directory
 
-Name: `specs/YYMMDD-<feature-name>/` using today's date.
+Name: `specs/YYMMDD-phase-NN-<feature-name>/` using today's date.
 
 #### `requirements.md`
 - Scope section: what is and is not included; field/data table if applicable
