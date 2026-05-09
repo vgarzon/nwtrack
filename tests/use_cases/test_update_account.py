@@ -74,6 +74,7 @@ def _patch_update_prompts(
     prompt_values: list[str],
     int_values: list[int],
     confirm_values: list[bool],
+    prompt_calls: list[str] | None = None,
 ) -> None:
     """Patch Rich prompt classes for account update workflow tests."""
     input_prompt = iter(prompt_values)
@@ -81,6 +82,8 @@ def _patch_update_prompts(
     input_confirm_prompt = iter(confirm_values)
 
     def mock_prompt(*args, **kwargs):
+        if prompt_calls is not None and len(args) > 1:
+            prompt_calls.append(str(args[1]))
         return next(input_prompt)
 
     def mock_int_prompt(*args, **kwargs):
@@ -153,6 +156,7 @@ def test_account_updater_can_add_institution(
     monkeypatch,
 ) -> None:
     init_db_tables_w_entities(configured_container, sample_entities)
+    prompt_order: list[str] = []
 
     setup_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
     with setup_uow as uow:
@@ -163,6 +167,7 @@ def test_account_updater_can_add_institution(
     _patch_update_prompts(
         monkeypatch,
         prompt_values=[
+            "1",
             "bank_1_checking",
             "bank_1 checking",
         ],
@@ -171,9 +176,9 @@ def test_account_updater_can_add_institution(
             1,
             1,
             1,
-            2,
         ],
         confirm_values=[True],
+        prompt_calls=prompt_order,
     )
 
     result: OperationResult[None] = configured_container.resolve(
@@ -187,6 +192,7 @@ def test_account_updater_can_add_institution(
         updated_account = uow.accounts.get_by_id(1)
     assert updated_account is not None
     assert updated_account.institution_id == institution_id
+    assert "institution index" in prompt_order[0]
 
     captured_output: str = configured_container.resolve(Console).export_text()
     assert re.search(r"Institution: Chase", captured_output)
@@ -215,6 +221,7 @@ def test_account_updater_can_change_institution(
     _patch_update_prompts(
         monkeypatch,
         prompt_values=[
+            "2",
             "bank_1_checking",
             "bank_1 checking",
         ],
@@ -223,7 +230,6 @@ def test_account_updater_can_change_institution(
             1,
             1,
             1,
-            3,
         ],
         confirm_values=[True],
     )
@@ -264,11 +270,11 @@ def test_account_updater_can_clear_institution(
     _patch_update_prompts(
         monkeypatch,
         prompt_values=[
+            "0",
             "bank_1_checking",
             "bank_1 checking",
         ],
         int_values=[
-            1,
             1,
             1,
             1,
@@ -291,3 +297,29 @@ def test_account_updater_can_clear_institution(
 
     captured_output: str = configured_container.resolve(Console).export_text()
     assert re.search(r"Institution: None", captured_output)
+
+
+def test_account_updater_quits_when_institution_selector_receives_q(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow_manager as uow:
+        uow.institutions.insert(Institution(name="Chase", description="Primary bank"))
+
+    _patch_update_prompts(
+        monkeypatch,
+        prompt_values=["q"],
+        int_values=[1],
+        confirm_values=[],
+    )
+
+    result: OperationResult[None] = configured_container.resolve(
+        UpdateAccountInfo
+    ).run()
+
+    assert not result.success
+    assert result.error_message == "Cancelled by user"

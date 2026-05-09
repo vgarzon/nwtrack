@@ -46,4 +46,7 @@ def test_account_list_presenter_renders_institution_column_for_mixed_accounts() 
 
     assert "Institution" in output
     assert "Chase" in output
-    assert "None" in output
+    header_line = next(line for line in output.splitlines() if "Institution" in line)
+    assert header_line.index("Institution") < header_line.index("Name")
+    assert "bank_2_savings" in output
+    assert "None" not in output

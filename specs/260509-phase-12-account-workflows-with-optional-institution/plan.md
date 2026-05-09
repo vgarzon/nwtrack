@@ -2,9 +2,9 @@
 
 ## 1. Account Input And Presenter Updates
 
-1. Extend account creation and update workflow inputs to carry optional institution selection.
+1. Extend account creation and update workflow inputs to carry optional institution selection as the first editable field.
 2. Add institution selection and institution display support to the account presenters.
-3. Reuse the existing indexed-selection CLI pattern with an explicit no-institution option.
+3. Use direct institution indexes with `0` for no institution and `q` for quit.
 
 ## 2. Minimal Fetch And Read Support
 
@@ -21,8 +21,9 @@
 ## 4. Account List Output
 
 1. Add institution display to the account list table.
-2. Keep active-only behavior and the rest of the account list flow unchanged.
-3. Use one consistent display convention for unassigned institutions.
+2. Place the institution column immediately after `ID`.
+3. Render unassigned institutions as blank cells in account tables only.
+4. Keep active-only behavior and the rest of the account list flow unchanged.
 
 ## 5. Validation
 
