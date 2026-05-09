@@ -6,7 +6,14 @@ from collections.abc import Callable
 
 from nwtrack.application.dto import MonthlyCategoryBalance
 from nwtrack.application.ports.uow import UnitOfWork
-from nwtrack.domain.models import Account, Balance, Category, Currency, NetWorth
+from nwtrack.domain.models import (
+    Account,
+    Balance,
+    Category,
+    Currency,
+    Institution,
+    NetWorth,
+)
 from nwtrack.domain.value_objects import Month
 
 
@@ -52,6 +59,12 @@ class FetchService:
         with self._uow() as uow:
             currencies = uow.currencies.get_all()
         return currencies
+
+    def get_all_institutions(self) -> list[Institution]:
+        """Get institutions for account workflow selection."""
+        with self._uow() as uow:
+            institutions = uow.institutions.get_all()
+        return institutions
 
     def get_account_by_id(self, account_id: int) -> Account | None:
         """Get account by ID.
