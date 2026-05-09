@@ -124,7 +124,8 @@ def test_account_updater_run_success_with_no_institutions(
 
     assert result.success
 
-    with configured_container.resolve(UnitOfWork) as uow:
+    uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow_manager as uow:
         updated_account = uow.accounts.get_by_id(1)
     assert updated_account is not None
     assert updated_account.institution_id is None
@@ -153,7 +154,8 @@ def test_account_updater_can_add_institution(
 ) -> None:
     init_db_tables_w_entities(configured_container, sample_entities)
 
-    with configured_container.resolve(UnitOfWork) as uow:
+    setup_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with setup_uow as uow:
         institution_id = uow.institutions.insert(
             Institution(name="Chase", description="Primary bank")
         )
@@ -180,12 +182,13 @@ def test_account_updater_can_add_institution(
 
     assert result.success
 
-    with configured_container.resolve(UnitOfWork) as uow:
+    refresh_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with refresh_uow as uow:
         updated_account = uow.accounts.get_by_id(1)
     assert updated_account is not None
     assert updated_account.institution_id == institution_id
 
-    captured_output = configured_container.resolve(Console).export_text()
+    captured_output: str = configured_container.resolve(Console).export_text()
     assert re.search(r"Institution: Chase", captured_output)
 
 
@@ -196,7 +199,8 @@ def test_account_updater_can_change_institution(
 ) -> None:
     init_db_tables_w_entities(configured_container, sample_entities)
 
-    with configured_container.resolve(UnitOfWork) as uow:
+    setup_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with setup_uow as uow:
         chase_id = uow.institutions.insert(
             Institution(name="Chase", description="Primary bank")
         )
@@ -230,12 +234,13 @@ def test_account_updater_can_change_institution(
 
     assert result.success
 
-    with configured_container.resolve(UnitOfWork) as uow:
+    refresh_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with refresh_uow as uow:
         updated_account = uow.accounts.get_by_id(1)
     assert updated_account is not None
     assert updated_account.institution_id == fidelity_id
 
-    captured_output = configured_container.resolve(Console).export_text()
+    captured_output: str = configured_container.resolve(Console).export_text()
     assert re.search(r"Institution: Fidelity", captured_output)
 
 
@@ -246,7 +251,8 @@ def test_account_updater_can_clear_institution(
 ) -> None:
     init_db_tables_w_entities(configured_container, sample_entities)
 
-    with configured_container.resolve(UnitOfWork) as uow:
+    setup_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with setup_uow as uow:
         chase_id = uow.institutions.insert(
             Institution(name="Chase", description="Primary bank")
         )
@@ -277,10 +283,11 @@ def test_account_updater_can_clear_institution(
 
     assert result.success
 
-    with configured_container.resolve(UnitOfWork) as uow:
+    refresh_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with refresh_uow as uow:
         updated_account = uow.accounts.get_by_id(1)
     assert updated_account is not None
     assert updated_account.institution_id is None
 
-    captured_output = configured_container.resolve(Console).export_text()
+    captured_output: str = configured_container.resolve(Console).export_text()
     assert re.search(r"Institution: None", captured_output)
