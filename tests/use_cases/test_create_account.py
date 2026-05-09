@@ -75,11 +75,16 @@ def test_account_creator_run_success_defaults(
     monkeypatch,
 ) -> None:
     init_db_tables_w_entities(configured_container, sample_entities)
+    call_order: list[str] = []
+
+    def prompt_name(*args, **kwargs) -> str:
+        call_order.append("name")
+        return "savings_account_3"
 
     monkeypatch.setattr(
         nwtrack.entrypoints.cli.adapters.account_presenters,
         "prompt_for_account_name",
-        lambda *args, **kwargs: "savings_account_3",
+        prompt_name,
     )
     monkeypatch.setattr(
         nwtrack.entrypoints.cli.adapters.account_presenters,
@@ -138,6 +143,7 @@ def test_account_creator_run_success_defaults(
         created_account = uow.accounts.get_by_id(account_id)
     assert created_account is not None
     assert created_account.institution_id is None
+    assert call_order == ["name"]
 
     console: Console = configured_container.resolve(Console)
     captured_output = console.export_text()
@@ -160,6 +166,15 @@ def test_account_creator_run_success_with_selected_institution(
     monkeypatch,
 ) -> None:
     init_db_tables_w_entities(configured_container, sample_entities)
+    call_order: list[str] = []
+
+    def prompt_name(*args, **kwargs) -> str:
+        call_order.append("name")
+        return "brokerage_account"
+
+    def prompt_institution(*args, **kwargs) -> int:
+        call_order.append("institution")
+        return 1
 
     uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
     with uow_manager as uow:
@@ -170,7 +185,7 @@ def test_account_creator_run_success_with_selected_institution(
     monkeypatch.setattr(
         nwtrack.entrypoints.cli.adapters.account_presenters,
         "prompt_for_account_name",
-        lambda *args, **kwargs: "brokerage_account",
+        prompt_name,
     )
     monkeypatch.setattr(
         nwtrack.entrypoints.cli.adapters.account_presenters,
@@ -195,7 +210,7 @@ def test_account_creator_run_success_with_selected_institution(
     monkeypatch.setattr(
         nwtrack.entrypoints.cli.adapters.account_presenters,
         "prompt_for_optional_institution_choice",
-        lambda *args, **kwargs: 2,
+        prompt_institution,
     )
     monkeypatch.setattr(
         nwtrack.entrypoints.cli.adapters.account_presenters,
@@ -226,10 +241,49 @@ def test_account_creator_run_success_with_selected_institution(
         created_account = uow.accounts.get_by_id(account_id)
     assert created_account is not None
     assert created_account.institution_id == institution_id
+    assert call_order == ["institution", "name"]
 
     console: Console = configured_container.resolve(Console)
     captured_output = console.export_text()
 
     assert re.search(r"Institutions", captured_output)
-    assert re.search(r"None", captured_output)
+    assert re.search(r"\b0\b", captured_output)
     assert re.search(r"Institution: Chase", captured_output)
+
+
+def test_account_creator_quits_when_institution_selector_returns_q(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    init_db_tables_w_entities(configured_container, sample_entities)
+    call_order: list[str] = []
+
+    def prompt_institution(*args, **kwargs) -> None:
+        call_order.append("institution")
+        return None
+
+    uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow_manager as uow:
+        uow.institutions.insert(Institution(name="Chase", description="Primary bank"))
+
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_optional_institution_choice",
+        prompt_institution,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_account_name",
+        lambda *args, **kwargs: pytest.fail(
+            "Account name should not be prompted after institution quit."
+        ),
+    )
+
+    result: OperationResult[tuple[int, int]] = configured_container.resolve(
+        AccountCreator
+    ).run()
+
+    assert not result.success
+    assert result.error_message == "Cancelled by user"
+    assert call_order == ["institution"]

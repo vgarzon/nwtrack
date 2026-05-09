@@ -18,14 +18,18 @@ from nwtrack.domain.models import (
 from nwtrack.domain.value_objects import Month
 
 UNASSIGNED_INSTITUTION_LABEL = "None"
+UNASSIGNED_INSTITUTION_TABLE_LABEL = ""
 
 
-def format_institution_name(account: Account) -> str:
+def format_institution_name(
+    account: Account,
+    unassigned_label: str = UNASSIGNED_INSTITUTION_LABEL,
+) -> str:
     """Return the display label for an account institution."""
     institution = account.institution
     if institution is not None:
         return institution.name
-    return UNASSIGNED_INSTITUTION_LABEL
+    return unassigned_label
 
 
 def build_indexed_institutions_table(institutions: list[Institution]) -> Table:
@@ -34,8 +38,8 @@ def build_indexed_institutions_table(institutions: list[Institution]) -> Table:
     table.add_column("Index", justify="right", style="col.id", no_wrap=True)
     table.add_column("Name", style="col.name")
     table.add_column("Description", style="col.desc")
-    table.add_row("1", UNASSIGNED_INSTITUTION_LABEL, "")
-    for index, institution in enumerate(institutions, start=2):
+    table.add_row("0", UNASSIGNED_INSTITUTION_LABEL, "")
+    for index, institution in enumerate(institutions, start=1):
         table.add_row(
             str(index),
             institution.name,
@@ -61,23 +65,32 @@ def build_accounts_table(
     _title = f"{title_prefix} Accounts" if title_prefix else "Accounts"
     table = Table(title=_title)
     table.add_column("ID", justify="right", style="col.id", no_wrap=True)
+    if show_institution:
+        table.add_column("Institution", style="col.name")
     table.add_column("Name", style="col.name")
     table.add_column("Category", style="col.category")
     table.add_column("Side", style="col.side")
-    if show_institution:
-        table.add_column("Institution", style="col.name")
     for account in accounts:
         category = account.category
         category_name = category.name if category else "Unknown"
         side = category.side.value if category else "Unknown"
         row = [
             str(account.id),
-            account.name,
-            category_name,
-            side,
         ]
         if show_institution:
-            row.append(format_institution_name(account))
+            row.append(
+                format_institution_name(
+                    account,
+                    unassigned_label=UNASSIGNED_INSTITUTION_TABLE_LABEL,
+                )
+            )
+        row.extend(
+            [
+                account.name,
+                category_name,
+                side,
+            ]
+        )
         table.add_row(*row)
     return table
 

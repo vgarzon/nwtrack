@@ -89,12 +89,12 @@ class RichAccountCreationPresenter:
         """
         try:
             return NewAccountData(
+                institution_id=self._collect_institution_id(),
                 account_name=self._collect_account_name(),
                 description=self._collect_description(),
                 category_name=self._collect_category_name(),
                 currency_code=self._collect_currency_code(),
                 status=self._collect_status(),
-                institution_id=self._collect_institution_id(),
                 initial_month=self._collect_initial_month(),
                 initial_amount=self._collect_initial_balance(),
             )
@@ -168,15 +168,15 @@ class RichAccountCreationPresenter:
         choice = prompt_for_optional_institution_choice(
             self._console,
             len(institutions),
-            default=1,
+            default=0,
         )
-        if choice == 0:
+        if choice is None:
             raise KeyboardInterrupt("Quit while collecting institution.")
-        if choice == 1:
+        if choice == 0:
             self._selected_institution_name = "None"
             return None
 
-        institution = institutions[choice - 2]
+        institution = institutions[choice - 1]
         self._selected_institution_name = institution.name
         return institution.id
 
@@ -315,6 +315,9 @@ class RichAccountUpdatePresenter:
         )
 
         try:
+            new_institution_id = self._collect_institution_id(
+                default=current_account.institution_id
+            )
             new_name = self._collect_account_name(default=current_account.name)
             new_description = self._collect_description(
                 default=current_account.description
@@ -326,9 +329,6 @@ class RichAccountUpdatePresenter:
                 default=current_account.currency_code
             )
             new_status = self._collect_status(default=current_account.status)
-            new_institution_id = self._collect_institution_id(
-                default=current_account.institution_id
-            )
 
             # Create Account without id (init=False in ORM model)
             updated_account = Account(
@@ -488,15 +488,15 @@ class RichAccountUpdatePresenter:
             )
             return None
 
-        default_index = 1
+        default_index = 0
         if default is not None:
             default_index = next(
                 (
                     index
-                    for index, institution in enumerate(institutions, start=2)
+                    for index, institution in enumerate(institutions, start=1)
                     if institution.id == default
                 ),
-                1,
+                0,
             )
         self._console.print(build_indexed_institutions_table(institutions))
         choice = prompt_for_optional_institution_choice(
@@ -504,13 +504,13 @@ class RichAccountUpdatePresenter:
             len(institutions),
             default=default_index,
         )
-        if choice == 0:
+        if choice is None:
             raise KeyboardInterrupt("Quit while collecting institution.")
-        if choice == 1:
+        if choice == 0:
             self._selected_institution_name = "None"
             return None
 
-        institution = institutions[choice - 2]
+        institution = institutions[choice - 1]
         self._selected_institution_name = institution.name
         return institution.id
 
