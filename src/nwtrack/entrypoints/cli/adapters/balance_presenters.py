@@ -10,7 +10,9 @@ from rich.prompt import Confirm, IntPrompt, Prompt
 from nwtrack.domain.models import Account, Balance, NetWorth
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.ui.prompts import (
+    prompt_for_balance_amount,
     prompt_for_account_id,
+    prompt_for_month,
     prompt_to_confirm_action,
 )
 from nwtrack.entrypoints.cli.ui.renderers import (
@@ -218,14 +220,18 @@ class RichBalanceCreationPresenter:
 
     def collect_month(self) -> Month | None:
         """Collect month or allow cancellation."""
-        return None
+        return prompt_for_month(self._console)
 
     def collect_amount(self) -> int | None:
         """Collect amount or allow cancellation."""
-        return None
+        return prompt_for_balance_amount(self._console)
 
     def show_preview_and_confirm(self, account: Account, balance: Balance) -> bool:
-        """Preview is implemented in the next task group."""
+        """Preview the new balance entry before creation."""
+        self._console.print("\n[bold]Balance to create:[/bold]")
+        self._console.print(f"  Account: {account.name} (ID: {account.id})")
+        self._console.print(f"  Month: {balance.month}")
+        self._console.print(f"  Amount: {balance.amount:,}")
         return prompt_to_confirm_action(self._console, "Create this balance entry?")
 
     def show_duplicate_error(self, account: Account, month: Month) -> None:
@@ -247,8 +253,12 @@ class RichBalanceCreationPresenter:
         self._console.print(f"[error]{message}[/error]")
 
     def show_success(self, account: Account, balance: Balance) -> None:
-        """Success rendering is implemented in the next task group."""
+        """Display success message and created-balance preview."""
         self._console.print("[success]Balance created successfully.[/success]")
+        self._console.print("\n[bold]Created balance:[/bold]")
+        self._console.print(f"  Account: {account.name} (ID: {account.id})")
+        self._console.print(f"  Month: {balance.month}")
+        self._console.print(f"  Amount: {balance.amount:,}")
 
 
 class RichBalancesRollForwardPresenter(SelectableMonthMixin):
