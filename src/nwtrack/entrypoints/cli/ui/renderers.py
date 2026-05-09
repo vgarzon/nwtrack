@@ -5,8 +5,16 @@ Rich renderers for displaying entities in the terminal.
 from rich.console import Console
 from rich.table import Table
 
-from nwtrack.application.dto import MonthlyCategoryBalance
-from nwtrack.domain.models import Account, Balance, Category, Currency, NetWorth, Status
+from nwtrack.application.dto import InstitutionListItem, MonthlyCategoryBalance
+from nwtrack.domain.models import (
+    Account,
+    Balance,
+    Category,
+    Currency,
+    Institution,
+    NetWorth,
+    Status,
+)
 from nwtrack.domain.value_objects import Month
 
 
@@ -72,6 +80,24 @@ def build_categories_table(categories: list[Category]) -> Table:
     return table
 
 
+def build_institutions_table(institutions: list[InstitutionListItem]) -> Table:
+    """Build a Rich table of institutions with usage counts."""
+    table = Table(title="Institutions")
+    table.add_column("ID", justify="right", style="col.id", no_wrap=True)
+    table.add_column("Name", style="col.name")
+    table.add_column("Description", style="col.desc")
+    table.add_column("Accounts", justify="right", style="col.count")
+    for item in institutions:
+        institution = item.institution
+        table.add_row(
+            str(institution.id),
+            institution.name,
+            institution.description or "",
+            str(item.account_count),
+        )
+    return table
+
+
 def build_indexed_categories_table(categories: list[Category]) -> Table:
     """Build a Rich Table of categories with index.
 
@@ -92,6 +118,20 @@ def build_indexed_categories_table(categories: list[Category]) -> Table:
             category.side.value,
         )
     return table
+
+
+def render_institution_data(
+    console: Console, institution: Institution, account_count: int | None = None
+) -> None:
+    """Render institution details and optional linked-account count."""
+    text = (
+        f"[label]Institution ID:[/label] {institution.id}\n"
+        f"[label]Institution name:[/label] {institution.name}\n"
+        f"[label]Description:[/label] {institution.description or ''}"
+    )
+    if account_count is not None:
+        text += f"\n[label]Linked accounts:[/label] {account_count}"
+    console.print(text)
 
 
 def build_balance_counts_table(balance_counts: list[tuple[Month, int]]) -> Table:

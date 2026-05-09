@@ -4,7 +4,7 @@ Data transfer objects (DTOs).
 
 from dataclasses import dataclass
 
-from nwtrack.domain.models import Category, Status
+from nwtrack.domain.models import Category, Institution, Status
 from nwtrack.domain.value_objects import Month
 
 
@@ -28,6 +28,14 @@ class NewAccountData:
     status: Status
     initial_month: Month
     initial_amount: int
+
+
+@dataclass(frozen=True)
+class InstitutionListItem:
+    """Institution row for CLI administration views."""
+
+    institution: Institution
+    account_count: int
 
 
 @dataclass(frozen=True)
