@@ -1,4 +1,8 @@
-# nwtrack — Product Requirements Specification
+# nwtrack — Stakeholder input
+
+This document collects input from stakeholders and is intended to inform the product specification and design. It is not a formal specification itself, but rather a synthesis of stakeholder needs, goals, and constraints.
+
+Project constitution files in the `specs/` directory are the source of truth for the official product specification. If there are discrepancies between this document and the constitution specs, the constitution specs take precedence.
 
 ## Overview
 
