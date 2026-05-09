@@ -156,6 +156,18 @@ class InstitutionsRepository(Repository[Institution], Protocol):
         """Get institution by name."""
         ...
 
+    def update(self, institution: Institution) -> int:
+        """Update institution."""
+        ...
+
+    def delete_by_id(self, institution_id: int) -> int:
+        """Delete institution by ID."""
+        ...
+
+    def count_linked_accounts(self, institution_id: int) -> int:
+        """Count accounts linked to an institution."""
+        ...
+
 
 class BalancesRepository(Repository[Balance], Protocol):
     """Protocol for balance repository operations."""

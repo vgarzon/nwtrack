@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from nwtrack.application.ports.repos import (
     InstitutionsRepository as InstitutionsRepositoryProtocol,
 )
-from nwtrack.infra.persistence.orm.models import Institution
+from nwtrack.infra.persistence.orm.models import Account, Institution
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +71,38 @@ class InstitutionsRepository(InstitutionsRepositoryProtocol):
         """Delete all institution records."""
         result = self._session.execute(delete(Institution))
         logger.info("Deleted %d institution records.", result.rowcount)  # type: ignore[attr-defined]
+
+    def update(self, data: Institution) -> int:
+        """Update institution record."""
+        merged = self._session.merge(data)
+        self._session.flush()
+        logger.info("Updated institution with ID %d.", merged.id)
+        return 1
+
+    def delete_by_id(self, institution_id: int) -> int:
+        """Delete institution by ID."""
+        result = self._session.execute(
+            delete(Institution).where(Institution.id == institution_id)
+        )
+        rowcount = result.rowcount or 0  # type: ignore[attr-defined]
+        if rowcount != 1:
+            logger.warning(
+                "Expected to delete 1 institution with ID %s, but deleted %s.",
+                institution_id,
+                rowcount,
+            )
+        else:
+            logger.info("Deleted institution with ID %d.", institution_id)
+        return rowcount
+
+    def count_linked_accounts(self, institution_id: int) -> int:
+        """Count the number of accounts linked to an institution."""
+        result = self._session.execute(
+            select(func.count())
+            .select_from(Account)
+            .where(Account.institution_id == institution_id)
+        ).scalar()
+        return result or 0
 
     def hydrate(self, record: Mapping[str, Any]) -> Institution:
         """Hydrate record to Institution entity."""
