@@ -24,7 +24,7 @@ The roadmap should optimize for:
 
 ## Planned Phases
 
-### [ ] Phase 9: Spec And Domain Shape Alignment
+### [X] Phase 9: Spec And Domain Shape Alignment
 
 Goal:
 Define the feature specs and align shared terminology around institutions, tags, and generalized balance aggregation.
@@ -35,7 +35,7 @@ Expected outcomes:
 - Shared terminology is standardized around account attributes and aggregation dimensions
 - Compatibility expectations for existing reporting commands are written down before implementation
 
-### [ ] Phase 10: Institution Schema Foundation
+### [X] Phase 10: Institution Schema Foundation
 
 Goal:
 Add first-class institution persistence without forcing immediate account reassignment.
