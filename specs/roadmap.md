@@ -58,7 +58,7 @@ Expected outcomes:
 - Validation prevents ambiguous or unsafe institution operations
 - Presenter and prompt flows match existing account/category administration patterns
 
-### [ ] Phase 12: Account Workflows With Optional Institution
+### [X] Phase 12: Account Workflows With Optional Institution
 
 Goal:
 Thread institution support through account creation, editing, listing, and fetch flows.

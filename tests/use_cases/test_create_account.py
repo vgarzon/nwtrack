@@ -9,6 +9,7 @@ from rich.console import Console
 from tests.helpers import init_db_tables_w_entities
 
 import nwtrack.entrypoints.cli.adapters.account_presenters
+from nwtrack.application.dto import OperationResult
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.application.use_cases.create_account import AccountCreator
@@ -132,7 +133,8 @@ def test_account_creator_run_success_defaults(
     assert account_id == 5
     assert balance_id > 0
 
-    with configured_container.resolve(UnitOfWork) as uow:
+    uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow_manager as uow:
         created_account = uow.accounts.get_by_id(account_id)
     assert created_account is not None
     assert created_account.institution_id is None
@@ -159,7 +161,8 @@ def test_account_creator_run_success_with_selected_institution(
 ) -> None:
     init_db_tables_w_entities(configured_container, sample_entities)
 
-    with configured_container.resolve(UnitOfWork) as uow:
+    uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow_manager as uow:
         institution_id = uow.institutions.insert(
             Institution(name="Chase", description="Primary bank")
         )
@@ -210,13 +213,16 @@ def test_account_creator_run_success_with_selected_institution(
         lambda *args, **kwargs: True,
     )
 
-    result = configured_container.resolve(AccountCreator).run()
+    result: OperationResult[tuple[int, int]] = configured_container.resolve(
+        AccountCreator
+    ).run()
 
     assert result.success
     assert result.data is not None
     account_id, _ = result.data
 
-    with configured_container.resolve(UnitOfWork) as uow:
+    refresh_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with refresh_uow as uow:
         created_account = uow.accounts.get_by_id(account_id)
     assert created_account is not None
     assert created_account.institution_id == institution_id
