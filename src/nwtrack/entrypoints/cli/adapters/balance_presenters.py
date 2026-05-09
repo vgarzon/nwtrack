@@ -220,11 +220,35 @@ class RichBalanceCreationPresenter:
 
     def collect_month(self) -> Month | None:
         """Collect month or allow cancellation."""
-        return prompt_for_month(self._console)
+        while True:
+            response = self._prompt.ask(
+                "Enter [bold]month[/bold] as 'YYYY-MM' or 'q' to quit"
+            ).strip()
+            if response.lower() == "q":
+                return None
+            try:
+                return Month.parse(response)
+            except ValueError:
+                self._console.print(
+                    "[validation]Invalid month format.[/validation] "
+                    "Please use YYYY-MM or 'q' to quit."
+                )
 
     def collect_amount(self) -> int | None:
         """Collect amount or allow cancellation."""
-        return prompt_for_balance_amount(self._console)
+        while True:
+            response = self._prompt.ask(
+                "Enter [bold]balance amount[/bold] (integer) or 'q' to quit"
+            ).strip()
+            if response.lower() == "q":
+                return None
+            try:
+                return int(response)
+            except ValueError:
+                self._console.print(
+                    "[validation]Invalid amount.[/validation] "
+                    "Please enter an integer or 'q' to quit."
+                )
 
     def show_preview_and_confirm(self, account: Account, balance: Balance) -> bool:
         """Preview the new balance entry before creation."""

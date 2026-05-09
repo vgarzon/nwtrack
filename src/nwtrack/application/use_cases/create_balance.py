@@ -50,6 +50,15 @@ class BalanceCreator:
             self._presenter.show_cancellation()
             return OperationResult(success=False, error_message="Cancelled by user")
 
+        if self._balance_exists(account.id, month):
+            logger.warning(
+                "Balance creation rejected for duplicate account_id=%s month=%s.",
+                account.id,
+                month,
+            )
+            self._presenter.show_duplicate_error(account, month)
+            return OperationResult(success=False, error_message="Duplicate balance")
+
         amount = self._presenter.collect_amount()
         if amount is None:
             logger.warning("Balance creation cancelled at amount entry.")
@@ -93,6 +102,14 @@ class BalanceCreator:
                 uow.rollback()
                 return None
         return balance_id
+
+    def _balance_exists(self, account_id: int, month) -> bool:
+        """Check whether a balance already exists for the account and month."""
+        try:
+            self._fetcher.get_balance_for_account_id(month, account_id)
+        except (IndexError, ValueError):
+            return False
+        return True
 
 
 def main() -> int:
