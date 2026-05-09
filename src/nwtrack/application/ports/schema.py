@@ -16,3 +16,7 @@ class SchemaManager(Protocol):
     def create_all_tables(self) -> None:
         """Create all tables from ORM definitions."""
         ...
+
+    def ensure_current_schema(self) -> None:
+        """Bring an existing database up to the current supported schema."""
+        ...
