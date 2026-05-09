@@ -8,10 +8,12 @@ import pytest
 from tests.helpers import init_db_tables_w_entities
 
 import nwtrack.application.use_cases.export_tables_csv
+from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.use_cases.export_tables_csv import (
     ExportTablesCSVInteractive,
 )
 from nwtrack.bootstrap.container import Container, Lifetime
+from nwtrack.domain.models import Account, Institution, Status
 
 
 @pytest.fixture
@@ -97,6 +99,7 @@ def test_export_tables_interactive(
         "exchange_rates",
     ]:
         assert (tmp_path / f"{table_name}.csv").exists()
+    assert not (tmp_path / "institutions.csv").exists()
 
     currencies_expected = """
         code,description
@@ -139,3 +142,40 @@ def test_export_tables_interactive(
         balances_csv = f.readlines()
     assert "id,account_id,month,amount\n" == balances_csv[0]
     assert "10,2,2024-08,2100\n" in balances_csv[:11]
+
+
+def test_export_accounts_csv_keeps_phase10_compatibility(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    tmp_path,
+) -> None:
+    """Account CSV output should not expose institution fields in Phase 10."""
+    from nwtrack.application.use_cases.export_tables_csv import ExportCSV
+
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow:
+        institution_id = uow.institutions.insert(
+            Institution(name="Chase", description="Primary bank")
+        )
+        uow.accounts.insert(
+            Account(
+                name="phase10_export_account",
+                description="Export compatibility check",
+                category_name="checking",
+                institution_id=institution_id,
+                currency_code="USD",
+                status=Status.ACTIVE,
+            )
+        )
+
+    exporter: ExportCSV = configured_container.resolve(ExportCSV)
+    exporter.export_tables_to_dir(tmp_path)
+
+    with open(tmp_path / "accounts.csv", encoding="utf-8") as f:
+        accounts_csv = f.read().splitlines()
+
+    assert accounts_csv[0] == "id,name,description,category,currency,status"
+    assert "institution_id" not in accounts_csv[0]
+    assert any("phase10_export_account" in line for line in accounts_csv[1:])
