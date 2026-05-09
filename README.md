@@ -63,3 +63,9 @@ just check          # Run linting, type checking, and tests
 just test           # Run tests
 ```
 
+## Development Workflow
+
+- Create feature branches from `devel`.
+- Open and merge feature pull requests into `devel`.
+- Promote validated changes from `devel` to `main` with separate pull requests.
+- Do not target feature pull requests directly at `main`.
