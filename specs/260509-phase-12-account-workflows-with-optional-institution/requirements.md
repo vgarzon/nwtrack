@@ -37,6 +37,7 @@ CLI expectations for this phase:
 - The workflows remain interactive and presenter-driven.
 - Institution selection follows the same indexed-choice pattern already used for categories and currencies.
 - The institution field is optional and must always provide an explicit no-institution path.
+- Institution selection is the first data element collected during account create and account update.
 - Existing accounts without an institution remain fully valid.
 
 ### Institution Selection Behavior
@@ -47,7 +48,8 @@ Required behavior:
 
 - Create and update show a readable indexed institutions table when institutions exist.
 - The prompt includes an explicit `None` / no-institution choice.
-- The indexed chooser uses `0` to quit and `1` to select `None`.
+- The indexed chooser uses `0` to select `None` and `q` to quit.
+- Institution rows use their displayed index values directly, starting at `1`.
 - Update uses the current institution as the default when one is assigned.
 - Update uses the no-institution option as the default when no institution is assigned.
 - If no institutions exist, create and update continue without failure and make it clear that no institution is available.
@@ -73,7 +75,7 @@ This phase uses the existing account shape and extends account workflow input/ou
 #### Create
 
 - `accounts create` continues to show existing accounts before collecting input.
-- The workflow collects institution selection after the existing classification inputs and before confirmation.
+- The workflow collects institution selection before all other account fields.
 - The user may choose an institution or explicitly choose no institution.
 - If no institutions exist, the workflow informs the user and continues with no institution assigned.
 - The create preview must show institution consistently, including the unassigned case.
@@ -83,7 +85,7 @@ This phase uses the existing account shape and extends account workflow input/ou
 
 - `accounts update` continues to show accounts and select the target account by account ID.
 - The workflow must allow the user to keep the current institution, change it to another institution, or clear it.
-- The institution selection step follows the same indexed-choice pattern as create.
+- The institution selection step is the first editable field and follows the same indexed-choice pattern as create.
 - If no institutions exist, the workflow must still allow the account to remain unassigned.
 - The update preview must show institution consistently, including the unassigned case.
 - The stored account must preserve the chosen `institution_id` or `None`.
@@ -91,8 +93,9 @@ This phase uses the existing account shape and extends account workflow input/ou
 #### List
 
 - `accounts list` surfaces institution in the account table.
+- The `Institution` column appears immediately after `ID`.
 - The institution display must be consistent for assigned and unassigned accounts.
-- This phase uses `None` as the display label for an unassigned institution.
+- Unassigned institutions display as blank cells in account tables.
 - Existing list behavior remains unchanged otherwise, including support for active-only filtering.
 
 ## Decisions
@@ -102,6 +105,7 @@ This phase uses the existing account shape and extends account workflow input/ou
 - Phase 12 is limited to account create, update, and list workflows.
 - Institution selection in account workflows uses indexed selection, not institution ID entry.
 - Account workflows must include an explicit no-institution option.
+- Account workflows collect institution before the other editable account fields.
 - Fetch-service expansion stays minimal and only supports this phase's account workflows.
 - Existing accounts without an institution remain valid and usable throughout this phase.
 - Institution display is added to account list and account create/update previews in this phase.

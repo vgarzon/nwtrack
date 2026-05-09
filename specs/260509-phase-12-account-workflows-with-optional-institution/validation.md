@@ -21,8 +21,11 @@ Specific assertions for this phase:
 - The spec directory `specs/260509-phase-12-account-workflows-with-optional-institution/` exists with `requirements.md`, `plan.md`, and `validation.md`.
 - The requirements document defines `accounts create`, `accounts update`, and `accounts list` as the Phase 12 workflow surface.
 - The requirements document states that institution selection uses indexed choice with an explicit no-institution option.
+- The requirements document states that institution selection is collected first in create and update.
+- The requirements document states that `0` selects no institution and `q` quits the institution selector.
 - The requirements document states that create and update continue to work when no institutions exist.
 - The requirements document states that account list output surfaces institution in this phase.
+- The requirements document states that account tables place institution immediately after `ID` and render unassigned institutions as blank.
 - The requirements document states that fetch-service changes remain minimal and phase-scoped.
 - The requirements document states that reporting, CSV, and institution-required behavior remain deferred.
 
@@ -33,19 +36,20 @@ Feature-specific implementation tests required by this phase:
 - A use-case or workflow test proves account update can add an institution to an unassigned account.
 - A use-case or workflow test proves account update can change an assigned institution.
 - A use-case or workflow test proves account update can clear an assigned institution.
-- A workflow or presenter test proves create and update institution selection uses an indexed choice with an explicit no-institution option.
+- A workflow or presenter test proves create and update collect institution selection before the other editable account fields.
+- A workflow or presenter test proves the institution selector uses direct indexes, with `0` for no institution and `q` for quit.
 - A workflow test proves account create still works when no institutions exist.
 - A workflow test proves account update still works when no institutions exist.
-- A presenter, CLI, or renderer test proves account list output includes institution for assigned and unassigned accounts.
+- A presenter, CLI, or renderer test proves account list output places institution after `ID` and renders unassigned institutions as blank.
 - A fetch-service or equivalent read-layer test proves the new institution read support is limited to what account workflows need.
 
 ## Manual
 
-1. Run `nwtrack accounts create` and confirm the workflow allows selecting an institution or explicitly choosing no institution.
+1. Run `nwtrack accounts create` and confirm institution selection is the first field, allows selecting an institution, and allows explicitly choosing no institution.
 2. Confirm `accounts create` still works cleanly when there are no institutions in the database.
-3. Run `nwtrack accounts update` and confirm the workflow allows keeping, changing, or clearing institution assignment.
+3. Run `nwtrack accounts update` and confirm institution selection is the first editable field and allows keeping, changing, or clearing institution assignment.
 4. Confirm `accounts update` still works cleanly when there are no institutions in the database.
-5. Run `nwtrack accounts list` and confirm the table includes institution information for mixed assigned and unassigned accounts.
+5. Run `nwtrack accounts list` and confirm the table places institution immediately after `ID` and shows blank cells for unassigned institutions.
 6. Confirm account create/update previews show institution consistently before confirmation.
 7. Confirm existing active-only account listing behavior remains unchanged apart from the new institution column.
 8. Confirm balance, report, and export workflows remain unchanged in this phase.
