@@ -28,6 +28,22 @@ def format_institution_name(account: Account) -> str:
     return UNASSIGNED_INSTITUTION_LABEL
 
 
+def build_indexed_institutions_table(institutions: list[Institution]) -> Table:
+    """Build an indexed institution-selection table with a None option."""
+    table = Table(title="Institutions")
+    table.add_column("Index", justify="right", style="col.id", no_wrap=True)
+    table.add_column("Name", style="col.name")
+    table.add_column("Description", style="col.desc")
+    table.add_row("1", UNASSIGNED_INSTITUTION_LABEL, "")
+    for index, institution in enumerate(institutions, start=2):
+        table.add_row(
+            str(index),
+            institution.name,
+            institution.description or "",
+        )
+    return table
+
+
 def build_accounts_table(
     accounts: list[Account],
     title_prefix: str = "",
@@ -60,14 +76,19 @@ def build_accounts_table(
     return table
 
 
-def render_account_data(console: Console, account: Account) -> None:
+def render_account_data(
+    console: Console,
+    account: Account,
+    institution_name: str | None = None,
+) -> None:
     console.print(
         f"[label]Account ID:[/label] {account.id}\n"
         f"[label]Account name:[/label] {account.name}\n"
         f"[label]Description:[/label] {account.description}\n"
         f"[label]Currency:[/label] {account.currency_code}\n"
         f"[label]Category:[/label] {account.category_name}\n"
-        f"[label]Institution:[/label] {format_institution_name(account)}\n"
+        f"[label]Institution:[/label] "
+        f"{institution_name or format_institution_name(account)}\n"
         f"[label]Status:[/label] {account.status}"
     )
 
@@ -306,7 +327,10 @@ def build_status_table(status_options: list[Status]) -> Table:
 
 
 def render_new_account_info(
-    console: Console, account: Account, balance: Balance
+    console: Console,
+    account: Account,
+    balance: Balance,
+    institution_name: str | None = None,
 ) -> None:
     """Render information about a newly created account.
 
@@ -321,7 +345,8 @@ def render_new_account_info(
         f"[label]Description:[/label] {account.description}\n"
         f"[label]Currency:[/label] {account.currency_code}\n"
         f"[label]Category:[/label] {account.category_name}\n"
-        f"[label]Institution:[/label] {format_institution_name(account)}\n"
+        f"[label]Institution:[/label] "
+        f"{institution_name or format_institution_name(account)}\n"
         f"[label]Status:[/label] {account.status.value}\n"
         f"[label]Initial month:[/label] {balance.month}\n"
         f"[label]Initial balance:[/label] {balance.amount}\n"

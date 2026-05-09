@@ -8,9 +8,12 @@ import pytest
 from rich.console import Console
 from tests.helpers import init_db_tables_w_entities
 
+from nwtrack.application.dto import OperationResult
+from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.application.use_cases.update_account_info import UpdateAccountInfo
 from nwtrack.bootstrap.container import Container
+from nwtrack.domain.models import Institution
 from nwtrack.entrypoints.cli.adapters.account_presenters import (
     RichAccountUpdatePresenter,
 )
@@ -65,63 +68,55 @@ def configured_container(base_container: Container) -> Container:
     )
 
 
-def test_account_creator_run_success_defaults(
-    configured_container: Container,
-    sample_entities: dict[str, list],
+def _patch_update_prompts(
     monkeypatch,
+    *,
+    prompt_values: list[str],
+    int_values: list[int],
+    confirm_values: list[bool],
 ) -> None:
-    # TODO: Use common fixture to init DB with entities
-    input_prompt = iter(
-        [
-            "bank_1_savings",  # Account name
-            "Savings account at bank 1",  # Account description
-        ]
-    )
-    input_int_prompt = iter(
-        [
-            "1",  # Account ID
-            "2",  # Account type: Savings
-            "2",  # Currency: CHF
-            "2",  # Status: Inactive
-        ]
-    )
-    input_confirm_prompt = iter(
-        [
-            True,  # Proceed with update y/n
-        ]
-    )
+    """Patch Rich prompt classes for account update workflow tests."""
+    input_prompt = iter(prompt_values)
+    input_int_prompt = iter(int_values)
+    input_confirm_prompt = iter(confirm_values)
 
     def mock_prompt(*args, **kwargs):
         return next(input_prompt)
 
     def mock_int_prompt(*args, **kwargs):
-        return int(next(input_int_prompt))
+        return next(input_int_prompt)
 
     def mock_confirm_prompt(*args, **kwargs):
         return next(input_confirm_prompt)
 
-    init_db_tables_w_entities(configured_container, sample_entities)
-
-    # Patch the prompt methods on the presenter classes
     from rich.prompt import Confirm, IntPrompt, Prompt
 
-    monkeypatch.setattr(
-        Prompt,
-        "ask",
-        mock_prompt,
-    )
-    monkeypatch.setattr(
-        IntPrompt,
-        "ask",
-        mock_int_prompt,
-    )
-    monkeypatch.setattr(
-        Confirm,
-        "ask",
-        mock_confirm_prompt,
+    monkeypatch.setattr(Prompt, "ask", mock_prompt)
+    monkeypatch.setattr(IntPrompt, "ask", mock_int_prompt)
+    monkeypatch.setattr(Confirm, "ask", mock_confirm_prompt)
+
+
+def test_account_updater_run_success_with_no_institutions(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    _patch_update_prompts(
+        monkeypatch,
+        prompt_values=[
+            "bank_1_savings",
+            "Savings account at bank 1",
+        ],
+        int_values=[
+            1,
+            2,
+            2,
+            2,
+        ],
+        confirm_values=[True],
     )
 
-    from nwtrack.application.dto import OperationResult
+    init_db_tables_w_entities(configured_container, sample_entities)
 
     result: OperationResult[None] = configured_container.resolve(
         UpdateAccountInfo
@@ -129,15 +124,163 @@ def test_account_creator_run_success_defaults(
 
     assert result.success
 
-    # Check console output
+    with configured_container.resolve(UnitOfWork) as uow:
+        updated_account = uow.accounts.get_by_id(1)
+    assert updated_account is not None
+    assert updated_account.institution_id is None
+
     console: Console = configured_container.resolve(Console)
     captured_output = console.export_text()
 
-    # TODO: Enable assertions through direct database queries
     assert re.search(r"Account ID: 1", captured_output)
     assert re.search(r"Account name: bank_1_savings", captured_output)
     assert re.search(r"Savings account at bank 1", captured_output)
     assert re.search(r"Currency: CHF", captured_output)
     assert re.search(r"Category: savings", captured_output)
     assert re.search(r"Status: inactive", captured_output)
+    assert re.search(r"Institution: None", captured_output)
     assert re.search(r"Account updated successfully", captured_output)
+    assert re.search(
+        r"No institutions available\. Continuing with no institution assigned\.",
+        captured_output,
+    )
+
+
+def test_account_updater_can_add_institution(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    with configured_container.resolve(UnitOfWork) as uow:
+        institution_id = uow.institutions.insert(
+            Institution(name="Chase", description="Primary bank")
+        )
+
+    _patch_update_prompts(
+        monkeypatch,
+        prompt_values=[
+            "bank_1_checking",
+            "bank_1 checking",
+        ],
+        int_values=[
+            1,
+            1,
+            1,
+            1,
+            2,
+        ],
+        confirm_values=[True],
+    )
+
+    result: OperationResult[None] = configured_container.resolve(
+        UpdateAccountInfo
+    ).run()
+
+    assert result.success
+
+    with configured_container.resolve(UnitOfWork) as uow:
+        updated_account = uow.accounts.get_by_id(1)
+    assert updated_account is not None
+    assert updated_account.institution_id == institution_id
+
+    captured_output = configured_container.resolve(Console).export_text()
+    assert re.search(r"Institution: Chase", captured_output)
+
+
+def test_account_updater_can_change_institution(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    with configured_container.resolve(UnitOfWork) as uow:
+        chase_id = uow.institutions.insert(
+            Institution(name="Chase", description="Primary bank")
+        )
+        fidelity_id = uow.institutions.insert(
+            Institution(name="Fidelity", description="Brokerage")
+        )
+        account = uow.accounts.get_by_id(1)
+        assert account is not None
+        account.institution_id = chase_id
+        uow.accounts.update(account)
+
+    _patch_update_prompts(
+        monkeypatch,
+        prompt_values=[
+            "bank_1_checking",
+            "bank_1 checking",
+        ],
+        int_values=[
+            1,
+            1,
+            1,
+            1,
+            3,
+        ],
+        confirm_values=[True],
+    )
+
+    result: OperationResult[None] = configured_container.resolve(
+        UpdateAccountInfo
+    ).run()
+
+    assert result.success
+
+    with configured_container.resolve(UnitOfWork) as uow:
+        updated_account = uow.accounts.get_by_id(1)
+    assert updated_account is not None
+    assert updated_account.institution_id == fidelity_id
+
+    captured_output = configured_container.resolve(Console).export_text()
+    assert re.search(r"Institution: Fidelity", captured_output)
+
+
+def test_account_updater_can_clear_institution(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    with configured_container.resolve(UnitOfWork) as uow:
+        chase_id = uow.institutions.insert(
+            Institution(name="Chase", description="Primary bank")
+        )
+        account = uow.accounts.get_by_id(1)
+        assert account is not None
+        account.institution_id = chase_id
+        uow.accounts.update(account)
+
+    _patch_update_prompts(
+        monkeypatch,
+        prompt_values=[
+            "bank_1_checking",
+            "bank_1 checking",
+        ],
+        int_values=[
+            1,
+            1,
+            1,
+            1,
+            1,
+        ],
+        confirm_values=[True],
+    )
+
+    result: OperationResult[None] = configured_container.resolve(
+        UpdateAccountInfo
+    ).run()
+
+    assert result.success
+
+    with configured_container.resolve(UnitOfWork) as uow:
+        updated_account = uow.accounts.get_by_id(1)
+    assert updated_account is not None
+    assert updated_account.institution_id is None
+
+    captured_output = configured_container.resolve(Console).export_text()
+    assert re.search(r"Institution: None", captured_output)

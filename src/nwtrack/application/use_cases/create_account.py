@@ -107,6 +107,7 @@ class AccountCreator:
                 description=data.description,
                 category_name=data.category_name,
                 currency_code=data.currency_code,
+                institution_id=data.institution_id,
                 status=data.status,
             )
             try:
@@ -157,6 +158,8 @@ class AccountCreator:
             return False, "Account currency mismatch."
         if account.status != data.status:
             return False, "Account status mismatch."
+        if account.institution_id != data.institution_id:
+            return False, "Account institution mismatch."
         if balance is None:
             return False, "Balance not found."
         if balance.account_id != account_id:
