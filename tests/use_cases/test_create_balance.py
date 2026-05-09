@@ -132,3 +132,82 @@ def test_balance_creator_exits_when_no_active_accounts(
 
     output = configured_container.resolve(Console).export_text()
     assert re.search(r"No active accounts available for balance creation", output)
+
+
+def test_balance_creator_rejects_duplicate_and_points_to_update(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Duplicate create should be rejected without overwriting the existing row."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    monkeypatch.setattr(
+        RichBalanceCreationPresenter,
+        "select_account",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        RichBalanceCreationPresenter,
+        "collect_month",
+        lambda *args, **kwargs: Month(2025, 11),
+    )
+    monkeypatch.setattr(
+        RichBalanceCreationPresenter,
+        "collect_amount",
+        lambda *args, **kwargs: pytest.fail(
+            "Amount entry should not be reached for a duplicate account/month."
+        ),
+    )
+
+    result = configured_container.resolve(BalanceCreator).run()
+
+    assert not result.success
+    assert result.error_message == "Duplicate balance"
+
+    uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow_manager as uow:
+        existing_balance = uow.balances.get_by_account_id(Month(2025, 11), 1)
+    assert existing_balance.amount == 200
+
+    output = configured_container.resolve(Console).export_text()
+    assert re.search(r"Balance already exists for account 1 in 2025-11", output)
+    assert re.search(r"balances update", output)
+
+
+def test_balance_creator_cancels_before_confirmation_without_insert(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Cancellation before confirmation should leave the database unchanged."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    monkeypatch.setattr(
+        RichBalanceCreationPresenter,
+        "select_account",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        RichBalanceCreationPresenter,
+        "collect_month",
+        lambda *args, **kwargs: Month(2025, 12),
+    )
+    monkeypatch.setattr(
+        RichBalanceCreationPresenter,
+        "collect_amount",
+        lambda *args, **kwargs: None,
+    )
+
+    result = configured_container.resolve(BalanceCreator).run()
+
+    assert not result.success
+    assert result.error_message == "Cancelled by user"
+
+    uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow_manager as uow:
+        existing_balances = uow.balances.get_all_by_account_id(1)
+    assert all(str(balance.month) != "2025-12" for balance in existing_balances)
+
+    output = configured_container.resolve(Console).export_text()
+    assert re.search(r"Balance creation cancelled", output)
