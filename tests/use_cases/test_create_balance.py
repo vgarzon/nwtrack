@@ -6,6 +6,7 @@ import pytest
 from rich.console import Console
 from tests.helpers import init_db_tables_w_entities
 
+from nwtrack.application.dto import OperationResult
 from nwtrack.application.ports.presentation import BalanceCreationPresenter
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.data_loader import InitDataService
@@ -95,7 +96,9 @@ def test_balance_creator_creates_missing_balance(
         lambda *args, **kwargs: True,
     )
 
-    result = configured_container.resolve(BalanceCreator).run()
+    result: OperationResult[tuple[int, int]] = configured_container.resolve(
+        BalanceCreator
+    ).run()
 
     assert result.success
     assert result.data is not None
@@ -105,7 +108,7 @@ def test_balance_creator_creates_missing_balance(
         created_balance = uow.balances.get_by_account_id(Month(2025, 12), 1)
     assert created_balance.amount == 350
 
-    output = configured_container.resolve(Console).export_text()
+    output: str = configured_container.resolve(Console).export_text()
     assert re.search(r"Active Accounts", output)
     assert re.search(r"Balance created successfully", output)
     assert re.search(r"Created balance:", output)
@@ -125,12 +128,14 @@ def test_balance_creator_exits_when_no_active_accounts(
             account.status = Status.INACTIVE
             uow.accounts.update(account)
 
-    result = configured_container.resolve(BalanceCreator).run()
+    result: OperationResult[tuple[int, int]] = configured_container.resolve(
+        BalanceCreator
+    ).run()
 
     assert not result.success
     assert result.error_message == "No active accounts."
 
-    output = configured_container.resolve(Console).export_text()
+    output: str = configured_container.resolve(Console).export_text()
     assert re.search(r"No active accounts available for balance creation", output)
 
 
@@ -160,7 +165,9 @@ def test_balance_creator_rejects_duplicate_and_points_to_update(
         ),
     )
 
-    result = configured_container.resolve(BalanceCreator).run()
+    result: OperationResult[tuple[int, int]] = configured_container.resolve(
+        BalanceCreator
+    ).run()
 
     assert not result.success
     assert result.error_message == "Duplicate balance"
@@ -170,7 +177,7 @@ def test_balance_creator_rejects_duplicate_and_points_to_update(
         existing_balance = uow.balances.get_by_account_id(Month(2025, 11), 1)
     assert existing_balance.amount == 200
 
-    output = configured_container.resolve(Console).export_text()
+    output: str = configured_container.resolve(Console).export_text()
     assert re.search(r"Balance already exists for account 1 in 2025-11", output)
     assert re.search(r"balances update", output)
 
@@ -199,7 +206,9 @@ def test_balance_creator_cancels_before_confirmation_without_insert(
         lambda *args, **kwargs: None,
     )
 
-    result = configured_container.resolve(BalanceCreator).run()
+    result: OperationResult[tuple[int, int]] = configured_container.resolve(
+        BalanceCreator
+    ).run()
 
     assert not result.success
     assert result.error_message == "Cancelled by user"
@@ -209,5 +218,5 @@ def test_balance_creator_cancels_before_confirmation_without_insert(
         existing_balances = uow.balances.get_all_by_account_id(1)
     assert all(str(balance.month) != "2025-12" for balance in existing_balances)
 
-    output = configured_container.resolve(Console).export_text()
+    output: str = configured_container.resolve(Console).export_text()
     assert re.search(r"Balance creation cancelled", output)
