@@ -50,7 +50,7 @@ class RichAccountListPresenter:
             active_only: Whether only active accounts are shown
         """
         title_prefix = "Active" if active_only else "All"
-        table = build_accounts_table(accounts, title_prefix)
+        table = build_accounts_table(accounts, title_prefix, show_institution=True)
         self._console.print(table)
 
 
@@ -78,7 +78,7 @@ class RichAccountCreationPresenter:
             active_only: Whether only active accounts are shown
         """
         title_prefix = "Active" if active_only else "All"
-        table = build_accounts_table(accounts, title_prefix)
+        table = build_accounts_table(accounts, title_prefix, show_institution=True)
         self._console.print(table)
 
     def collect_account_data(self) -> NewAccountData | None:
@@ -266,7 +266,7 @@ class RichAccountUpdatePresenter:
             active_only: Whether only active accounts are shown
         """
         title_prefix = "Active" if active_only else "All"
-        table = build_accounts_table(accounts, title_prefix)
+        table = build_accounts_table(accounts, title_prefix, show_institution=True)
         self._console.print(table)
 
     def select_account(self) -> int | None:
