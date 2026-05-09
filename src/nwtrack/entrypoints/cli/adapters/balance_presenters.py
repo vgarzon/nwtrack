@@ -10,9 +10,7 @@ from rich.prompt import Confirm, IntPrompt, Prompt
 from nwtrack.domain.models import Account, Balance, NetWorth
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.ui.prompts import (
-    prompt_for_balance_amount,
     prompt_for_account_id,
-    prompt_for_month,
     prompt_to_confirm_action,
 )
 from nwtrack.entrypoints.cli.ui.renderers import (

@@ -7,7 +7,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Command And Presenter Surface
 - [X] Create Workflow Integration
 - [X] Duplicate And Cancellation Handling
-- [ ] Validation
+- [X] Validation
 
 ## Automated
 
