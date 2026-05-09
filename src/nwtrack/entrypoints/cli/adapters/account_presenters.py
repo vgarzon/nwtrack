@@ -17,6 +17,7 @@ from nwtrack.entrypoints.cli.ui.prompts import (
     prompt_for_category_choice,
     prompt_for_currency_choice,
     prompt_for_month,
+    prompt_for_optional_institution_choice,
     prompt_for_status_choice,
     prompt_to_confirm_action,
 )
@@ -24,6 +25,7 @@ from nwtrack.entrypoints.cli.ui.renderers import (
     build_accounts_table,
     build_currencies_table,
     build_indexed_categories_table,
+    build_indexed_institutions_table,
     build_status_table,
     render_account_data,
     render_new_account_info,
@@ -58,6 +60,7 @@ class RichAccountCreationPresenter:
     def __init__(self, console: Console, fetcher: FetchService) -> None:
         self._console = console
         self._fetcher = fetcher
+        self._selected_institution_name = "None"
 
     def show_header(self) -> None:
         """Display workflow header using Rich."""
@@ -91,6 +94,7 @@ class RichAccountCreationPresenter:
                 category_name=self._collect_category_name(),
                 currency_code=self._collect_currency_code(),
                 status=self._collect_status(),
+                institution_id=self._collect_institution_id(),
                 initial_month=self._collect_initial_month(),
                 initial_amount=self._collect_initial_balance(),
             )
@@ -149,6 +153,33 @@ class RichAccountCreationPresenter:
             raise KeyboardInterrupt("Quit while collecting account status.")
         return status_options[choice - 1]
 
+    def _collect_institution_id(self) -> int | None:
+        """Collect optional institution selection from user."""
+        institutions = self._fetcher.get_all_institutions()
+        if not institutions:
+            self._selected_institution_name = "None"
+            self._console.print(
+                "[info]No institutions available. Continuing with no institution "
+                "assigned.[/info]"
+            )
+            return None
+
+        self._console.print(build_indexed_institutions_table(institutions))
+        choice = prompt_for_optional_institution_choice(
+            self._console,
+            len(institutions),
+            default=1,
+        )
+        if choice == 0:
+            raise KeyboardInterrupt("Quit while collecting institution.")
+        if choice == 1:
+            self._selected_institution_name = "None"
+            return None
+
+        institution = institutions[choice - 2]
+        self._selected_institution_name = institution.name
+        return institution.id
+
     def _collect_initial_month(self) -> Month:
         """Collect initial month from user."""
         return prompt_for_month(self._console)
@@ -168,7 +199,12 @@ class RichAccountCreationPresenter:
             True if user confirms, False otherwise
         """
         self._console.print("\n[bold]New account data:[/bold]")
-        render_new_account_info(self._console, account, balance)
+        render_new_account_info(
+            self._console,
+            account,
+            balance,
+            institution_name=self._selected_institution_name,
+        )
         return prompt_to_confirm_action(self._console, "Create account?")
 
     def show_cancellation(self, message: str = "") -> None:
@@ -212,6 +248,7 @@ class RichAccountUpdatePresenter:
         self._prompt = Prompt(console=console)
         self._int_prompt = IntPrompt(console=console)
         self._confirm = Confirm(console=console)
+        self._selected_institution_name = "None"
 
     def show_header(self) -> None:
         """Display workflow header using Rich."""
@@ -289,6 +326,9 @@ class RichAccountUpdatePresenter:
                 default=current_account.currency_code
             )
             new_status = self._collect_status(default=current_account.status)
+            new_institution_id = self._collect_institution_id(
+                default=current_account.institution_id
+            )
 
             # Create Account without id (init=False in ORM model)
             updated_account = Account(
@@ -296,7 +336,7 @@ class RichAccountUpdatePresenter:
                 description=new_description,
                 category_name=new_category_name,
                 currency_code=new_currency_code,
-                institution_id=current_account.institution_id,
+                institution_id=new_institution_id,
                 status=new_status,
             )
             # Set id after construction
@@ -437,6 +477,43 @@ class RichAccountUpdatePresenter:
         index = choice - 1
         return status_options[index]
 
+    def _collect_institution_id(self, default: int | None = None) -> int | None:
+        """Collect optional institution selection from user."""
+        institutions = self._fetcher.get_all_institutions()
+        if not institutions:
+            self._selected_institution_name = "None"
+            self._console.print(
+                "[info]No institutions available. Continuing with no institution "
+                "assigned.[/info]"
+            )
+            return None
+
+        default_index = 1
+        if default is not None:
+            default_index = next(
+                (
+                    index
+                    for index, institution in enumerate(institutions, start=2)
+                    if institution.id == default
+                ),
+                1,
+            )
+        self._console.print(build_indexed_institutions_table(institutions))
+        choice = prompt_for_optional_institution_choice(
+            self._console,
+            len(institutions),
+            default=default_index,
+        )
+        if choice == 0:
+            raise KeyboardInterrupt("Quit while collecting institution.")
+        if choice == 1:
+            self._selected_institution_name = "None"
+            return None
+
+        institution = institutions[choice - 2]
+        self._selected_institution_name = institution.name
+        return institution.id
+
     def _build_status_table(self, status_options: list[Status]) -> Table:
         """Build status selection table."""
         table = Table(title="Status Options")
@@ -459,7 +536,11 @@ class RichAccountUpdatePresenter:
             True if user confirms, False otherwise
         """
         self._console.print("[bold]Updated account data[/bold]")
-        render_account_data(self._console, updated_account)
+        render_account_data(
+            self._console,
+            updated_account,
+            institution_name=self._selected_institution_name,
+        )
         return self._confirm.ask("Proceed with update", default=False)
 
     def show_cancellation(self, message: str = "") -> None:
