@@ -101,3 +101,141 @@ def test_update_institution_run(
     captured_output = console.export_text()
     assert re.search(r"Institution updated successfully", captured_output)
     assert re.search(r"Chase Bank", captured_output)
+
+
+def test_update_institution_rejects_duplicate_name(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Update should reject duplicate institution names case-insensitively."""
+    from nwtrack.application.ports.uow import UnitOfWork
+    from nwtrack.domain.models import Institution
+
+    init_db_tables_w_entities(configured_container, sample_entities)
+    uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow:
+        uow.institutions.insert(Institution(name="Chase", description="Primary bank"))
+        uow.institutions.insert(Institution(name="Fidelity", description="Brokerage"))
+
+    id_answers = iter([2])
+
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters,
+        "prompt_for_institution_id",
+        lambda *args, **kwargs: next(id_answers),
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters,
+        "prompt_for_institution_name",
+        lambda *args, **kwargs: "CHASE",
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters,
+        "prompt_for_institution_description",
+        lambda *args, **kwargs: "Duplicate description",
+    )
+
+    service: UpdateInstitutionInteractive = configured_container.resolve(
+        UpdateInstitutionInteractive
+    )
+    result = service.run()
+
+    assert not result.success
+    assert result.error_message == "Duplicate institution name"
+    console: Console = configured_container.resolve(Console)
+    captured_output = console.export_text()
+    assert re.search(r"Institution name 'CHASE' already exists", captured_output)
+
+
+def test_update_institution_reprompts_invalid_id(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Update should re-prompt when the selected institution ID is invalid."""
+    from nwtrack.application.ports.uow import UnitOfWork
+    from nwtrack.domain.models import Institution
+
+    init_db_tables_w_entities(configured_container, sample_entities)
+    uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow:
+        uow.institutions.insert(Institution(name="Chase", description="Primary bank"))
+
+    id_answers = iter([99, 1])
+
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters,
+        "prompt_for_institution_id",
+        lambda *args, **kwargs: next(id_answers),
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters,
+        "prompt_for_institution_name",
+        lambda *args, **kwargs: "Chase Bank",
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters,
+        "prompt_for_institution_description",
+        lambda *args, **kwargs: "Updated description",
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters.Confirm,
+        "ask",
+        lambda *args, **kwargs: True,
+    )
+
+    service: UpdateInstitutionInteractive = configured_container.resolve(
+        UpdateInstitutionInteractive
+    )
+    result = service.run()
+
+    assert result.success
+    console: Console = configured_container.resolve(Console)
+    captured_output = console.export_text()
+    assert re.search(r"Institution ID 99 not found", captured_output)
+
+
+def test_update_institution_no_institutions(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+) -> None:
+    """Update should exit cleanly when no institutions exist."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    service: UpdateInstitutionInteractive = configured_container.resolve(
+        UpdateInstitutionInteractive
+    )
+    result = service.run()
+
+    assert not result.success
+    assert result.error_message == "No institutions found"
+
+
+def test_update_institution_cancellation(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Update should stop cleanly when the user cancels selection."""
+    from nwtrack.application.ports.uow import UnitOfWork
+    from nwtrack.domain.models import Institution
+
+    init_db_tables_w_entities(configured_container, sample_entities)
+    uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow:
+        uow.institutions.insert(Institution(name="Chase", description="Primary bank"))
+
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters,
+        "prompt_for_institution_id",
+        lambda *args, **kwargs: None,
+    )
+
+    service: UpdateInstitutionInteractive = configured_container.resolve(
+        UpdateInstitutionInteractive
+    )
+    result = service.run()
+
+    assert not result.success
+    assert result.error_message == "Cancelled by user"

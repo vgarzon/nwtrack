@@ -35,6 +35,14 @@ class CreateInstitutionInteractive:
             self._presenter.show_cancellation()
             return OperationResult(success=False, error_message="Cancelled by user")
 
+        if self._is_duplicate_name(data.name):
+            logger.error("Institution name '%s' already exists.", data.name)
+            self._presenter.show_duplicate_error(data.name)
+            return OperationResult(
+                success=False,
+                error_message="Duplicate institution name",
+            )
+
         if not self._presenter.show_preview_and_confirm(data):
             logger.info("Institution creation cancelled by user.")
             self._presenter.show_cancellation()
@@ -75,6 +83,15 @@ class CreateInstitutionInteractive:
             logger.error("Failed to insert institution: %s", institution.name)
             return None
         return institution.name
+
+    def _is_duplicate_name(self, institution_name: str) -> bool:
+        with self._uow() as uow:
+            institutions = uow.institutions.get_all()
+        normalized_name = institution_name.casefold()
+        return any(
+            institution.name.casefold() == normalized_name
+            for institution in institutions
+        )
 
     def _validate_created_institution(
         self, data: Institution, institution_name: str

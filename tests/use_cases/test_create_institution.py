@@ -91,3 +91,63 @@ def test_create_institution_run(
     captured_output = console.export_text()
     assert re.search(r"Institution 'Chase' created successfully", captured_output)
     assert re.search(r"Institution name: Chase", captured_output)
+
+
+def test_create_institution_rejects_duplicate_name(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Create should reject duplicate institution names case-insensitively."""
+    from nwtrack.application.ports.uow import UnitOfWork
+    from nwtrack.domain.models import Institution
+
+    init_db_tables_w_entities(configured_container, sample_entities)
+    uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow:
+        uow.institutions.insert(Institution(name="Chase", description="Primary bank"))
+
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters,
+        "prompt_for_institution_name",
+        lambda *args, **kwargs: "chase",
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters,
+        "prompt_for_institution_description",
+        lambda *args, **kwargs: "Duplicate bank",
+    )
+
+    service: CreateInstitutionInteractive = configured_container.resolve(
+        CreateInstitutionInteractive
+    )
+    result = service.run()
+
+    assert not result.success
+    assert result.error_message == "Duplicate institution name"
+    console: Console = configured_container.resolve(Console)
+    captured_output = console.export_text()
+    assert re.search(r"Institution name 'chase' already exists", captured_output)
+
+
+def test_create_institution_cancellation(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Create should stop cleanly when the user cancels input."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters,
+        "prompt_for_institution_name",
+        lambda *args, **kwargs: "q",
+    )
+
+    service: CreateInstitutionInteractive = configured_container.resolve(
+        CreateInstitutionInteractive
+    )
+    result = service.run()
+
+    assert not result.success
+    assert result.error_message == "Cancelled by user"

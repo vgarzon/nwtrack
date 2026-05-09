@@ -52,6 +52,17 @@ class UpdateInstitutionInteractive:
             self._presenter.show_cancellation()
             return OperationResult(success=False, error_message="Cancelled by user")
 
+        if self._is_duplicate_name(updated_institution):
+            logger.error(
+                "Institution name '%s' already exists.",
+                updated_institution.name,
+            )
+            self._presenter.show_duplicate_error(updated_institution.name)
+            return OperationResult(
+                success=False,
+                error_message="Duplicate institution name",
+            )
+
         if not self._presenter.show_preview_and_confirm(updated_institution):
             logger.warning("Institution update cancelled by user.")
             self._presenter.show_cancellation("User declined.")
@@ -98,6 +109,16 @@ class UpdateInstitutionInteractive:
             logger.error("Error retrieving updated institution.")
             return False
         return retrieved_data == update_data
+
+    def _is_duplicate_name(self, institution: Institution) -> bool:
+        with self._uow() as uow:
+            institutions = uow.institutions.get_all()
+        normalized_name = institution.name.casefold()
+        return any(
+            existing.name.casefold() == normalized_name
+            and existing.id != institution.id
+            for existing in institutions
+        )
 
 
 def main() -> None:

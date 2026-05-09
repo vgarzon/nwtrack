@@ -90,3 +90,98 @@ def test_delete_institution_run(
     console: Console = configured_container.resolve(Console)
     captured_output = console.export_text()
     assert re.search(r"Institution deleted successfully", captured_output)
+
+
+def test_delete_institution_blocked_when_accounts_linked(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Delete should be blocked when an institution is still referenced."""
+    from nwtrack.application.ports.uow import UnitOfWork
+    from nwtrack.domain.models import Account, Institution, Status
+
+    init_db_tables_w_entities(configured_container, sample_entities)
+    uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow:
+        institution_id = uow.institutions.insert(
+            Institution(name="Chase", description="Primary bank")
+        )
+        uow.accounts.insert(
+            Account(
+                name="linked_checking",
+                description="Linked checking",
+                category_name="checking",
+                institution_id=institution_id,
+                currency_code="USD",
+                status=Status.ACTIVE,
+            )
+        )
+
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters,
+        "prompt_for_institution_id",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters.Confirm,
+        "ask",
+        lambda *args, **kwargs: True,
+    )
+
+    service: DeleteInstitutionInteractive = configured_container.resolve(
+        DeleteInstitutionInteractive
+    )
+    result = service.run()
+
+    assert not result.success
+    assert result.error_message == "Institution still has linked accounts"
+    console: Console = configured_container.resolve(Console)
+    captured_output = console.export_text()
+    assert re.search(r"Cannot delete institution 'Chase'", captured_output)
+    assert re.search(r"1 account\(s\)", captured_output)
+
+
+def test_delete_institution_no_institutions(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+) -> None:
+    """Delete should exit cleanly when no institutions exist."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    service: DeleteInstitutionInteractive = configured_container.resolve(
+        DeleteInstitutionInteractive
+    )
+    result = service.run()
+
+    assert not result.success
+    assert result.error_message == "No institutions found"
+
+
+def test_delete_institution_cancellation(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Delete should stop cleanly when the user cancels selection."""
+    from nwtrack.application.ports.uow import UnitOfWork
+    from nwtrack.domain.models import Institution
+
+    init_db_tables_w_entities(configured_container, sample_entities)
+    uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow:
+        uow.institutions.insert(Institution(name="Chase", description="Primary bank"))
+
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.institution_presenters,
+        "prompt_for_institution_id",
+        lambda *args, **kwargs: None,
+    )
+
+    service: DeleteInstitutionInteractive = configured_container.resolve(
+        DeleteInstitutionInteractive
+    )
+    result = service.run()
+
+    assert not result.success
+    assert result.error_message == "Cancelled by user"
