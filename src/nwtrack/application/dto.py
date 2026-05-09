@@ -28,6 +28,7 @@ class NewAccountData:
     status: Status
     initial_month: Month
     initial_amount: int
+    institution_id: int | None = None
 
 
 @dataclass(frozen=True)

@@ -90,6 +90,7 @@ This phase uses the existing account shape and extends account workflow input/ou
 
 - `accounts list` surfaces institution in the account table.
 - The institution display must be consistent for assigned and unassigned accounts.
+- This phase uses `None` as the display label for an unassigned institution.
 - Existing list behavior remains unchanged otherwise, including support for active-only filtering.
 
 ## Decisions
