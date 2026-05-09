@@ -321,6 +321,11 @@ class AccountsRepository(AccountsRepositoryProtocol):
             name=record["name"],
             description=record["description"],
             category_name=record["category"],
+            institution_id=(
+                int(record["institution_id"])
+                if record.get("institution_id") not in (None, "")
+                else None
+            ),
             currency_code=record["currency"],
             status=Status(record["status"]),
         )
