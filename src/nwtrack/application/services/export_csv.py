@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 class ExportCSV:
     """Service to export records to CSV files."""
 
+    _field_exclusions = {
+        "accounts": {"institution_id"},
+    }
+
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
         # TODO: Use RepoRegistry to define table names
@@ -29,14 +33,15 @@ class ExportCSV:
             "exchange_rates",
         ]
 
-    @staticmethod
-    def _entity_to_record(entity: Any) -> dict[str, Any]:
+    @classmethod
+    def _entity_to_record(cls, entity: Any, table_name: str) -> dict[str, Any]:
         """Convert an entity to a dictionary record for CSV export.
 
         Handles special types like Month and Enums that need conversion.
 
         Args:
             entity: Domain entity to convert
+            table_name: Export table name for compatibility filtering
 
         Returns:
             Dictionary representation suitable for CSV export
@@ -49,6 +54,7 @@ class ExportCSV:
 
         # Get SQLAlchemy mapper to access column names
         mapper = inspect(entity.__class__)
+        excluded_fields = cls._field_exclusions.get(table_name, set())
 
         # Map field names to database column names
         for field in dataclasses.fields(entity):
@@ -67,6 +73,9 @@ class ExportCSV:
                     column_name = list(column.columns)[0].name
 
             # Convert special types to CSV-friendly formats
+            if column_name in excluded_fields:
+                continue
+
             if isinstance(value, Month):
                 record[column_name] = str(value)
             elif isinstance(value, Enum):
@@ -119,7 +128,9 @@ class ExportCSV:
                 raise ValueError(f"Repository for table {table_name} not found.")
             entities = repo.get_all()
             # Convert entities to records (dicts) for CSV export
-            records = [self._entity_to_record(entity) for entity in entities]
+            records = [
+                self._entity_to_record(entity, table_name) for entity in entities
+            ]
 
         if not records:
             logger.info("No records found in table %s. Skipping export.", table_name)
