@@ -6,7 +6,7 @@ from nwtrack.entrypoints.cli.ui.console import ConsoleSettings, build_console
 
 
 def test_account_list_presenter_renders_institution_column_for_mixed_accounts() -> None:
-    """Account list presenter should show institutions for assigned and unassigned accounts."""
+    """Account list presenter should show assigned and unassigned institutions."""
     console = build_console(ConsoleSettings(record=True))
     presenter = RichAccountListPresenter(console)
 
@@ -37,7 +37,10 @@ def test_account_list_presenter_renders_institution_column_for_mixed_accounts() 
     unassigned_account.id = 2
     unassigned_account.category = category
 
-    presenter.display_accounts([assigned_account, unassigned_account], active_only=False)
+    presenter.display_accounts(
+        [assigned_account, unassigned_account],
+        active_only=False,
+    )
 
     output = console.export_text()
 
