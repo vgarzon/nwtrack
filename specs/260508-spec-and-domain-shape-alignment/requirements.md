@@ -90,7 +90,20 @@ This phase does not define the full aggregated reporting feature. It defines the
 - History aggregation: grouped balances across a start and end `YYYY-MM` range.
 - Compatibility reporting: existing user-facing report commands that should converge on the shared aggregation model where practical.
 
-Reporting implementation details, CLI flags, output formatting, and tag aggregation edge-case semantics remain for later phases.
+Reporting boundary decisions for this phase:
+
+- Later reporting phases should describe new reporting features in terms of aggregation dimensions and aggregation windows, not as isolated bespoke report types.
+- Existing net worth and category report commands should be treated as compatibility reporting surfaces over the same shared aggregation model.
+- Shared reporting logic should converge below the CLI layer so old and new commands can reuse the same aggregation primitives.
+
+Reporting decisions explicitly deferred:
+
+- CLI command names, flags, prompts, and output formatting for future aggregation commands
+- Exact tag aggregation semantics for accounts with multiple tags
+- The order in which compatibility commands move onto the shared aggregation model
+- CSV import/export implications of future reporting changes
+
+Reporting implementation details, CLI flags, output formatting, migration sequencing, and tag aggregation edge-case semantics remain for later phases.
 
 ## Decisions
 
@@ -102,6 +115,7 @@ Reporting implementation details, CLI flags, output formatting, and tag aggregat
 - Tag assignment is optional and supports many-to-many account associations.
 - Institutions and tags will be added manually to active accounts during the rollout to protect data integrity and avoid disruptive bulk backfills.
 - Reporting work is deferred, but all later reporting specs should use the standardized aggregation vocabulary from this document.
+- Existing report commands are compatibility reporting surfaces and should converge on one shared aggregation model where practical.
 - Later feature specs must define the tests, assertions, and quality checks required for the feature, not rely only on generic repository-level gates.
 
 ### Decisions Explicitly Deferred
@@ -111,6 +125,7 @@ Reporting implementation details, CLI flags, output formatting, and tag aggregat
 - Detailed validation and deletion semantics for institution and tag management
 - CSV import/export changes
 - Detailed aggregation semantics for accounts with multiple tags
+- Future aggregation CLI command design and output details
 - The exact cutover rules for making institutions mandatory later
 
 ## Context

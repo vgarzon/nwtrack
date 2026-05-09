@@ -71,8 +71,8 @@ These are intentional product constraints, not open-ended abstractions:
 Reporting should follow one generalized balance-aggregation model instead of separate bespoke implementations.
 
 - Aggregation dimension means the account attribute used to group balances, such as category, side, institution, currency, or tag.
-- Single-month reporting is a first-class use case.
-- Month-history reporting across a start and end `YYYY-MM` range is a first-class use case.
+- Single-month aggregation is a first-class use case.
+- History aggregation across a start and end `YYYY-MM` range is a first-class use case.
 - Aggregation dimensions should be explicit account attributes rather than report-specific query paths.
 - Net worth reporting is the aggregation-by-side view of the same underlying model.
 - Category reporting should converge on the same aggregation model while preserving user-facing compatibility where practical.

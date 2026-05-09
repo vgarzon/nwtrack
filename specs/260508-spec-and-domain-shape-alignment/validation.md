@@ -7,7 +7,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Shared Terminology
 - [X] Institution Spec Baseline
 - [X] Tag Spec Baseline
-- [ ] Reporting Boundary Alignment
+- [X] Reporting Boundary Alignment
 - [ ] Follow-On Phase Readiness
 
 ## Automated
@@ -27,6 +27,8 @@ Specific assertions for this phase:
 - The requirements document states that tag names are unique and that tags remain first-class reusable reference data.
 - The requirements document states that existing accounts are preserved without forced tag assignment.
 - The requirements document defines reporting vocabulary but defers full aggregated reporting behavior to later phases.
+- The requirements document distinguishes reporting boundary decisions from reporting decisions explicitly deferred.
+- The requirements document states that existing report commands are compatibility reporting surfaces over the shared aggregation model.
 - The requirements document states that later feature phases must include explicit testing and quality-check requirements.
 
 ## Manual
@@ -36,9 +38,10 @@ Specific assertions for this phase:
 3. Confirm the institution baseline keeps account-to-institution assignment optional and preserves accounts without forced reassignment.
 4. Confirm the tag section defines `Tag` as first-class reusable reference data with baseline fields `id`, `name`, and optional `description`.
 5. Confirm the tag baseline keeps account-to-tag assignment optional and preserves accounts without forced tag assignment.
-6. Confirm the reporting section establishes shared terminology without locking in future CLI design too early.
-7. Confirm the scope and deferred decisions leave later phases room to define implementation details independently.
-8. Confirm the spec requires future phases to define concrete testing coverage and quality checks as part of validation.
+6. Confirm the reporting section defines aggregation vocabulary and compatibility reporting expectations without locking in future CLI design too early.
+7. Confirm the reporting section explicitly separates boundary decisions from deferred implementation details.
+8. Confirm the scope and deferred decisions leave later phases room to define implementation details independently.
+9. Confirm the spec requires future phases to define concrete testing coverage and quality checks as part of validation.
 
 ## Tone Check
 
