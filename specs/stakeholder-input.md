@@ -16,6 +16,7 @@ This document is a legacy product specification. If terminology here conflicts w
 
 - "Balances by Category (Monthly Snapshot)" maps to single-month aggregation by category.
 - "Net Worth History" maps to history aggregation by side as a compatibility reporting surface.
+- Future aggregation commands should be described by aggregation dimension and time window, not as separate bespoke report types.
 - "Compatibility reporting" means preserving existing user-facing report commands while converging them on the shared aggregation model.
 
 ---
