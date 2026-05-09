@@ -55,6 +55,13 @@ Initial migration posture:
 
 A tag is a reusable account label used for grouping and reporting.
 
+Initial tag baseline:
+
+- `Tag` is first-class reference data, not an unchecked multi-value text field on accounts.
+- The baseline tag shape is intentionally small: `id`, `name`, and optional `description`.
+- Tag `name` must be unique so accounts can reference unambiguous reusable tag records.
+- Additional tag attributes remain out of scope until a later feature phase explicitly adds them.
+
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
 | `id` | `int` | Primary key, unique | Internal identifier |
@@ -66,6 +73,13 @@ Initial account relationship:
 - An account may reference zero, one, or many tags.
 - Tags may be shared across multiple accounts.
 - Tags are user-managed reference data, even though they support flexible grouping.
+- The initial account model should represent tag assignment through explicit associations rather than duplicated free-form account text.
+
+Initial migration posture:
+
+- Existing accounts remain valid with zero tags during the initial rollout.
+- Tags will be attached manually to active accounts during later implementation phases.
+- Schema and workflow changes must preserve current accounts that do not yet have any tags.
 
 ### Reporting Terms
 
