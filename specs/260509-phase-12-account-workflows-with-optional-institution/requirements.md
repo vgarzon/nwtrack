@@ -47,6 +47,7 @@ Required behavior:
 
 - Create and update show a readable indexed institutions table when institutions exist.
 - The prompt includes an explicit `None` / no-institution choice.
+- The indexed chooser uses `0` to quit and `1` to select `None`.
 - Update uses the current institution as the default when one is assigned.
 - Update uses the no-institution option as the default when no institution is assigned.
 - If no institutions exist, create and update continue without failure and make it clear that no institution is available.

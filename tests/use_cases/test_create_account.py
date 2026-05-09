@@ -9,9 +9,11 @@ from rich.console import Console
 from tests.helpers import init_db_tables_w_entities
 
 import nwtrack.entrypoints.cli.adapters.account_presenters
+from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.application.use_cases.create_account import AccountCreator
 from nwtrack.bootstrap.container import Container
+from nwtrack.domain.models import Institution
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.adapters.account_presenters import (
     RichAccountCreationPresenter,
@@ -71,10 +73,8 @@ def test_account_creator_run_success_defaults(
     sample_entities: dict[str, list],
     monkeypatch,
 ) -> None:
-    # TODO: Use common fixture to init DB with entities
     init_db_tables_w_entities(configured_container, sample_entities)
 
-    # Patch the prompt functions in the presenter module
     monkeypatch.setattr(
         nwtrack.entrypoints.cli.adapters.account_presenters,
         "prompt_for_account_name",
@@ -102,6 +102,13 @@ def test_account_creator_run_success_defaults(
     )
     monkeypatch.setattr(
         nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_optional_institution_choice",
+        lambda *args, **kwargs: pytest.fail(
+            "Institution choice should not be prompted when no institutions exist."
+        ),
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
         "prompt_for_month",
         lambda *args, **kwargs: Month(2025, 10),
     )
@@ -122,17 +129,101 @@ def test_account_creator_run_success_defaults(
     assert result.success
     assert result.data is not None
     account_id, balance_id = result.data
-    assert account_id == 5  # Expected new account ID
-    assert balance_id > 0  # Balance ID should be positive
+    assert account_id == 5
+    assert balance_id > 0
 
-    # Check console output
+    with configured_container.resolve(UnitOfWork) as uow:
+        created_account = uow.accounts.get_by_id(account_id)
+    assert created_account is not None
+    assert created_account.institution_id is None
+
     console: Console = configured_container.resolve(Console)
     captured_output = console.export_text()
-
-    # TODO: Enable assertions through direct database queries
 
     assert re.search(r"Account created successfully", captured_output)
     assert re.search(r"Account name: savings_account_3", captured_output)
     assert re.search(r"Account ID: 5", captured_output)
     assert re.search(r"Initial month: 2025-10", captured_output)
     assert re.search(r"Initial balance: 100", captured_output)
+    assert re.search(r"Institution: None", captured_output)
+    assert re.search(
+        r"No institutions available\. Continuing with no institution assigned\.",
+        captured_output,
+    )
+
+
+def test_account_creator_run_success_with_selected_institution(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    with configured_container.resolve(UnitOfWork) as uow:
+        institution_id = uow.institutions.insert(
+            Institution(name="Chase", description="Primary bank")
+        )
+
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_account_name",
+        lambda *args, **kwargs: "brokerage_account",
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_account_description",
+        lambda *args, **kwargs: "Brokerage at Chase",
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_category_choice",
+        lambda *args, **kwargs: 2,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_currency_choice",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_status_choice",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_optional_institution_choice",
+        lambda *args, **kwargs: 2,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_month",
+        lambda *args, **kwargs: Month(2025, 11),
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_balance_amount",
+        lambda *args, **kwargs: 500,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_to_confirm_action",
+        lambda *args, **kwargs: True,
+    )
+
+    result = configured_container.resolve(AccountCreator).run()
+
+    assert result.success
+    assert result.data is not None
+    account_id, _ = result.data
+
+    with configured_container.resolve(UnitOfWork) as uow:
+        created_account = uow.accounts.get_by_id(account_id)
+    assert created_account is not None
+    assert created_account.institution_id == institution_id
+
+    console: Console = configured_container.resolve(Console)
+    captured_output = console.export_text()
+
+    assert re.search(r"Institutions", captured_output)
+    assert re.search(r"None", captured_output)
+    assert re.search(r"Institution: Chase", captured_output)

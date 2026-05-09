@@ -243,6 +243,24 @@ def prompt_for_institution_id(console: Console) -> int | None:
             )
 
 
+def prompt_for_optional_institution_choice(
+    console: Console,
+    n_institutions: int,
+    default: int = 1,
+) -> int:
+    """Prompt for optional institution selection by index.
+
+    Index 0 exits the workflow, index 1 selects no institution, and the
+    remaining indexes map to listed institutions.
+    """
+    int_prompt = IntPrompt(console=console)
+    return int_prompt.ask(
+        "Enter [bold]institution index[/bold], '1' for None, or '0' to quit",
+        default=default,
+        choices=[str(i) for i in range(n_institutions + 2)],
+    )
+
+
 def prompt_for_category_side(console: Console) -> str:
     """Prompt user for category side.
 
