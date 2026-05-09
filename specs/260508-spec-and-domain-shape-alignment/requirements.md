@@ -132,6 +132,55 @@ Reporting implementation details, CLI flags, output formatting, migration sequen
 
 This spec should be interpreted through the project constitution in `specs/mission.md` and `specs/tech-stack.md`.
 
+## Follow-On Phase Readiness
+
+This phase should leave later feature phases with enough clarity to implement their own scope without reopening the baseline terminology and relationship decisions defined above.
+
+### Readiness For Phase 10: Institution Schema Foundation
+
+Phase 10 should assume:
+
+- `Institution` is a first-class entity with baseline fields `id`, `name`, and optional `description`.
+- Accounts may reference zero or one institution initially.
+- Existing accounts must remain valid without forced institution reassignment.
+
+Phase 10 should still decide:
+
+- Exact ORM, repository, and migration implementation details
+- CSV import/export handling for institution data
+- The testing scope needed to prove schema behavior and migration safety
+
+### Readiness For Phase 13: Tag Schema Foundation
+
+Phase 13 should assume:
+
+- `Tag` is a first-class entity with baseline fields `id`, `name`, and optional `description`.
+- Accounts may reference zero, one, or many tags through explicit associations.
+- Existing accounts must remain valid with zero tags during the initial rollout.
+
+Phase 13 should still decide:
+
+- Exact association-table, ORM, repository, and migration implementation details
+- CSV import/export handling for tag data
+- The testing scope needed to prove association behavior and migration safety
+
+### Readiness For Phases 16 Through 19: Aggregated Reporting Work
+
+Phases 16 through 19 should assume:
+
+- Reporting work should be described in terms of aggregation dimensions and aggregation windows.
+- New and existing report commands should converge on one shared aggregation model where practical.
+- Existing net worth and category commands are compatibility reporting surfaces over that shared model.
+
+Phases 16 through 19 should still decide:
+
+- Exact query/use-case structure and CLI command design
+- Output formatting and presentation details
+- Tag aggregation semantics for multi-tag accounts
+- The sequence for moving compatibility commands onto the shared aggregation core
+
+This phase does not pre-approve any breaking CLI change. Later phases must justify any compatibility tradeoff explicitly.
+
 Context for later implementation:
 
 - `nwtrack` is CLI-first and local-first.

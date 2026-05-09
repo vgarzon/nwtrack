@@ -8,7 +8,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Institution Spec Baseline
 - [X] Tag Spec Baseline
 - [X] Reporting Boundary Alignment
-- [ ] Follow-On Phase Readiness
+- [X] Follow-On Phase Readiness
 
 ## Automated
 
@@ -29,6 +29,8 @@ Specific assertions for this phase:
 - The requirements document defines reporting vocabulary but defers full aggregated reporting behavior to later phases.
 - The requirements document distinguishes reporting boundary decisions from reporting decisions explicitly deferred.
 - The requirements document states that existing report commands are compatibility reporting surfaces over the shared aggregation model.
+- The requirements document provides explicit readiness guidance for Phases 10, 13, and 16 through 19.
+- The requirements document distinguishes what later phases should assume from what they must still decide.
 - The requirements document states that later feature phases must include explicit testing and quality-check requirements.
 
 ## Manual
@@ -40,8 +42,10 @@ Specific assertions for this phase:
 5. Confirm the tag baseline keeps account-to-tag assignment optional and preserves accounts without forced tag assignment.
 6. Confirm the reporting section defines aggregation vocabulary and compatibility reporting expectations without locking in future CLI design too early.
 7. Confirm the reporting section explicitly separates boundary decisions from deferred implementation details.
-8. Confirm the scope and deferred decisions leave later phases room to define implementation details independently.
-9. Confirm the spec requires future phases to define concrete testing coverage and quality checks as part of validation.
+8. Confirm the follow-on readiness section gives Phase 10, Phase 13, and Phases 16 through 19 enough baseline guidance without over-specifying their implementation details.
+9. Confirm the requirements distinguish what later phases should assume from what they must still decide.
+10. Confirm the scope and deferred decisions leave later phases room to define implementation details independently.
+11. Confirm the spec requires future phases to define concrete testing coverage and quality checks as part of validation.
 
 ## Tone Check
 
