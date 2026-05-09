@@ -5,6 +5,8 @@ Load configuration settings.
 import logging
 import os
 
+from dotenv import find_dotenv, load_dotenv
+
 from nwtrack.infra.config.settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -17,6 +19,8 @@ def load_settings() -> Settings:
     Returns:
         Settings: An instance of the Settings dataclass with loaded configuration.
     """
+    load_dotenv(find_dotenv(usecwd=True), override=False)
+
     if "NWTRACK_DB_FILE_PATH" in os.environ:
         db_file_path = os.environ["NWTRACK_DB_FILE_PATH"]
     else:

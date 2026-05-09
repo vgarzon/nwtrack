@@ -34,3 +34,11 @@ class DBAdminService:
         )
         self._schema_manager.drop_all_tables()
         self._schema_manager.create_all_tables()
+
+    def ensure_database(self) -> None:
+        """Ensure the database matches the current supported schema."""
+        logger.info(
+            "Ensuring database schema is up to date at '%s'",
+            self._config.db_file_path,
+        )
+        self._schema_manager.ensure_current_schema()
