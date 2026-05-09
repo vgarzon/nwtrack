@@ -53,7 +53,7 @@ Name: `specs/YYMMDD-<feature-name>/` using today's date.
 - Manual: walkthrough, behaviour, edge cases
 - Tone check if the feature has user-facing copy
 - Definition of done
-- Checklist of completed validation steps including testing and code quality checks
+- Checklist of completed validation steps including testing and code quality checks, aligned with `plan.md` task groups
 
 ## Constraints
 
