@@ -10,6 +10,7 @@ Included in this phase:
 - Add optional institution assignment, reassignment, and clearing to interactive account updates
 - Surface institution consistently in account list output and account create/update previews
 - Extend account-facing fetch/read support only as needed for institution-aware account workflows in this phase
+- Extend fetch support only by adding institution listing for account workflow selection
 - Preserve compatibility for accounts that still have no institution assigned
 
 Not included in this phase:
