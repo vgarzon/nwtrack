@@ -5,7 +5,7 @@
 Update this checklist as task groups in `plan.md` are completed.
 
 - [X] Account Input And Presenter Updates
-- [ ] Minimal Fetch And Read Support
+- [X] Minimal Fetch And Read Support
 - [ ] Account Use Case Integration
 - [ ] Account List Output
 - [ ] Validation
