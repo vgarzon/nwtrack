@@ -4,7 +4,7 @@
 
 Update this checklist as task groups in `plan.md` are completed.
 
-- [ ] Institution CLI Surface
+- [X] Institution CLI Surface
 - [ ] Presenter And UI Support
 - [ ] Use Cases And Repository Extensions
 - [ ] Delete Safety And Validation
