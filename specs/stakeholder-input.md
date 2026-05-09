@@ -70,6 +70,16 @@ Categories classify accounts for accounting purposes. The `side` field determine
 
 Institutions are first-class reference data representing the financial institution where an account is held.
 
+### Tags
+
+| Field | Type   | Constraints                    |
+|-------|--------|--------------------------------|
+| id    | int    | Primary key, unique            |
+| name  | string | Short label, unique            |
+| description | string | Optional free-text description |
+
+Tags are first-class reusable reference data used for grouping and reporting across accounts.
+
 ### Accounts
 
 | Field          | Type   | Constraints                            |
@@ -83,6 +93,16 @@ Institutions are first-class reference data representing the financial instituti
 | status         | enum   | `"active"` or `"inactive"`, default "active" |
 
 Accounts may initially reference zero or one institution. Existing accounts remain valid without an institution during the initial rollout, and institution assignment is expected to be added manually rather than through disruptive bulk reassignment.
+Accounts may also reference zero, one, or many tags through explicit associations. Existing accounts remain valid with zero tags during the initial rollout, and tag assignment is expected to be added manually rather than through disruptive bulk reassignment.
+
+### Account Tags
+
+| Field      | Type | Constraints                 |
+|------------|------|-----------------------------|
+| account_id | int  | FK → accounts.id            |
+| tag_id     | int  | FK → tags.id                |
+
+Composite unique constraint: `(account_id, tag_id)`.
 
 ### Balances
 
