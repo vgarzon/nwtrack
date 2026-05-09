@@ -47,6 +47,7 @@ def build_indexed_institutions_table(institutions: list[Institution]) -> Table:
 def build_accounts_table(
     accounts: list[Account],
     title_prefix: str = "",
+    show_institution: bool = False,
 ) -> Table:
     """Build a Rich Table of active accounts.
 
@@ -63,16 +64,21 @@ def build_accounts_table(
     table.add_column("Name", style="col.name")
     table.add_column("Category", style="col.category")
     table.add_column("Side", style="col.side")
+    if show_institution:
+        table.add_column("Institution", style="col.name")
     for account in accounts:
         category = account.category
         category_name = category.name if category else "Unknown"
         side = category.side.value if category else "Unknown"
-        table.add_row(
+        row = [
             str(account.id),
             account.name,
             category_name,
             side,
-        )
+        ]
+        if show_institution:
+            row.append(format_institution_name(account))
+        table.add_row(*row)
     return table
 
 
