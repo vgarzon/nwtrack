@@ -8,7 +8,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Presenter And UI Support
 - [X] Use Cases And Repository Extensions
 - [X] Delete Safety And Validation
-- [ ] Validation
+- [X] Validation
 
 ## Automated
 
