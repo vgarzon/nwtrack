@@ -70,6 +70,18 @@ Expected outcomes:
 - Existing accounts remain valid without an institution during this phase
 - Tests cover interactive and non-interactive institution assignment paths
 
+### [ ] Phase 12b: Interactive Balance Creation
+
+Goal:
+Add an interactive CLI command for creating one missing balance entry without changing the existing balance update and delete workflows.
+
+Expected outcomes:
+
+- A `balances create` command exists for one-off balance entry creation
+- The workflow can create a balance for one active account and one `YYYY-MM` month
+- Duplicate balance entries for the same account and month are rejected with clear validation
+- Existing balance update, delete, roll-forward, and transfer workflows remain unchanged during this phase
+
 ### [ ] Phase 13: Tag Schema Foundation
 
 Goal:
