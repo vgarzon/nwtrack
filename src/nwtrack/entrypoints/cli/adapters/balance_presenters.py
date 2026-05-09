@@ -182,6 +182,75 @@ class RichBalanceUpdatePresenter(SelectableMonthMixin):
         self._console.print(table)
 
 
+class RichBalanceCreationPresenter:
+    """Rich-based implementation of BalanceCreationPresenter."""
+
+    def __init__(self, console: Console) -> None:
+        self._console = console
+        self._prompt = Prompt(console=self._console)
+        self._int_prompt = IntPrompt(console=self._console)
+
+    def show_header(self) -> None:
+        """Display workflow header using Rich."""
+        self._console.rule("[header]Balance Creation[/header]")
+
+    def display_active_accounts(self, accounts: list[Account]) -> None:
+        """Display active accounts table."""
+        table = build_accounts_table(accounts, title_prefix="Active")
+        self._console.print(table)
+
+    def select_account(self) -> int | None:
+        """Prompt for account ID or cancellation."""
+        return prompt_for_account_id(self._console)
+
+    def show_no_active_accounts(self) -> None:
+        """Display message when no active accounts are available."""
+        self._console.print(
+            "[info]No active accounts available for balance creation.[/info]"
+        )
+
+    def show_account_not_found(self, account_id: int) -> None:
+        """Display validation when selected account is not active or not found."""
+        self._console.print(
+            f"[validation]Active account ID {account_id} not found.[/validation] "
+            "Please try again."
+        )
+
+    def collect_month(self) -> Month | None:
+        """Collect month or allow cancellation."""
+        return None
+
+    def collect_amount(self) -> int | None:
+        """Collect amount or allow cancellation."""
+        return None
+
+    def show_preview_and_confirm(self, account: Account, balance: Balance) -> bool:
+        """Preview is implemented in the next task group."""
+        return prompt_to_confirm_action(self._console, "Create this balance entry?")
+
+    def show_duplicate_error(self, account: Account, month: Month) -> None:
+        """Duplicate messaging is implemented in a later task group."""
+        self._console.print(
+            f"[validation]Balance already exists for account {account.id} in {month}."
+            "[/validation] Use `balances update` instead."
+        )
+
+    def show_cancellation(self, message: str = "") -> None:
+        """Display cancellation message."""
+        msg = "[cancel]Balance creation cancelled.[/cancel]"
+        if message:
+            msg += f" {message}"
+        self._console.print(msg)
+
+    def show_error(self, message: str) -> None:
+        """Display error message."""
+        self._console.print(f"[error]{message}[/error]")
+
+    def show_success(self, account: Account, balance: Balance) -> None:
+        """Success rendering is implemented in the next task group."""
+        self._console.print("[success]Balance created successfully.[/success]")
+
+
 class RichBalancesRollForwardPresenter(SelectableMonthMixin):
     """Rich-based implementation of BalancesRollForwardPresenter."""
 

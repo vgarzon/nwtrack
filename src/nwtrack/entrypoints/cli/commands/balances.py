@@ -7,6 +7,16 @@ import sys
 from nwtrack.entrypoints.cli.app import balances_app
 
 
+@balances_app.command("create")
+def create_balance_interactive():
+    """
+    Create a new balance entry interactively.
+    """
+    import nwtrack.application.use_cases.create_balance as create_balance
+
+    sys.exit(create_balance.main())
+
+
 @balances_app.command("roll")
 def roll_balances_forward_interactive():
     """

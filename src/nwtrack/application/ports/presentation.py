@@ -498,6 +498,58 @@ class BalanceUpdatePresenter(Protocol):
         ...
 
 
+class BalanceCreationPresenter(Protocol):
+    """Presenter for balance creation workflow."""
+
+    def show_header(self) -> None:
+        """Display workflow header."""
+        ...
+
+    def display_active_accounts(self, accounts: list[Account]) -> None:
+        """Display active accounts eligible for balance creation."""
+        ...
+
+    def select_account(self) -> int | None:
+        """Prompt for an account ID or cancellation."""
+        ...
+
+    def show_no_active_accounts(self) -> None:
+        """Display empty-state message when no active accounts are available."""
+        ...
+
+    def show_account_not_found(self, account_id: int) -> None:
+        """Display validation when the selected account is not eligible."""
+        ...
+
+    def collect_month(self) -> Month | None:
+        """Collect the month for the new balance."""
+        ...
+
+    def collect_amount(self) -> int | None:
+        """Collect the amount for the new balance."""
+        ...
+
+    def show_preview_and_confirm(self, account: Account, balance: Balance) -> bool:
+        """Preview the new balance entry and confirm creation."""
+        ...
+
+    def show_duplicate_error(self, account: Account, month: Month) -> None:
+        """Display duplicate-balance validation with update guidance."""
+        ...
+
+    def show_cancellation(self, message: str = "") -> None:
+        """Display cancellation message."""
+        ...
+
+    def show_error(self, message: str) -> None:
+        """Display error message."""
+        ...
+
+    def show_success(self, account: Account, balance: Balance) -> None:
+        """Display success message and created-balance preview."""
+        ...
+
+
 class DBInitCSVPresenter(Protocol):
     """Presenter for DB initialization from CSV workflow."""
 
