@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class DBInitializerCSV:
-    """Initialize the database from CSV files."""
+    """Import the database from CSV files."""
 
     def __init__(
         self,
@@ -31,15 +31,18 @@ class DBInitializerCSV:
         self._required_keys = [
             "currencies",
             "categories",
+            "institutions",
+            "tags",
             "accounts",
+            "account_tags",
             "balances",
             "exchange_rates",
         ]
         self._file_paths: dict[str, str] = {}
 
     def run(self) -> OperationResult[None]:
-        """Run the database initialization process."""
-        logger.info("Starting database initialization from CSV files.")
+        """Run the database import process."""
+        logger.info("Starting database import from CSV files.")
         logger.info("Database file path: %s", self._config.db_file_path)
         self._presenter.show_header(self._config.db_file_path)
         try:
@@ -54,26 +57,26 @@ class DBInitializerCSV:
         self._presenter.show_file_paths_table(self._file_paths)
         accept = self._presenter.prompt_for_confirmation()
         if not accept:
-            logger.warning("User aborted database initialization.")
+            logger.warning("User aborted database import.")
             self._presenter.show_cancellation()
             return OperationResult(success=False, error_message="Aborted by user")
 
         try:
-            self._admin_svc.init_database()
+            self._admin_svc.ensure_database()
         except Exception as e:
-            logger.error("Database initialization failed: %s", e)
-            self._presenter.show_error(f"Database initialization failed: {e}")
+            logger.error("Database preparation failed: %s", e)
+            self._presenter.show_error(f"Database preparation failed: {e}")
             return OperationResult(success=False, error_message=str(e))
 
         try:
-            self._data_svc.insert_data_from_csv(self._file_paths)
+            self._data_svc.import_bundle_from_file_paths(self._file_paths)
         except Exception as e:
-            logger.error("Data insertion from CSV files failed: %s", e)
-            self._presenter.show_error(f"Data insertion failed: {e}")
+            logger.error("Data import from CSV files failed: %s", e)
+            self._presenter.show_error(f"Data import failed: {e}")
             return OperationResult(success=False, error_message=str(e))
 
         self._presenter.show_success()
-        logger.info("Finished database initialization from CSV files.")
+        logger.info("Finished database import from CSV files.")
         return OperationResult(success=True)
 
 

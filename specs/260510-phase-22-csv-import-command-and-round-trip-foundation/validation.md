@@ -9,7 +9,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Database Bootstrap And Import Service Refactor
 - [X] Idempotent Persistence Behavior
 - [X] Round-Trip And Regression Coverage
-- [ ] Validation And Documentation
+- [X] Validation And Documentation
 
 ## Automated
 

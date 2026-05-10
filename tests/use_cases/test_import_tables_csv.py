@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from rich.console import Console
+from tests.helpers import init_db_tables_w_entities
 
 from nwtrack.application.ports.schema import SchemaManager
 from nwtrack.application.ports.uow import UnitOfWork
@@ -16,15 +17,16 @@ from nwtrack.application.use_cases.import_tables_csv import (
 )
 from nwtrack.bootstrap.composition import build_base_container
 from nwtrack.bootstrap.container import Container, Lifetime
-from nwtrack.domain.models import Institution, Status, Tag
+from nwtrack.domain.models import Account, Balance, Institution, Status, Tag
 from nwtrack.infra.config.settings import Settings
 from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
 from nwtrack.infra.persistence.orm.models import account_tags_table
 from nwtrack.infra.persistence.schema import SchemaManager as SchemaManagerImpl
-from tests.helpers import init_db_tables_w_entities
 
 
-def _write_bundle_file(target_dir: Path, name: str, header: str, rows: list[str]) -> None:
+def _write_bundle_file(
+    target_dir: Path, name: str, header: str, rows: list[str]
+) -> None:
     body = "\n".join([header, *rows]) + "\n"
     (target_dir / f"{name}.csv").write_text(body, encoding="utf-8")
 
@@ -87,7 +89,11 @@ def file_db_container(tmp_path: Path) -> Container:
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
     )
-    container.register(Console, lambda _: Console(record=True), lifetime=Lifetime.SINGLETON)
+    container.register(
+        Console,
+        lambda _: Console(record=True),
+        lifetime=Lifetime.SINGLETON,
+    )
     return container
 
 
@@ -109,15 +115,17 @@ def test_import_tables_cli_creates_missing_database_and_imports_supported_tables
 
     assert db_path.exists()
 
-    with file_db_container.resolve(UnitOfWork) as uow:
-        assert uow.currencies.count() == 1
-        assert uow.categories.count() == 1
-        assert uow.institutions.count() == 1
-        assert uow.tags.count() == 1
-        assert uow.accounts.count() == 1
-        assert uow.balances.count() == 1
-        assert uow.exchange_rates.count() == 1
-        assert [tag.id for tag in uow.tags.get_for_account(1)] == [1]
+    typed_uow: UnitOfWork
+    with file_db_container.resolve(UnitOfWork) as typed_uow:
+        linked_tags: list[Tag] = typed_uow.tags.get_for_account(1)
+        assert typed_uow.currencies.count() == 1
+        assert typed_uow.categories.count() == 1
+        assert typed_uow.institutions.count() == 1
+        assert typed_uow.tags.count() == 1
+        assert typed_uow.accounts.count() == 1
+        assert typed_uow.balances.count() == 1
+        assert typed_uow.exchange_rates.count() == 1
+        assert [linked_tag.id for linked_tag in linked_tags] == [1]
 
 
 def test_import_tables_cli_is_idempotent_for_repeated_bundle_imports(
@@ -136,15 +144,16 @@ def test_import_tables_cli_is_idempotent_for_repeated_bundle_imports(
     importer.run(source_dir=str(source_dir))
     importer.run(source_dir=str(source_dir))
 
-    with file_db_container.resolve(UnitOfWork) as uow:
-        assert uow.currencies.count() == 1
-        assert uow.categories.count() == 1
-        assert uow.institutions.count() == 1
-        assert uow.tags.count() == 1
-        assert uow.accounts.count() == 1
-        assert uow.balances.count() == 1
-        assert uow.exchange_rates.count() == 1
-        session = getattr(uow, "_session", None)
+    typed_uow: UnitOfWork
+    with file_db_container.resolve(UnitOfWork) as typed_uow:
+        assert typed_uow.currencies.count() == 1
+        assert typed_uow.categories.count() == 1
+        assert typed_uow.institutions.count() == 1
+        assert typed_uow.tags.count() == 1
+        assert typed_uow.accounts.count() == 1
+        assert typed_uow.balances.count() == 1
+        assert typed_uow.exchange_rates.count() == 1
+        session = getattr(typed_uow, "_session", None)
         assert session is not None
         links = session.execute(account_tags_table.select()).all()
         assert len(links) == 1
@@ -182,10 +191,11 @@ def test_import_tables_cli_updates_matching_rows_by_bundle_identity(
 
     importer.run(source_dir=str(source_dir))
 
-    with file_db_container.resolve(UnitOfWork) as uow:
-        institution = uow.institutions.get_by_id(1)
-        account = uow.accounts.get_by_id(1)
-        balance = uow.balances.get_by_id(1)
+    typed_uow: UnitOfWork
+    with file_db_container.resolve(UnitOfWork) as typed_uow:
+        institution: Institution | None = typed_uow.institutions.get_by_id(1)
+        account: Account | None = typed_uow.accounts.get_by_id(1)
+        balance: Balance | None = typed_uow.balances.get_by_id(1)
 
         assert institution is not None
         assert institution.description == "Updated bank description"
@@ -202,7 +212,7 @@ def test_import_tables_interactive_imports_valid_bundle(
     source_dir = tmp_path / "bundle"
     source_dir.mkdir()
     _write_minimal_bundle(source_dir)
-    console = file_db_container.resolve(Console)
+    console: Console = file_db_container.resolve(Console)
 
     monkeypatch.setattr(
         "nwtrack.application.use_cases.import_tables_csv.Prompt.ask",
@@ -215,8 +225,9 @@ def test_import_tables_interactive_imports_valid_bundle(
         console=console,
     ).run(defaults={"source_dir": str(source_dir)})
 
-    with file_db_container.resolve(UnitOfWork) as uow:
-        assert uow.accounts.count() == 1
+    typed_uow: UnitOfWork
+    with file_db_container.resolve(UnitOfWork) as typed_uow:
+        assert typed_uow.accounts.count() == 1
 
     assert "Imported CSV tables from" in console.export_text()
 
@@ -235,16 +246,18 @@ def test_import_tables_cli_leaves_unmatched_existing_rows_unchanged(
     )
     importer.run(source_dir=str(source_dir))
 
-    with file_db_container.resolve(UnitOfWork) as uow:
-        inserted_id = uow.institutions.insert(
+    typed_uow_insert: UnitOfWork
+    with file_db_container.resolve(UnitOfWork) as typed_uow_insert:
+        inserted_id: int = typed_uow_insert.institutions.insert(
             Institution(name="Spare bank", description="Not in bundle")
         )
         assert inserted_id == 2
 
     importer.run(source_dir=str(source_dir))
 
-    with file_db_container.resolve(UnitOfWork) as uow:
-        spare = uow.institutions.get_by_id(2)
+    typed_uow_verify: UnitOfWork
+    with file_db_container.resolve(UnitOfWork) as typed_uow_verify:
+        spare: Institution | None = typed_uow_verify.institutions.get_by_id(2)
         assert spare is not None
         assert spare.name == "Spare bank"
 
@@ -255,7 +268,7 @@ def test_import_tables_cli_rolls_back_on_invalid_relationship_rows(
     source_dir = tmp_path / "bundle"
     source_dir.mkdir()
     _write_invalid_account_tag_bundle(source_dir)
-    console = file_db_container.resolve(Console)
+    console: Console = file_db_container.resolve(Console)
 
     ImportTablesCSVCLI(
         importer=file_db_container.resolve(InitDataService),
@@ -263,10 +276,11 @@ def test_import_tables_cli_rolls_back_on_invalid_relationship_rows(
         console=console,
     ).run(source_dir=str(source_dir))
 
-    with file_db_container.resolve(UnitOfWork) as uow:
-        assert uow.currencies.count() == 0
-        assert uow.accounts.count() == 0
-        session = getattr(uow, "_session", None)
+    typed_uow: UnitOfWork
+    with file_db_container.resolve(UnitOfWork) as typed_uow:
+        assert typed_uow.currencies.count() == 0
+        assert typed_uow.accounts.count() == 0
+        session = getattr(typed_uow, "_session", None)
         assert session is not None
         assert session.execute(account_tags_table.select()).all() == []
 
@@ -284,21 +298,24 @@ def test_export_import_round_trip_reproduces_supported_bundle(
     )
     init_db_tables_w_entities(base_container, sample_entities)
 
-    with base_container.resolve(UnitOfWork) as uow:
-        institution_id = uow.institutions.insert(
+    typed_uow: UnitOfWork
+    with base_container.resolve(UnitOfWork) as typed_uow:
+        institution_id: int = typed_uow.institutions.insert(
             Institution(name="Fidelity", description="Brokerage")
         )
-        retirement_id = uow.tags.insert(
+        retirement_id: int = typed_uow.tags.insert(
             Tag(name="retirement", description="Retirement assets")
         )
-        core_id = uow.tags.insert(Tag(name="core", description="Core liquidity"))
-        account = uow.accounts.get_by_id(1)
+        core_id: int = typed_uow.tags.insert(
+            Tag(name="core", description="Core liquidity")
+        )
+        account: Account | None = typed_uow.accounts.get_by_id(1)
         assert account is not None
         account.institution_id = institution_id
         account.status = Status.INACTIVE
-        uow.accounts.update(account)
-        uow.tags.replace_for_account(1, [core_id, retirement_id])
-        uow.tags.replace_for_account(2, [retirement_id])
+        typed_uow.accounts.update(account)
+        typed_uow.tags.replace_for_account(1, [core_id, retirement_id])
+        typed_uow.tags.replace_for_account(2, [retirement_id])
 
     source_export_dir = tmp_path / "source-export"
     source_export_dir.mkdir()
