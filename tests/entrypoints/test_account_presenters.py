@@ -79,8 +79,8 @@ def test_account_list_presenter_renders_institution_column_for_mixed_accounts() 
     assert "None" not in output
 
 
-def test_account_creation_presenter_keeps_phase14_no_tag_input(monkeypatch) -> None:
-    """Phase 14 should not add tag input to account creation workflows."""
+def test_account_creation_presenter_exposes_tag_ids_field(monkeypatch) -> None:
+    """Account creation data should now carry tag selections."""
     import nwtrack.entrypoints.cli.adapters.account_presenters as account_presenters
 
     console = build_console(ConsoleSettings(record=True))
@@ -129,8 +129,8 @@ def test_account_creation_presenter_keeps_phase14_no_tag_input(monkeypatch) -> N
 
     assert data is not None
     assert "institution_id" in data.__dataclass_fields__
-    assert "tag_ids" not in data.__dataclass_fields__
-    assert "tags" not in data.__dataclass_fields__
+    assert "tag_ids" in data.__dataclass_fields__
+    assert data.tag_ids == []
     output = console.export_text()
     assert (
         "No institutions available. Continuing with no institution assigned."
