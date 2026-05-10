@@ -59,11 +59,13 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         from nwtrack.infra.persistence.repositories.reporting import (
             ReportingQueries,
         )
+        from nwtrack.infra.persistence.repositories.tags import TagsRepository
 
         # Instantiate repositories with shared session
         self.currencies = CurrenciesRepository(self._session)
         self.categories = CategoriesRepository(self._session)
         self.institutions = InstitutionsRepository(self._session)
+        self.tags = TagsRepository(self._session)
         self.accounts = AccountsRepository(self._session)
         self.balances = BalancesRepository(self._session)
         self.exchange_rates = ExchangeRatesRepository(self._session)
