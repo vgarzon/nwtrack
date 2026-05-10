@@ -90,6 +90,9 @@ def test_export_tables_interactive(
     captured = capsys.readouterr()
 
     print(captured.out)
+    assert "Skipped empty 'institutions' table." in captured.out
+    assert "Skipped empty 'tags' table." in captured.out
+    assert "Skipped empty 'account_tags' table." in captured.out
 
     for table_name in [
         "currencies",
