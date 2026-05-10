@@ -8,6 +8,7 @@ from rich.table import Table
 from nwtrack.application.dto import (
     InstitutionListItem,
     MonthlyCategoryBalance,
+    SingleMonthAggregationResult,
     TagListItem,
 )
 from nwtrack.domain.models import (
@@ -309,6 +310,27 @@ def build_category_summary_table(
             category_side,
             f"{amount:8,}",
         )
+    return table
+
+
+def build_single_month_aggregation_table(
+    result: SingleMonthAggregationResult,
+) -> Table:
+    """Build a Rich table for grouped single-month aggregation output."""
+    title = f"Grouped Balances {result.month} by {result.dimension.value}"
+    if result.currency_code is not None:
+        title += f" ({result.currency_code})"
+    table = Table(title=title)
+    table.add_column(result.dimension.value.title(), style="col.name")
+    if result.dimension == result.dimension.CURRENCY:
+        table.add_column("Currency", style="col.code")
+    table.add_column("Amount", justify="right", style="col.amount")
+    for group in result.groups:
+        row = [group.label]
+        if result.dimension == result.dimension.CURRENCY:
+            row.append(group.currency_code)
+        row.append(f"{group.amount:8,}")
+        table.add_row(*row)
     return table
 
 

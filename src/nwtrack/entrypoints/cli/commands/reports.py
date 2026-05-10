@@ -3,7 +3,11 @@ CLI reporting commands
 """
 
 import sys
+from typing import Annotated
 
+import typer
+
+from nwtrack.application.dto import AccountStatusScope, AggregationDimension
 from nwtrack.entrypoints.cli.app import reports_app
 from nwtrack.entrypoints.cli.ui.console import build_console
 
@@ -43,3 +47,29 @@ def networth_history_report_interactive(n_months: int = 12, n_years: int | None 
         n_months = 12
 
     sys.exit(report_networth.main(n_months=n_months))
+
+
+@reports_app.command("balances-aggregate")
+def balances_aggregate_report(
+    month: Annotated[str | None, typer.Option("--month")] = None,
+    dimension: Annotated[
+        AggregationDimension | None,
+        typer.Option("--dimension"),
+    ] = None,
+    currency: Annotated[str | None, typer.Option("--currency")] = None,
+    status_scope: Annotated[
+        AccountStatusScope,
+        typer.Option("--status-scope"),
+    ] = AccountStatusScope.ACTIVE,
+):
+    """Generate a grouped single-month balance report."""
+    import nwtrack.application.use_cases.report_balances_aggregate as report_balances
+
+    sys.exit(
+        report_balances.main(
+            month=month,
+            dimension=dimension,
+            currency_code=currency,
+            status_scope=status_scope,
+        )
+    )
