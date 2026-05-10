@@ -4,7 +4,11 @@ Fetch service module for read-only data retrieval.
 
 from collections.abc import Callable
 
-from nwtrack.application.dto import AccountStatusScope, MonthlyCategoryBalance
+from nwtrack.application.dto import (
+    AccountStatusScope,
+    AggregationDimension,
+    MonthlyCategoryBalance,
+)
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.domain.models import (
     Account,
@@ -256,3 +260,18 @@ class FetchService:
                 status_scope,
             )
         return currencies
+
+    def get_available_aggregation_months(
+        self,
+        dimension: AggregationDimension,
+        currency_code: str | None = None,
+        status_scope: AccountStatusScope = AccountStatusScope.ACTIVE,
+    ) -> list[Month]:
+        """Get distinct months with balances for one aggregation configuration."""
+        with self._uow() as uow:
+            months = uow.reporting.get_available_aggregation_months(
+                dimension,
+                currency_code,
+                status_scope,
+            )
+        return months
