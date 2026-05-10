@@ -909,6 +909,10 @@ class BalancesByCategoryPresenter(Protocol):
         """
         ...
 
+    def show_error(self, message: str) -> None:
+        """Display an error message for compatibility-report failures."""
+        ...
+
 
 class BalancesRollForwardPresenter(Protocol):
     """Presenter for balances roll forward workflow."""

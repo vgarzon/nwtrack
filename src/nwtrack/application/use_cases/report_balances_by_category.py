@@ -2,13 +2,35 @@
 Print summary of balances by category.
 """
 
-import logging
+from __future__ import annotations
 
-from nwtrack.application.dto import OperationResult
+import logging
+from typing import Protocol
+
+from nwtrack.application.dto import (
+    AccountStatusScope,
+    AggregationDimension,
+    OperationResult,
+    SingleMonthAggregationRequest,
+    SingleMonthAggregationResult,
+)
 from nwtrack.application.ports.presentation import BalancesByCategoryPresenter
 from nwtrack.application.services.fetch import FetchService
+from nwtrack.application.services.report_compatibility import (
+    to_monthly_category_balances,
+    to_networth,
+)
 
 logger = logging.getLogger(__name__)
+
+
+class _SingleMonthAggregationRunner(Protocol):
+    """Shared aggregation dependency for the compatibility category report."""
+
+    def run(
+        self,
+        request: SingleMonthAggregationRequest,
+    ) -> OperationResult[SingleMonthAggregationResult]: ...
 
 
 class ReportBalancesByCategory:
@@ -18,9 +40,11 @@ class ReportBalancesByCategory:
         self,
         fetcher: FetchService,
         presenter: BalancesByCategoryPresenter,
+        aggregation_report: _SingleMonthAggregationRunner,
     ) -> None:
         self._fetcher = fetcher
         self._presenter = presenter
+        self._aggregation_report = aggregation_report
 
     def run(self) -> OperationResult:
         """Run the summary service."""
@@ -44,12 +68,62 @@ class ReportBalancesByCategory:
 
         balances = self._fetcher.get_month_balances(month, active_only=True)
         self._presenter.show_balances_table(balances, title_suffix=str(month))
-        monthly_balances = self._fetcher.get_monthly_balance_total_by_category(month)
+
+        currencies = self._fetcher.get_month_currencies(
+            month,
+            AccountStatusScope.ACTIVE,
+        )
+        if len(currencies) > 1:
+            message = (
+                "Mixed-currency compatibility reporting is not supported yet. "
+                "Conversion-based consolidated reporting is not available yet."
+            )
+            self._presenter.show_error(message)
+            return OperationResult(success=False, error_message=message)
+
+        category_result = self._aggregation_report.run(
+            SingleMonthAggregationRequest(
+                month=month,
+                dimension=AggregationDimension.CATEGORY,
+                currency_code=currencies[0] if len(currencies) == 1 else None,
+                status_scope=AccountStatusScope.ACTIVE,
+            )
+        )
+        if not category_result.success or category_result.data is None:
+            error_message = (
+                category_result.error_message
+                or "Unable to build category compatibility report."
+            )
+            self._presenter.show_error(error_message)
+            return OperationResult(success=False, error_message=error_message)
+
+        category_sides = {
+            category.name: category.side
+            for category in self._fetcher.get_all_categories()
+        }
+        monthly_balances = to_monthly_category_balances(
+            category_result.data,
+            category_sides,
+        )
         self._presenter.show_summary_by_category(monthly_balances, str(month))
 
-        # TODO: Handle currency selection
         currency_code = "USD"
-        nw = self._fetcher.get_networth(month, currency_code=currency_code)
+        networth_result = self._aggregation_report.run(
+            SingleMonthAggregationRequest(
+                month=month,
+                dimension=AggregationDimension.SIDE,
+                currency_code=currency_code,
+                status_scope=AccountStatusScope.ACTIVE,
+            )
+        )
+        if not networth_result.success or networth_result.data is None:
+            error_message = (
+                networth_result.error_message
+                or "Unable to build net worth compatibility report."
+            )
+            self._presenter.show_error(error_message)
+            return OperationResult(success=False, error_message=error_message)
+        nw = to_networth(networth_result.data)
 
         if not nw:
             logger.warning("No net worth data found for %s in %s", month, currency_code)
@@ -73,6 +147,9 @@ def main() -> int:
     from dotenv import load_dotenv
 
     from nwtrack.application.ports.uow import UnitOfWork
+    from nwtrack.application.use_cases.report_single_month_aggregation import (
+        ReportSingleMonthAggregation,
+    )
     from nwtrack.bootstrap.composition import Lifetime, build_base_container
     from nwtrack.bootstrap.logging_config import setup_logging
     from nwtrack.entrypoints.cli.adapters.report_presenters import (
@@ -96,6 +173,9 @@ def main() -> int:
         FetchService,
         lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
     ).register(
+        ReportSingleMonthAggregation,
+        lambda c: ReportSingleMonthAggregation(uow=lambda: c.resolve(UnitOfWork)),
+    ).register(
         BalancesByCategoryPresenter,
         lambda c: RichBalancesByCategoryPresenter(
             fetcher=c.resolve(FetchService),
@@ -106,6 +186,7 @@ def main() -> int:
         lambda c: ReportBalancesByCategory(
             fetcher=c.resolve(FetchService),
             presenter=c.resolve(BalancesByCategoryPresenter),
+            aggregation_report=c.resolve(ReportSingleMonthAggregation),
         ),
     )
     result: OperationResult = container.resolve(ReportBalancesByCategory).run()

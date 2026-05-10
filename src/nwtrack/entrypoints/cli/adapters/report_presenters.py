@@ -254,6 +254,10 @@ class RichBalancesByCategoryPresenter:
             f"[error]No net worth data found for {month} in {currency_code}[/error]"
         )
 
+    def show_error(self, message: str) -> None:
+        """Display an error message."""
+        self._console.print(f"[error]{message}[/error]")
+
 
 class RichSingleMonthAggregationReportPresenter:
     """Rich-based implementation of the aggregated single-month report presenter."""

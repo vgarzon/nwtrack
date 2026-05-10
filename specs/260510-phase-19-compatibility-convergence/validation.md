@@ -5,7 +5,7 @@
 Update this checklist as task groups in `plan.md` are completed.
 
 - [X] Compatibility Reporting Contracts
-- [ ] Legacy Command Convergence
+- [X] Legacy Command Convergence
 - [ ] Correctness And Error Handling
 - [ ] Validation And Constitution Updates
 
@@ -13,6 +13,8 @@ Update this checklist as task groups in `plan.md` are completed.
 
 - Compatibility Reporting Contracts: completed. Added a shared reporting-query helper for distinct available aggregation months, exposed it through `FetchService`, and added compatibility mappers for adapting shared category and side aggregation results back into legacy DTO shapes.
 - Compatibility Reporting Contracts validation: `uv run pytest tests/sqlite/test_reporting_queries.py tests/services/test_fetch_service.py tests/use_cases/test_report_compatibility.py`
+- Legacy Command Convergence: completed. Reworked `reports balances-category` to source category and net-worth sections from shared single-month aggregation, reworked `reports networth-history` to source rows from shared history aggregation, and preserved the existing command surfaces and presenter layouts.
+- Legacy Command Convergence validation: `uv run pytest tests/use_cases/test_report_balances_by_category.py tests/use_cases/test_report_networth_history.py tests/entrypoints/test_cli_reports.py`
 
 ## Automated
 
