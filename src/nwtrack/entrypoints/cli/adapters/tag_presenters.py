@@ -164,3 +164,52 @@ class RichTagUpdatePresenter:
     def show_success(self, tags: list[TagListItem]) -> None:
         self._console.print("\n[success]Tag updated successfully.[/success]")
         self.display_tags(tags)
+
+
+class RichTagDeletePresenter:
+    """Rich-based implementation of TagDeletePresenter."""
+
+    def __init__(self, console: Console) -> None:
+        self._console = console
+        self._confirm = Confirm(console=console)
+
+    def show_header(self) -> None:
+        self._console.rule("[header]Delete Tag[/header]")
+
+    def display_tags(self, tags: list[TagListItem]) -> None:
+        RichTagListPresenter(self._console).display_tags(tags)
+
+    def show_no_tags(self) -> None:
+        self._console.print("[info]No tags available to delete.[/info]")
+
+    def select_tag(self) -> int | None:
+        return prompt_for_tag_id(self._console)
+
+    def show_tag_not_found(self, tag_id: int) -> None:
+        self._console.print(
+            f"[validation]Tag ID {tag_id} not found.[/validation] Please try again."
+        )
+
+    def show_preview_and_confirm(self, tag: Tag, account_count: int) -> bool:
+        self._console.print("[bold]Tag to be deleted:[/bold]")
+        render_tag_data(self._console, tag, account_count=account_count)
+        return self._confirm.ask("Proceed with delete", default=False)
+
+    def show_delete_blocked(self, tag: Tag, account_count: int) -> None:
+        self._console.print(
+            f"[validation]Cannot delete tag '{tag.name}'.[/validation] "
+            f"It is still linked to {account_count} account(s)."
+        )
+
+    def show_cancellation(self, message: str = "") -> None:
+        full_message = "[cancel]Tag delete cancelled.[/cancel]"
+        if message:
+            full_message += f" {message}"
+        self._console.print(full_message)
+
+    def show_error(self, message: str) -> None:
+        self._console.print(f"[error]{message}[/error]")
+
+    def show_success(self, tags: list[TagListItem]) -> None:
+        self._console.print("\n[success]Tag deleted successfully.[/success]")
+        self.display_tags(tags)
