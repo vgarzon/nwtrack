@@ -112,7 +112,9 @@ class TagsRepository(TagsRepositoryProtocol):
         """Replace all tag associations for an account."""
         normalized_tag_ids = list(dict.fromkeys(tag_ids))
         self._session.execute(
-            delete(account_tags_table).where(account_tags_table.c.account_id == account_id)
+            delete(account_tags_table).where(
+                account_tags_table.c.account_id == account_id
+            )
         )
         if normalized_tag_ids:
             self._session.execute(
