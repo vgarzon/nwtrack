@@ -65,7 +65,7 @@ The monthly snapshot model is a feature, not a temporary shortcut. New work shou
 - Managing accounts, categories, institutions, tags, balances, and exchange rates
 - Reporting balances for a single month or across month history by account attributes
 - Preserving compatibility with existing CLI reporting where practical
-- CSV-based import/export for portability
+- CSV-based import/export for portability, backup, and recovery
 - Local-only operation by default
 - Incremental evolution from CLI toward TUI
 
