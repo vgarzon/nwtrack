@@ -186,7 +186,11 @@ def test_export_accounts_csv_includes_institution_id_when_present(
         "id,name,description,category,institution_id,currency,status"
     )
     assert any(
-        line == "5,phase10_export_account,Export compatibility check,checking,1,USD,active"
+        line
+        == (
+            "5,phase10_export_account,Export compatibility check,"
+            "checking,1,USD,active"
+        )
         for line in accounts_csv[1:]
     )
 
