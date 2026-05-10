@@ -13,7 +13,7 @@ from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.application.use_cases.update_account_info import UpdateAccountInfo
 from nwtrack.bootstrap.container import Container
-from nwtrack.domain.models import Institution
+from nwtrack.domain.models import Institution, Tag
 from nwtrack.entrypoints.cli.adapters.account_presenters import (
     RichAccountUpdatePresenter,
 )
@@ -148,6 +148,10 @@ def test_account_updater_run_success_with_no_institutions(
         r"No institutions available\. Continuing with no institution assigned\.",
         captured_output,
     )
+    assert re.search(
+        r"No tags available\. Continuing with no tags assigned\.",
+        captured_output,
+    )
 
 
 def test_account_updater_can_add_institution(
@@ -163,11 +167,13 @@ def test_account_updater_can_add_institution(
         institution_id = uow.institutions.insert(
             Institution(name="Chase", description="Primary bank")
         )
+        uow.tags.insert(Tag(name="liquid", description="Quick access"))
 
     _patch_update_prompts(
         monkeypatch,
         prompt_values=[
             "1",
+            "0",
             "bank_1_checking",
             "bank_1 checking",
         ],
@@ -193,6 +199,7 @@ def test_account_updater_can_add_institution(
     assert updated_account is not None
     assert updated_account.institution_id == institution_id
     assert "institution index" in prompt_order[0]
+    assert "tag indexes" in prompt_order[1]
 
     captured_output: str = configured_container.resolve(Console).export_text()
     assert re.search(r"Institution: Chase", captured_output)
@@ -222,6 +229,7 @@ def test_account_updater_can_change_institution(
         monkeypatch,
         prompt_values=[
             "2",
+            "0",
             "bank_1_checking",
             "bank_1 checking",
         ],
@@ -270,6 +278,7 @@ def test_account_updater_can_clear_institution(
     _patch_update_prompts(
         monkeypatch,
         prompt_values=[
+            "0",
             "0",
             "bank_1_checking",
             "bank_1 checking",

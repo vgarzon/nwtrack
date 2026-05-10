@@ -299,6 +299,62 @@ def prompt_for_optional_institution_choice(
     return int(choice)
 
 
+def prompt_for_optional_tag_choices(
+    console: Console,
+    n_tags: int,
+    default: str = "0",
+) -> list[int] | None:
+    """Prompt for optional tag selection by displayed indexes.
+
+    `0` selects no tags, indexes `1..n` map to tags, comma-separated input
+    selects multiple tags, and `q` quits the workflow.
+    """
+    prompt = Prompt(console=console)
+    while True:
+        choice = prompt.ask(
+            (
+                "Enter [bold]tag indexes[/bold] as comma-separated values, "
+                "'0' for None, or 'q' to quit"
+            ),
+            default=default,
+        ).strip()
+        normalized = choice.lower()
+        if normalized == "q":
+            return None
+        if choice == "0":
+            return []
+
+        raw_indexes = [part.strip() for part in choice.split(",")]
+        if not raw_indexes or any(not part for part in raw_indexes):
+            console.print(
+                "[validation]Invalid tag selection.[/validation] Please try again."
+            )
+            continue
+
+        try:
+            indexes = [int(part) for part in raw_indexes]
+        except ValueError:
+            console.print(
+                "[validation]Invalid tag selection.[/validation] Please try again."
+            )
+            continue
+
+        if 0 in indexes:
+            console.print(
+                "[validation]Use '0' by itself to select no tags.[/validation]"
+                " Please try again."
+            )
+            continue
+
+        if any(index < 1 or index > n_tags for index in indexes):
+            console.print(
+                "[validation]Invalid tag selection.[/validation] Please try again."
+            )
+            continue
+
+        return indexes
+
+
 def prompt_for_category_side(console: Console) -> str:
     """Prompt user for category side.
 

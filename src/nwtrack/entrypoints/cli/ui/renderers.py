@@ -53,6 +53,22 @@ def build_indexed_institutions_table(institutions: list[Institution]) -> Table:
     return table
 
 
+def build_indexed_tags_table(tags: list[Tag]) -> Table:
+    """Build an indexed tag-selection table with a no-tags option."""
+    table = Table(title="Tags")
+    table.add_column("Index", justify="right", style="col.id", no_wrap=True)
+    table.add_column("Name", style="col.name")
+    table.add_column("Description", style="col.desc")
+    table.add_row("0", "None", "")
+    for index, tag in enumerate(tags, start=1):
+        table.add_row(
+            str(index),
+            tag.name,
+            tag.description or "",
+        )
+    return table
+
+
 def build_accounts_table(
     accounts: list[Account],
     title_prefix: str = "",

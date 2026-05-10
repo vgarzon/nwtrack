@@ -10,6 +10,7 @@ from nwtrack.domain.models import (
     Institution,
     Side,
     Status,
+    Tag,
 )
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.adapters.account_presenters import (
@@ -30,6 +31,20 @@ class FakeAccountCreationFetchService:
 
     def get_all_institutions(self) -> list[Institution]:
         return []
+
+    def get_all_tags(self) -> list[Tag]:
+        return []
+
+
+class FakeTaggedAccountCreationFetchService(FakeAccountCreationFetchService):
+    """Fetch-service stub with tags for presenter tests."""
+
+    def get_all_tags(self) -> list[Tag]:
+        liquid = Tag(name="liquid", description="Quick access")
+        liquid.id = 1
+        emergency = Tag(name="emergency", description="Rainy day")
+        emergency.id = 2
+        return [liquid, emergency]
 
 
 def test_account_list_presenter_renders_institution_column_for_mixed_accounts() -> None:
@@ -79,8 +94,8 @@ def test_account_list_presenter_renders_institution_column_for_mixed_accounts() 
     assert "None" not in output
 
 
-def test_account_creation_presenter_keeps_phase14_no_tag_input(monkeypatch) -> None:
-    """Phase 14 should not add tag input to account creation workflows."""
+def test_account_creation_presenter_handles_no_tags(monkeypatch) -> None:
+    """Account creation should continue cleanly when no tags exist."""
     import nwtrack.entrypoints.cli.adapters.account_presenters as account_presenters
 
     console = build_console(ConsoleSettings(record=True))
@@ -89,6 +104,13 @@ def test_account_creation_presenter_keeps_phase14_no_tag_input(monkeypatch) -> N
         cast(FetchService, FakeAccountCreationFetchService()),
     )
 
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_optional_tag_choices",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("Tag selector should not run when no tags exist.")
+        ),
+    )
     monkeypatch.setattr(
         account_presenters,
         "prompt_for_account_name",
@@ -129,11 +151,67 @@ def test_account_creation_presenter_keeps_phase14_no_tag_input(monkeypatch) -> N
 
     assert data is not None
     assert "institution_id" in data.__dataclass_fields__
-    assert "tag_ids" not in data.__dataclass_fields__
-    assert "tags" not in data.__dataclass_fields__
+    assert data.tag_ids == []
     output = console.export_text()
     assert (
         "No institutions available. Continuing with no institution assigned."
         in output
     )
-    assert "Tag" not in output
+    assert "No tags available. Continuing with no tags assigned." in output
+
+
+def test_account_creation_presenter_collects_tag_ids_from_indexes(monkeypatch) -> None:
+    """Account creation should map selected tag indexes to tag IDs."""
+    import nwtrack.entrypoints.cli.adapters.account_presenters as account_presenters
+
+    console = build_console(ConsoleSettings(record=True))
+    presenter = RichAccountCreationPresenter(
+        console,
+        cast(FetchService, FakeTaggedAccountCreationFetchService()),
+    )
+
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_account_name",
+        lambda *args, **kwargs: "cash_account",
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_account_description",
+        lambda *args, **kwargs: "Cash account",
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_category_choice",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_currency_choice",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_status_choice",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_month",
+        lambda *args, **kwargs: Month(2025, 10),
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_balance_amount",
+        lambda *args, **kwargs: 100,
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_optional_tag_choices",
+        lambda *args, **kwargs: [2, 1, 2],
+    )
+
+    data = presenter.collect_account_data()
+
+    assert data is not None
+    assert data.tag_ids == [2, 1]

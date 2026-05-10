@@ -5,7 +5,7 @@ Demo interactive use case for updating account information.
 import logging
 from collections.abc import Callable
 
-from nwtrack.application.dto import OperationResult
+from nwtrack.application.dto import OperationResult, UpdatedAccountData
 from nwtrack.application.ports.presentation import AccountUpdatePresenter
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
@@ -56,19 +56,20 @@ class UpdateAccountInfo:
             return OperationResult(success=False, error_message=_msg)
 
         # Collect updated data
-        updated_account = self._presenter.collect_updated_data(current_account)
-        if updated_account is None:
+        updated_account_data = self._presenter.collect_updated_data(current_account)
+        if updated_account_data is None:
             logger.warning("Account update cancelled by user.")
             self._presenter.show_cancellation()
             return OperationResult(success=False, error_message="Cancelled by user")
 
         # Show preview and confirm
-        if not self._presenter.show_preview_and_confirm(updated_account):
+        if not self._presenter.show_preview_and_confirm(updated_account_data):
             logger.warning("Account update cancelled by user.")
             self._presenter.show_cancellation("User declined.")
             return OperationResult(success=False, error_message="User declined")
 
         # Update in database
+        updated_account = self._build_account(updated_account_data)
         self._update_account(updated_account)
 
         # Verify update
@@ -84,6 +85,19 @@ class UpdateAccountInfo:
         logger.info("Finished Account Updater")
 
         return OperationResult(success=True)
+
+    def _build_account(self, update_data: UpdatedAccountData) -> Account:
+        """Build an Account entity from update workflow input."""
+        updated_account = Account(
+            name=update_data.account_name,
+            description=update_data.description,
+            category_name=update_data.category_name,
+            currency_code=update_data.currency_code,
+            institution_id=update_data.institution_id,
+            status=update_data.status,
+        )
+        updated_account.id = update_data.account_id
+        return updated_account
 
     def _update_account(self, updated_account: Account) -> None:
         """Update account data in the database.

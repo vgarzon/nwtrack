@@ -14,7 +14,7 @@ from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.application.use_cases.create_account import AccountCreator
 from nwtrack.bootstrap.container import Container
-from nwtrack.domain.models import Institution
+from nwtrack.domain.models import Institution, Tag
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.adapters.account_presenters import (
     RichAccountCreationPresenter,
@@ -115,6 +115,13 @@ def test_account_creator_run_success_defaults(
     )
     monkeypatch.setattr(
         nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_optional_tag_choices",
+        lambda *args, **kwargs: pytest.fail(
+            "Tag choice should not be prompted when no tags exist."
+        ),
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
         "prompt_for_month",
         lambda *args, **kwargs: Month(2025, 10),
     )
@@ -158,6 +165,10 @@ def test_account_creator_run_success_defaults(
         r"No institutions available\. Continuing with no institution assigned\.",
         captured_output,
     )
+    assert re.search(
+        r"No tags available\. Continuing with no tags assigned\.",
+        captured_output,
+    )
 
 
 def test_account_creator_run_success_with_selected_institution(
@@ -176,11 +187,16 @@ def test_account_creator_run_success_with_selected_institution(
         call_order.append("institution")
         return 1
 
+    def prompt_tags(*args, **kwargs) -> list[int]:
+        call_order.append("tags")
+        return []
+
     uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
     with uow_manager as uow:
         institution_id = uow.institutions.insert(
             Institution(name="Chase", description="Primary bank")
         )
+        uow.tags.insert(Tag(name="liquid", description="Quick access"))
 
     monkeypatch.setattr(
         nwtrack.entrypoints.cli.adapters.account_presenters,
@@ -214,6 +230,11 @@ def test_account_creator_run_success_with_selected_institution(
     )
     monkeypatch.setattr(
         nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_optional_tag_choices",
+        prompt_tags,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
         "prompt_for_month",
         lambda *args, **kwargs: Month(2025, 11),
     )
@@ -241,7 +262,7 @@ def test_account_creator_run_success_with_selected_institution(
         created_account = uow.accounts.get_by_id(account_id)
     assert created_account is not None
     assert created_account.institution_id == institution_id
-    assert call_order == ["institution", "name"]
+    assert call_order == ["institution", "tags", "name"]
 
     console: Console = configured_container.resolve(Console)
     captured_output = console.export_text()
@@ -271,6 +292,13 @@ def test_account_creator_quits_when_institution_selector_returns_q(
         nwtrack.entrypoints.cli.adapters.account_presenters,
         "prompt_for_optional_institution_choice",
         prompt_institution,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_optional_tag_choices",
+        lambda *args, **kwargs: pytest.fail(
+            "Tag selection should not run after quitting the institution selector."
+        ),
     )
     monkeypatch.setattr(
         nwtrack.entrypoints.cli.adapters.account_presenters,

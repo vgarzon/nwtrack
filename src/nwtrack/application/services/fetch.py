@@ -13,6 +13,7 @@ from nwtrack.domain.models import (
     Currency,
     Institution,
     NetWorth,
+    Tag,
 )
 from nwtrack.domain.value_objects import Month
 
@@ -65,6 +66,12 @@ class FetchService:
         with self._uow() as uow:
             institutions = uow.institutions.get_all()
         return institutions
+
+    def get_all_tags(self) -> list[Tag]:
+        """Get tags for account workflow selection."""
+        with self._uow() as uow:
+            tags = uow.tags.get_all()
+        return tags
 
     def get_account_by_id(self, account_id: int) -> Account | None:
         """Get account by ID.

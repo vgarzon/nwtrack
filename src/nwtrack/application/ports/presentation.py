@@ -13,6 +13,7 @@ from nwtrack.application.dto import (
     MonthlyCategoryBalance,
     NewAccountData,
     TagListItem,
+    UpdatedAccountData,
 )
 from nwtrack.domain.models import Account, Balance, Category, Institution, NetWorth, Tag
 from nwtrack.domain.value_objects import Month
@@ -293,8 +294,8 @@ class AccountCreationPresenter(Protocol):
     def collect_account_data(self) -> NewAccountData | None:
         """Interactively collect all account data from user.
 
-        This includes: name, description, category, currency, status,
-        initial month, initial balance amount, and optional institution.
+        This includes: institution, tags, name, description, category, currency,
+        status, initial month, and initial balance amount.
 
         Returns:
             NewAccountData or None if cancelled by user
@@ -377,19 +378,21 @@ class AccountUpdatePresenter(Protocol):
         """
         ...
 
-    def collect_updated_data(self, current_account: Account) -> Account | None:
+    def collect_updated_data(
+        self, current_account: Account
+    ) -> UpdatedAccountData | None:
         """Interactively collect updated account data with current values as defaults.
 
         Args:
             current_account: Current account data to use as defaults
 
         Returns:
-            Updated Account with preserved or updated institution assignment,
-            or None if cancelled by user
+            Updated account input data with preserved or updated institution and tag
+            assignment, or None if cancelled by user
         """
         ...
 
-    def show_preview_and_confirm(self, updated_account: Account) -> bool:
+    def show_preview_and_confirm(self, updated_account: UpdatedAccountData) -> bool:
         """Show preview of updated account and get confirmation.
 
         Args:
