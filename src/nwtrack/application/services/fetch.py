@@ -36,9 +36,11 @@ class FetchService:
         if active_only:
             with self._uow() as uow:
                 accounts = uow.accounts.get_active()
+                self._attach_tags_to_accounts(uow, accounts)
         else:
             with self._uow() as uow:
                 accounts = uow.accounts.get_all()
+                self._attach_tags_to_accounts(uow, accounts)
         return accounts
 
     def get_all_categories(self) -> list[Category]:
@@ -84,7 +86,15 @@ class FetchService:
         """
         with self._uow() as uow:
             account = uow.accounts.get_by_id(account_id)
+            if account is not None:
+                account.tags = uow.tags.get_for_account(account_id)
         return account
+
+    def get_tags_for_account(self, account_id: int) -> list[Tag]:
+        """Get tags linked to a specific account."""
+        with self._uow() as uow:
+            tags = uow.tags.get_for_account(account_id)
+        return tags
 
     def get_balance_by_id(self, balance_id: int) -> Balance | None:
         """Get balance by ID.
@@ -231,3 +241,12 @@ class FetchService:
         with self._uow() as uow:
             monthly_balances = uow._reporting.monthly_balance_total_by_category(month)
         return monthly_balances
+
+    def _attach_tags_to_accounts(
+        self,
+        uow: UnitOfWork,
+        accounts: list[Account],
+    ) -> None:
+        """Populate account tag relationships for detached read models."""
+        for account in accounts:
+            account.tags = uow.tags.get_for_account(account.id)
