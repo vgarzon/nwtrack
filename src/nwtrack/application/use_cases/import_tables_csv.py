@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.prompt import Prompt
 
 from nwtrack.application.services.data_loader import InitDataService
+from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.bootstrap.container import Container
 from nwtrack.entrypoints.cli.ui.console import build_console
 
@@ -18,13 +19,20 @@ logger = logging.getLogger(__name__)
 class ImportTablesCSVBase:
     """Base class for importing database tables from CSV files."""
 
-    def __init__(self, importer: InitDataService, console: Console) -> None:
+    def __init__(
+        self,
+        importer: InitDataService,
+        admin_svc: DBAdminService,
+        console: Console,
+    ) -> None:
         self._importer = importer
+        self._admin_svc = admin_svc
         self._console = console
 
     def import_tables_from_dir(self, source_dir: Path) -> None:
         """Import database tables from CSV files in the source directory."""
         try:
+            self._admin_svc.ensure_database()
             self._importer.import_bundle_from_dir(source_dir)
         except Exception as exc:
             logger.error("Failed to import CSV bundle from %s: %s", source_dir, exc)
@@ -38,8 +46,13 @@ class ImportTablesCSVBase:
 class ImportTablesCSVInteractive(ImportTablesCSVBase):
     """Import database tables to the runtime database."""
 
-    def __init__(self, importer: InitDataService, console: Console) -> None:
-        super().__init__(importer, console)
+    def __init__(
+        self,
+        importer: InitDataService,
+        admin_svc: DBAdminService,
+        console: Console,
+    ) -> None:
+        super().__init__(importer, admin_svc, console)
         self._prompt = Prompt(console=self._console)
 
     def run(self, defaults: dict[str, str]) -> None:
@@ -80,19 +93,18 @@ class ImportTablesCSVCLI(ImportTablesCSVBase):
 def bootstrap() -> Container:
     from dotenv import load_dotenv
 
-    from nwtrack.application.ports.uow import UnitOfWork
-    from nwtrack.bootstrap.composition import build_base_container
+    from nwtrack.bootstrap.composition import (
+        build_base_container,
+        build_data_services_container,
+    )
     from nwtrack.bootstrap.logging_config import setup_logging
 
     load_dotenv()
     setup_logging()
-    container = build_base_container()
+    container = build_data_services_container(build_base_container())
     container.register(
         Console,
         lambda c: build_console(),
-    ).register(
-        InitDataService,
-        lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
     )
     return container
 
@@ -103,6 +115,7 @@ def run_interactive(container: Container, defaults: dict[str, str]) -> None:
         ImportTablesCSVInteractive,
         lambda c: ImportTablesCSVInteractive(
             importer=c.resolve(InitDataService),
+            admin_svc=c.resolve(DBAdminService),
             console=c.resolve(Console),
         ),
     )
@@ -115,6 +128,7 @@ def run_cli(container: Container, source_dir: str) -> None:
         ImportTablesCSVCLI,
         lambda c: ImportTablesCSVCLI(
             importer=c.resolve(InitDataService),
+            admin_svc=c.resolve(DBAdminService),
             console=c.resolve(Console),
         ),
     )
