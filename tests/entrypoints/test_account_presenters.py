@@ -2,6 +2,8 @@
 
 from typing import cast
 
+from rich.prompt import IntPrompt, Prompt
+
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import (
     Account,
@@ -225,7 +227,6 @@ def test_account_creation_presenter_collects_selected_tag_ids(monkeypatch) -> No
 def test_account_update_presenter_uses_current_tags_as_default(monkeypatch) -> None:
     """Account update should seed tag replacement with current selections."""
     import nwtrack.entrypoints.cli.adapters.account_presenters as account_presenters
-    from rich.prompt import IntPrompt, Prompt
 
     console = build_console(ConsoleSettings(record=True))
     presenter = RichAccountUpdatePresenter(
