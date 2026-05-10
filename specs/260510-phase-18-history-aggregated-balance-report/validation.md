@@ -5,10 +5,15 @@
 Update this checklist as task groups in `plan.md` are completed.
 
 - [X] Shared History Aggregation Contracts
-- [X] History Aggregation Use Case
-- [X] CLI Contract And Interactive Flow
-- [X] History Report Presentation
-- [X] Validation And Compatibility
+- [ ] History Aggregation Use Case
+- [ ] CLI Contract And Interactive Flow
+- [ ] History Report Presentation
+- [ ] Validation And Compatibility
+
+## Implementation Notes
+
+- Shared History Aggregation Contracts: completed. Added history-range DTOs, reporting port support for range currency lookup and generic history aggregation, SQLAlchemy repository implementation for all supported dimensions, and repository coverage in `tests/sqlite/test_reporting_queries.py`.
+- Shared History Aggregation Contracts validation: `uv run pytest tests/sqlite/test_reporting_queries.py`
 
 ## Automated
 
