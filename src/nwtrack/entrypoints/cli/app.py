@@ -15,6 +15,7 @@ accounts_app = typer.Typer(help="Account commands", no_args_is_help=True)
 balances_app = typer.Typer(help="Balance commands", no_args_is_help=True)
 categories_app = typer.Typer(help="Categories commands", no_args_is_help=True)
 institutions_app = typer.Typer(help="Institution commands", no_args_is_help=True)
+tags_app = typer.Typer(help="Tag commands", no_args_is_help=True)
 reports_app = typer.Typer(help="Report commands", no_args_is_help=True)
 export_app = typer.Typer(help="Export commands", no_args_is_help=True)
 
@@ -22,6 +23,7 @@ app.add_typer(accounts_app, name="accounts")
 app.add_typer(balances_app, name="balances")
 app.add_typer(categories_app, name="categories")
 app.add_typer(institutions_app, name="institutions")
+app.add_typer(tags_app, name="tags")
 app.add_typer(reports_app, name="reports")
 app.add_typer(export_app, name="export")
 
@@ -52,4 +54,5 @@ from nwtrack.entrypoints.cli.commands import (  # noqa: F401, E402
     export,
     institutions,
     reports,
+    tags,
 )
