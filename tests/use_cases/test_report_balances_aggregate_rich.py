@@ -5,7 +5,11 @@ import re
 import pytest
 from tests.helpers import init_db_tables_w_entities
 
-from nwtrack.application.dto import AggregationDimension
+from nwtrack.application.dto import (
+    AggregationDimension,
+    OperationResult,
+    SingleMonthAggregationResult,
+)
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.application.use_cases.report_balances_aggregate import (
@@ -20,7 +24,13 @@ from nwtrack.entrypoints.cli.adapters.report_presenters import (
     RichSingleMonthAggregationReportPresenter,
 )
 from nwtrack.entrypoints.cli.ui.factory import Console, ConsoleFactory, ConsoleSettings
-from nwtrack.infra.persistence.orm.models import Account, Balance, Institution, Status, Tag
+from nwtrack.infra.persistence.orm.models import (
+    Account,
+    Balance,
+    Institution,
+    Status,
+    Tag,
+)
 
 
 def _setup_reporting_fixture(base_container, sample_entities):
@@ -63,7 +73,9 @@ def _setup_reporting_fixture(base_container, sample_entities):
                 status=Status.ACTIVE,
             )
         )
-        uow.balances.insert(Balance(account_id=swiss_account_id, month=month, amount=700))
+        uow.balances.insert(
+            Balance(account_id=swiss_account_id, month=month, amount=700)
+        )
 
     return container, month
 
@@ -134,7 +146,7 @@ def test_currency_report_renders_one_currency_column(
     configured_container: Container,
     sample_entities: dict[str, list],
 ) -> None:
-    """Currency aggregation should render grouped rows without a report currency suffix."""
+    """Currency aggregation should not imply one report currency."""
     container, month = _setup_reporting_fixture(configured_container, sample_entities)
 
     result = container.resolve(SingleMonthAggregatedBalanceReport).run(
@@ -191,13 +203,15 @@ def test_empty_results_show_no_data_message_without_rendering_table(
     container = configured_container
     init_db_tables_w_entities(container, sample_entities)
 
-    result = container.resolve(SingleMonthAggregatedBalanceReport).run(
+    result: OperationResult[SingleMonthAggregationResult] = container.resolve(
+        SingleMonthAggregatedBalanceReport
+    ).run(
         month=Month(2030, 1),
         dimension=AggregationDimension.CATEGORY,
         currency_code="USD",
         allow_interactive=False,
     )
-    output = container.resolve(Console).export_text()
+    output: str = container.resolve(Console).export_text()
 
     assert result.success
     assert "No grouped balances found for 2030-01 by category in USD." in output

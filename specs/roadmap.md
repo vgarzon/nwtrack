@@ -129,7 +129,7 @@ Expected outcomes:
 - Tag aggregation semantics for multi-tag accounts are explicitly defined in the feature spec and tests
 - Report outputs remain CLI-oriented
 
-### [ ] Phase 17: New Single-Month Aggregated Balance Report
+### [X] Phase 17: New Single-Month Aggregated Balance Report
 
 Goal:
 Expose the generalized single-month report through a dedicated CLI command.

@@ -33,7 +33,7 @@ def test_grouped_table_uses_selected_dimension_as_first_column() -> None:
 
 
 def test_currency_grouped_table_keeps_one_currency_column() -> None:
-    """Currency aggregation should render one currency label column and one amount column."""
+    """Currency aggregation should render one currency label column."""
     result = SingleMonthAggregationResult(
         month=Month(2025, 11),
         dimension=AggregationDimension.CURRENCY,
