@@ -12,11 +12,13 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from sqlalchemy import (
+    Column,
     CheckConstraint,
     Float,
     ForeignKey,
     Integer,
     String,
+    Table,
     UniqueConstraint,
 )
 from sqlalchemy import Enum as SQLEnum
@@ -84,6 +86,25 @@ class Tag(MappedAsDataclass, Base):
     description: Mapped[str | None] = mapped_column(String, nullable=True, default=None)
 
 
+account_tags_table = Table(
+    "account_tags",
+    Base.metadata,
+    Column(
+        "account_id",
+        Integer,
+        ForeignKey("accounts.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column(
+        "tag_id",
+        Integer,
+        ForeignKey("tags.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    UniqueConstraint("account_id", "tag_id", name="uq_account_tags_account_tag"),
+)
+
+
 class Account(MappedAsDataclass, Base):
     """Account entity."""
 
@@ -130,6 +151,15 @@ class Account(MappedAsDataclass, Base):
         viewonly=True,
         init=False,
         default=None,
+        compare=False,
+        repr=False,
+    )
+    tags: Mapped[list[Tag]] = relationship(
+        "Tag",
+        secondary=account_tags_table,
+        lazy="selectin",
+        init=False,
+        default_factory=list,
         compare=False,
         repr=False,
     )

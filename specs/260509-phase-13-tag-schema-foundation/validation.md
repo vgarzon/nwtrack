@@ -5,7 +5,7 @@
 Update this checklist as task groups in `plan.md` are completed.
 
 - [X] Tag Persistence Baseline
-- [ ] Account-Tag Association Integration
+- [X] Account-Tag Association Integration
 - [ ] Repository And Unit Of Work Support
 - [ ] Compatibility Boundaries
 - [ ] Validation
