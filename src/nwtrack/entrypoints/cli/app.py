@@ -18,6 +18,7 @@ institutions_app = typer.Typer(help="Institution commands", no_args_is_help=True
 tags_app = typer.Typer(help="Tag commands", no_args_is_help=True)
 reports_app = typer.Typer(help="Report commands", no_args_is_help=True)
 export_app = typer.Typer(help="Export commands", no_args_is_help=True)
+import_app = typer.Typer(help="Import commands", no_args_is_help=True)
 
 app.add_typer(accounts_app, name="accounts")
 app.add_typer(balances_app, name="balances")
@@ -26,6 +27,7 @@ app.add_typer(institutions_app, name="institutions")
 app.add_typer(tags_app, name="tags")
 app.add_typer(reports_app, name="reports")
 app.add_typer(export_app, name="export")
+app.add_typer(import_app, name="import")
 
 
 def _ensure_runtime_schema() -> None:
@@ -52,6 +54,7 @@ from nwtrack.entrypoints.cli.commands import (  # noqa: F401, E402
     balances,
     categories,
     export,
+    imports,
     institutions,
     reports,
     tags,
