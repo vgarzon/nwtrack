@@ -5,7 +5,11 @@ Rich renderers for displaying entities in the terminal.
 from rich.console import Console
 from rich.table import Table
 
-from nwtrack.application.dto import InstitutionListItem, MonthlyCategoryBalance
+from nwtrack.application.dto import (
+    InstitutionListItem,
+    MonthlyCategoryBalance,
+    TagListItem,
+)
 from nwtrack.domain.models import (
     Account,
     Balance,
@@ -14,6 +18,7 @@ from nwtrack.domain.models import (
     Institution,
     NetWorth,
     Status,
+    Tag,
 )
 from nwtrack.domain.value_objects import Month
 
@@ -149,6 +154,24 @@ def build_institutions_table(institutions: list[InstitutionListItem]) -> Table:
     return table
 
 
+def build_tags_table(tags: list[TagListItem]) -> Table:
+    """Build a Rich table of tags with usage counts."""
+    table = Table(title="Tags")
+    table.add_column("ID", justify="right", style="col.id", no_wrap=True)
+    table.add_column("Name", style="col.name")
+    table.add_column("Description", style="col.desc")
+    table.add_column("Accounts", justify="right", style="col.count")
+    for item in tags:
+        tag = item.tag
+        table.add_row(
+            str(tag.id),
+            tag.name,
+            tag.description or "",
+            str(item.account_count),
+        )
+    return table
+
+
 def build_indexed_categories_table(categories: list[Category]) -> Table:
     """Build a Rich Table of categories with index.
 
@@ -179,6 +202,18 @@ def render_institution_data(
         f"[label]Institution ID:[/label] {institution.id}\n"
         f"[label]Institution name:[/label] {institution.name}\n"
         f"[label]Description:[/label] {institution.description or ''}"
+    )
+    if account_count is not None:
+        text += f"\n[label]Linked accounts:[/label] {account_count}"
+    console.print(text)
+
+
+def render_tag_data(console: Console, tag: Tag, account_count: int | None = None) -> None:
+    """Render tag details and optional linked-account count."""
+    text = (
+        f"[label]Tag ID:[/label] {tag.id}\n"
+        f"[label]Tag name:[/label] {tag.name}\n"
+        f"[label]Description:[/label] {tag.description or ''}"
     )
     if account_count is not None:
         text += f"\n[label]Linked accounts:[/label] {account_count}"

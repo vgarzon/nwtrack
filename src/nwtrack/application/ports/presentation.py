@@ -12,6 +12,7 @@ from nwtrack.application.dto import (
     InstitutionListItem,
     MonthlyCategoryBalance,
     NewAccountData,
+    TagListItem,
 )
 from nwtrack.domain.models import Account, Balance, Category, Institution, NetWorth
 from nwtrack.domain.value_objects import Month
@@ -51,6 +52,14 @@ class InstitutionListPresenter(Protocol):
 
     def display_institutions(self, institutions: list[InstitutionListItem]) -> None:
         """Display institutions table."""
+        ...
+
+
+class TagListPresenter(Protocol):
+    """Presenter for tag listing workflow."""
+
+    def display_tags(self, tags: list[TagListItem]) -> None:
+        """Display tags table."""
         ...
 
 
