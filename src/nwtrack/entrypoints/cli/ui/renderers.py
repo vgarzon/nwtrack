@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.table import Table
 
 from nwtrack.application.dto import (
+    HistoryAggregationResult,
     InstitutionListItem,
     MonthlyCategoryBalance,
     SingleMonthAggregationResult,
@@ -327,6 +328,29 @@ def build_single_month_aggregation_table(
         row = [group.label]
         row.append(f"{group.amount:8,}")
         table.add_row(*row)
+    return table
+
+
+def build_history_aggregation_table(
+    result: HistoryAggregationResult,
+) -> Table:
+    """Build a Rich table for grouped history aggregation output."""
+    title = (
+        f"Grouped Balances {result.start_month} to "
+        f"{result.end_month} by {result.dimension.value}"
+    )
+    if result.currency_code is not None:
+        title += f" ({result.currency_code})"
+    table = Table(title=title)
+    table.add_column("Month", style="col.name")
+    table.add_column(result.dimension.value.title(), style="col.name")
+    table.add_column("Amount", justify="right", style="col.amount")
+    for row in result.rows:
+        table.add_row(
+            str(row.month),
+            row.label,
+            f"{row.amount:8,}",
+        )
     return table
 
 

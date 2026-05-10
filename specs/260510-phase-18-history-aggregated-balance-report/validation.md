@@ -7,7 +7,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Shared History Aggregation Contracts
 - [X] History Aggregation Use Case
 - [X] CLI Contract And Interactive Flow
-- [ ] History Report Presentation
+- [X] History Report Presentation
 - [ ] Validation And Compatibility
 
 ## Implementation Notes
@@ -18,6 +18,8 @@ Update this checklist as task groups in `plan.md` are completed.
 - History Aggregation Use Case validation: `uv run pytest tests/use_cases/test_report_history_aggregation.py tests/sqlite/test_reporting_queries.py`
 - CLI Contract And Interactive Flow: completed. Added `reports balances-aggregate-history`, the history CLI workflow, fetch-service range currency lookup, history presenter protocol, and workflow/CLI registration coverage in `tests/use_cases/test_report_balances_aggregate_history.py` and `tests/entrypoints/test_cli_reports.py`.
 - CLI Contract And Interactive Flow validation: `uv run pytest tests/use_cases/test_report_balances_aggregate_history.py tests/entrypoints/test_cli_reports.py tests/use_cases/test_report_history_aggregation.py tests/sqlite/test_reporting_queries.py`
+- History Report Presentation: completed. Added the Rich history report presenter and table renderer, then covered output titles, columns, special labels, and empty-state messaging in `tests/use_cases/test_report_balances_aggregate_history_rich.py` and `tests/ui/test_report_renderers.py`.
+- History Report Presentation validation: `uv run pytest tests/use_cases/test_report_balances_aggregate_history_rich.py tests/ui/test_report_renderers.py tests/use_cases/test_report_balances_aggregate_history.py tests/entrypoints/test_cli_reports.py`
 
 ## Automated
 
