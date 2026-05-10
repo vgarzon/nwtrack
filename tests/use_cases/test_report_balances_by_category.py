@@ -126,7 +126,8 @@ def test_print_summary_mixed_currency_month_fails_clearly(
 
     init_db_tables_w_entities(configured_container, sample_entities)
 
-    with configured_container.resolve(UnitOfWork) as uow:
+    uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow_manager as uow:
         swiss_account_id = uow.accounts.insert(
             Account(
                 name="swiss_cash",

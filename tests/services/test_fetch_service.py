@@ -3,13 +3,13 @@
 import pytest
 from tests.helpers import init_db_tables_w_entities
 
+from nwtrack.application.dto import AccountStatusScope, AggregationDimension
 from nwtrack.application.ports.schema import SchemaManager
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.bootstrap.container import Container
-from nwtrack.application.dto import AccountStatusScope, AggregationDimension
 from nwtrack.domain.models import Institution, Tag
 from nwtrack.domain.value_objects import Month
 from nwtrack.infra.config.settings import Settings

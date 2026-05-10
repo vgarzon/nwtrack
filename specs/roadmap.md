@@ -151,7 +151,7 @@ Expected outcomes:
 - Output shows per-month grouped balances over the requested range
 - History reporting reuses the shared aggregation core rather than duplicating query logic
 
-### [ ] Phase 19: Compatibility Convergence
+### [X] Phase 19: Compatibility Convergence
 
 Goal:
 Move older reporting commands onto the generalized reporting core while preserving user-facing behavior where practical.
