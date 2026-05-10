@@ -3,9 +3,27 @@ Data transfer objects (DTOs).
 """
 
 from dataclasses import dataclass
+from enum import StrEnum
 
 from nwtrack.domain.models import Category, Institution, Status, Tag
 from nwtrack.domain.value_objects import Month
+
+
+class AggregationDimension(StrEnum):
+    """Supported account-attribute dimensions for grouped balance reporting."""
+
+    CATEGORY = "category"
+    SIDE = "side"
+    INSTITUTION = "institution"
+    CURRENCY = "currency"
+    TAG = "tag"
+
+
+class AccountStatusScope(StrEnum):
+    """Status filter applied to shared aggregation queries."""
+
+    ACTIVE = "active"
+    ALL = "all"
 
 
 @dataclass(frozen=True)
@@ -15,6 +33,37 @@ class MonthlyCategoryBalance:
     month: Month
     category: Category
     amount: int
+
+
+@dataclass(frozen=True)
+class SingleMonthAggregationRequest:
+    """Application-level request for one month of grouped balance totals."""
+
+    month: Month
+    dimension: AggregationDimension
+    currency_code: str | None = None
+    status_scope: AccountStatusScope = AccountStatusScope.ACTIVE
+
+
+@dataclass(frozen=True)
+class SingleMonthAggregationGroup:
+    """One grouped balance row from the shared aggregation layer."""
+
+    group_key: str
+    label: str
+    amount: int
+    currency_code: str
+
+
+@dataclass(frozen=True)
+class SingleMonthAggregationResult:
+    """Result of single-month grouped balance aggregation."""
+
+    month: Month
+    dimension: AggregationDimension
+    currency_code: str | None
+    status_scope: AccountStatusScope
+    groups: list[SingleMonthAggregationGroup]
 
 
 @dataclass(frozen=True)
