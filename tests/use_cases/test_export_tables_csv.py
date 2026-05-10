@@ -192,7 +192,7 @@ def test_export_tables_csv_includes_institutions_and_tags_when_present(
     sample_entities: dict[str, list],
     tmp_path,
 ) -> None:
-    """Phase 21 should export institution and tag tables."""
+    """Phase 21 should export institution, tag, and account-tag tables."""
     from nwtrack.application.use_cases.export_tables_csv import ExportCSV
 
     init_db_tables_w_entities(configured_container, sample_entities)
@@ -201,7 +201,12 @@ def test_export_tables_csv_includes_institutions_and_tags_when_present(
         uow.institutions.insert(
             Institution(name="Fidelity", description="Brokerage institution")
         )
-        uow.tags.insert(Tag(name="retirement", description="Tax-advantaged"))
+        retirement_id = uow.tags.insert(
+            Tag(name="retirement", description="Tax-advantaged")
+        )
+        liquid_id = uow.tags.insert(Tag(name="liquid", description="Cash-like"))
+        uow.tags.replace_for_account(1, [liquid_id, retirement_id])
+        uow.tags.replace_for_account(2, [retirement_id])
 
     exporter: ExportCSV = configured_container.resolve(ExportCSV)
     exporter.export_tables_to_dir(tmp_path)
@@ -218,4 +223,14 @@ def test_export_tables_csv_includes_institutions_and_tags_when_present(
     assert tags_csv == [
         "id,name,description",
         "1,retirement,Tax-advantaged",
+        "2,liquid,Cash-like",
+    ]
+
+    with open(tmp_path / "account_tags.csv", encoding="utf-8") as f:
+        account_tags_csv = f.read().splitlines()
+    assert account_tags_csv == [
+        "account_id,tag_id",
+        "1,1",
+        "1,2",
+        "2,1",
     ]
