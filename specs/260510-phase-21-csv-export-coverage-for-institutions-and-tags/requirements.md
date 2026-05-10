@@ -82,6 +82,7 @@ This phase uses database IDs as the canonical reference format for exported rela
 - The export workflow includes institution, tag, and account-tag data when present.
 - The export workflow continues to export the pre-existing tables.
 - Empty tables should not cause the command to fail.
+- Empty supported tables are reported as skipped and do not produce CSV files.
 - Export order should remain deterministic so the resulting directory is stable and easy to inspect.
 
 #### Accounts CSV

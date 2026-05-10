@@ -8,7 +8,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Export Service Support
 - [X] Command And Workflow Preservation
 - [X] Compatibility And Regression Tests
-- [ ] Validation And Documentation
+- [X] Validation And Documentation
 
 ## Automated
 
