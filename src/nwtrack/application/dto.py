@@ -2,7 +2,7 @@
 Data transfer objects (DTOs).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 
 from nwtrack.domain.models import Category, Institution, Status, Tag
@@ -78,6 +78,7 @@ class NewAccountData:
     initial_month: Month
     initial_amount: int
     institution_id: int | None = None
+    tag_ids: list[int] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
