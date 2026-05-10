@@ -274,6 +274,7 @@ class RichSingleMonthAggregationReportPresenter:
         """Present month selection with recent months or custom input."""
         recent_months = [month for month, _ in balance_counts]
         n_months = len(balance_counts)
+        default_choice = self._default_month_choice(balance_counts)
 
         table = build_month_balances_table(balance_counts)
         self._console.print(table)
@@ -284,7 +285,7 @@ class RichSingleMonthAggregationReportPresenter:
         choice = self._prompt.ask(
             "[bold]Enter choice[/bold]",
             choices=[str(i + 1) for i in range(n_months)] + ["A", "Q"],
-            default="1",
+            default=default_choice,
             case_sensitive=False,
         )
 
@@ -295,6 +296,17 @@ class RichSingleMonthAggregationReportPresenter:
 
         choice_idx = int(choice) - 1
         return recent_months[choice_idx]
+
+    @staticmethod
+    def _default_month_choice(balance_counts: list[tuple[Month, int]]) -> str:
+        """Prefer the most complete recent month when choosing a default option."""
+        if not balance_counts:
+            return "1"
+        best_index = max(
+            range(len(balance_counts)),
+            key=lambda index: balance_counts[index][1],
+        )
+        return str(best_index + 1)
 
     def _input_custom_month(self) -> Month | None:
         """Input a specific month from user."""
