@@ -90,7 +90,9 @@ def balances_aggregate_history_report(
     ] = AccountStatusScope.ACTIVE,
 ):
     """Generate a grouped history balance report."""
-    import nwtrack.application.use_cases.report_balances_aggregate_history as report_balances
+    from nwtrack.application.use_cases import (
+        report_balances_aggregate_history as report_balances,
+    )
 
     sys.exit(
         report_balances.main(

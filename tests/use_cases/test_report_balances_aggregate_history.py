@@ -47,7 +47,9 @@ class RecordingPresenter:
     def __init__(self) -> None:
         self.header_calls = 0
         self.errors: list[str] = []
-        self.no_data_calls: list[tuple[Month, Month, AggregationDimension, str | None]] = []
+        self.no_data_calls: list[
+            tuple[Month, Month, AggregationDimension, str | None]
+        ] = []
         self.displayed_results: list[HistoryAggregationResult] = []
         self.month_prompt_calls: list[list[tuple[Month, int]]] = []
         self.dimension_prompt_calls = 0

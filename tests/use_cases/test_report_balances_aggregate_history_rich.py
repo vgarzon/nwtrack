@@ -77,12 +77,16 @@ def _setup_reporting_fixture(base_container, sample_entities):
         uow.balances.insert(Balance(account_id=1, month=start_month, amount=150))
         uow.balances.insert(Balance(account_id=2, month=start_month, amount=450))
         uow.balances.insert(Balance(account_id=3, month=start_month, amount=550))
-        uow.balances.insert(Balance(account_id=swiss_account_id, month=start_month, amount=650))
+        uow.balances.insert(
+            Balance(account_id=swiss_account_id, month=start_month, amount=650)
+        )
         uow.balances.insert(Balance(account_id=1, month=end_month, amount=200))
         uow.balances.insert(Balance(account_id=2, month=end_month, amount=500))
         uow.balances.insert(Balance(account_id=3, month=end_month, amount=600))
         uow.balances.insert(Balance(account_id=4, month=end_month, amount=200))
-        uow.balances.insert(Balance(account_id=swiss_account_id, month=end_month, amount=700))
+        uow.balances.insert(
+            Balance(account_id=swiss_account_id, month=end_month, amount=700)
+        )
 
     return container, start_month, end_month
 
@@ -237,5 +241,8 @@ def test_empty_history_results_show_no_data_message_without_rendering_table(
     output: str = container.resolve(Console).export_text()
 
     assert result.success
-    assert "No grouped balances found from 2030-01 to 2030-03 by category in USD." in output
+    assert (
+        "No grouped balances found from 2030-01 to 2030-03 by category in USD."
+        in output
+    )
     assert "Grouped Balances 2030-01 to 2030-03 by category (USD)" not in output

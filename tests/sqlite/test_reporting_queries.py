@@ -85,7 +85,9 @@ def _setup_history_reporting_fixture(base_container, sample_entities):
 
     with _uow_factory(container) as uow:
         swiss_account = next(
-            account for account in uow.accounts.get_all() if account.name == "swiss_cash"
+            account
+            for account in uow.accounts.get_all()
+            if account.name == "swiss_cash"
         )
         uow.balances.insert(Balance(account_id=1, month=start_month, amount=150))
         uow.balances.insert(Balance(account_id=2, month=start_month, amount=450))
@@ -140,7 +142,10 @@ def test_get_month_currencies_honors_status_scope(
     assert all_currencies == ["CHF", "USD"]
 
 
-def test_get_range_currencies_honors_status_scope(base_container, sample_entities) -> None:
+def test_get_range_currencies_honors_status_scope(
+    base_container,
+    sample_entities,
+) -> None:
     """Distinct range currencies should respect the requested status scope."""
     container, start_month, end_month = _setup_history_reporting_fixture(
         base_container,
@@ -430,7 +435,7 @@ def test_aggregate_single_month_empty_result(base_container, sample_entities) ->
 
 
 def test_aggregate_history_empty_result(base_container, sample_entities) -> None:
-    """Valid history requests with no matching balances should return an empty row list."""
+    """Valid history requests with no matching balances should return an empty row list."""  # noqa: E501
     container = build_data_services_container(base_container)
     init_db_tables_w_entities(container, sample_entities)
 

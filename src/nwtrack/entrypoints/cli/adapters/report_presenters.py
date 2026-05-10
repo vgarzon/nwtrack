@@ -19,8 +19,8 @@ from nwtrack.entrypoints.cli.ui.renderers import (
     build_accounts_table,
     build_balances_table,
     build_category_summary_table,
-    build_month_balances_table,
     build_history_aggregation_table,
+    build_month_balances_table,
     build_networth_history_table,
     build_networth_history_total_change_table,
     build_networth_table,
@@ -514,7 +514,9 @@ class RichHistoryAggregationReportPresenter:
 
     def show_no_start_month_selected_message(self) -> None:
         """Display feedback when start-month selection is cancelled."""
-        self._console.print("[warning]No start month selected. Exiting report.[/warning]")
+        self._console.print(
+            "[warning]No start month selected. Exiting report.[/warning]"
+        )
 
     def show_no_end_month_selected_message(self) -> None:
         """Display feedback when end-month selection is cancelled."""
