@@ -10,7 +10,7 @@ from nwtrack.application.use_cases.list_accounts import (
     ListAccounts,
 )
 from nwtrack.bootstrap.container import Container
-from nwtrack.domain.models import Account
+from nwtrack.domain.models import Account, Tag
 from nwtrack.infra.config.settings import Settings
 
 
@@ -114,3 +114,30 @@ def test_list_all_accounts(
     account_names = [acc.name for acc in mock_presenter.displayed_accounts]
     assert "credit_cards_1" in account_names
     assert "mortgage_1" in account_names  # inactive account included
+
+
+def test_list_accounts_exposes_assigned_tags(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+) -> None:
+    """Account list reads should include tags for presenter rendering."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+    service: ListAccounts = configured_container.resolve(ListAccounts)
+    mock_presenter: MockAccountListPresenter = configured_container.resolve(
+        MockAccountListPresenter
+    )
+
+    from nwtrack.application.ports.uow import UnitOfWork
+
+    uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow_manager as uow:
+        tag_id = uow.tags.insert(Tag(name="liquid", description="Quick access"))
+        uow.tags.replace_for_account(1, [tag_id])
+
+    result = service.run(active_only=False)
+
+    assert result.success
+    listed_account = next(
+        account for account in mock_presenter.displayed_accounts if account.id == 1
+    )
+    assert [tag.name for tag in listed_account.tags] == ["liquid"]

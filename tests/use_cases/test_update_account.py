@@ -344,6 +344,9 @@ def test_account_updater_can_add_tags(
     assert updated_account is not None
     assert [tag.id for tag in updated_account.tags] == [first_tag_id, second_tag_id]
 
+    captured_output: str = configured_container.resolve(Console).export_text()
+    assert re.search(r"Tags: core, liquid", captured_output)
+
 
 def test_account_updater_can_clear_tags(
     configured_container: Container,
