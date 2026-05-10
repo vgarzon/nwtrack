@@ -1,11 +1,15 @@
 """Tests for the shared single-month aggregation use case."""
 
+from collections.abc import Callable
+from typing import cast
+
 from nwtrack.application.dto import (
     AccountStatusScope,
     AggregationDimension,
     SingleMonthAggregationRequest,
     SingleMonthAggregationResult,
 )
+from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.use_cases.report_single_month_aggregation import (
     ReportSingleMonthAggregation,
 )
@@ -55,6 +59,12 @@ class FakeUnitOfWork:
         return None
 
 
+def _build_use_case(reporting: FakeReportingQueries) -> ReportSingleMonthAggregation:
+    """Create the use case with a typed fake unit-of-work factory."""
+    uow_factory = cast(Callable[[], UnitOfWork], lambda: FakeUnitOfWork(reporting))
+    return ReportSingleMonthAggregation(uow=uow_factory)
+
+
 def test_request_defaults_status_scope_to_active() -> None:
     """The shared request should default to active-only aggregation."""
     request = SingleMonthAggregationRequest(
@@ -72,7 +82,7 @@ def test_run_rejects_mixed_currency_non_currency_aggregation() -> None:
         dimension=AggregationDimension.TAG,
     )
     reporting = FakeReportingQueries(month_currencies=["CHF", "USD"])
-    use_case = ReportSingleMonthAggregation(uow=lambda: FakeUnitOfWork(reporting))
+    use_case = _build_use_case(reporting)
 
     result = use_case.run(request)
 
@@ -96,7 +106,7 @@ def test_run_allows_single_currency_non_currency_aggregation() -> None:
         groups=[],
     )
     reporting = FakeReportingQueries(month_currencies=["USD"], result=expected)
-    use_case = ReportSingleMonthAggregation(uow=lambda: FakeUnitOfWork(reporting))
+    use_case = _build_use_case(reporting)
 
     result = use_case.run(request)
 
@@ -121,7 +131,7 @@ def test_run_skips_currency_validation_when_currency_filter_is_supplied() -> Non
         groups=[],
     )
     reporting = FakeReportingQueries(month_currencies=["CHF", "USD"], result=expected)
-    use_case = ReportSingleMonthAggregation(uow=lambda: FakeUnitOfWork(reporting))
+    use_case = _build_use_case(reporting)
 
     result = use_case.run(request)
 
@@ -145,7 +155,7 @@ def test_run_skips_currency_validation_for_currency_aggregation() -> None:
         groups=[],
     )
     reporting = FakeReportingQueries(month_currencies=["CHF", "USD"], result=expected)
-    use_case = ReportSingleMonthAggregation(uow=lambda: FakeUnitOfWork(reporting))
+    use_case = _build_use_case(reporting)
 
     result = use_case.run(request)
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from sqlalchemy import case, func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from nwtrack.application.dto import (
@@ -218,7 +218,10 @@ class ReportingQueries:
             .join(Account, Balance.account_id == Account.id)
             .where(Balance.month == request.month)
         )
-        stmt = self._apply_request_filters(stmt, request).group_by(Account.currency_code)
+        stmt = self._apply_request_filters(
+            stmt,
+            request,
+        ).group_by(Account.currency_code)
         rows = self._session.execute(stmt).all()
 
         groups = [
@@ -243,7 +246,10 @@ class ReportingQueries:
                 func.sum(Balance.amount).label("total_amount"),
             )
             .join(Account, Balance.account_id == Account.id)
-            .outerjoin(account_tags_table, account_tags_table.c.account_id == Account.id)
+            .outerjoin(
+                account_tags_table,
+                account_tags_table.c.account_id == Account.id,
+            )
             .outerjoin(Tag, Tag.id == account_tags_table.c.tag_id)
             .where(Balance.month == request.month)
         )
