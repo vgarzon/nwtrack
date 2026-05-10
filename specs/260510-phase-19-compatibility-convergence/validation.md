@@ -7,7 +7,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Compatibility Reporting Contracts
 - [X] Legacy Command Convergence
 - [X] Correctness And Error Handling
-- [ ] Validation And Constitution Updates
+- [X] Validation And Constitution Updates
 
 ## Implementation Notes
 
@@ -17,6 +17,8 @@ Update this checklist as task groups in `plan.md` are completed.
 - Legacy Command Convergence validation: `uv run pytest tests/use_cases/test_report_balances_by_category.py tests/use_cases/test_report_networth_history.py tests/entrypoints/test_cli_reports.py`
 - Correctness And Error Handling: completed. Added explicit mixed-currency compatibility failure coverage, verified grouped totals do not render after that failure, and preserved legacy cancellation and no-data warning behavior under the shared-core implementation.
 - Correctness And Error Handling validation: `uv run pytest tests/use_cases/test_report_balances_by_category.py tests/use_cases/test_report_networth_history.py`
+- Validation And Constitution Updates: completed. Reviewed `requirements.md` and `validation.md` against the implemented behavior, ran repo-wide `ruff`, `mypy`, and `pytest`, and updated the roadmap to mark Phase 19 complete.
+- Validation And Constitution Updates validation: `uv run ruff check .`, `uv run mypy .`, `uv run pytest`
 
 ## Automated
 

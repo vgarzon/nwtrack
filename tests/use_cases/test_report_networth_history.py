@@ -7,6 +7,7 @@ import re
 import pytest
 from tests.helpers import init_db_tables_w_entities
 
+from nwtrack.application.dto import OperationResult
 from nwtrack.application.use_cases.report_networth_history import (
     NetworthHistoryReport,
 )
@@ -108,7 +109,9 @@ def test_report_networth_history_no_data_warning_is_preserved(
     """Unavailable reporting currency should still show the legacy no-data warning."""
     init_db_tables_w_entities(configured_container, sample_entities)
 
-    result = configured_container.resolve(NetworthHistoryReport).run(
+    result: OperationResult[None] = configured_container.resolve(
+        NetworthHistoryReport
+    ).run(
         n_months=12,
         currency_code="CHF",
     )
