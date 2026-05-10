@@ -9,10 +9,13 @@ protocols, not on concrete UI implementations like Rich.
 from typing import Protocol
 
 from nwtrack.application.dto import (
+    AccountStatusScope,
+    AggregationDimension,
     AccountUpdateData,
     InstitutionListItem,
     MonthlyCategoryBalance,
     NewAccountData,
+    SingleMonthAggregationResult,
     TagListItem,
 )
 from nwtrack.domain.models import Account, Balance, Category, Institution, NetWorth, Tag
@@ -180,6 +183,61 @@ class NetworthHistoryPresenter(Protocol):
         self, networth_records: list[NetWorth], currency_code: str
     ) -> None:
         """Display total change in net worth over the period."""
+        ...
+
+
+class SingleMonthAggregationReportPresenter(Protocol):
+    """Presenter for the single-month aggregated balances report workflow."""
+
+    def show_header(self) -> None:
+        """Display report header."""
+        ...
+
+    def prompt_for_month_choice(
+        self, balance_counts: list[tuple[Month, int]]
+    ) -> Month | None:
+        """Present month selection with recent months or custom input."""
+        ...
+
+    def prompt_for_dimension_choice(self) -> AggregationDimension | None:
+        """Prompt for one supported aggregation dimension."""
+        ...
+
+    def prompt_for_currency_choice(self, currencies: list[str]) -> str | None:
+        """Prompt for one currency when a filter is required."""
+        ...
+
+    def show_no_month_selected_message(self) -> None:
+        """Display cancellation feedback when month selection ends empty."""
+        ...
+
+    def show_no_dimension_selected_message(self) -> None:
+        """Display cancellation feedback when dimension selection ends empty."""
+        ...
+
+    def show_no_currency_selected_message(self) -> None:
+        """Display cancellation feedback when currency selection ends empty."""
+        ...
+
+    def show_no_data_message(
+        self,
+        month: Month,
+        dimension: AggregationDimension,
+        status_scope: AccountStatusScope,
+        currency_code: str | None,
+    ) -> None:
+        """Display feedback for valid requests with no grouped results."""
+        ...
+
+    def display_aggregation_report(
+        self,
+        result: SingleMonthAggregationResult,
+    ) -> None:
+        """Display grouped balances for a successful aggregation request."""
+        ...
+
+    def show_error(self, message: str) -> None:
+        """Display an error message."""
         ...
 
 

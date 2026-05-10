@@ -5,7 +5,12 @@ Rich-based presenters for report-related use cases.
 from rich.console import Console
 from rich.prompt import IntPrompt, Prompt
 
-from nwtrack.application.dto import MonthlyCategoryBalance
+from nwtrack.application.dto import (
+    AccountStatusScope,
+    AggregationDimension,
+    MonthlyCategoryBalance,
+    SingleMonthAggregationResult,
+)
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Account, Balance, NetWorth
 from nwtrack.domain.value_objects import Month
@@ -17,6 +22,7 @@ from nwtrack.entrypoints.cli.ui.renderers import (
     build_networth_history_table,
     build_networth_history_total_change_table,
     build_networth_table,
+    build_single_month_aggregation_table,
 )
 
 
@@ -245,3 +251,139 @@ class RichBalancesByCategoryPresenter:
         self._console.print(
             f"[error]No net worth data found for {month} in {currency_code}[/error]"
         )
+
+
+class RichSingleMonthAggregationReportPresenter:
+    """Rich-based implementation of the aggregated single-month report presenter."""
+
+    def __init__(self, fetcher: FetchService, console: Console) -> None:
+        self._fetcher = fetcher
+        self._console = console
+        self._prompt = Prompt(console=console)
+
+    def show_header(self) -> None:
+        """Display report header using Rich."""
+        self._console.rule(
+            "[header]Grouped Balance Report[/header]",
+            align="center",
+        )
+
+    def prompt_for_month_choice(
+        self, balance_counts: list[tuple[Month, int]]
+    ) -> Month | None:
+        """Present month selection with recent months or custom input."""
+        recent_months = [month for month, _ in balance_counts]
+        n_months = len(balance_counts)
+
+        table = build_month_balances_table(balance_counts)
+        self._console.print(table)
+        self._console.print("Options:")
+        self._console.print("  [bold]A.[/bold] Enter year and month")
+        self._console.print("  [bold]Q.[/bold] Quit")
+
+        choice = self._prompt.ask(
+            "[bold]Enter choice[/bold]",
+            choices=[str(i + 1) for i in range(n_months)] + ["A", "Q"],
+            default="1",
+            case_sensitive=False,
+        )
+
+        if choice.lower().strip() == "q":
+            return None
+        if choice.lower().strip() == "a":
+            return self._input_custom_month()
+
+        choice_idx = int(choice) - 1
+        return recent_months[choice_idx]
+
+    def _input_custom_month(self) -> Month | None:
+        """Input a specific month from user."""
+        from datetime import date
+
+        today = date.today()
+        int_prompt = IntPrompt(console=self._console)
+        _year = int_prompt.ask("Enter year as 'YYYY'", default=today.year)
+        _month = int_prompt.ask("Enter month as 'MM'", default=today.month)
+
+        try:
+            month = Month(year=_year, month=_month)
+        except ValueError:
+            self.show_error("Invalid month format. Please use YYYY-MM.")
+            return None
+
+        if not self._fetcher.check_month_in_balances(month):
+            self.show_error(f"No balance entries found in {month}.")
+            return None
+
+        return month
+
+    def prompt_for_dimension_choice(self) -> AggregationDimension | None:
+        """Prompt for one supported aggregation dimension."""
+        dimensions = list(AggregationDimension)
+        self._console.print("Dimensions:")
+        for index, dimension in enumerate(dimensions, start=1):
+            self._console.print(f"  [bold]{index}.[/bold] {dimension.value}")
+        self._console.print("  [bold]Q.[/bold] Quit")
+        choice = self._prompt.ask(
+            "[bold]Enter dimension choice[/bold]",
+            choices=[str(index) for index in range(1, len(dimensions) + 1)] + ["Q"],
+            default="1",
+            case_sensitive=False,
+        )
+        if choice.lower().strip() == "q":
+            return None
+        return dimensions[int(choice) - 1]
+
+    def prompt_for_currency_choice(self, currencies: list[str]) -> str | None:
+        """Prompt for one currency when a filter is required."""
+        self._console.print("Currencies:")
+        for index, currency in enumerate(currencies, start=1):
+            self._console.print(f"  [bold]{index}.[/bold] {currency}")
+        self._console.print("  [bold]Q.[/bold] Quit")
+        choice = self._prompt.ask(
+            "[bold]Enter currency choice[/bold]",
+            choices=[str(index) for index in range(1, len(currencies) + 1)] + ["Q"],
+            default="1",
+            case_sensitive=False,
+        )
+        if choice.lower().strip() == "q":
+            return None
+        return currencies[int(choice) - 1]
+
+    def show_no_month_selected_message(self) -> None:
+        """Display feedback when month selection is cancelled."""
+        self._console.print("[warning]No month selected. Exiting report.[/warning]")
+
+    def show_no_dimension_selected_message(self) -> None:
+        """Display feedback when dimension selection is cancelled."""
+        self._console.print("[warning]No dimension selected. Exiting report.[/warning]")
+
+    def show_no_currency_selected_message(self) -> None:
+        """Display feedback when currency selection is cancelled."""
+        self._console.print("[warning]No currency selected. Exiting report.[/warning]")
+
+    def show_no_data_message(
+        self,
+        month: Month,
+        dimension: AggregationDimension,
+        status_scope: AccountStatusScope,
+        currency_code: str | None,
+    ) -> None:
+        """Display feedback for valid requests with no grouped results."""
+        currency_message = f" in {currency_code}" if currency_code is not None else ""
+        self._console.print(
+            f"[warning]No grouped balances found for {month} by "
+            f"{dimension.value}{currency_message}.[/warning]"
+        )
+
+    def display_aggregation_report(
+        self,
+        result: SingleMonthAggregationResult,
+    ) -> None:
+        """Display grouped balances for a successful aggregation request."""
+        table = build_single_month_aggregation_table(result)
+        self._console.print(table)
+
+    def show_error(self, message: str) -> None:
+        """Display an error message."""
+        self._console.print(f"[error]{message}[/error]")
