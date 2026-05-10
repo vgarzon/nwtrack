@@ -82,6 +82,20 @@ class NewAccountData:
 
 
 @dataclass(frozen=True)
+class AccountUpdateData:
+    """Data class for interactive account updates."""
+
+    account_id: int
+    account_name: str
+    description: str
+    category_name: str
+    currency_code: str
+    status: Status
+    institution_id: int | None = None
+    tag_ids: list[int] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class InstitutionListItem:
     """Institution row for CLI administration views."""
 

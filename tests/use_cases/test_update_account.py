@@ -13,7 +13,7 @@ from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.application.use_cases.update_account_info import UpdateAccountInfo
 from nwtrack.bootstrap.container import Container
-from nwtrack.domain.models import Institution
+from nwtrack.domain.models import Institution, Tag
 from nwtrack.entrypoints.cli.adapters.account_presenters import (
     RichAccountUpdatePresenter,
 )
@@ -146,6 +146,10 @@ def test_account_updater_run_success_with_no_institutions(
     assert re.search(r"Account updated successfully", captured_output)
     assert re.search(
         r"No institutions available\. Continuing with no institution assigned\.",
+        captured_output,
+    )
+    assert re.search(
+        r"No tags available\. Continuing with no tags assigned\.",
         captured_output,
     )
 
@@ -299,6 +303,90 @@ def test_account_updater_can_clear_institution(
     assert re.search(r"Institution: None", captured_output)
 
 
+def test_account_updater_can_add_tags(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Update should replace the account tag set from the tag selection step."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    setup_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with setup_uow as uow:
+        first_tag_id = uow.tags.insert(Tag(name="core", description="Core holding"))
+        second_tag_id = uow.tags.insert(Tag(name="liquid", description="Quick access"))
+
+    _patch_update_prompts(
+        monkeypatch,
+        prompt_values=[
+            "1,2",
+            "bank_1_checking",
+            "bank_1 checking",
+        ],
+        int_values=[
+            1,
+            1,
+            1,
+            1,
+        ],
+        confirm_values=[True],
+    )
+
+    result: OperationResult[None] = configured_container.resolve(
+        UpdateAccountInfo
+    ).run()
+
+    assert result.success
+
+    refresh_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with refresh_uow as uow:
+        updated_account = uow.accounts.get_by_id(1)
+    assert updated_account is not None
+    assert [tag.id for tag in updated_account.tags] == [first_tag_id, second_tag_id]
+
+
+def test_account_updater_can_clear_tags(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Update should clear all tags through the explicit no-tags path."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    setup_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with setup_uow as uow:
+        tag_id = uow.tags.insert(Tag(name="core", description="Core holding"))
+        uow.tags.replace_for_account(1, [tag_id])
+
+    _patch_update_prompts(
+        monkeypatch,
+        prompt_values=[
+            "0",
+            "bank_1_checking",
+            "bank_1 checking",
+        ],
+        int_values=[
+            1,
+            1,
+            1,
+            1,
+        ],
+        confirm_values=[True],
+    )
+
+    result: OperationResult[None] = configured_container.resolve(
+        UpdateAccountInfo
+    ).run()
+
+    assert result.success
+
+    refresh_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with refresh_uow as uow:
+        updated_account = uow.accounts.get_by_id(1)
+    assert updated_account is not None
+    assert updated_account.tags == []
+
+
 def test_account_updater_quits_when_institution_selector_receives_q(
     configured_container: Container,
     sample_entities: dict[str, list],
@@ -309,6 +397,33 @@ def test_account_updater_quits_when_institution_selector_receives_q(
     uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
     with uow_manager as uow:
         uow.institutions.insert(Institution(name="Chase", description="Primary bank"))
+
+    _patch_update_prompts(
+        monkeypatch,
+        prompt_values=["q"],
+        int_values=[1],
+        confirm_values=[],
+    )
+
+    result: OperationResult[None] = configured_container.resolve(
+        UpdateAccountInfo
+    ).run()
+
+    assert not result.success
+    assert result.error_message == "Cancelled by user"
+
+
+def test_account_updater_quits_when_tag_selector_receives_q(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Update should cancel cleanly when quitting from tag selection."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow_manager as uow:
+        uow.tags.insert(Tag(name="core", description="Core holding"))
 
     _patch_update_prompts(
         monkeypatch,

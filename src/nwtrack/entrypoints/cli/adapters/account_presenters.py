@@ -6,7 +6,7 @@ from rich.console import Console
 from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 
-from nwtrack.application.dto import NewAccountData
+from nwtrack.application.dto import AccountUpdateData, NewAccountData
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Account, Balance, Category, Currency, Status
 from nwtrack.domain.value_objects import Month
@@ -281,6 +281,7 @@ class RichAccountUpdatePresenter:
         self._int_prompt = IntPrompt(console=console)
         self._confirm = Confirm(console=console)
         self._selected_institution_name = "None"
+        self._selected_tag_names = "None"
 
     def show_header(self) -> None:
         """Display workflow header using Rich."""
@@ -332,7 +333,9 @@ class RichAccountUpdatePresenter:
             " Please try again."
         )
 
-    def collect_updated_data(self, current_account: Account) -> Account | None:
+    def collect_updated_data(
+        self, current_account: Account
+    ) -> AccountUpdateData | None:
         """Interactively collect updated account data with current values as defaults.
 
         Args:
@@ -350,6 +353,7 @@ class RichAccountUpdatePresenter:
             new_institution_id = self._collect_institution_id(
                 default=current_account.institution_id
             )
+            new_tag_ids = self._collect_tag_ids(current_account)
             new_name = self._collect_account_name(default=current_account.name)
             new_description = self._collect_description(
                 default=current_account.description
@@ -362,18 +366,16 @@ class RichAccountUpdatePresenter:
             )
             new_status = self._collect_status(default=current_account.status)
 
-            # Create Account without id (init=False in ORM model)
-            updated_account = Account(
-                name=new_name,
+            return AccountUpdateData(
+                account_id=current_account.id,
+                account_name=new_name,
                 description=new_description,
                 category_name=new_category_name,
                 currency_code=new_currency_code,
                 institution_id=new_institution_id,
                 status=new_status,
+                tag_ids=new_tag_ids,
             )
-            # Set id after construction
-            updated_account.id = current_account.id
-            return updated_account
         except KeyboardInterrupt:
             return None
 
@@ -546,6 +548,41 @@ class RichAccountUpdatePresenter:
         self._selected_institution_name = institution.name
         return institution.id
 
+    def _collect_tag_ids(self, current_account: Account) -> list[int]:
+        """Collect optional replacement tag selections from user."""
+        tags = self._fetcher.get_all_tags()
+        if not tags:
+            self._selected_tag_names = "None"
+            self._console.print(
+                "[info]No tags available. Continuing with no tags assigned.[/info]"
+            )
+            return []
+
+        selected_tag_ids = {tag.id for tag in current_account.tags}
+        default_choices = [
+            str(index)
+            for index, tag in enumerate(tags, start=1)
+            if tag.id in selected_tag_ids
+        ]
+        default_value = ",".join(default_choices) if default_choices else "0"
+
+        self._console.print(build_indexed_tags_table(tags))
+        choices = prompt_for_optional_tag_choices(
+            self._console,
+            len(tags),
+            default=default_value,
+        )
+        if choices is None:
+            raise KeyboardInterrupt("Quit while collecting tags.")
+        if not choices:
+            self._selected_tag_names = "None"
+            return []
+
+        normalized_choices = sorted(set(choices))
+        selected_tags = [tags[choice - 1] for choice in normalized_choices]
+        self._selected_tag_names = ", ".join(tag.name for tag in selected_tags)
+        return [tag.id for tag in selected_tags]
+
     def _build_status_table(self, status_options: list[Status]) -> Table:
         """Build status selection table."""
         table = Table(title="Status Options")
@@ -558,7 +595,7 @@ class RichAccountUpdatePresenter:
             )
         return table
 
-    def show_preview_and_confirm(self, updated_account: Account) -> bool:
+    def show_preview_and_confirm(self, updated_account: AccountUpdateData) -> bool:
         """Show preview and get confirmation.
 
         Args:
@@ -568,9 +605,18 @@ class RichAccountUpdatePresenter:
             True if user confirms, False otherwise
         """
         self._console.print("[bold]Updated account data[/bold]")
+        preview_account = Account(
+            name=updated_account.account_name,
+            description=updated_account.description,
+            category_name=updated_account.category_name,
+            currency_code=updated_account.currency_code,
+            institution_id=updated_account.institution_id,
+            status=updated_account.status,
+        )
+        preview_account.id = updated_account.account_id
         render_account_data(
             self._console,
-            updated_account,
+            preview_account,
             institution_name=self._selected_institution_name,
         )
         return self._confirm.ask("Proceed with update", default=False)

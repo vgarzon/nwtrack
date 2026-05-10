@@ -5,7 +5,7 @@ Demo interactive use case for updating account information.
 import logging
 from collections.abc import Callable
 
-from nwtrack.application.dto import OperationResult
+from nwtrack.application.dto import AccountUpdateData, OperationResult
 from nwtrack.application.ports.presentation import AccountUpdatePresenter
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
@@ -56,23 +56,23 @@ class UpdateAccountInfo:
             return OperationResult(success=False, error_message=_msg)
 
         # Collect updated data
-        updated_account = self._presenter.collect_updated_data(current_account)
-        if updated_account is None:
+        update_data = self._presenter.collect_updated_data(current_account)
+        if update_data is None:
             logger.warning("Account update cancelled by user.")
             self._presenter.show_cancellation()
             return OperationResult(success=False, error_message="Cancelled by user")
 
         # Show preview and confirm
-        if not self._presenter.show_preview_and_confirm(updated_account):
+        if not self._presenter.show_preview_and_confirm(update_data):
             logger.warning("Account update cancelled by user.")
             self._presenter.show_cancellation("User declined.")
             return OperationResult(success=False, error_message="User declined")
 
         # Update in database
-        self._update_account(updated_account)
+        self._update_account(update_data)
 
         # Verify update
-        success = self._verify_update(account_id, updated_account)
+        success = self._verify_update(account_id, update_data)
         if not success:
             _msg = "Account update verification failed."
             logger.error(_msg)
@@ -85,16 +85,26 @@ class UpdateAccountInfo:
 
         return OperationResult(success=True)
 
-    def _update_account(self, updated_account: Account) -> None:
+    def _update_account(self, update_data: AccountUpdateData) -> None:
         """Update account data in the database.
 
         Args:
-            updated_account: New account data
+            update_data: New account data
         """
         with self._uow() as uow:
+            updated_account = Account(
+                name=update_data.account_name,
+                description=update_data.description,
+                category_name=update_data.category_name,
+                currency_code=update_data.currency_code,
+                institution_id=update_data.institution_id,
+                status=update_data.status,
+            )
+            updated_account.id = update_data.account_id
             uow.accounts.update(updated_account)
+            uow.tags.replace_for_account(update_data.account_id, update_data.tag_ids)
 
-    def _verify_update(self, account_id: int, update_data: Account) -> bool:
+    def _verify_update(self, account_id: int, update_data: AccountUpdateData) -> bool:
         """Verify that the account was updated correctly.
 
         Args:
@@ -108,7 +118,16 @@ class UpdateAccountInfo:
         if retrieved_data is None:
             logger.error("Error retrieving updated account.")
             return False
-        return retrieved_data == update_data
+        return (
+            retrieved_data.id == update_data.account_id
+            and retrieved_data.name == update_data.account_name
+            and retrieved_data.description == update_data.description
+            and retrieved_data.category_name == update_data.category_name
+            and retrieved_data.currency_code == update_data.currency_code
+            and retrieved_data.institution_id == update_data.institution_id
+            and retrieved_data.status == update_data.status
+            and [tag.id for tag in retrieved_data.tags] == update_data.tag_ids
+        )
 
 
 def main() -> None:
