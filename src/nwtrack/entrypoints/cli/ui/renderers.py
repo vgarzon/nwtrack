@@ -208,7 +208,11 @@ def render_institution_data(
     console.print(text)
 
 
-def render_tag_data(console: Console, tag: Tag, account_count: int | None = None) -> None:
+def render_tag_data(
+    console: Console,
+    tag: Tag,
+    account_count: int | None = None,
+) -> None:
     """Render tag details and optional linked-account count."""
     text = (
         f"[label]Tag ID:[/label] {tag.id}\n"

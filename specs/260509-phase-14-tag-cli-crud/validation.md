@@ -8,7 +8,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Tag List And Shared Admin Helper
 - [X] Tag Create And Update Workflows
 - [X] Tag Delete Workflow
-- [ ] Validation And Compatibility
+- [X] Validation And Compatibility
 
 ## Automated
 
