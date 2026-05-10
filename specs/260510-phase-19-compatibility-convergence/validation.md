@@ -6,7 +6,7 @@ Update this checklist as task groups in `plan.md` are completed.
 
 - [X] Compatibility Reporting Contracts
 - [X] Legacy Command Convergence
-- [ ] Correctness And Error Handling
+- [X] Correctness And Error Handling
 - [ ] Validation And Constitution Updates
 
 ## Implementation Notes
@@ -15,6 +15,8 @@ Update this checklist as task groups in `plan.md` are completed.
 - Compatibility Reporting Contracts validation: `uv run pytest tests/sqlite/test_reporting_queries.py tests/services/test_fetch_service.py tests/use_cases/test_report_compatibility.py`
 - Legacy Command Convergence: completed. Reworked `reports balances-category` to source category and net-worth sections from shared single-month aggregation, reworked `reports networth-history` to source rows from shared history aggregation, and preserved the existing command surfaces and presenter layouts.
 - Legacy Command Convergence validation: `uv run pytest tests/use_cases/test_report_balances_by_category.py tests/use_cases/test_report_networth_history.py tests/entrypoints/test_cli_reports.py`
+- Correctness And Error Handling: completed. Added explicit mixed-currency compatibility failure coverage, verified grouped totals do not render after that failure, and preserved legacy cancellation and no-data warning behavior under the shared-core implementation.
+- Correctness And Error Handling validation: `uv run pytest tests/use_cases/test_report_balances_by_category.py tests/use_cases/test_report_networth_history.py`
 
 ## Automated
 
