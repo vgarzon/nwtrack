@@ -4,7 +4,7 @@
 
 Update this checklist as task groups in `plan.md` are completed.
 
-- [ ] Export Contract And Table Coverage
+- [X] Export Contract And Table Coverage
 - [ ] Export Service Support
 - [ ] Command And Workflow Preservation
 - [ ] Compatibility And Regression Tests
