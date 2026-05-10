@@ -7,7 +7,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Import CLI And Workflow Foundation
 - [X] Source Bundle Validation
 - [X] Database Bootstrap And Import Service Refactor
-- [ ] Idempotent Persistence Behavior
+- [X] Idempotent Persistence Behavior
 - [ ] Round-Trip And Regression Coverage
 - [ ] Validation And Documentation
 
