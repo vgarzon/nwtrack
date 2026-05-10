@@ -344,7 +344,8 @@ def prompt_for_optional_tag_choices(
 
     while True:
         response = prompt.ask(
-            "Enter [bold]tag index list[/bold] (for example 1,3), '0' for None, or 'q' to quit",
+            "Enter [bold]tag index list[/bold] "
+            "(for example 1,3), '0' for None, or 'q' to quit",
             default=default,
         ).strip()
         parsed = parse_optional_tag_choices(response, n_tags)
