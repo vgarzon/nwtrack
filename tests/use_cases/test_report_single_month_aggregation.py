@@ -45,6 +45,7 @@ class FakeUnitOfWork:
     """Context-manager test double exposing the reporting port."""
 
     def __init__(self, reporting: FakeReportingQueries) -> None:
+        self.reporting = reporting
         self._reporting = reporting
 
     def __enter__(self) -> "FakeUnitOfWork":

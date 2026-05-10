@@ -70,7 +70,9 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         self.balances = BalancesRepository(self._session)
         self.exchange_rates = ExchangeRatesRepository(self._session)
         self.net_worth = NetWorthRepository(self._session)
-        self._reporting = ReportingQueries(self._session)
+        self.reporting = ReportingQueries(self._session)
+        # Keep the legacy attribute during the reporting-layer transition.
+        self._reporting = self.reporting
 
         return self
 

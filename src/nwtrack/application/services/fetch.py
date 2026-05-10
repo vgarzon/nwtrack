@@ -222,5 +222,5 @@ class FetchService:
            list[MonthlyCategoryBalance]: List of MonthlyCategoryBalance objects.
         """
         with self._uow() as uow:
-            monthly_balances = uow._reporting.monthly_balance_total_by_category(month)
+            monthly_balances = uow.reporting.monthly_balance_total_by_category(month)
         return monthly_balances
