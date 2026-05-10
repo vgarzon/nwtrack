@@ -48,14 +48,18 @@ class FakeTaggedAccountCreationFetchService(FakeAccountCreationFetchService):
         return [first, second]
 
 
-def test_account_list_presenter_renders_institution_column_for_mixed_accounts() -> None:
-    """Account list presenter should show assigned and unassigned institutions."""
+def test_account_list_presenter_renders_institution_and_tags_columns() -> None:
+    """Account list presenter should show assigned and unassigned tags cleanly."""
     console = build_console(ConsoleSettings(record=True))
     presenter = RichAccountListPresenter(console)
 
     category = Category(name="checking", side=Side.ASSET)
     institution = Institution(name="Chase", description="Primary bank")
     institution.id = 1
+    first_tag = Tag(name="core", description="Core holding")
+    first_tag.id = 1
+    second_tag = Tag(name="liquid", description="Quick access")
+    second_tag.id = 2
 
     assigned_account = Account(
         name="bank_1_checking",
@@ -68,6 +72,7 @@ def test_account_list_presenter_renders_institution_column_for_mixed_accounts() 
     assigned_account.id = 1
     assigned_account.category = category
     assigned_account.institution = institution
+    assigned_account.tags = [first_tag, second_tag]
 
     unassigned_account = Account(
         name="bank_2_savings",
@@ -88,9 +93,12 @@ def test_account_list_presenter_renders_institution_column_for_mixed_accounts() 
     output = console.export_text()
 
     assert "Institution" in output
+    assert "Tags" in output
     assert "Chase" in output
     header_line = next(line for line in output.splitlines() if "Institution" in line)
     assert header_line.index("Institution") < header_line.index("Name")
+    assert header_line.index("Tags") < header_line.index("Name")
+    assert "core, liquid" in output
     assert "bank_2_savings" in output
     assert "None" not in output
 

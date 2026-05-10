@@ -85,6 +85,7 @@ def build_accounts_table(
     accounts: list[Account],
     title_prefix: str = "",
     show_institution: bool = False,
+    show_tags: bool = False,
 ) -> Table:
     """Build a Rich Table of active accounts.
 
@@ -100,6 +101,8 @@ def build_accounts_table(
     table.add_column("ID", justify="right", style="col.id", no_wrap=True)
     if show_institution:
         table.add_column("Institution", style="col.name")
+    if show_tags:
+        table.add_column("Tags", style="col.name")
     table.add_column("Name", style="col.name")
     table.add_column("Category", style="col.category")
     table.add_column("Side", style="col.side")
@@ -117,6 +120,13 @@ def build_accounts_table(
                     unassigned_label=UNASSIGNED_INSTITUTION_TABLE_LABEL,
                 )
             )
+        if show_tags:
+            row.append(
+                format_tag_names(
+                    account,
+                    untagged_label=UNTAGGED_TABLE_LABEL,
+                )
+            )
         row.extend(
             [
                 account.name,
@@ -132,6 +142,7 @@ def render_account_data(
     console: Console,
     account: Account,
     institution_name: str | None = None,
+    tag_names: str | None = None,
 ) -> None:
     console.print(
         f"[label]Account ID:[/label] {account.id}\n"
@@ -141,6 +152,7 @@ def render_account_data(
         f"[label]Category:[/label] {account.category_name}\n"
         f"[label]Institution:[/label] "
         f"{institution_name or format_institution_name(account)}\n"
+        f"[label]Tags:[/label] {tag_names or format_tag_names(account)}\n"
         f"[label]Status:[/label] {account.status}"
     )
 
