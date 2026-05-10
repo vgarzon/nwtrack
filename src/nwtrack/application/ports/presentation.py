@@ -10,8 +10,8 @@ from typing import Protocol
 
 from nwtrack.application.dto import (
     AccountStatusScope,
-    AggregationDimension,
     AccountUpdateData,
+    AggregationDimension,
     InstitutionListItem,
     MonthlyCategoryBalance,
     NewAccountData,
