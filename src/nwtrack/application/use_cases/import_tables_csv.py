@@ -24,7 +24,12 @@ class ImportTablesCSVBase:
 
     def import_tables_from_dir(self, source_dir: Path) -> None:
         """Import database tables from CSV files in the source directory."""
-        self._importer.import_bundle_from_dir(source_dir)
+        try:
+            self._importer.import_bundle_from_dir(source_dir)
+        except Exception as exc:
+            logger.error("Failed to import CSV bundle from %s: %s", source_dir, exc)
+            self._console.print(f"[error]Error:[/error] {exc}")
+            return
         self._console.print(
             f"[success]Imported[/success] CSV tables from [bold]{source_dir}[/bold]"
         )
