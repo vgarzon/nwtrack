@@ -142,6 +142,23 @@ def test_get_month_currencies_honors_status_scope(
     assert all_currencies == ["CHF", "USD"]
 
 
+def test_get_available_aggregation_months_filters_by_dimension_currency_and_scope(
+    base_container, sample_entities
+) -> None:
+    """Compatibility month discovery should return deterministic filtered months."""
+    container, month = _setup_reporting_fixture(base_container, sample_entities)
+
+    with _uow_factory(container) as uow:
+        months = uow._reporting.get_available_aggregation_months(
+            AggregationDimension.SIDE,
+            "USD",
+            AccountStatusScope.ACTIVE,
+        )
+
+    assert month in months
+    assert months == sorted(months)
+
+
 def test_get_range_currencies_honors_status_scope(
     base_container,
     sample_entities,
