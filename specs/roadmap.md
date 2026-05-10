@@ -186,6 +186,18 @@ Expected outcomes:
 - Non-interactive aggregated history reporting can emit CSV output for downstream analysis
 - Output-format options are defined in a way that preserves current default behavior unless the user opts in
 
+### [ ] Phase 22: Single-Currency Conversion Reporting
+
+Goal:
+Add conversion-backed reporting so aggregated views can be rendered in one explicit reporting currency instead of failing on mixed-currency totals.
+
+Expected outcomes:
+
+- Reporting can convert mixed-currency balances into one explicit reporting currency before aggregation
+- USD is supported as the initial consolidated reporting currency
+- Conversion rules and required exchange-rate inputs are defined clearly for reporting workflows
+- Compatibility and aggregated report commands can converge on accounting-correct single-currency output where conversion data exists
+
 ## Planning Rules
 
 - Keep phases small enough to land independently.
