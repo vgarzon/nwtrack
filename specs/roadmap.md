@@ -105,7 +105,7 @@ Expected outcomes:
 - Validation preserves controlled-label behavior
 - Deletion and rename semantics are defined and tested
 
-### [ ] Phase 15: Account Workflows With Tags
+### [X] Phase 15: Account Workflows With Tags
 
 Goal:
 Thread tag assignment through account management in a way that remains efficient for monthly workflows.
