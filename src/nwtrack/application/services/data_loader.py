@@ -4,6 +4,7 @@ Data loading services
 
 import logging
 from collections.abc import Callable
+from pathlib import Path
 
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.infra.fileio.csv_io import csv_to_records
@@ -13,6 +14,17 @@ logger = logging.getLogger(__name__)
 
 class InitDataService:
     """Initialize reference and sample data in the database."""
+
+    IMPORT_TABLE_NAMES = (
+        "currencies",
+        "categories",
+        "institutions",
+        "tags",
+        "accounts",
+        "account_tags",
+        "balances",
+        "exchange_rates",
+    )
 
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
@@ -56,6 +68,13 @@ class InitDataService:
             row["amount"] = abs(int(row["amount"]))
 
         self._insert_records(records)
+
+    def import_bundle_from_dir(self, source_dir: Path) -> None:
+        """Import a standard CSV bundle from one source directory."""
+        file_paths = {
+            name: str(source_dir / f"{name}.csv") for name in self.IMPORT_TABLE_NAMES
+        }
+        self.insert_data_from_csv(file_paths)
 
     def _load_records_from_csv(self, file_paths: dict[str, str]) -> dict[str, list]:
         """Load records from a collection of CSV files indexed by repo name.
