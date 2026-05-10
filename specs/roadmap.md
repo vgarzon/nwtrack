@@ -162,6 +162,7 @@ Expected outcomes:
 - Existing category balance reporting uses aggregation-by-category internally
 - CLI output changes are limited to what is necessary for consistency or new data requirements
 - Compatibility differences are documented in release notes or feature specs
+- Mixed-currency compatibility reporting fails clearly until explicit conversion-based reporting exists
 
 ### [ ] Phase 20: Institution Requirement Migration Plan
 
@@ -191,5 +192,6 @@ Expected outcomes:
 - Prefer schema-first changes before broad CLI rewiring.
 - Preserve existing command behavior where practical until replacement paths are proven.
 - Route new reporting work through shared aggregation primitives instead of adding more bespoke report logic.
+- Prefer accounting-correct single-currency output; when conversion support is not available, fail clearly instead of summing mixed currencies.
 - Treat testing and quality checks as part of phase validation, and document them explicitly in each phase spec.
 - Update this roadmap when feature specs materially change implementation order.
