@@ -94,7 +94,7 @@ Expected outcomes:
 - Database migration path preserves existing account and balance records
 - CSV import/export behavior is updated or explicitly deferred in the feature spec
 
-### [ ] Phase 14: Tag CLI CRUD
+### [X] Phase 14: Tag CLI CRUD
 
 Goal:
 Make tags independently manageable before wiring them into account workflows.
