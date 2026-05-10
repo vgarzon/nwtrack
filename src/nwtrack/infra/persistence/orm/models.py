@@ -74,6 +74,16 @@ class Institution(MappedAsDataclass, Base):
     description: Mapped[str | None] = mapped_column(String, nullable=True, default=None)
 
 
+class Tag(MappedAsDataclass, Base):
+    """Tag entity."""
+
+    __tablename__ = "tags"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    name: Mapped[str] = mapped_column(String, unique=True)
+    description: Mapped[str | None] = mapped_column(String, nullable=True, default=None)
+
+
 class Account(MappedAsDataclass, Base):
     """Account entity."""
 
