@@ -55,7 +55,7 @@ class TagsRepository(TagsRepositoryProtocol):
 
     def get_all(self) -> list[Tag]:
         """Get all tags."""
-        result = self._session.execute(select(Tag)).scalars()
+        result = self._session.execute(select(Tag).order_by(Tag.id)).scalars()
         return list(result)
 
     def count(self) -> int:

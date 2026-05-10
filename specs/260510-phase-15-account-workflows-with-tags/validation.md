@@ -5,10 +5,10 @@
 Update this checklist as task groups in `plan.md` are completed.
 
 - [X] Account Workflow Contracts And Selection Support
-- [X] Account Create Workflow With Tags
-- [X] Account Update Workflow With Tags
-- [X] Account List And Presentation Updates
-- [X] Validation And Compatibility
+- [ ] Account Create Workflow With Tags
+- [ ] Account Update Workflow With Tags
+- [ ] Account List And Presentation Updates
+- [ ] Validation And Compatibility
 
 ## Automated
 

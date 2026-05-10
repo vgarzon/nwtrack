@@ -299,6 +299,65 @@ def prompt_for_optional_institution_choice(
     return int(choice)
 
 
+def parse_optional_tag_choices(
+    response: str,
+    n_tags: int,
+) -> list[int] | None:
+    """Parse comma-separated displayed tag indices.
+
+    Returns:
+        A de-duplicated list of selected indices in ascending table order,
+        an empty list for the explicit no-tags path, or None for invalid input.
+    """
+    normalized = response.strip().lower()
+    if normalized == "q":
+        return None
+    if normalized == "0":
+        return []
+
+    raw_parts = [part.strip() for part in response.split(",")]
+    if not raw_parts or any(not part for part in raw_parts):
+        return None
+
+    parsed: list[int] = []
+    for part in raw_parts:
+        if not part.isdigit():
+            return None
+        choice = int(part)
+        if choice < 1 or choice > n_tags:
+            return None
+        parsed.append(choice)
+
+    return sorted(set(parsed))
+
+
+def prompt_for_optional_tag_choices(
+    console: Console,
+    n_tags: int,
+    default: str = "0",
+) -> list[int] | None:
+    """Prompt for optional multi-tag selection by displayed index.
+
+    Index 0 selects no tags, indexes 1..n map to tags, and 'q' quits the workflow.
+    """
+    prompt = Prompt(console=console)
+
+    while True:
+        response = prompt.ask(
+            "Enter [bold]tag index list[/bold] (for example 1,3), '0' for None, or 'q' to quit",
+            default=default,
+        ).strip()
+        parsed = parse_optional_tag_choices(response, n_tags)
+        if response.lower() == "q":
+            return None
+        if parsed is not None:
+            return parsed
+        console.print(
+            "[validation]Invalid tag selection.[/validation] "
+            "Enter comma-separated indices, '0' for None, or 'q' to quit."
+        )
+
+
 def prompt_for_category_side(console: Console) -> str:
     """Prompt user for category side.
 

@@ -158,6 +158,7 @@ class Account(MappedAsDataclass, Base):
         "Tag",
         secondary=account_tags_table,
         lazy="selectin",
+        order_by="Tag.id",
         init=False,
         default_factory=list,
         compare=False,

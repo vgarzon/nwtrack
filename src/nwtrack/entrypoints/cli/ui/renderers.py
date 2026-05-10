@@ -24,6 +24,8 @@ from nwtrack.domain.value_objects import Month
 
 UNASSIGNED_INSTITUTION_LABEL = "None"
 UNASSIGNED_INSTITUTION_TABLE_LABEL = ""
+UNTAGGED_LABEL = "None"
+UNTAGGED_TABLE_LABEL = ""
 
 
 def format_institution_name(
@@ -35,6 +37,16 @@ def format_institution_name(
     if institution is not None:
         return institution.name
     return unassigned_label
+
+
+def format_tag_names(
+    account: Account,
+    untagged_label: str = UNTAGGED_LABEL,
+) -> str:
+    """Return the display label for an account's tags."""
+    if not account.tags:
+        return untagged_label
+    return ", ".join(tag.name for tag in account.tags)
 
 
 def build_indexed_institutions_table(institutions: list[Institution]) -> Table:
@@ -49,6 +61,22 @@ def build_indexed_institutions_table(institutions: list[Institution]) -> Table:
             str(index),
             institution.name,
             institution.description or "",
+        )
+    return table
+
+
+def build_indexed_tags_table(tags: list[Tag]) -> Table:
+    """Build an indexed tag-selection table with a None option."""
+    table = Table(title="Tags")
+    table.add_column("Index", justify="right", style="col.id", no_wrap=True)
+    table.add_column("Name", style="col.name")
+    table.add_column("Description", style="col.desc")
+    table.add_row("0", UNTAGGED_LABEL, "")
+    for index, tag in enumerate(tags, start=1):
+        table.add_row(
+            str(index),
+            tag.name,
+            tag.description or "",
         )
     return table
 
