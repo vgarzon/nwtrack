@@ -18,8 +18,22 @@ logger = logging.getLogger(__name__)
 class ExportCSV:
     """Service to export records to CSV files."""
 
-    _field_exclusions = {
-        "accounts": {"institution_id"},
+    _field_orders = {
+        "currencies": ("code", "description"),
+        "categories": ("name", "side"),
+        "institutions": ("id", "name", "description"),
+        "tags": ("id", "name", "description"),
+        "accounts": (
+            "id",
+            "name",
+            "description",
+            "category",
+            "institution_id",
+            "currency",
+            "status",
+        ),
+        "balances": ("id", "account_id", "month", "amount"),
+        "exchange_rates": ("id", "currency", "month", "rate"),
     }
 
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
@@ -28,6 +42,8 @@ class ExportCSV:
         self._table_names = [
             "currencies",
             "categories",
+            "institutions",
+            "tags",
             "accounts",
             "balances",
             "exchange_rates",
@@ -54,8 +70,6 @@ class ExportCSV:
 
         # Get SQLAlchemy mapper to access column names
         mapper = inspect(entity.__class__)
-        excluded_fields = cls._field_exclusions.get(table_name, set())
-
         # Map field names to database column names
         for field in dataclasses.fields(entity):
             value = getattr(entity, field.name)
@@ -71,10 +85,6 @@ class ExportCSV:
                 if hasattr(column, "columns"):
                     # Get the actual column name from the first column
                     column_name = list(column.columns)[0].name
-
-            # Convert special types to CSV-friendly formats
-            if column_name in excluded_fields:
-                continue
 
             if isinstance(value, Month):
                 record[column_name] = str(value)
@@ -136,7 +146,8 @@ class ExportCSV:
             logger.info("No records found in table %s. Skipping export.", table_name)
             return 0
 
-        records_to_csv(records, csv_path)
+        fieldnames = self._field_orders.get(table_name)
+        records_to_csv(records, csv_path, fieldnames=fieldnames)
         n_records = len(records)
         logger.info(
             "Exported %d records from table %s to %s", n_records, table_name, csv_path

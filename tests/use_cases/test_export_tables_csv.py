@@ -13,7 +13,7 @@ from nwtrack.application.use_cases.export_tables_csv import (
     ExportTablesCSVInteractive,
 )
 from nwtrack.bootstrap.container import Container, Lifetime
-from nwtrack.domain.models import Account, Institution, Status
+from nwtrack.domain.models import Account, Institution, Status, Tag
 
 
 @pytest.fixture
@@ -117,11 +117,11 @@ def test_export_tables_interactive(
         revolving_credit,liability
     """
     accounts_expected = """
-        id,name,description,category,currency,status
-        1,bank_1_checking,bank_1 checking,checking,USD,active
-        2,bank_2_savings,bank_2_savings,savings,USD,active
-        3,credit_cards_1,credit_cards_1,revolving_credit,USD,active
-        4,mortgage_1,mortgage_1,mortgage,USD,inactive
+        id,name,description,category,institution_id,currency,status
+        1,bank_1_checking,bank_1 checking,checking,,USD,active
+        2,bank_2_savings,bank_2_savings,savings,,USD,active
+        3,credit_cards_1,credit_cards_1,revolving_credit,,USD,active
+        4,mortgage_1,mortgage_1,mortgage,,USD,inactive
     """
 
     currencies_expected = textwrap.dedent(currencies_expected).lstrip()
@@ -146,12 +146,12 @@ def test_export_tables_interactive(
     assert "10,2,2024-08,2100\n" in balances_csv[:11]
 
 
-def test_export_accounts_csv_keeps_phase10_compatibility(
+def test_export_accounts_csv_includes_institution_id_when_present(
     configured_container: Container,
     sample_entities: dict[str, list],
     tmp_path,
 ) -> None:
-    """Account CSV output should not expose institution fields in Phase 10."""
+    """Account CSV output should include institution linkage in Phase 21."""
     from nwtrack.application.use_cases.export_tables_csv import ExportCSV
 
     init_db_tables_w_entities(configured_container, sample_entities)
@@ -178,23 +178,44 @@ def test_export_accounts_csv_keeps_phase10_compatibility(
     with open(tmp_path / "accounts.csv", encoding="utf-8") as f:
         accounts_csv = f.read().splitlines()
 
-    assert accounts_csv[0] == "id,name,description,category,currency,status"
-    assert "institution_id" not in accounts_csv[0]
-    assert any("phase10_export_account" in line for line in accounts_csv[1:])
+    assert accounts_csv[0] == (
+        "id,name,description,category,institution_id,currency,status"
+    )
+    assert any(
+        line == "5,phase10_export_account,Export compatibility check,checking,1,USD,active"
+        for line in accounts_csv[1:]
+    )
 
 
-def test_export_tables_csv_keeps_phase13_compatibility(
+def test_export_tables_csv_includes_institutions_and_tags_when_present(
     configured_container: Container,
     sample_entities: dict[str, list],
     tmp_path,
 ) -> None:
-    """Phase 13 should not introduce tag CSV files into export output."""
+    """Phase 21 should export institution and tag tables."""
     from nwtrack.application.use_cases.export_tables_csv import ExportCSV
 
     init_db_tables_w_entities(configured_container, sample_entities)
+    uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow:
+        uow.institutions.insert(
+            Institution(name="Fidelity", description="Brokerage institution")
+        )
+        uow.tags.insert(Tag(name="retirement", description="Tax-advantaged"))
 
     exporter: ExportCSV = configured_container.resolve(ExportCSV)
     exporter.export_tables_to_dir(tmp_path)
 
-    assert not (tmp_path / "tags.csv").exists()
-    assert not (tmp_path / "account_tags.csv").exists()
+    with open(tmp_path / "institutions.csv", encoding="utf-8") as f:
+        institutions_csv = f.read().splitlines()
+    assert institutions_csv == [
+        "id,name,description",
+        "1,Fidelity,Brokerage institution",
+    ]
+
+    with open(tmp_path / "tags.csv", encoding="utf-8") as f:
+        tags_csv = f.read().splitlines()
+    assert tags_csv == [
+        "id,name,description",
+        "1,retirement,Tax-advantaged",
+    ]
