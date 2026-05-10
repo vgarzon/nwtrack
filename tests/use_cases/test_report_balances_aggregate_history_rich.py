@@ -3,6 +3,7 @@
 import re
 
 import pytest
+from rich.prompt import Prompt
 from tests.helpers import init_db_tables_w_entities
 
 from nwtrack.application.dto import (
@@ -158,6 +159,35 @@ def test_category_history_report_renders_grouped_balances_table(
     assert "checking" in output
     assert "revolving_credit" in output
     assert "savings" in output
+
+
+def test_interactive_history_report_labels_start_and_end_month_selection(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Interactive history prompts should label start and end month selection."""
+    container, _, _ = _setup_reporting_fixture(configured_container, sample_entities)
+    responses = iter(["3", "1", "1"])
+
+    monkeypatch.setattr(
+        Prompt,
+        "ask",
+        lambda self, *args, **kwargs: next(responses),
+    )
+
+    result = container.resolve(HistoryAggregatedBalanceReport).run(
+        start_month=None,
+        end_month=None,
+        dimension=None,
+        currency_code="USD",
+        allow_interactive=True,
+    )
+    output = container.resolve(Console).export_text()
+
+    assert result.success
+    assert "Select start month:" in output
+    assert "Select end month:" in output
 
 
 def test_currency_history_report_renders_month_and_currency_columns(

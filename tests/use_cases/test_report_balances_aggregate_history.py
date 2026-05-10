@@ -51,7 +51,8 @@ class RecordingPresenter:
             tuple[Month, Month, AggregationDimension, str | None]
         ] = []
         self.displayed_results: list[HistoryAggregationResult] = []
-        self.month_prompt_calls: list[list[tuple[Month, int]]] = []
+        self.start_month_prompt_calls: list[list[tuple[Month, int]]] = []
+        self.end_month_prompt_calls: list[list[tuple[Month, int]]] = []
         self.dimension_prompt_calls = 0
         self.currency_prompt_calls: list[list[str]] = []
         self.selected_months: list[Month | None] = []
@@ -65,8 +66,14 @@ class RecordingPresenter:
     def show_header(self) -> None:
         self.header_calls += 1
 
-    def prompt_for_month_choice(self, balance_counts):
-        self.month_prompt_calls.append(list(balance_counts))
+    def prompt_for_start_month_choice(self, balance_counts):
+        self.start_month_prompt_calls.append(list(balance_counts))
+        if not self.selected_months:
+            return None
+        return self.selected_months.pop(0)
+
+    def prompt_for_end_month_choice(self, balance_counts):
+        self.end_month_prompt_calls.append(list(balance_counts))
         if not self.selected_months:
             return None
         return self.selected_months.pop(0)
@@ -328,9 +335,10 @@ def test_run_prompts_for_start_month_when_missing() -> None:
     )
 
     assert result.success
-    assert presenter.month_prompt_calls == [
+    assert presenter.start_month_prompt_calls == [
         [(Month(2025, 11), 5), (Month(2025, 10), 4), (Month(2025, 9), 3)]
     ]
+    assert presenter.end_month_prompt_calls == []
     assert aggregation_report.requests[0].start_month == start_month
 
 
@@ -381,10 +389,61 @@ def test_run_prompts_for_end_month_when_missing() -> None:
     )
 
     assert result.success
-    assert presenter.month_prompt_calls == [
+    assert presenter.start_month_prompt_calls == []
+    assert presenter.end_month_prompt_calls == [
         [(Month(2025, 11), 5), (Month(2025, 10), 4), (Month(2025, 9), 3)]
     ]
     assert aggregation_report.requests[0].end_month == end_month
+
+
+def test_run_uses_distinct_start_and_end_month_prompts() -> None:
+    """The workflow should use separate presenter hooks for start and end month."""
+    start_month = Month(2025, 9)
+    end_month = Month(2025, 11)
+    expected = _build_result(
+        start_month,
+        end_month,
+        AggregationDimension.CATEGORY,
+        "USD",
+        AccountStatusScope.ACTIVE,
+        [
+            HistoryAggregationRow(
+                month=start_month,
+                group_key="checking",
+                label="checking",
+                amount=200,
+                currency_code="USD",
+            )
+        ],
+    )
+    fetcher = FakeFetchService(
+        balance_counts=[
+            (Month(2025, 9), 3),
+            (Month(2025, 10), 4),
+            (Month(2025, 11), 5),
+        ]
+    )
+    aggregation_report = FakeAggregationReport(
+        OperationResult(success=True, data=expected)
+    )
+    presenter = RecordingPresenter()
+    presenter.selected_months = [start_month, end_month]
+    workflow = HistoryAggregatedBalanceReport(
+        fetcher=fetcher,
+        aggregation_report=aggregation_report,
+        presenter=presenter,
+    )
+
+    result = workflow.run(
+        start_month=None,
+        end_month=None,
+        dimension=AggregationDimension.CATEGORY,
+        currency_code="USD",
+    )
+
+    assert result.success
+    assert len(presenter.start_month_prompt_calls) == 1
+    assert len(presenter.end_month_prompt_calls) == 1
 
 
 def test_run_prompts_for_dimension_when_missing() -> None:

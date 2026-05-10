@@ -249,10 +249,16 @@ class HistoryAggregationReportPresenter(Protocol):
         """Display report header."""
         ...
 
-    def prompt_for_month_choice(
+    def prompt_for_start_month_choice(
         self, balance_counts: list[tuple[Month, int]]
     ) -> Month | None:
-        """Present month selection with recent months or custom input."""
+        """Present start-month selection with recent months or custom input."""
+        ...
+
+    def prompt_for_end_month_choice(
+        self, balance_counts: list[tuple[Month, int]]
+    ) -> Month | None:
+        """Present end-month selection with recent months or custom input."""
         ...
 
     def prompt_for_dimension_choice(self) -> AggregationDimension | None:
