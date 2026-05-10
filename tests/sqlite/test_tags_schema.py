@@ -1,8 +1,11 @@
 """Schema tests for tag persistence foundations."""
 
+from typing import cast
+
 import pytest
 from sqlalchemy import delete, insert, inspect, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from tests.helpers import _uow_factory, init_db_tables_w_entities
 
@@ -10,6 +13,13 @@ from nwtrack.bootstrap.composition import build_data_services_container
 from nwtrack.domain.models import Account, Status, Tag
 from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
 from nwtrack.infra.persistence.orm.models import account_tags_table
+from nwtrack.infra.persistence.uow import SQLAlchemyUnitOfWork
+
+
+def _session_from_uow(uow: SQLAlchemyUnitOfWork) -> Session:
+    """Return the active SQLAlchemy session for low-level association tests."""
+    assert uow._session is not None
+    return uow._session
 
 
 def test_schema_includes_tags_table(base_container) -> None:
@@ -51,6 +61,7 @@ def test_account_tags_support_many_to_many_links(base_container, sample_entities
     init_db_tables_w_entities(container, sample_entities)
 
     with _uow_factory(container) as uow:
+        session = _session_from_uow(cast(SQLAlchemyUnitOfWork, uow))
         checking = uow.accounts.insert(
             Account(
                 name="cash_account",
@@ -71,9 +82,9 @@ def test_account_tags_support_many_to_many_links(base_container, sample_entities
         )
         emergency = Tag(name="Emergency Fund", description="Cash reserve")
         liquid = Tag(name="Liquid", description="Quick access")
-        uow._session.add_all([emergency, liquid])
-        uow._session.flush()
-        uow._session.execute(
+        session.add_all([emergency, liquid])
+        session.flush()
+        session.execute(
             insert(account_tags_table),
             [
                 {"account_id": checking, "tag_id": emergency.id},
@@ -101,6 +112,7 @@ def test_account_tags_reject_duplicate_links(base_container, sample_entities) ->
 
     with pytest.raises(IntegrityError):
         with _uow_factory(container) as uow:
+            session = _session_from_uow(cast(SQLAlchemyUnitOfWork, uow))
             account_id = uow.accounts.insert(
                 Account(
                     name="duplicate_link_account",
@@ -111,15 +123,15 @@ def test_account_tags_reject_duplicate_links(base_container, sample_entities) ->
                 )
             )
             tag = Tag(name="Liquid", description="Quick access")
-            uow._session.add(tag)
-            uow._session.flush()
-            uow._session.execute(
+            session.add(tag)
+            session.flush()
+            session.execute(
                 insert(account_tags_table).values(account_id=account_id, tag_id=tag.id)
             )
-            uow._session.execute(
+            session.execute(
                 insert(account_tags_table).values(account_id=account_id, tag_id=tag.id)
             )
-            uow._session.flush()
+            session.flush()
 
 
 def test_deleting_account_removes_only_account_tag_links(
@@ -130,6 +142,7 @@ def test_deleting_account_removes_only_account_tag_links(
     init_db_tables_w_entities(container, sample_entities)
 
     with _uow_factory(container) as uow:
+        session = _session_from_uow(cast(SQLAlchemyUnitOfWork, uow))
         account_id = uow.accounts.insert(
             Account(
                 name="delete_account_test",
@@ -140,15 +153,15 @@ def test_deleting_account_removes_only_account_tag_links(
             )
         )
         tag = Tag(name="Retain Tag", description="Should survive account deletion")
-        uow._session.add(tag)
-        uow._session.flush()
-        uow._session.execute(
+        session.add(tag)
+        session.flush()
+        session.execute(
             insert(account_tags_table).values(account_id=account_id, tag_id=tag.id)
         )
-        uow._session.execute(delete(Account).where(Account.id == account_id))
+        session.execute(delete(Account).where(Account.id == account_id))
 
-        remaining_links = uow._session.execute(select(account_tags_table)).all()
-        remaining_tags = uow._session.execute(select(Tag)).scalars().all()
+        remaining_links = session.execute(select(account_tags_table)).all()
+        remaining_tags = session.execute(select(Tag)).scalars().all()
 
     assert remaining_links == []
     assert [stored_tag.name for stored_tag in remaining_tags] == ["Retain Tag"]
@@ -162,6 +175,7 @@ def test_deleting_tag_removes_only_account_tag_links(
     init_db_tables_w_entities(container, sample_entities)
 
     with _uow_factory(container) as uow:
+        session = _session_from_uow(cast(SQLAlchemyUnitOfWork, uow))
         account_id = uow.accounts.insert(
             Account(
                 name="delete_tag_test",
@@ -172,15 +186,15 @@ def test_deleting_tag_removes_only_account_tag_links(
             )
         )
         tag = Tag(name="Delete Me", description="Should not remove account")
-        uow._session.add(tag)
-        uow._session.flush()
-        uow._session.execute(
+        session.add(tag)
+        session.flush()
+        session.execute(
             insert(account_tags_table).values(account_id=account_id, tag_id=tag.id)
         )
-        uow._session.execute(delete(Tag).where(Tag.id == tag.id))
+        session.execute(delete(Tag).where(Tag.id == tag.id))
 
-        remaining_links = uow._session.execute(select(account_tags_table)).all()
-        remaining_accounts = uow._session.execute(select(Account)).scalars().all()
+        remaining_links = session.execute(select(account_tags_table)).all()
+        remaining_accounts = session.execute(select(Account)).scalars().all()
 
     assert remaining_links == []
     assert any(account.name == "delete_tag_test" for account in remaining_accounts)
