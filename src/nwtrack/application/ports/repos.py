@@ -15,6 +15,7 @@ from nwtrack.domain.models import (
     ExchangeRate,
     Institution,
     NetWorth,
+    Tag,
 )
 from nwtrack.domain.value_objects import Month
 
@@ -166,6 +167,42 @@ class InstitutionsRepository(Repository[Institution], Protocol):
 
     def count_linked_accounts(self, institution_id: int) -> int:
         """Count accounts linked to an institution."""
+        ...
+
+
+class TagsRepository(Repository[Tag], Protocol):
+    """Protocol for tag repository operations."""
+
+    def insert(self, data: Tag) -> int:
+        """Insert tag object in respective table."""
+        ...
+
+    def get_by_id(self, tag_id: int) -> Tag | None:
+        """Get tag by ID."""
+        ...
+
+    def get_by_name(self, tag_name: str) -> Tag | None:
+        """Get tag by name."""
+        ...
+
+    def update(self, tag: Tag) -> int:
+        """Update tag."""
+        ...
+
+    def delete_by_id(self, tag_id: int) -> int:
+        """Delete tag by ID."""
+        ...
+
+    def count_linked_accounts(self, tag_id: int) -> int:
+        """Count accounts linked to a tag."""
+        ...
+
+    def get_for_account(self, account_id: int) -> list[Tag]:
+        """Get all tags linked to a specific account."""
+        ...
+
+    def replace_for_account(self, account_id: int, tag_ids: list[int]) -> None:
+        """Replace all tag associations for an account."""
         ...
 
 
