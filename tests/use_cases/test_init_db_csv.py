@@ -71,7 +71,10 @@ def valid_file_paths() -> dict[str, str]:
     return {
         "currencies": "tests/data/csv/currencies.csv",
         "categories": "tests/data/csv/categories.csv",
+        "institutions": "tests/data/csv/institutions.csv",
+        "tags": "tests/data/csv/tags.csv",
         "accounts": "tests/data/csv/accounts.csv",
+        "account_tags": "tests/data/csv/account_tags.csv",
         "balances": "tests/data/csv/balances.csv",
         "exchange_rates": "tests/data/csv/exchange_rates.csv",
     }
@@ -95,11 +98,13 @@ def test_db_initializer_csv_yes(
     service.run()
 
     captured_out = service._presenter._console.export_text()
-    assert "Database initialized successfully." in captured_out
+    assert "Database imported successfully." in captured_out
     with configured_container.resolve(UnitOfWork) as uow:
         balances = uow.balances.get_all_by_account_id(1)
+        tags = uow.tags.get_for_account(1)
     assert len(balances) == 12
     assert balances[11].amount == 200
+    assert [tag.id for tag in tags] == [1]
 
 
 def test_db_initializer_csv_no(
@@ -121,24 +126,25 @@ def test_db_initializer_csv_no(
 
     captured_out = service._presenter._console.export_text()
     print(captured_out)
-    assert "Database initialization aborted by user" in captured_out
+    assert "Database import aborted by user" in captured_out
 
 
-def test_db_initializer_csv_keeps_phase13_compatibility(
+def test_db_initializer_csv_requires_phase22_bundle(
     configured_container, monkeypatch, valid_file_paths
 ) -> None:
-    """CSV initialization should not require tag files in Phase 13."""
+    """CSV import should require the full Phase 22 bundle."""
 
     def mock_prompt_for_file_paths(self, required_keys):
         assert required_keys == [
             "currencies",
             "categories",
+            "institutions",
+            "tags",
             "accounts",
+            "account_tags",
             "balances",
             "exchange_rates",
         ]
-        assert "tags" not in required_keys
-        assert "account_tags" not in required_keys
         return valid_file_paths
 
     monkeypatch.setattr(

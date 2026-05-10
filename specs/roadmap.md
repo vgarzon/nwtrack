@@ -186,7 +186,7 @@ Expected outcomes:
 - Exported CSV table sets are defined to remain consistent with the supported import format
 - CSV export behavior moves closer to full local backup and recovery for the current data model
 
-### [ ] Phase 22: CSV Import Command And Round-Trip Foundation
+### [X] Phase 22: CSV Import Command And Round-Trip Foundation
 
 Goal:
 Add a first-class CLI import workflow for CSV table data and align import behavior with the current schema and portability goals.

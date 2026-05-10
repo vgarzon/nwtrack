@@ -31,7 +31,7 @@ def _write_valid_bundle(target_dir: Path) -> None:
 def test_validate_import_bundle_rejects_missing_source_directory(
     configured_container: Container, tmp_path: Path
 ) -> None:
-    service = configured_container.resolve(InitDataService)
+    service: InitDataService = configured_container.resolve(InitDataService)
 
     with pytest.raises(ValueError, match="does not exist"):
         service.validate_import_bundle(tmp_path / "missing")
@@ -40,7 +40,7 @@ def test_validate_import_bundle_rejects_missing_source_directory(
 def test_validate_import_bundle_rejects_missing_required_files(
     configured_container: Container, tmp_path: Path
 ) -> None:
-    service = configured_container.resolve(InitDataService)
+    service: InitDataService = configured_container.resolve(InitDataService)
     _write_valid_bundle(tmp_path)
     (tmp_path / "tags.csv").unlink()
 
@@ -51,7 +51,7 @@ def test_validate_import_bundle_rejects_missing_required_files(
 def test_validate_import_bundle_rejects_malformed_headers(
     configured_container: Container, tmp_path: Path
 ) -> None:
-    service = configured_container.resolve(InitDataService)
+    service: InitDataService = configured_container.resolve(InitDataService)
     _write_valid_bundle(tmp_path)
     _write_bundle_file(tmp_path, "accounts", "id,name,description")
 
