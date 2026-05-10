@@ -8,7 +8,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] History Aggregation Use Case
 - [X] CLI Contract And Interactive Flow
 - [X] History Report Presentation
-- [ ] Validation And Compatibility
+- [X] Validation And Compatibility
 
 ## Implementation Notes
 
@@ -20,6 +20,8 @@ Update this checklist as task groups in `plan.md` are completed.
 - CLI Contract And Interactive Flow validation: `uv run pytest tests/use_cases/test_report_balances_aggregate_history.py tests/entrypoints/test_cli_reports.py tests/use_cases/test_report_history_aggregation.py tests/sqlite/test_reporting_queries.py`
 - History Report Presentation: completed. Added the Rich history report presenter and table renderer, then covered output titles, columns, special labels, and empty-state messaging in `tests/use_cases/test_report_balances_aggregate_history_rich.py` and `tests/ui/test_report_renderers.py`.
 - History Report Presentation validation: `uv run pytest tests/use_cases/test_report_balances_aggregate_history_rich.py tests/ui/test_report_renderers.py tests/use_cases/test_report_balances_aggregate_history.py tests/entrypoints/test_cli_reports.py`
+- Validation And Compatibility: completed. Ran repo-wide `ruff`, `mypy`, and `pytest`, then reviewed `requirements.md` and `validation.md` against the implemented feature before marking the phase complete and updating the roadmap.
+- Validation And Compatibility validation: `uv run ruff check .`, `uv run mypy .`, `uv run pytest`
 
 ## Automated
 

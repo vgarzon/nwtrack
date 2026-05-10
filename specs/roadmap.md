@@ -140,7 +140,7 @@ Expected outcomes:
 - Rich output presents grouped balances clearly
 - Existing net worth and category reporting commands continue to work during this phase
 
-### [ ] Phase 18: History Aggregated Balance Report
+### [X] Phase 18: History Aggregated Balance Report
 
 Goal:
 Extend the shared aggregation model to month history between two `YYYY-MM` values.
