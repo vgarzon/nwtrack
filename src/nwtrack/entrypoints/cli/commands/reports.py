@@ -73,3 +73,31 @@ def balances_aggregate_report(
             status_scope=status_scope,
         )
     )
+
+
+@reports_app.command("balances-aggregate-history")
+def balances_aggregate_history_report(
+    start_month: Annotated[str | None, typer.Option("--start-month")] = None,
+    end_month: Annotated[str | None, typer.Option("--end-month")] = None,
+    dimension: Annotated[
+        AggregationDimension | None,
+        typer.Option("--dimension"),
+    ] = None,
+    currency: Annotated[str | None, typer.Option("--currency")] = None,
+    status_scope: Annotated[
+        AccountStatusScope,
+        typer.Option("--status-scope"),
+    ] = AccountStatusScope.ACTIVE,
+):
+    """Generate a grouped history balance report."""
+    import nwtrack.application.use_cases.report_balances_aggregate_history as report_balances
+
+    sys.exit(
+        report_balances.main(
+            start_month=start_month,
+            end_month=end_month,
+            dimension=dimension,
+            currency_code=currency,
+            status_scope=status_scope,
+        )
+    )
