@@ -12,8 +12,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from sqlalchemy import (
-    Column,
     CheckConstraint,
+    Column,
     Float,
     ForeignKey,
     Integer,
