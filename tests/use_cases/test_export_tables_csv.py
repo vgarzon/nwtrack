@@ -100,6 +100,8 @@ def test_export_tables_interactive(
     ]:
         assert (tmp_path / f"{table_name}.csv").exists()
     assert not (tmp_path / "institutions.csv").exists()
+    assert not (tmp_path / "tags.csv").exists()
+    assert not (tmp_path / "account_tags.csv").exists()
 
     currencies_expected = """
         code,description
@@ -179,3 +181,20 @@ def test_export_accounts_csv_keeps_phase10_compatibility(
     assert accounts_csv[0] == "id,name,description,category,currency,status"
     assert "institution_id" not in accounts_csv[0]
     assert any("phase10_export_account" in line for line in accounts_csv[1:])
+
+
+def test_export_tables_csv_keeps_phase13_compatibility(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    tmp_path,
+) -> None:
+    """Phase 13 should not introduce tag CSV files into export output."""
+    from nwtrack.application.use_cases.export_tables_csv import ExportCSV
+
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    exporter: ExportCSV = configured_container.resolve(ExportCSV)
+    exporter.export_tables_to_dir(tmp_path)
+
+    assert not (tmp_path / "tags.csv").exists()
+    assert not (tmp_path / "account_tags.csv").exists()

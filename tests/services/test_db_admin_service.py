@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import inspect, select
 
 from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.infra.config.settings import Settings
@@ -35,6 +35,30 @@ def test_ensure_database_upgrades_legacy_sqlite_schema(tmp_path: Path) -> None:
     assert accounts[0].name == "cash"
     assert accounts[0].institution_id is None
     assert institutions == []
+
+
+def test_ensure_database_creates_tag_tables_for_legacy_sqlite_schema(
+    tmp_path: Path,
+) -> None:
+    """Existing SQLite files should gain tag tables through schema ensure."""
+    db_path = tmp_path / "legacy_tags.db"
+    _create_legacy_database(db_path)
+
+    settings = Settings(db_file_path=str(db_path))
+    session_manager = SQLiteSessionManager(settings)
+    schema_manager = SchemaManagerImpl(session_manager.engine)
+    service = DBAdminService(settings, schema_manager)
+
+    service.ensure_database()
+    service.ensure_database()
+
+    inspector = inspect(session_manager.engine)
+
+    assert "tags" in inspector.get_table_names()
+    assert "account_tags" in inspector.get_table_names()
+    assert {
+        column["name"] for column in inspector.get_columns("account_tags")
+    } == {"account_id", "tag_id"}
 
 
 def _create_legacy_database(db_path: Path) -> None:

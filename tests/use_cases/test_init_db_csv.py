@@ -122,3 +122,37 @@ def test_db_initializer_csv_no(
     captured_out = service._presenter._console.export_text()
     print(captured_out)
     assert "Database initialization aborted by user" in captured_out
+
+
+def test_db_initializer_csv_keeps_phase13_compatibility(
+    configured_container, monkeypatch, valid_file_paths
+) -> None:
+    """CSV initialization should not require tag files in Phase 13."""
+
+    def mock_prompt_for_file_paths(self, required_keys):
+        assert required_keys == [
+            "currencies",
+            "categories",
+            "accounts",
+            "balances",
+            "exchange_rates",
+        ]
+        assert "tags" not in required_keys
+        assert "account_tags" not in required_keys
+        return valid_file_paths
+
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.db_admin_presenters.RichDBInitCSVPresenter,
+        "prompt_for_file_paths",
+        mock_prompt_for_file_paths,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.db_admin_presenters.RichDBInitCSVPresenter,
+        "prompt_for_confirmation",
+        lambda *args, **kwargs: True,
+    )
+
+    service = configured_container.resolve(DBInitializerCSV)
+    result = service.run()
+
+    assert result.success is True
