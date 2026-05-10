@@ -322,13 +322,9 @@ def build_single_month_aggregation_table(
         title += f" ({result.currency_code})"
     table = Table(title=title)
     table.add_column(result.dimension.value.title(), style="col.name")
-    if result.dimension == result.dimension.CURRENCY:
-        table.add_column("Currency", style="col.code")
     table.add_column("Amount", justify="right", style="col.amount")
     for group in result.groups:
         row = [group.label]
-        if result.dimension == result.dimension.CURRENCY:
-            row.append(group.currency_code)
         row.append(f"{group.amount:8,}")
         table.add_row(*row)
     return table
