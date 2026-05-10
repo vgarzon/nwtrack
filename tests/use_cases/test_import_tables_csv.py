@@ -14,6 +14,7 @@ from nwtrack.bootstrap.composition import build_base_container
 from nwtrack.bootstrap.container import Container, Lifetime
 from nwtrack.infra.config.settings import Settings
 from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
+from nwtrack.infra.persistence.orm.models import account_tags_table
 from nwtrack.infra.persistence.schema import SchemaManager as SchemaManagerImpl
 
 
@@ -99,3 +100,79 @@ def test_import_tables_cli_creates_missing_database_and_imports_supported_tables
         assert uow.balances.count() == 1
         assert uow.exchange_rates.count() == 1
         assert [tag.id for tag in uow.tags.get_for_account(1)] == [1]
+
+
+def test_import_tables_cli_is_idempotent_for_repeated_bundle_imports(
+    file_db_container: Container, tmp_path: Path
+) -> None:
+    source_dir = tmp_path / "bundle"
+    source_dir.mkdir()
+    _write_minimal_bundle(source_dir)
+
+    importer = ImportTablesCSVCLI(
+        importer=file_db_container.resolve(InitDataService),
+        admin_svc=file_db_container.resolve(DBAdminService),
+        console=file_db_container.resolve(Console),
+    )
+
+    importer.run(source_dir=str(source_dir))
+    importer.run(source_dir=str(source_dir))
+
+    with file_db_container.resolve(UnitOfWork) as uow:
+        assert uow.currencies.count() == 1
+        assert uow.categories.count() == 1
+        assert uow.institutions.count() == 1
+        assert uow.tags.count() == 1
+        assert uow.accounts.count() == 1
+        assert uow.balances.count() == 1
+        assert uow.exchange_rates.count() == 1
+        session = getattr(uow, "_session", None)
+        assert session is not None
+        links = session.execute(account_tags_table.select()).all()
+        assert len(links) == 1
+
+
+def test_import_tables_cli_updates_matching_rows_by_bundle_identity(
+    file_db_container: Container, tmp_path: Path
+) -> None:
+    source_dir = tmp_path / "bundle"
+    source_dir.mkdir()
+    _write_minimal_bundle(source_dir)
+
+    importer = ImportTablesCSVCLI(
+        importer=file_db_container.resolve(InitDataService),
+        admin_svc=file_db_container.resolve(DBAdminService),
+        console=file_db_container.resolve(Console),
+    )
+    importer.run(source_dir=str(source_dir))
+
+    _write_bundle_file(
+        source_dir,
+        "institutions",
+        "id,name,description",
+        ["1,Chase,Updated bank description"],
+    )
+    _write_bundle_file(
+        source_dir,
+        "accounts",
+        "id,name,description,category,institution_id,currency,status",
+        ["1,cash,Updated cash account,checking,1,USD,inactive"],
+    )
+    _write_bundle_file(
+        source_dir, "balances", "id,account_id,month,amount", ["1,1,2024-01,2500"]
+    )
+
+    importer.run(source_dir=str(source_dir))
+
+    with file_db_container.resolve(UnitOfWork) as uow:
+        institution = uow.institutions.get_by_id(1)
+        account = uow.accounts.get_by_id(1)
+        balance = uow.balances.get_by_id(1)
+
+        assert institution is not None
+        assert institution.description == "Updated bank description"
+        assert account is not None
+        assert account.description == "Updated cash account"
+        assert account.status.value == "inactive"
+        assert balance is not None
+        assert balance.amount == 2500
