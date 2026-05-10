@@ -8,9 +8,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from sqlalchemy import select
+
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.domain.value_objects import Month
 from nwtrack.infra.fileio.csv_io import records_to_csv
+from nwtrack.infra.persistence.orm.models import account_tags_table
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,7 @@ class ExportCSV:
             "institutions",
             "tags",
             "accounts",
+            "account_tags",
             "balances",
             "exchange_rates",
         ]
@@ -129,6 +133,9 @@ class ExportCSV:
         Returns:
             int: Number of records exported.
         """
+        if table_name == "account_tags":
+            return self._export_account_tags(csv_path)
+
         # TODO: Use RepoRegistry to validate table_name
         with self._uow() as uow:
             try:
@@ -151,5 +158,43 @@ class ExportCSV:
         n_records = len(records)
         logger.info(
             "Exported %d records from table %s to %s", n_records, table_name, csv_path
+        )
+        return n_records
+
+    def _export_account_tags(self, csv_path: Path) -> int:
+        """Export account-tag associations to CSV.
+
+        This association table is not exposed as a first-class UnitOfWork repository,
+        so export it directly from the shared SQLAlchemy session.
+        """
+        with self._uow() as uow:
+            session = getattr(uow, "_session", None)
+            if session is None:
+                raise ValueError("Unit of work session is unavailable for account_tags.")
+
+            results = session.execute(
+                select(
+                    account_tags_table.c.account_id,
+                    account_tags_table.c.tag_id,
+                ).order_by(
+                    account_tags_table.c.account_id,
+                    account_tags_table.c.tag_id,
+                )
+            )
+            records = [
+                {"account_id": row.account_id, "tag_id": row.tag_id} for row in results
+            ]
+
+        if not records:
+            logger.info("No records found in table %s. Skipping export.", "account_tags")
+            return 0
+
+        records_to_csv(records, csv_path, fieldnames=("account_id", "tag_id"))
+        n_records = len(records)
+        logger.info(
+            "Exported %d records from table %s to %s",
+            n_records,
+            "account_tags",
+            csv_path,
         )
         return n_records
