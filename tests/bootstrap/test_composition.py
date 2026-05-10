@@ -63,6 +63,7 @@ def test_uow_has_repositories(configured_container):
         assert hasattr(uow, "currencies")
         assert hasattr(uow, "categories")
         assert hasattr(uow, "institutions")
+        assert hasattr(uow, "tags")
         assert hasattr(uow, "accounts")
         assert hasattr(uow, "balances")
         assert hasattr(uow, "exchange_rates")

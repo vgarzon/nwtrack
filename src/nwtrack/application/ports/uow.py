@@ -13,6 +13,7 @@ from nwtrack.application.ports.repos import (
     ExchangeRatesRepository,
     InstitutionsRepository,
     NetWorthRepository,
+    TagsRepository,
 )
 
 
@@ -22,6 +23,7 @@ class UnitOfWork(Protocol):
     currencies: CurrenciesRepository
     categories: CategoriesRepository
     institutions: InstitutionsRepository
+    tags: TagsRepository
     accounts: AccountsRepository
     balances: BalancesRepository
     exchange_rates: ExchangeRatesRepository
