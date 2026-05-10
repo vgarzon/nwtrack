@@ -14,5 +14,6 @@ def test_reports_command_group_includes_balances_aggregate() -> None:
     assert result.exit_code == 0
     assert "Report commands" in result.output
     assert "balances-aggregate" in result.output
+    assert "balances-aggregate-history" in result.output
     assert "balances-category" in result.output
     assert "networth-history" in result.output
