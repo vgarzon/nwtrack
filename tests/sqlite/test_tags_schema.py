@@ -6,7 +6,6 @@ import pytest
 from sqlalchemy import delete, insert, inspect, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-
 from tests.helpers import _uow_factory, init_db_tables_w_entities
 
 from nwtrack.bootstrap.composition import build_data_services_container
@@ -55,7 +54,9 @@ def test_schema_includes_account_tags_table(base_container) -> None:
     ]
 
 
-def test_account_tags_support_many_to_many_links(base_container, sample_entities) -> None:
+def test_account_tags_support_many_to_many_links(
+    base_container, sample_entities
+) -> None:
     """Accounts and tags should support many-to-many associations."""
     container = build_data_services_container(base_container)
     init_db_tables_w_entities(container, sample_entities)
