@@ -22,6 +22,9 @@ def configured_container(base_container: Container) -> Container:
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.application.services.db_admin import DBAdminService
     from nwtrack.application.services.fetch import FetchService
+    from nwtrack.application.use_cases.report_history_aggregation import (
+        ReportHistoryAggregation,
+    )
     from nwtrack.bootstrap.container import Lifetime
     from nwtrack.entrypoints.cli.adapters.report_presenters import (
         RichNetworthHistoryPresenter,
@@ -52,6 +55,10 @@ def configured_container(base_container: Container) -> Container:
             lambda c: FetchService(uow=lambda: c.resolve(UnitOfWork)),
         )
         .register(
+            ReportHistoryAggregation,
+            lambda c: ReportHistoryAggregation(uow=lambda: c.resolve(UnitOfWork)),
+        )
+        .register(
             NetworthHistoryPresenter,
             lambda c: RichNetworthHistoryPresenter(console=c.resolve(Console)),
         )
@@ -60,6 +67,7 @@ def configured_container(base_container: Container) -> Container:
             lambda c: NetworthHistoryReport(
                 fetcher=c.resolve(FetchService),
                 presenter=c.resolve(NetworthHistoryPresenter),
+                aggregation_report=c.resolve(ReportHistoryAggregation),
             ),
         )
     )
@@ -74,7 +82,7 @@ def test_report_networth_history_default(
     captured_out: str = configured_container.resolve(Console).export_text()
     assert len(captured_out.splitlines()) == 25
     assert re.search(r"2024-06 to 2025-11", captured_out)
-    assert re.search(r".+2024-06.+2,300.+2,400.+-100.+\s{9}", captured_out)
+    assert re.search(r".+2024-06.+2,300.+600.+1,700.+\s{9}", captured_out)
     assert re.search(r".+2025-11.+700.+600.+100.+-100", captured_out)
 
 
@@ -87,7 +95,7 @@ def test_report_networth_history_n_months(
     captured_out: str = configured_container.resolve(Console).export_text()
     assert len(captured_out.splitlines()) == 15
     assert re.search(r"2025-10 to 2025-11", captured_out)
-    assert not re.search(r".+2024-06.+2,300.+2,400.+-100", captured_out)
+    assert not re.search(r".+2024-06.+2,300.+600.+1,700", captured_out)
     assert re.search(r".+2025-10.+900.+700.+200.+\s{9}", captured_out)
     assert re.search(r".+2025-11.+700.+600.+100.+-100", captured_out)
     assert re.search(r".+-200.+-100.+-100", captured_out)
