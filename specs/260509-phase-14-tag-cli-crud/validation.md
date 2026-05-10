@@ -4,7 +4,7 @@
 
 Update this checklist as task groups in `plan.md` are completed.
 
-- [ ] Tag Command Surface
+- [X] Tag Command Surface
 - [ ] Tag List And Shared Admin Helper
 - [ ] Tag Create And Update Workflows
 - [ ] Tag Delete Workflow
