@@ -4,6 +4,7 @@ from nwtrack.application.dto import TagListItem
 from nwtrack.domain.models import Tag
 from nwtrack.entrypoints.cli.adapters.tag_presenters import (
     RichTagCreationPresenter,
+    RichTagDeletePresenter,
     RichTagListPresenter,
     RichTagUpdatePresenter,
 )
@@ -63,3 +64,17 @@ def test_update_presenter_shows_duplicate_error() -> None:
 
     output = console.export_text()
     assert "Tag name 'liquid' already exists." in output
+
+
+def test_delete_presenter_shows_blocked_message() -> None:
+    """Delete presenter should explain when linked accounts block removal."""
+    console = build_console(ConsoleSettings(record=True, width=120))
+    presenter = RichTagDeletePresenter(console)
+
+    tag = Tag(name="liquid", description="Quick access")
+    tag.id = 3
+    presenter.show_delete_blocked(tag, account_count=1)
+
+    output = console.export_text()
+    assert "Cannot delete tag 'liquid'." in output
+    assert "1 account(s)" in output
