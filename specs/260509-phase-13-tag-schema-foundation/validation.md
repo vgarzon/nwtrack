@@ -8,7 +8,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Account-Tag Association Integration
 - [X] Repository And Unit Of Work Support
 - [X] Compatibility Boundaries
-- [ ] Validation
+- [X] Validation
 
 ## Automated
 
