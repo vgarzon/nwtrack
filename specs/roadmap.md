@@ -174,6 +174,17 @@ Expected outcomes:
 - CLI and validation rules can identify and remediate missing institutions
 - The spec defines the cutover criteria for making institution assignment mandatory
 
+### [ ] Phase 21: Reporting UX Options
+
+Goal:
+Improve aggregated reporting ergonomics with alternative history layouts and export-friendly output.
+
+Expected outcomes:
+
+- History aggregated balance reporting can render either long or wide table output
+- Non-interactive aggregated history reporting can emit CSV output for downstream analysis
+- Output-format options are defined in a way that preserves current default behavior unless the user opts in
+
 ## Planning Rules
 
 - Keep phases small enough to land independently.
