@@ -4,7 +4,7 @@
 
 Update this checklist as task groups in `plan.md` are completed.
 
-- [ ] CLI Contract And Workflow Wiring
+- [X] CLI Contract And Workflow Wiring
 - [ ] Interactive Input Flow
 - [ ] Report Presentation
 - [ ] Validation And Compatibility

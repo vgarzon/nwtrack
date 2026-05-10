@@ -4,7 +4,7 @@ Fetch service module for read-only data retrieval.
 
 from collections.abc import Callable
 
-from nwtrack.application.dto import MonthlyCategoryBalance
+from nwtrack.application.dto import AccountStatusScope, MonthlyCategoryBalance
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.domain.models import (
     Account,
@@ -231,3 +231,13 @@ class FetchService:
         with self._uow() as uow:
             monthly_balances = uow.reporting.monthly_balance_total_by_category(month)
         return monthly_balances
+
+    def get_month_currencies(
+        self,
+        month: Month,
+        status_scope: AccountStatusScope = AccountStatusScope.ACTIVE,
+    ) -> list[str]:
+        """Get distinct balance currencies for a month under a status filter."""
+        with self._uow() as uow:
+            currencies = uow.reporting.get_month_currencies(month, status_scope)
+        return currencies
