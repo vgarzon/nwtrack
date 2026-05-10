@@ -26,7 +26,7 @@ class ReportSingleMonthAggregation:
                 request.dimension != AggregationDimension.CURRENCY
                 and request.currency_code is None
             ):
-                currencies = uow._reporting.get_month_currencies(
+                currencies = uow.reporting.get_month_currencies(
                     request.month,
                     request.status_scope,
                 )
@@ -39,6 +39,6 @@ class ReportSingleMonthAggregation:
                         ),
                     )
 
-            result = uow._reporting.aggregate_single_month(request)
+            result = uow.reporting.aggregate_single_month(request)
 
         return OperationResult(success=True, data=result)

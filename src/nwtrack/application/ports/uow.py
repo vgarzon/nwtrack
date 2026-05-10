@@ -28,6 +28,7 @@ class UnitOfWork(Protocol):
     balances: BalancesRepository
     exchange_rates: ExchangeRatesRepository
     net_worth: NetWorthRepository
+    reporting: ReportingQueries
     _reporting: ReportingQueries
 
     def __enter__(self) -> "UnitOfWork": ...

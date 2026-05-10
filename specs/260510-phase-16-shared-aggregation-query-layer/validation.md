@@ -7,7 +7,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Reporting Contracts And DTOs
 - [X] Shared Single-Month Aggregation Use Case
 - [X] SQLAlchemy Aggregation Query Layer
-- [ ] Wiring And Compatibility Boundary
+- [X] Wiring And Compatibility Boundary
 - [ ] Validation And Regression Coverage
 
 ## Automated
