@@ -24,6 +24,8 @@ from nwtrack.domain.value_objects import Month
 
 UNASSIGNED_INSTITUTION_LABEL = "None"
 UNASSIGNED_INSTITUTION_TABLE_LABEL = ""
+UNASSIGNED_TAGS_LABEL = "None"
+UNASSIGNED_TAGS_TABLE_LABEL = ""
 
 
 def format_institution_name(
@@ -35,6 +37,27 @@ def format_institution_name(
     if institution is not None:
         return institution.name
     return unassigned_label
+
+
+def format_tag_names(
+    tag_names: list[str],
+    unassigned_label: str = UNASSIGNED_TAGS_LABEL,
+) -> str:
+    """Return a stable display label for a list of tag names."""
+    if not tag_names:
+        return unassigned_label
+    return ", ".join(sorted(tag_names, key=str.casefold))
+
+
+def format_account_tags(
+    account: Account,
+    unassigned_label: str = UNASSIGNED_TAGS_LABEL,
+) -> str:
+    """Return the display label for an account's tags."""
+    return format_tag_names(
+        [tag.name for tag in account.tags],
+        unassigned_label=unassigned_label,
+    )
 
 
 def build_indexed_institutions_table(institutions: list[Institution]) -> Table:
@@ -73,6 +96,7 @@ def build_accounts_table(
     accounts: list[Account],
     title_prefix: str = "",
     show_institution: bool = False,
+    show_tags: bool = False,
 ) -> Table:
     """Build a Rich Table of active accounts.
 
@@ -89,6 +113,8 @@ def build_accounts_table(
     if show_institution:
         table.add_column("Institution", style="col.name")
     table.add_column("Name", style="col.name")
+    if show_tags:
+        table.add_column("Tags", style="col.desc")
     table.add_column("Category", style="col.category")
     table.add_column("Side", style="col.side")
     for account in accounts:
@@ -108,6 +134,17 @@ def build_accounts_table(
         row.extend(
             [
                 account.name,
+            ]
+        )
+        if show_tags:
+            row.append(
+                format_account_tags(
+                    account,
+                    unassigned_label=UNASSIGNED_TAGS_TABLE_LABEL,
+                )
+            )
+        row.extend(
+            [
                 category_name,
                 side,
             ]
@@ -120,7 +157,13 @@ def render_account_data(
     console: Console,
     account: Account,
     institution_name: str | None = None,
+    tag_names: list[str] | None = None,
 ) -> None:
+    tags_label = (
+        format_tag_names(tag_names)
+        if tag_names is not None
+        else format_account_tags(account)
+    )
     console.print(
         f"[label]Account ID:[/label] {account.id}\n"
         f"[label]Account name:[/label] {account.name}\n"
@@ -129,6 +172,7 @@ def render_account_data(
         f"[label]Category:[/label] {account.category_name}\n"
         f"[label]Institution:[/label] "
         f"{institution_name or format_institution_name(account)}\n"
+        f"[label]Tags:[/label] {tags_label}\n"
         f"[label]Status:[/label] {account.status}"
     )
 
@@ -405,6 +449,7 @@ def render_new_account_info(
     account: Account,
     balance: Balance,
     institution_name: str | None = None,
+    tag_names: list[str] | None = None,
 ) -> None:
     """Render information about a newly created account.
 
@@ -413,6 +458,11 @@ def render_new_account_info(
         account: Account object
         balance: Balance object
     """
+    tags_label = (
+        format_tag_names(tag_names)
+        if tag_names is not None
+        else format_account_tags(account)
+    )
     console.print(
         f"[label]Account name:[/label] {account.name}\n"
         f"[label]Account ID:[/label] {account.id}\n"
@@ -421,6 +471,7 @@ def render_new_account_info(
         f"[label]Category:[/label] {account.category_name}\n"
         f"[label]Institution:[/label] "
         f"{institution_name or format_institution_name(account)}\n"
+        f"[label]Tags:[/label] {tags_label}\n"
         f"[label]Status:[/label] {account.status.value}\n"
         f"[label]Initial month:[/label] {balance.month}\n"
         f"[label]Initial balance:[/label] {balance.amount}\n"

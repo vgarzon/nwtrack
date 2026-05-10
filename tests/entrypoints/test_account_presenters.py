@@ -2,9 +2,13 @@
 
 from typing import cast
 
+from rich.prompt import Confirm
+
+from nwtrack.application.dto import UpdatedAccountData
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import (
     Account,
+    Balance,
     Category,
     Currency,
     Institution,
@@ -16,6 +20,7 @@ from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.adapters.account_presenters import (
     RichAccountCreationPresenter,
     RichAccountListPresenter,
+    RichAccountUpdatePresenter,
 )
 from nwtrack.entrypoints.cli.ui.console import ConsoleSettings, build_console
 
@@ -48,7 +53,7 @@ class FakeTaggedAccountCreationFetchService(FakeAccountCreationFetchService):
 
 
 def test_account_list_presenter_renders_institution_column_for_mixed_accounts() -> None:
-    """Account list presenter should show assigned and unassigned institutions."""
+    """Account list presenter should show tags and institutions for accounts."""
     console = build_console(ConsoleSettings(record=True))
     presenter = RichAccountListPresenter(console)
 
@@ -67,6 +72,10 @@ def test_account_list_presenter_renders_institution_column_for_mixed_accounts() 
     assigned_account.id = 1
     assigned_account.category = category
     assigned_account.institution = institution
+    assigned_account.tags = [
+        Tag(name="liquid", description="Quick access"),
+        Tag(name="core", description="Core holding"),
+    ]
 
     unassigned_account = Account(
         name="bank_2_savings",
@@ -78,6 +87,7 @@ def test_account_list_presenter_renders_institution_column_for_mixed_accounts() 
     )
     unassigned_account.id = 2
     unassigned_account.category = category
+    unassigned_account.tags = []
 
     presenter.display_accounts(
         [assigned_account, unassigned_account],
@@ -87,9 +97,12 @@ def test_account_list_presenter_renders_institution_column_for_mixed_accounts() 
     output = console.export_text()
 
     assert "Institution" in output
+    assert "Tags" in output
     assert "Chase" in output
     header_line = next(line for line in output.splitlines() if "Institution" in line)
     assert header_line.index("Institution") < header_line.index("Name")
+    assert header_line.index("Name") < header_line.index("Tags")
+    assert "core, liquid" in output
     assert "bank_2_savings" in output
     assert "None" not in output
 
@@ -215,3 +228,67 @@ def test_account_creation_presenter_collects_tag_ids_from_indexes(monkeypatch) -
 
     assert data is not None
     assert data.tag_ids == [2, 1]
+
+
+def test_account_creation_preview_renders_tags(monkeypatch) -> None:
+    """Account creation preview should show tags in alphabetical order."""
+    import nwtrack.entrypoints.cli.adapters.account_presenters as account_presenters
+
+    console = build_console(ConsoleSettings(record=True))
+    presenter = RichAccountCreationPresenter(
+        console,
+        cast(FetchService, FakeTaggedAccountCreationFetchService()),
+    )
+    presenter._selected_institution_name = "Chase"  # noqa: SLF001
+    presenter._selected_tag_names = ["liquid", "core"]  # noqa: SLF001
+
+    account = Account(
+        name="cash_account",
+        description="Cash account",
+        category_name="checking",
+        currency_code="USD",
+        institution_id=1,
+        status=Status.ACTIVE,
+    )
+    account.id = 5
+    balance = Balance(account_id=5, month=Month(2025, 10), amount=100)
+
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_to_confirm_action",
+        lambda *args, **kwargs: True,
+    )
+
+    assert presenter.show_preview_and_confirm(account, balance)
+
+    output = console.export_text()
+    assert "Tags: core, liquid" in output
+
+
+def test_account_update_preview_renders_none_for_no_tags(monkeypatch) -> None:
+    """Account update preview should show an explicit no-tags state."""
+    console = build_console(ConsoleSettings(record=True))
+    presenter = RichAccountUpdatePresenter(
+        console,
+        cast(FetchService, FakeAccountCreationFetchService()),
+    )
+    presenter._selected_institution_name = "None"  # noqa: SLF001
+    presenter._selected_tag_names = []  # noqa: SLF001
+
+    updated_account = UpdatedAccountData(
+        account_id=1,
+        account_name="cash_account",
+        description="Cash account",
+        category_name="checking",
+        currency_code="USD",
+        institution_id=None,
+        status=Status.ACTIVE,
+        tag_ids=[],
+    )
+
+    monkeypatch.setattr(Confirm, "ask", lambda *args, **kwargs: True)
+
+    assert presenter.show_preview_and_confirm(updated_account)
+
+    output = console.export_text()
+    assert "Tags: None" in output

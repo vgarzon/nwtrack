@@ -52,7 +52,12 @@ class RichAccountListPresenter:
             active_only: Whether only active accounts are shown
         """
         title_prefix = "Active" if active_only else "All"
-        table = build_accounts_table(accounts, title_prefix, show_institution=True)
+        table = build_accounts_table(
+            accounts,
+            title_prefix,
+            show_institution=True,
+            show_tags=True,
+        )
         self._console.print(table)
 
 
@@ -81,7 +86,12 @@ class RichAccountCreationPresenter:
             active_only: Whether only active accounts are shown
         """
         title_prefix = "Active" if active_only else "All"
-        table = build_accounts_table(accounts, title_prefix, show_institution=True)
+        table = build_accounts_table(
+            accounts,
+            title_prefix,
+            show_institution=True,
+            show_tags=True,
+        )
         self._console.print(table)
 
     def collect_account_data(self) -> NewAccountData | None:
@@ -231,6 +241,7 @@ class RichAccountCreationPresenter:
             account,
             balance,
             institution_name=self._selected_institution_name,
+            tag_names=self._selected_tag_names,
         )
         return prompt_to_confirm_action(self._console, "Create account?")
 
@@ -294,7 +305,12 @@ class RichAccountUpdatePresenter:
             active_only: Whether only active accounts are shown
         """
         title_prefix = "Active" if active_only else "All"
-        table = build_accounts_table(accounts, title_prefix, show_institution=True)
+        table = build_accounts_table(
+            accounts,
+            title_prefix,
+            show_institution=True,
+            show_tags=True,
+        )
         self._console.print(table)
 
     def select_account(self) -> int | None:
@@ -617,6 +633,7 @@ class RichAccountUpdatePresenter:
             self._console,
             preview_account,
             institution_name=self._selected_institution_name,
+            tag_names=self._selected_tag_names,
         )
         return self._confirm.ask("Proceed with update", default=False)
 
