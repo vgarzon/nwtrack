@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Protocol
 
 from nwtrack.application.dto import (
     AccountStatusScope,
@@ -21,13 +22,34 @@ from nwtrack.domain.value_objects import Month
 logger = logging.getLogger(__name__)
 
 
+class _AggregationReportRunner(Protocol):
+    """Shared aggregation use-case dependency for the CLI workflow."""
+
+    def run(
+        self,
+        request: SingleMonthAggregationRequest,
+    ) -> OperationResult[SingleMonthAggregationResult]: ...
+
+
+class _AggregationReportFetchService(Protocol):
+    """Read-only data needed by the CLI workflow."""
+
+    def get_balance_count_per_month(self) -> list[tuple[Month, int]]: ...
+
+    def get_month_currencies(
+        self,
+        month: Month,
+        status_scope: AccountStatusScope = AccountStatusScope.ACTIVE,
+    ) -> list[str]: ...
+
+
 class SingleMonthAggregatedBalanceReport:
     """CLI workflow for the dedicated single-month grouped balances report."""
 
     def __init__(
         self,
-        fetcher: FetchService,
-        aggregation_report: ReportSingleMonthAggregation,
+        fetcher: _AggregationReportFetchService,
+        aggregation_report: _AggregationReportRunner,
         presenter: SingleMonthAggregationReportPresenter,
     ) -> None:
         self._fetcher = fetcher
@@ -64,24 +86,16 @@ class SingleMonthAggregatedBalanceReport:
             status_scope=status_scope,
             allow_interactive=allow_interactive,
         )
-        if resolved_currency is _CANCELLED:
+        if not resolved_currency.success:
             return OperationResult(
                 success=False,
-                error_message="No currency selected.",
-            )
-        if resolved_currency is _FAILED:
-            return OperationResult(
-                success=False,
-                error_message=(
-                    "Aggregation requires one currency. "
-                    "Provide --currency for mixed-currency months."
-                ),
+                error_message=resolved_currency.error_message,
             )
 
         request = SingleMonthAggregationRequest(
             month=resolved_month,
             dimension=resolved_dimension,
-            currency_code=resolved_currency,
+            currency_code=resolved_currency.data,
             status_scope=status_scope,
         )
         result = self._aggregation_report.run(request)
@@ -149,29 +163,29 @@ class SingleMonthAggregatedBalanceReport:
         currency_code: str | None,
         status_scope: AccountStatusScope,
         allow_interactive: bool,
-    ) -> str | None | object:
+    ) -> OperationResult[str | None]:
         if currency_code is not None or dimension == AggregationDimension.CURRENCY:
-            return currency_code
+            return OperationResult(success=True, data=currency_code)
 
         currencies = self._fetcher.get_month_currencies(month, status_scope)
         if len(currencies) <= 1:
-            return currency_code
+            return OperationResult(success=True, data=currency_code)
         if not allow_interactive:
-            self._presenter.show_error(
+            message = (
                 "Aggregation requires one currency. "
                 "Provide --currency for mixed-currency months."
             )
-            return _FAILED
+            self._presenter.show_error(message)
+            return OperationResult(success=False, error_message=message)
 
         selected_currency = self._presenter.prompt_for_currency_choice(currencies)
         if selected_currency is None:
             self._presenter.show_no_currency_selected_message()
-            return _CANCELLED
-        return selected_currency
-
-
-_FAILED = object()
-_CANCELLED = object()
+            return OperationResult(
+                success=False,
+                error_message="No currency selected.",
+            )
+        return OperationResult(success=True, data=selected_currency)
 
 
 def _parse_month(month: str | None) -> Month | None:

@@ -20,7 +20,9 @@ class FakeFetchService:
     def __init__(
         self,
         balance_counts: list[tuple[Month, int]] | None = None,
-        month_currencies: dict[tuple[Month, AccountStatusScope], list[str]] | None = None,
+        month_currencies: (
+            dict[tuple[Month, AccountStatusScope], list[str]] | None
+        ) = None,
     ) -> None:
         self.balance_counts = balance_counts or []
         self.month_currencies = month_currencies or {}
@@ -324,7 +326,7 @@ def test_run_prompts_for_dimension_when_missing() -> None:
 
 
 def test_run_prompts_for_currency_for_interactive_mixed_currency_request() -> None:
-    """Interactive mixed-currency non-currency aggregation should prompt for currency."""
+    """Interactive mixed-currency requests should prompt for currency."""
     month = Month(2025, 11)
     expected = SingleMonthAggregationResult(
         month=month,
@@ -366,7 +368,7 @@ def test_run_prompts_for_currency_for_interactive_mixed_currency_request() -> No
 
 
 def test_run_fails_cleanly_for_non_interactive_mixed_currency_request() -> None:
-    """Non-interactive mixed-currency non-currency requests should require --currency."""
+    """Non-interactive mixed-currency requests should require --currency."""
     month = Month(2025, 11)
     aggregation_report = FakeAggregationReport(
         OperationResult(
@@ -392,7 +394,8 @@ def test_run_fails_cleanly_for_non_interactive_mixed_currency_request() -> None:
 
     assert not result.success
     assert presenter.errors == [
-        "Aggregation requires one currency. Provide --currency for mixed-currency months."
+        "Aggregation requires one currency. "
+        "Provide --currency for mixed-currency months."
     ]
     assert aggregation_report.requests == []
 
