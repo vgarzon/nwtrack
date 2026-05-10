@@ -3,6 +3,7 @@ Data loading services
 """
 
 import logging
+from csv import DictReader
 from collections.abc import Callable
 from pathlib import Path
 
@@ -25,6 +26,24 @@ class InitDataService:
         "balances",
         "exchange_rates",
     )
+    IMPORT_HEADERS = {
+        "currencies": ("code", "description"),
+        "categories": ("name", "side"),
+        "institutions": ("id", "name", "description"),
+        "tags": ("id", "name", "description"),
+        "accounts": (
+            "id",
+            "name",
+            "description",
+            "category",
+            "institution_id",
+            "currency",
+            "status",
+        ),
+        "account_tags": ("account_id", "tag_id"),
+        "balances": ("id", "account_id", "month", "amount"),
+        "exchange_rates": ("id", "currency", "month", "rate"),
+    }
 
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
@@ -71,10 +90,46 @@ class InitDataService:
 
     def import_bundle_from_dir(self, source_dir: Path) -> None:
         """Import a standard CSV bundle from one source directory."""
-        file_paths = {
-            name: str(source_dir / f"{name}.csv") for name in self.IMPORT_TABLE_NAMES
-        }
+        file_paths = self.validate_import_bundle(source_dir)
         self.insert_data_from_csv(file_paths)
+
+    def validate_import_bundle(self, source_dir: Path) -> dict[str, str]:
+        """Validate a standard CSV bundle before mutating database data."""
+        if not source_dir.exists():
+            raise ValueError(f"Source directory {source_dir} does not exist.")
+        if not source_dir.is_dir():
+            raise ValueError(f"Source path {source_dir} is not a directory.")
+
+        file_paths: dict[str, str] = {}
+        missing_files: list[str] = []
+        for name in self.IMPORT_TABLE_NAMES:
+            csv_path = source_dir / f"{name}.csv"
+            if not csv_path.is_file():
+                missing_files.append(csv_path.name)
+                continue
+            file_paths[name] = str(csv_path)
+
+        if missing_files:
+            missing = ", ".join(sorted(missing_files))
+            raise ValueError(f"Missing required CSV files: {missing}")
+
+        for table_name, csv_path in file_paths.items():
+            self._validate_csv_header(table_name, Path(csv_path))
+
+        return file_paths
+
+    def _validate_csv_header(self, table_name: str, csv_path: Path) -> None:
+        """Validate one CSV header against the supported import contract."""
+        with open(csv_path, encoding="utf-8") as file_obj:
+            reader = DictReader(file_obj)
+            actual_fields = tuple(reader.fieldnames or ())
+
+        expected_fields = self.IMPORT_HEADERS[table_name]
+        if actual_fields != expected_fields:
+            raise ValueError(
+                "Malformed CSV header for "
+                f"{csv_path.name}: expected {expected_fields}, got {actual_fields}"
+            )
 
     def _load_records_from_csv(self, file_paths: dict[str, str]) -> dict[str, list]:
         """Load records from a collection of CSV files indexed by repo name.
