@@ -417,6 +417,7 @@ def render_new_account_info(
     account: Account,
     balance: Balance,
     institution_name: str | None = None,
+    tag_names: str | None = None,
 ) -> None:
     """Render information about a newly created account.
 
@@ -433,6 +434,7 @@ def render_new_account_info(
         f"[label]Category:[/label] {account.category_name}\n"
         f"[label]Institution:[/label] "
         f"{institution_name or format_institution_name(account)}\n"
+        f"[label]Tags:[/label] {tag_names or format_tag_names(account)}\n"
         f"[label]Status:[/label] {account.status.value}\n"
         f"[label]Initial month:[/label] {balance.month}\n"
         f"[label]Initial balance:[/label] {balance.amount}\n"
