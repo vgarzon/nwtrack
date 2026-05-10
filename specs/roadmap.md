@@ -117,7 +117,7 @@ Expected outcomes:
 - Account fetch/read models expose tags for reporting and presentation
 - Tests cover empty, single-tag, and multi-tag account cases
 
-### [ ] Phase 16: Shared Aggregation Query Layer
+### [X] Phase 16: Shared Aggregation Query Layer
 
 Goal:
 Build one reporting core for balance aggregation by account attributes.
