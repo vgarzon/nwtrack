@@ -9,6 +9,7 @@ protocols, not on concrete UI implementations like Rich.
 from typing import Protocol
 
 from nwtrack.application.dto import (
+    AccountUpdateData,
     InstitutionListItem,
     MonthlyCategoryBalance,
     NewAccountData,
@@ -377,19 +378,21 @@ class AccountUpdatePresenter(Protocol):
         """
         ...
 
-    def collect_updated_data(self, current_account: Account) -> Account | None:
+    def collect_updated_data(
+        self, current_account: Account
+    ) -> AccountUpdateData | None:
         """Interactively collect updated account data with current values as defaults.
 
         Args:
             current_account: Current account data to use as defaults
 
         Returns:
-            Updated Account with preserved or updated institution assignment,
+            Updated account data with preserved or updated institution assignment,
             or None if cancelled by user
         """
         ...
 
-    def show_preview_and_confirm(self, updated_account: Account) -> bool:
+    def show_preview_and_confirm(self, updated_account: AccountUpdateData) -> bool:
         """Show preview of updated account and get confirmation.
 
         Args:

@@ -16,6 +16,7 @@ from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.adapters.account_presenters import (
     RichAccountCreationPresenter,
     RichAccountListPresenter,
+    RichAccountUpdatePresenter,
 )
 from nwtrack.entrypoints.cli.ui.console import ConsoleSettings, build_console
 
@@ -211,3 +212,49 @@ def test_account_creation_presenter_collects_selected_tag_ids(monkeypatch) -> No
     assert data.tag_ids == [1, 2]
     output = console.export_text()
     assert "Tags" in output
+
+
+def test_account_update_presenter_uses_current_tags_as_default(monkeypatch) -> None:
+    """Account update should seed tag replacement with current selections."""
+    import nwtrack.entrypoints.cli.adapters.account_presenters as account_presenters
+    from rich.prompt import IntPrompt, Prompt
+
+    console = build_console(ConsoleSettings(record=True))
+    presenter = RichAccountUpdatePresenter(
+        console,
+        cast(FetchService, FakeTaggedAccountCreationFetchService()),
+    )
+
+    current_account = Account(
+        name="cash_account",
+        description="Cash account",
+        category_name="checking",
+        currency_code="USD",
+        institution_id=None,
+        status=Status.ACTIVE,
+    )
+    current_account.id = 10
+    current_account.tags = FakeTaggedAccountCreationFetchService().get_all_tags()
+
+    captured_default: dict[str, str] = {}
+
+    def capture_tags(*args, **kwargs) -> list[int]:
+        captured_default["value"] = kwargs["default"]
+        return [1, 2]
+
+    prompt_values = iter(["cash_account", "Cash account"])
+    int_values = iter([1, 1, 1])
+
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_optional_tag_choices",
+        capture_tags,
+    )
+    monkeypatch.setattr(Prompt, "ask", lambda *args, **kwargs: next(prompt_values))
+    monkeypatch.setattr(IntPrompt, "ask", lambda *args, **kwargs: next(int_values))
+
+    data = presenter.collect_updated_data(current_account)
+
+    assert data is not None
+    assert captured_default["value"] == "1,2"
+    assert data.tag_ids == [1, 2]
