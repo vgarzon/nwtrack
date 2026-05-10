@@ -170,7 +170,9 @@ class ExportCSV:
         with self._uow() as uow:
             session = getattr(uow, "_session", None)
             if session is None:
-                raise ValueError("Unit of work session is unavailable for account_tags.")
+                raise ValueError(
+                    "Unit of work session is unavailable for account_tags."
+                )
 
             results = session.execute(
                 select(
@@ -186,7 +188,10 @@ class ExportCSV:
             ]
 
         if not records:
-            logger.info("No records found in table %s. Skipping export.", "account_tags")
+            logger.info(
+                "No records found in table %s. Skipping export.",
+                "account_tags",
+            )
             return 0
 
         records_to_csv(records, csv_path, fieldnames=("account_id", "tag_id"))

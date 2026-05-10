@@ -175,7 +175,7 @@ Expected outcomes:
 - CLI and validation rules can identify and remediate missing institutions
 - The spec defines the cutover criteria for making institution assignment mandatory
 
-### [ ] Phase 21: CSV Export Coverage For Institutions And Tags
+### [X] Phase 21: CSV Export Coverage For Institutions And Tags
 
 Goal:
 Extend the existing CSV export workflow so exported table sets include the newer account classification tables needed for data portability.
