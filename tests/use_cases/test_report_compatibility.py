@@ -80,11 +80,15 @@ def test_to_networth_maps_single_month_side_groups() -> None:
     networth = to_networth(result)
 
     assert networth is not None
-    assert (networth.assets, networth.liabilities, networth.net_worth) == (700, 600, 100)
+    assert (networth.assets, networth.liabilities, networth.net_worth) == (
+        700,
+        600,
+        100,
+    )
 
 
 def test_to_networth_history_groups_history_rows_by_month() -> None:
-    """History side aggregation should adapt into chronological legacy net-worth rows."""
+    """History side aggregation should adapt into chronological net-worth rows."""
     result = HistoryAggregationResult(
         start_month=Month(2025, 10),
         end_month=Month(2025, 11),

@@ -20,7 +20,9 @@ def to_monthly_category_balances(
 ) -> list[MonthlyCategoryBalance]:
     """Adapt shared category aggregation rows to the legacy category DTO shape."""
     if result.dimension != AggregationDimension.CATEGORY:
-        raise ValueError("Category compatibility mapping requires category aggregation.")
+        raise ValueError(
+            "Category compatibility mapping requires category aggregation."
+        )
 
     monthly_balances: list[MonthlyCategoryBalance] = []
     for group in result.groups:
@@ -46,7 +48,9 @@ def to_networth(
     if not result.groups:
         return None
 
-    assets, liabilities = _sum_side_groups((group.label, group.amount) for group in result.groups)
+    assets, liabilities = _sum_side_groups(
+        (group.label, group.amount) for group in result.groups
+    )
     currency_code = result.currency_code or result.groups[0].currency_code
 
     return NetWorth(
@@ -72,7 +76,9 @@ def to_networth_history(
     networth_history: list[NetWorth] = []
     for month in sorted(rows_by_month):
         month_rows = rows_by_month[month]
-        assets, liabilities = _sum_side_groups((label, amount) for label, amount, _ in month_rows)
+        assets, liabilities = _sum_side_groups(
+            (label, amount) for label, amount, _ in month_rows
+        )
         currency_code = result.currency_code or month_rows[0][2]
         networth_history.append(
             NetWorth(
