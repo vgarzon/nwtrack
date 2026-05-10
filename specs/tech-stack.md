@@ -77,6 +77,7 @@ Reporting should follow one generalized balance-aggregation model instead of sep
 - Net worth reporting is the aggregation-by-side view of the same underlying model.
 - Category reporting should converge on the same aggregation model while preserving user-facing compatibility where practical.
 - Existing report commands should be treated as compatibility reporting surfaces over the shared aggregation model.
+- If future reporting supports consolidated cross-currency output, it should convert into one explicit reporting currency rather than summing raw mixed-currency balances.
 
 ## Exchange Rates
 
@@ -89,6 +90,7 @@ Future direction:
 
 - Public-source fetching may be considered later.
 - If added, fetched data must remain optional and must not weaken the local-first default.
+- Conversion-based reporting may later target one explicit reporting currency, with USD as the initial target.
 
 ## Engineering Standards
 
