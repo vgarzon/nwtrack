@@ -9,7 +9,9 @@ from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.application.services.db_admin import DBAdminService
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.bootstrap.container import Container
+from nwtrack.application.dto import AccountStatusScope, AggregationDimension
 from nwtrack.domain.models import Institution, Tag
+from nwtrack.domain.value_objects import Month
 from nwtrack.infra.config.settings import Settings
 from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
 from nwtrack.infra.persistence.schema import SchemaManager as SchemaManagerImpl
@@ -85,3 +87,21 @@ def test_fetch_service_get_account_by_id_exposes_assigned_tags(
 
     assert account is not None
     assert [tag.name for tag in account.tags] == ["core", "liquid"]
+
+
+def test_fetch_service_lists_available_aggregation_months(
+    configured_container: Container, sample_entities
+) -> None:
+    """Compatibility workflows should be able to list months with shared report data."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+    fetcher = FetchService(uow=lambda: configured_container.resolve(UnitOfWork))
+
+    months = fetcher.get_available_aggregation_months(
+        AggregationDimension.SIDE,
+        currency_code="USD",
+        status_scope=AccountStatusScope.ACTIVE,
+    )
+
+    assert months == sorted(months)
+    assert months[0] == Month(2024, 6)
+    assert months[-1] == Month(2025, 11)

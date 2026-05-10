@@ -41,6 +41,39 @@ class ReportingQueries:
         """Initialize reporting queries with SQLAlchemy session."""
         self._session = session
 
+    def get_available_aggregation_months(
+        self,
+        dimension: AggregationDimension,
+        currency_code: str | None,
+        status_scope: AccountStatusScope,
+    ) -> list[Month]:
+        """List distinct months with balances for one aggregation configuration."""
+        stmt = (
+            select(Balance.month)
+            .select_from(Balance)
+            .join(Account, Balance.account_id == Account.id)
+        )
+
+        if dimension in {AggregationDimension.CATEGORY, AggregationDimension.SIDE}:
+            stmt = stmt.join(Category, Account.category_name == Category.name)
+        elif dimension in {
+            AggregationDimension.INSTITUTION,
+            AggregationDimension.CURRENCY,
+            AggregationDimension.TAG,
+        }:
+            pass
+        else:
+            raise ValueError(f"Unsupported aggregation dimension: {dimension}")
+
+        stmt = self._apply_status_scope(stmt, status_scope)
+        if currency_code is not None:
+            stmt = stmt.where(Account.currency_code == currency_code)
+
+        results = self._session.execute(
+            stmt.distinct().order_by(Balance.month)
+        ).scalars().all()
+        return list(results)
+
     def get_month_currencies(
         self, month: Month, status_scope: AccountStatusScope
     ) -> list[str]:

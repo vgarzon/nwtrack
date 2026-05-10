@@ -6,6 +6,7 @@ from typing import Protocol
 
 from nwtrack.application.dto import (
     AccountStatusScope,
+    AggregationDimension,
     HistoryAggregationRequest,
     HistoryAggregationResult,
     MonthlyCategoryBalance,
@@ -16,6 +17,15 @@ from nwtrack.domain.value_objects import Month
 
 
 class ReportingQueries(Protocol):
+    def get_available_aggregation_months(
+        self,
+        dimension: AggregationDimension,
+        currency_code: str | None,
+        status_scope: AccountStatusScope,
+    ) -> list[Month]:
+        """List distinct months with balances for one aggregation configuration."""
+        ...
+
     def get_month_currencies(
         self, month: Month, status_scope: AccountStatusScope
     ) -> list[str]:
