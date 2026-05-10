@@ -118,7 +118,9 @@ class RichTagUpdatePresenter:
         )
         try:
             name = self._collect_name(default=current_tag.name)
-            description = self._collect_description(default=current_tag.description or "")
+            description = self._collect_description(
+                default=current_tag.description or ""
+            )
             tag = Tag(name=name, description=description or None)
             tag.id = current_tag.id
             return tag
