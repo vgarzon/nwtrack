@@ -44,6 +44,15 @@ class InitDataService:
         "balances": ("id", "account_id", "month", "amount"),
         "exchange_rates": ("id", "currency", "month", "rate"),
     }
+    IMPORT_ENTITY_TABLE_NAMES = (
+        "currencies",
+        "categories",
+        "institutions",
+        "tags",
+        "accounts",
+        "balances",
+        "exchange_rates",
+    )
 
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
@@ -91,7 +100,13 @@ class InitDataService:
     def import_bundle_from_dir(self, source_dir: Path) -> None:
         """Import a standard CSV bundle from one source directory."""
         file_paths = self.validate_import_bundle(source_dir)
-        self.insert_data_from_csv(file_paths)
+        records = self._load_records_from_csv(file_paths)
+
+        # NOTE: storing liabilities as positive amounts
+        for row in records["balances"]:
+            row["amount"] = abs(int(row["amount"]))
+
+        self._import_records(records)
 
     def validate_import_bundle(self, source_dir: Path) -> dict[str, str]:
         """Validate a standard CSV bundle before mutating database data."""
@@ -153,6 +168,23 @@ class InitDataService:
                 repo = getattr(uow, name)
                 entities = repo.hydrate_many(records[name])
                 repo.insert_many(entities)
+
+    def _import_records(self, records: dict[str, list[dict]]) -> None:
+        """Import the supported CSV bundle into the database."""
+        with self._uow() as uow:
+            for name in self.IMPORT_ENTITY_TABLE_NAMES:
+                repo = getattr(uow, name)
+                entities = repo.hydrate_many(records[name])
+                repo.insert_many(entities)
+
+            account_tag_map: dict[int, list[int]] = {}
+            for row in records["account_tags"]:
+                account_id = int(row["account_id"])
+                tag_id = int(row["tag_id"])
+                account_tag_map.setdefault(account_id, []).append(tag_id)
+
+            for account_id, tag_ids in sorted(account_tag_map.items()):
+                uow.tags.replace_for_account(account_id, tag_ids)
 
     def _records_to_entities(self, records: dict[str, list[dict]]) -> dict[str, list]:
         """Hydrate records into entities using unit of work pattern.
