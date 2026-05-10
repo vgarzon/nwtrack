@@ -80,7 +80,11 @@ def test_history_grouped_table_uses_month_and_selected_dimension_columns() -> No
 
     table = build_history_aggregation_table(result)
 
-    assert [column.header for column in table.columns] == ["Month", "Category", "Amount"]
+    assert [column.header for column in table.columns] == [
+        "Month",
+        "Category",
+        "Amount",
+    ]
 
 
 def test_currency_history_grouped_table_keeps_one_currency_label_column() -> None:
@@ -104,4 +108,8 @@ def test_currency_history_grouped_table_keeps_one_currency_label_column() -> Non
 
     table = build_history_aggregation_table(result)
 
-    assert [column.header for column in table.columns] == ["Month", "Currency", "Amount"]
+    assert [column.header for column in table.columns] == [
+        "Month",
+        "Currency",
+        "Amount",
+    ]

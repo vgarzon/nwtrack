@@ -146,7 +146,9 @@ class HistoryAggregatedBalanceReport:
         if start_month is not None:
             return start_month
         if not allow_interactive:
-            self._presenter.show_error("Start month is required. Provide --start-month.")
+            self._presenter.show_error(
+                "Start month is required. Provide --start-month."
+            )
             return None
 
         balance_counts = self._fetcher.get_balance_count_per_month()
