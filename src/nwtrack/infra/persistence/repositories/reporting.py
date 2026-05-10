@@ -10,6 +10,9 @@ from sqlalchemy.orm import Session
 from nwtrack.application.dto import (
     AccountStatusScope,
     AggregationDimension,
+    HistoryAggregationRequest,
+    HistoryAggregationResult,
+    HistoryAggregationRow,
     MonthlyCategoryBalance,
     SingleMonthAggregationGroup,
     SingleMonthAggregationRequest,
@@ -54,6 +57,26 @@ class ReportingQueries:
         results = self._session.execute(stmt).scalars().all()
         return list(results)
 
+    def get_range_currencies(
+        self,
+        start_month: Month,
+        end_month: Month,
+        status_scope: AccountStatusScope,
+    ) -> list[str]:
+        """List distinct currencies present across an inclusive month range."""
+        stmt = (
+            select(Account.currency_code)
+            .select_from(Balance)
+            .join(Account, Balance.account_id == Account.id)
+            .where(Balance.month >= start_month)
+            .where(Balance.month <= end_month)
+        )
+        stmt = self._apply_status_scope(stmt, status_scope).distinct().order_by(
+            Account.currency_code
+        )
+        results = self._session.execute(stmt).scalars().all()
+        return list(results)
+
     def aggregate_single_month(
         self, request: SingleMonthAggregationRequest
     ) -> SingleMonthAggregationResult:
@@ -77,6 +100,33 @@ class ReportingQueries:
             currency_code=self._resolve_result_currency_code(request, groups),
             status_scope=request.status_scope,
             groups=groups,
+        )
+
+    def aggregate_history(
+        self,
+        request: HistoryAggregationRequest,
+    ) -> HistoryAggregationResult:
+        """Group balances across an inclusive month range by a supported dimension."""
+        if request.dimension == AggregationDimension.CATEGORY:
+            rows = self._aggregate_history_by_category(request)
+        elif request.dimension == AggregationDimension.SIDE:
+            rows = self._aggregate_history_by_side(request)
+        elif request.dimension == AggregationDimension.INSTITUTION:
+            rows = self._aggregate_history_by_institution(request)
+        elif request.dimension == AggregationDimension.CURRENCY:
+            rows = self._aggregate_history_by_currency(request)
+        elif request.dimension == AggregationDimension.TAG:
+            rows = self._aggregate_history_by_tag(request)
+        else:
+            raise ValueError(f"Unsupported aggregation dimension: {request.dimension}")
+
+        return HistoryAggregationResult(
+            start_month=request.start_month,
+            end_month=request.end_month,
+            dimension=request.dimension,
+            currency_code=self._resolve_history_currency_code(request, rows),
+            status_scope=request.status_scope,
+            rows=rows,
         )
 
     def monthly_balance_total_by_category(
@@ -137,6 +187,39 @@ class ReportingQueries:
         ]
         return self._sort_groups(groups)
 
+    def _aggregate_history_by_category(
+        self, request: HistoryAggregationRequest
+    ) -> list[HistoryAggregationRow]:
+        stmt = (
+            select(
+                Balance.month.label("month"),
+                Category.name.label("name"),
+                Account.currency_code.label("currency_code"),
+                func.sum(Balance.amount).label("total_amount"),
+            )
+            .join(Account, Balance.account_id == Account.id)
+            .join(Category, Account.category_name == Category.name)
+            .where(Balance.month >= request.start_month)
+            .where(Balance.month <= request.end_month)
+        )
+        stmt = self._apply_history_request_filters(stmt, request).group_by(
+            Balance.month,
+            Category.name,
+            Account.currency_code,
+        )
+        rows = self._session.execute(stmt).all()
+        history_rows = [
+            HistoryAggregationRow(
+                month=row.month,
+                group_key=row.name,
+                label=row.name,
+                amount=row.total_amount or 0,
+                currency_code=row.currency_code,
+            )
+            for row in rows
+        ]
+        return self._sort_history_rows(history_rows)
+
     def _aggregate_by_side(
         self, request: SingleMonthAggregationRequest
     ) -> list[SingleMonthAggregationGroup]:
@@ -166,6 +249,40 @@ class ReportingQueries:
             for row in rows
         ]
         return self._sort_groups(groups)
+
+    def _aggregate_history_by_side(
+        self, request: HistoryAggregationRequest
+    ) -> list[HistoryAggregationRow]:
+        stmt = (
+            select(
+                Balance.month.label("month"),
+                Category.side.label("side"),
+                Account.currency_code.label("currency_code"),
+                func.sum(Balance.amount).label("total_amount"),
+            )
+            .join(Account, Balance.account_id == Account.id)
+            .join(Category, Account.category_name == Category.name)
+            .where(Balance.month >= request.start_month)
+            .where(Balance.month <= request.end_month)
+        )
+        stmt = self._apply_history_request_filters(stmt, request).group_by(
+            Balance.month,
+            Category.side,
+            Account.currency_code,
+        )
+        rows = self._session.execute(stmt).all()
+
+        history_rows = [
+            HistoryAggregationRow(
+                month=row.month,
+                group_key=row.side.value,
+                label=row.side.value,
+                amount=row.total_amount or 0,
+                currency_code=row.currency_code,
+            )
+            for row in rows
+        ]
+        return self._sort_history_rows(history_rows)
 
     def _aggregate_by_institution(
         self, request: SingleMonthAggregationRequest
@@ -207,6 +324,50 @@ class ReportingQueries:
         ]
         return self._sort_groups(groups)
 
+    def _aggregate_history_by_institution(
+        self, request: HistoryAggregationRequest
+    ) -> list[HistoryAggregationRow]:
+        stmt = (
+            select(
+                Balance.month.label("month"),
+                Institution.id.label("institution_id"),
+                Institution.name.label("institution_name"),
+                Account.currency_code.label("currency_code"),
+                func.sum(Balance.amount).label("total_amount"),
+            )
+            .join(Account, Balance.account_id == Account.id)
+            .outerjoin(Institution, Account.institution_id == Institution.id)
+            .where(Balance.month >= request.start_month)
+            .where(Balance.month <= request.end_month)
+        )
+        stmt = self._apply_history_request_filters(stmt, request).group_by(
+            Balance.month,
+            Institution.id,
+            Institution.name,
+            Account.currency_code,
+        )
+        rows = self._session.execute(stmt).all()
+
+        history_rows = [
+            HistoryAggregationRow(
+                month=row.month,
+                group_key=(
+                    f"institution:{row.institution_id}"
+                    if row.institution_id is not None
+                    else "unassigned"
+                ),
+                label=(
+                    row.institution_name
+                    if row.institution_id is not None
+                    else "Unassigned"
+                ),
+                amount=row.total_amount or 0,
+                currency_code=row.currency_code,
+            )
+            for row in rows
+        ]
+        return self._sort_history_rows(history_rows)
+
     def _aggregate_by_currency(
         self, request: SingleMonthAggregationRequest
     ) -> list[SingleMonthAggregationGroup]:
@@ -234,6 +395,37 @@ class ReportingQueries:
             for row in rows
         ]
         return self._sort_groups(groups)
+
+    def _aggregate_history_by_currency(
+        self, request: HistoryAggregationRequest
+    ) -> list[HistoryAggregationRow]:
+        stmt = (
+            select(
+                Balance.month.label("month"),
+                Account.currency_code.label("currency_code"),
+                func.sum(Balance.amount).label("total_amount"),
+            )
+            .join(Account, Balance.account_id == Account.id)
+            .where(Balance.month >= request.start_month)
+            .where(Balance.month <= request.end_month)
+        )
+        stmt = self._apply_history_request_filters(stmt, request).group_by(
+            Balance.month,
+            Account.currency_code,
+        )
+        rows = self._session.execute(stmt).all()
+
+        history_rows = [
+            HistoryAggregationRow(
+                month=row.month,
+                group_key=row.currency_code,
+                label=row.currency_code,
+                amount=row.total_amount or 0,
+                currency_code=row.currency_code,
+            )
+            for row in rows
+        ]
+        return self._sort_history_rows(history_rows)
 
     def _aggregate_by_tag(
         self, request: SingleMonthAggregationRequest
@@ -271,8 +463,55 @@ class ReportingQueries:
         ]
         return self._sort_groups(groups)
 
+    def _aggregate_history_by_tag(
+        self, request: HistoryAggregationRequest
+    ) -> list[HistoryAggregationRow]:
+        stmt = (
+            select(
+                Balance.month.label("month"),
+                Tag.id.label("tag_id"),
+                Tag.name.label("tag_name"),
+                Account.currency_code.label("currency_code"),
+                func.sum(Balance.amount).label("total_amount"),
+            )
+            .join(Account, Balance.account_id == Account.id)
+            .outerjoin(
+                account_tags_table,
+                account_tags_table.c.account_id == Account.id,
+            )
+            .outerjoin(Tag, Tag.id == account_tags_table.c.tag_id)
+            .where(Balance.month >= request.start_month)
+            .where(Balance.month <= request.end_month)
+        )
+        stmt = self._apply_history_request_filters(stmt, request).group_by(
+            Balance.month,
+            Tag.id,
+            Tag.name,
+            Account.currency_code,
+        )
+        rows = self._session.execute(stmt).all()
+
+        history_rows = [
+            HistoryAggregationRow(
+                month=row.month,
+                group_key=f"tag:{row.tag_id}" if row.tag_id is not None else "untagged",
+                label=row.tag_name if row.tag_id is not None else "Untagged",
+                amount=row.total_amount or 0,
+                currency_code=row.currency_code,
+            )
+            for row in rows
+        ]
+        return self._sort_history_rows(history_rows)
+
     def _apply_request_filters(self, stmt, request: SingleMonthAggregationRequest):
         """Apply status scope and optional currency filter to a statement."""
+        stmt = self._apply_status_scope(stmt, request.status_scope)
+        if request.currency_code is not None:
+            stmt = stmt.where(Account.currency_code == request.currency_code)
+        return stmt
+
+    def _apply_history_request_filters(self, stmt, request: HistoryAggregationRequest):
+        """Apply status scope and optional currency filter to a history statement."""
         stmt = self._apply_status_scope(stmt, request.status_scope)
         if request.currency_code is not None:
             stmt = stmt.where(Account.currency_code == request.currency_code)
@@ -299,6 +538,21 @@ class ReportingQueries:
 
         return None
 
+    def _resolve_history_currency_code(
+        self,
+        request: HistoryAggregationRequest,
+        rows: list[HistoryAggregationRow],
+    ) -> str | None:
+        """Resolve the result-level currency code from request and grouped rows."""
+        if request.currency_code is not None:
+            return request.currency_code
+
+        currencies = sorted({row.currency_code for row in rows})
+        if len(currencies) == 1:
+            return currencies[0]
+
+        return None
+
     def _sort_groups(
         self,
         groups: list[SingleMonthAggregationGroup],
@@ -317,5 +571,27 @@ class ReportingQueries:
                 side_order.get(group.label, 0),
                 1 if group.label in special_last else 0,
                 group.label,
+            ),
+        )
+
+    def _sort_history_rows(
+        self,
+        rows: list[HistoryAggregationRow],
+    ) -> list[HistoryAggregationRow]:
+        """Return deterministic ordering across month history rows."""
+        side_order = {
+            Side.ASSET.value: 0,
+            Side.LIABILITY.value: 1,
+        }
+        special_last = {"Unassigned", "Untagged"}
+
+        return sorted(
+            rows,
+            key=lambda row: (
+                row.month,
+                0 if row.label in side_order else 1,
+                side_order.get(row.label, 0),
+                1 if row.label in special_last else 0,
+                row.label,
             ),
         )

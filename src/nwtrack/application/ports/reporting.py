@@ -6,6 +6,8 @@ from typing import Protocol
 
 from nwtrack.application.dto import (
     AccountStatusScope,
+    HistoryAggregationRequest,
+    HistoryAggregationResult,
     MonthlyCategoryBalance,
     SingleMonthAggregationRequest,
     SingleMonthAggregationResult,
@@ -20,10 +22,26 @@ class ReportingQueries(Protocol):
         """List distinct currencies for one month under a status filter."""
         ...
 
+    def get_range_currencies(
+        self,
+        start_month: Month,
+        end_month: Month,
+        status_scope: AccountStatusScope,
+    ) -> list[str]:
+        """List distinct currencies across an inclusive month range."""
+        ...
+
     def aggregate_single_month(
         self, request: SingleMonthAggregationRequest
     ) -> SingleMonthAggregationResult:
         """Group one month of balances by a supported aggregation dimension."""
+        ...
+
+    def aggregate_history(
+        self,
+        request: HistoryAggregationRequest,
+    ) -> HistoryAggregationResult:
+        """Group balances across an inclusive month range by one dimension."""
         ...
 
     def monthly_balance_total_by_category(

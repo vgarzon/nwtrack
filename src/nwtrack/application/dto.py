@@ -67,6 +67,40 @@ class SingleMonthAggregationResult:
 
 
 @dataclass(frozen=True)
+class HistoryAggregationRequest:
+    """Application-level request for grouped totals across an inclusive month range."""
+
+    start_month: Month
+    end_month: Month
+    dimension: AggregationDimension
+    currency_code: str | None = None
+    status_scope: AccountStatusScope = AccountStatusScope.ACTIVE
+
+
+@dataclass(frozen=True)
+class HistoryAggregationRow:
+    """One grouped balance row for one month in a history aggregation result."""
+
+    month: Month
+    group_key: str
+    label: str
+    amount: int
+    currency_code: str
+
+
+@dataclass(frozen=True)
+class HistoryAggregationResult:
+    """Result of grouped balance aggregation across an inclusive month range."""
+
+    start_month: Month
+    end_month: Month
+    dimension: AggregationDimension
+    currency_code: str | None
+    status_scope: AccountStatusScope
+    rows: list[HistoryAggregationRow]
+
+
+@dataclass(frozen=True)
 class NewAccountData:
     """Data class for new account creation use case."""
 
