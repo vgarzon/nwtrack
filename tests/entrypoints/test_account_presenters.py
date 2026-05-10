@@ -10,6 +10,7 @@ from nwtrack.domain.models import (
     Institution,
     Side,
     Status,
+    Tag,
 )
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.adapters.account_presenters import (
@@ -30,6 +31,20 @@ class FakeAccountCreationFetchService:
 
     def get_all_institutions(self) -> list[Institution]:
         return []
+
+    def get_all_tags(self) -> list:
+        return []
+
+
+class FakeTaggedAccountCreationFetchService(FakeAccountCreationFetchService):
+    """Fetch service stub with tags for create-workflow tests."""
+
+    def get_all_tags(self) -> list[Tag]:
+        first = Tag(name="core", description="Core holding")
+        first.id = 1
+        second = Tag(name="liquid", description="Quick access")
+        second.id = 2
+        return [first, second]
 
 
 def test_account_list_presenter_renders_institution_column_for_mixed_accounts() -> None:
@@ -136,4 +151,63 @@ def test_account_creation_presenter_exposes_tag_ids_field(monkeypatch) -> None:
         "No institutions available. Continuing with no institution assigned."
         in output
     )
-    assert "Tag" not in output
+    assert "No tags available. Continuing with no tags assigned." in output
+
+
+def test_account_creation_presenter_collects_selected_tag_ids(monkeypatch) -> None:
+    """Account creation should collect selected tag IDs after institution."""
+    import nwtrack.entrypoints.cli.adapters.account_presenters as account_presenters
+
+    console = build_console(ConsoleSettings(record=True))
+    presenter = RichAccountCreationPresenter(
+        console,
+        cast(FetchService, FakeTaggedAccountCreationFetchService()),
+    )
+
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_optional_tag_choices",
+        lambda *args, **kwargs: [2, 1],
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_account_name",
+        lambda *args, **kwargs: "cash_account",
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_account_description",
+        lambda *args, **kwargs: "Cash account",
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_category_choice",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_currency_choice",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_status_choice",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_month",
+        lambda *args, **kwargs: Month(2025, 10),
+    )
+    monkeypatch.setattr(
+        account_presenters,
+        "prompt_for_balance_amount",
+        lambda *args, **kwargs: 100,
+    )
+
+    data = presenter.collect_account_data()
+
+    assert data is not None
+    assert data.tag_ids == [1, 2]
+    output = console.export_text()
+    assert "Tags" in output

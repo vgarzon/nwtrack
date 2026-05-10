@@ -128,6 +128,7 @@ class AccountCreator:
                 logger.exception("Error inserting balance: %s", e)
                 uow.rollback()
                 return None
+            uow.tags.replace_for_account(account_id, data.tag_ids)
         return account_id, balance_id
 
     def _validate_created_account(
@@ -160,6 +161,8 @@ class AccountCreator:
             return False, "Account status mismatch."
         if account.institution_id != data.institution_id:
             return False, "Account institution mismatch."
+        if [tag.id for tag in account.tags] != data.tag_ids:
+            return False, "Account tags mismatch."
         if balance is None:
             return False, "Balance not found."
         if balance.account_id != account_id:

@@ -18,6 +18,7 @@ from nwtrack.entrypoints.cli.ui.prompts import (
     prompt_for_currency_choice,
     prompt_for_month,
     prompt_for_optional_institution_choice,
+    prompt_for_optional_tag_choices,
     prompt_for_status_choice,
     prompt_to_confirm_action,
 )
@@ -26,6 +27,7 @@ from nwtrack.entrypoints.cli.ui.renderers import (
     build_currencies_table,
     build_indexed_categories_table,
     build_indexed_institutions_table,
+    build_indexed_tags_table,
     build_status_table,
     render_account_data,
     render_new_account_info,
@@ -61,6 +63,7 @@ class RichAccountCreationPresenter:
         self._console = console
         self._fetcher = fetcher
         self._selected_institution_name = "None"
+        self._selected_tag_names = "None"
 
     def show_header(self) -> None:
         """Display workflow header using Rich."""
@@ -90,6 +93,7 @@ class RichAccountCreationPresenter:
         try:
             return NewAccountData(
                 institution_id=self._collect_institution_id(),
+                tag_ids=self._collect_tag_ids(),
                 account_name=self._collect_account_name(),
                 description=self._collect_description(),
                 category_name=self._collect_category_name(),
@@ -180,6 +184,33 @@ class RichAccountCreationPresenter:
         self._selected_institution_name = institution.name
         return institution.id
 
+    def _collect_tag_ids(self) -> list[int]:
+        """Collect optional tag selections from user."""
+        tags = self._fetcher.get_all_tags()
+        if not tags:
+            self._selected_tag_names = "None"
+            self._console.print(
+                "[info]No tags available. Continuing with no tags assigned.[/info]"
+            )
+            return []
+
+        self._console.print(build_indexed_tags_table(tags))
+        choices = prompt_for_optional_tag_choices(
+            self._console,
+            len(tags),
+            default="0",
+        )
+        if choices is None:
+            raise KeyboardInterrupt("Quit while collecting tags.")
+        if not choices:
+            self._selected_tag_names = "None"
+            return []
+
+        normalized_choices = sorted(set(choices))
+        selected_tags = [tags[choice - 1] for choice in normalized_choices]
+        self._selected_tag_names = ", ".join(tag.name for tag in selected_tags)
+        return [tag.id for tag in selected_tags]
+
     def _collect_initial_month(self) -> Month:
         """Collect initial month from user."""
         return prompt_for_month(self._console)
@@ -204,6 +235,7 @@ class RichAccountCreationPresenter:
             account,
             balance,
             institution_name=self._selected_institution_name,
+            tag_names=self._selected_tag_names,
         )
         return prompt_to_confirm_action(self._console, "Create account?")
 
