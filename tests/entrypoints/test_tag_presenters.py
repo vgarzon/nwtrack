@@ -2,7 +2,11 @@
 
 from nwtrack.application.dto import TagListItem
 from nwtrack.domain.models import Tag
-from nwtrack.entrypoints.cli.adapters.tag_presenters import RichTagListPresenter
+from nwtrack.entrypoints.cli.adapters.tag_presenters import (
+    RichTagCreationPresenter,
+    RichTagListPresenter,
+    RichTagUpdatePresenter,
+)
 from nwtrack.entrypoints.cli.ui.console import ConsoleSettings, build_console
 
 
@@ -31,3 +35,31 @@ def test_list_presenter_displays_usage_counts() -> None:
     assert "liquid" in output
     assert "Accounts" in output
     assert "2" in output
+
+
+def test_create_presenter_renders_success_message() -> None:
+    """Tag create presenter should confirm successful creation."""
+    console = build_console(ConsoleSettings(record=True, width=120))
+    presenter = RichTagCreationPresenter(console)
+
+    tag = Tag(name="liquid", description="Quick access")
+    tag.id = 2
+    presenter.show_success(
+        "liquid",
+        [TagListItem(tag=tag, account_count=0)],
+    )
+
+    output = console.export_text()
+    assert "created successfully" in output
+    assert "liquid" in output
+
+
+def test_update_presenter_shows_duplicate_error() -> None:
+    """Update presenter should explain when a normalized duplicate exists."""
+    console = build_console(ConsoleSettings(record=True, width=120))
+    presenter = RichTagUpdatePresenter(console)
+
+    presenter.show_duplicate_error("liquid")
+
+    output = console.export_text()
+    assert "Tag name 'liquid' already exists." in output
