@@ -160,7 +160,35 @@ def test_print_summary_mixed_currency_month_fails_clearly(
         "Mixed-currency compatibility reporting is not supported yet."
         in captured_output
     )
+    assert "Summary by Category 2025-11" not in captured_output
+    assert "Net Worth Summary 2025-11 (USD)" not in captured_output
     assert re.search(
         r"conversion-based\s+consolidated reporting is not available yet",
         captured_output.lower(),
     )
+
+
+def test_print_summary_no_month_selected_preserves_existing_feedback(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Cancelling month selection should still exit with the legacy warning."""
+    import nwtrack.entrypoints.cli.adapters.report_presenters as report_presenters
+    from nwtrack.entrypoints.cli.adapters.report_presenters import Console
+
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    monkeypatch.setattr(
+        report_presenters.RichBalancesByCategoryPresenter,
+        "prompt_for_month_choice",
+        lambda *args, **kwargs: None,
+    )
+
+    result: OperationResult = configured_container.resolve(
+        ReportBalancesByCategory
+    ).run()
+    captured_output: str = configured_container.resolve(Console).export_text()
+
+    assert not result.success
+    assert "No month selected. Exiting report." in captured_output
