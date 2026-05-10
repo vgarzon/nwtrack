@@ -8,7 +8,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Minimal Tag Fetch And Read Support
 - [X] Account Use Case Integration
 - [X] Account List And Preview Output
-- [ ] Validation And Compatibility
+- [X] Validation And Compatibility
 
 ## Automated
 
