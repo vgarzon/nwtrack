@@ -243,6 +243,40 @@ def prompt_for_institution_id(console: Console) -> int | None:
             )
 
 
+def prompt_for_tag_name(console: Console, default: str = "") -> str:
+    """Prompt user for tag name."""
+    prompt = Prompt(console=console)
+    name = prompt.ask(
+        "Enter [bold]tag name[/bold] or 'q' to quit",
+        default=default,
+    )
+    return name.strip()
+
+
+def prompt_for_tag_description(console: Console, default: str = "") -> str:
+    """Prompt user for tag description."""
+    prompt = Prompt(console=console)
+    description = prompt.ask(
+        "Enter optional [bold]description[/bold] or 'q' to quit",
+        default=default,
+    )
+    return description.strip()
+
+
+def prompt_for_tag_id(console: Console) -> int | None:
+    """Prompt user for tag ID."""
+    prompt = Prompt(console=console)
+    while True:
+        response = prompt.ask("Enter [bold]tag ID[/bold] or 'q' to quit")
+        if response.lower().strip() == "q":
+            return None
+        try:
+            tag_id = int(response)
+            return tag_id
+        except ValueError:
+            console.print("[error]Invalid input. Please enter a valid tag ID.[/error]")
+
+
 def prompt_for_optional_institution_choice(
     console: Console,
     n_institutions: int,
