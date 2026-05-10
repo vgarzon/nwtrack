@@ -60,11 +60,18 @@ Default architectural expectations:
 These are intentional product constraints, not open-ended abstractions:
 
 - SQLite is the product database for the foreseeable future.
-- CSV import/export is sufficient for now.
+- CSV import/export is the default portability and recovery workflow for now.
 - The product is CLI-first today.
 - Reporting scope is CLI commands only.
 - Future interface expansion should target a TUI before any other interface.
 - Monthly snapshots are the permanent core model.
+
+CSV portability expectations:
+
+- Supported CSV export and import workflows should converge on the current product data model rather than remain legacy-only compatibility paths.
+- Import should be able to initialize an empty local database before loading supported CSV data.
+- Import behavior should be idempotent for supported CSV table sets, with exact semantics defined in feature specs.
+- Supported CSV export/import round trips should preserve the same data for the exported tables.
 
 ## Reporting Model
 

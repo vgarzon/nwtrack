@@ -175,7 +175,31 @@ Expected outcomes:
 - CLI and validation rules can identify and remediate missing institutions
 - The spec defines the cutover criteria for making institution assignment mandatory
 
-### [ ] Phase 21: Reporting UX Options
+### [ ] Phase 21: CSV Export Coverage For Institutions And Tags
+
+Goal:
+Extend the existing CSV export workflow so exported table sets include the newer account classification tables needed for data portability.
+
+Expected outcomes:
+
+- The existing export CSV command and use case include `institutions` and `tags` in export output
+- Exported CSV table sets are defined to remain consistent with the supported import format
+- CSV export behavior moves closer to full local backup and recovery for the current data model
+
+### [ ] Phase 22: CSV Import Command And Round-Trip Foundation
+
+Goal:
+Add a first-class CLI import workflow for CSV table data and align import behavior with the current schema and portability goals.
+
+Expected outcomes:
+
+- A new `import` CLI command group exists with a `tables-csv` command
+- The CSV import use case updates the current initialization/import path to include `institutions` and `tags`
+- Import can create the database file and required schema when starting from an empty or missing database
+- CSV import behavior is idempotent, with exact semantics defined in the feature spec
+- Export/import CSV round trips preserve the same database data for supported tables
+
+### [ ] Phase 23: Reporting UX Options
 
 Goal:
 Improve aggregated reporting ergonomics with alternative history layouts and export-friendly output.
@@ -186,7 +210,7 @@ Expected outcomes:
 - Non-interactive aggregated history reporting can emit CSV output for downstream analysis
 - Output-format options are defined in a way that preserves current default behavior unless the user opts in
 
-### [ ] Phase 22: Single-Currency Conversion Reporting
+### [ ] Phase 24: Single-Currency Conversion Reporting
 
 Goal:
 Add conversion-backed reporting so aggregated views can be rendered in one explicit reporting currency instead of failing on mixed-currency totals.
