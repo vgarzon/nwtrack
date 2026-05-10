@@ -9,13 +9,19 @@ from nwtrack.application.ports.schema import SchemaManager
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.application.services.db_admin import DBAdminService
-from nwtrack.application.use_cases.import_tables_csv import ImportTablesCSVCLI
+from nwtrack.application.services.export_csv import ExportCSV
+from nwtrack.application.use_cases.import_tables_csv import (
+    ImportTablesCSVCLI,
+    ImportTablesCSVInteractive,
+)
 from nwtrack.bootstrap.composition import build_base_container
 from nwtrack.bootstrap.container import Container, Lifetime
+from nwtrack.domain.models import Institution, Status, Tag
 from nwtrack.infra.config.settings import Settings
 from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
 from nwtrack.infra.persistence.orm.models import account_tags_table
 from nwtrack.infra.persistence.schema import SchemaManager as SchemaManagerImpl
+from tests.helpers import init_db_tables_w_entities
 
 
 def _write_bundle_file(target_dir: Path, name: str, header: str, rows: list[str]) -> None:
@@ -49,6 +55,18 @@ def _write_minimal_bundle(target_dir: Path) -> None:
         "id,currency,month,rate",
         ["1,USD,2024-01,1.0"],
     )
+
+
+def _write_invalid_account_tag_bundle(target_dir: Path) -> None:
+    _write_minimal_bundle(target_dir)
+    _write_bundle_file(target_dir, "account_tags", "account_id,tag_id", ["1,99"])
+
+
+def _read_bundle_contents(source_dir: Path) -> dict[str, str]:
+    return {
+        path.name: path.read_text(encoding="utf-8")
+        for path in sorted(source_dir.glob("*.csv"))
+    }
 
 
 @pytest.fixture
@@ -176,3 +194,152 @@ def test_import_tables_cli_updates_matching_rows_by_bundle_identity(
         assert account.status.value == "inactive"
         assert balance is not None
         assert balance.amount == 2500
+
+
+def test_import_tables_interactive_imports_valid_bundle(
+    file_db_container: Container, tmp_path: Path, monkeypatch
+) -> None:
+    source_dir = tmp_path / "bundle"
+    source_dir.mkdir()
+    _write_minimal_bundle(source_dir)
+    console = file_db_container.resolve(Console)
+
+    monkeypatch.setattr(
+        "nwtrack.application.use_cases.import_tables_csv.Prompt.ask",
+        lambda *args, **kwargs: str(source_dir),
+    )
+
+    ImportTablesCSVInteractive(
+        importer=file_db_container.resolve(InitDataService),
+        admin_svc=file_db_container.resolve(DBAdminService),
+        console=console,
+    ).run(defaults={"source_dir": str(source_dir)})
+
+    with file_db_container.resolve(UnitOfWork) as uow:
+        assert uow.accounts.count() == 1
+
+    assert "Imported CSV tables from" in console.export_text()
+
+
+def test_import_tables_cli_leaves_unmatched_existing_rows_unchanged(
+    file_db_container: Container, tmp_path: Path
+) -> None:
+    source_dir = tmp_path / "bundle"
+    source_dir.mkdir()
+    _write_minimal_bundle(source_dir)
+
+    importer = ImportTablesCSVCLI(
+        importer=file_db_container.resolve(InitDataService),
+        admin_svc=file_db_container.resolve(DBAdminService),
+        console=file_db_container.resolve(Console),
+    )
+    importer.run(source_dir=str(source_dir))
+
+    with file_db_container.resolve(UnitOfWork) as uow:
+        inserted_id = uow.institutions.insert(
+            Institution(name="Spare bank", description="Not in bundle")
+        )
+        assert inserted_id == 2
+
+    importer.run(source_dir=str(source_dir))
+
+    with file_db_container.resolve(UnitOfWork) as uow:
+        spare = uow.institutions.get_by_id(2)
+        assert spare is not None
+        assert spare.name == "Spare bank"
+
+
+def test_import_tables_cli_rolls_back_on_invalid_relationship_rows(
+    file_db_container: Container, tmp_path: Path
+) -> None:
+    source_dir = tmp_path / "bundle"
+    source_dir.mkdir()
+    _write_invalid_account_tag_bundle(source_dir)
+    console = file_db_container.resolve(Console)
+
+    ImportTablesCSVCLI(
+        importer=file_db_container.resolve(InitDataService),
+        admin_svc=file_db_container.resolve(DBAdminService),
+        console=console,
+    ).run(source_dir=str(source_dir))
+
+    with file_db_container.resolve(UnitOfWork) as uow:
+        assert uow.currencies.count() == 0
+        assert uow.accounts.count() == 0
+        session = getattr(uow, "_session", None)
+        assert session is not None
+        assert session.execute(account_tags_table.select()).all() == []
+
+    assert "Error:" in console.export_text()
+
+
+def test_export_import_round_trip_reproduces_supported_bundle(
+    base_container: Container,
+    sample_entities: dict[str, list],
+    tmp_path: Path,
+) -> None:
+    base_container.register(
+        DBAdminService,
+        lambda c: DBAdminService(c.resolve(Settings), c.resolve(SchemaManager)),
+    )
+    init_db_tables_w_entities(base_container, sample_entities)
+
+    with base_container.resolve(UnitOfWork) as uow:
+        institution_id = uow.institutions.insert(
+            Institution(name="Fidelity", description="Brokerage")
+        )
+        retirement_id = uow.tags.insert(
+            Tag(name="retirement", description="Retirement assets")
+        )
+        core_id = uow.tags.insert(Tag(name="core", description="Core liquidity"))
+        account = uow.accounts.get_by_id(1)
+        assert account is not None
+        account.institution_id = institution_id
+        account.status = Status.INACTIVE
+        uow.accounts.update(account)
+        uow.tags.replace_for_account(1, [core_id, retirement_id])
+        uow.tags.replace_for_account(2, [retirement_id])
+
+    source_export_dir = tmp_path / "source-export"
+    source_export_dir.mkdir()
+    ExportCSV(uow=lambda: base_container.resolve(UnitOfWork)).export_tables_to_dir(
+        source_export_dir
+    )
+
+    target_container = build_base_container()
+    target_container.register(
+        Settings,
+        lambda _: Settings(db_file_path=str(tmp_path / "roundtrip.db")),
+        lifetime=Lifetime.SINGLETON,
+    )
+    target_container.register(
+        SchemaManager,
+        lambda c: SchemaManagerImpl(engine=c.resolve(SQLiteSessionManager).engine),
+    )
+    target_container.register(
+        DBAdminService,
+        lambda c: DBAdminService(c.resolve(Settings), c.resolve(SchemaManager)),
+    )
+    target_container.register(
+        InitDataService,
+        lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
+    )
+    target_container.register(
+        Console, lambda _: Console(record=True), lifetime=Lifetime.SINGLETON
+    )
+
+    ImportTablesCSVCLI(
+        importer=target_container.resolve(InitDataService),
+        admin_svc=target_container.resolve(DBAdminService),
+        console=target_container.resolve(Console),
+    ).run(source_dir=str(source_export_dir))
+
+    roundtrip_export_dir = tmp_path / "roundtrip-export"
+    roundtrip_export_dir.mkdir()
+    ExportCSV(uow=lambda: target_container.resolve(UnitOfWork)).export_tables_to_dir(
+        roundtrip_export_dir
+    )
+
+    assert _read_bundle_contents(roundtrip_export_dir) == _read_bundle_contents(
+        source_export_dir
+    )
