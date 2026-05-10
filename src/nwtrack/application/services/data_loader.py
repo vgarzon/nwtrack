@@ -3,8 +3,8 @@ Data loading services
 """
 
 import logging
-from csv import DictReader
 from collections.abc import Callable
+from csv import DictReader
 from pathlib import Path
 
 from nwtrack.application.ports.uow import UnitOfWork
@@ -100,6 +100,11 @@ class InitDataService:
     def import_bundle_from_dir(self, source_dir: Path) -> None:
         """Import a standard CSV bundle from one source directory."""
         file_paths = self.validate_import_bundle(source_dir)
+        self.import_bundle_from_file_paths(file_paths)
+
+    def import_bundle_from_file_paths(self, file_paths: dict[str, str]) -> None:
+        """Import a validated standard CSV bundle from explicit file paths."""
+        self.validate_import_file_paths(file_paths)
         records = self._load_records_from_csv(file_paths)
 
         # NOTE: storing liabilities as positive amounts
@@ -115,21 +120,29 @@ class InitDataService:
         if not source_dir.is_dir():
             raise ValueError(f"Source path {source_dir} is not a directory.")
 
-        file_paths: dict[str, str] = {}
-        missing_files: list[str] = []
-        for name in self.IMPORT_TABLE_NAMES:
-            csv_path = source_dir / f"{name}.csv"
-            if not csv_path.is_file():
-                missing_files.append(csv_path.name)
-                continue
-            file_paths[name] = str(csv_path)
+        file_paths = {
+            name: str(source_dir / f"{name}.csv") for name in self.IMPORT_TABLE_NAMES
+        }
+        return self.validate_import_file_paths(file_paths)
 
+    def validate_import_file_paths(self, file_paths: dict[str, str]) -> dict[str, str]:
+        """Validate explicit CSV file paths against the supported import contract."""
+        missing_files = [
+            name for name in self.IMPORT_TABLE_NAMES if name not in file_paths
+        ]
+        missing_paths = [
+            name
+            for name in self.IMPORT_TABLE_NAMES
+            if name in file_paths and not Path(file_paths[name]).is_file()
+        ]
+        missing_files.extend(missing_paths)
         if missing_files:
-            missing = ", ".join(sorted(missing_files))
+            missing = ", ".join(sorted(f"{name}.csv" for name in missing_files))
             raise ValueError(f"Missing required CSV files: {missing}")
 
-        for table_name, csv_path in file_paths.items():
-            self._validate_csv_header(table_name, Path(csv_path))
+        for table_name in self.IMPORT_TABLE_NAMES:
+            csv_path = Path(file_paths[table_name])
+            self._validate_csv_header(table_name, csv_path)
 
         return file_paths
 

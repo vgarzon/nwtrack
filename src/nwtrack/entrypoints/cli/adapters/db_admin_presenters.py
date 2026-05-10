@@ -22,7 +22,7 @@ class RichDBInitCSVPresenter:
         Args:
             db_file_path: Path to the SQLite database file
         """
-        self._console.rule("[header]Initialize DB from CSV Files[/header]")
+        self._console.rule("[header]Import DB from CSV Files[/header]")
         self._console.print(f"[bold]SQLite db file path:[/bold] {db_file_path}")
 
     def prompt_for_file_paths(self, table_names: list[str]) -> dict[str, str]:
@@ -73,17 +73,17 @@ class RichDBInitCSVPresenter:
         """
         self._console.print(
             "\n[warning]WARNING:[/warning] This script will "
-            "[bold]DELETE and RE-CREATE[/bold] the database.\n"
+            "[bold]IMPORT OR UPDATE[/bold] supported data in the database.\n"
         )
         return self._confirm.ask("Do you want to continue?", default=False)
 
     def show_cancellation(self) -> None:
         """Display user cancellation message."""
-        self._console.print("[cancel]Database initialization aborted by user.[/cancel]")
+        self._console.print("[cancel]Database import aborted by user.[/cancel]")
 
     def show_success(self) -> None:
         """Display successful completion message."""
-        self._console.print("[success]Database initialized successfully.[/success]")
+        self._console.print("[success]Database imported successfully.[/success]")
 
     def show_error(self, message: str) -> None:
         """Display error message.

@@ -179,7 +179,7 @@ This spec should be interpreted through `specs/mission.md`, `specs/roadmap.md`, 
 
 Implementation context for this phase:
 
-- The current codebase has a module-level CSV initializer in `init_db_csv.py`, but it is destructive, not wired into the main CLI, and still scoped around the older table set.
+- Before this phase, the codebase had a module-level CSV initializer in `init_db_csv.py` that was destructive, not wired into the main CLI, and still scoped around the older table set.
 - The current export workflow already emits the richer Phase 21 bundle needed for round-trip support.
 - The persistence model already contains first-class repositories for currencies, categories, institutions, tags, accounts, balances, and exchange rates, plus a direct SQLAlchemy association table for `account_tags`.
 - The product constitution now treats CSV portability as a backup and recovery workflow, so Phase 22 should make import match that direction rather than remain a legacy-only bootstrap tool.
