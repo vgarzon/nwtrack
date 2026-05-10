@@ -46,32 +46,57 @@ class SingleMonthAggregatedBalanceReport:
         logger.info("Starting single-month aggregated balance report")
         self._presenter.show_header()
 
-        if month is None:
-            message = "Month is required. Provide --month."
-            self._presenter.show_error(message)
-            return OperationResult(success=False, error_message=message)
+        resolved_month = self._resolve_month(month, allow_interactive)
+        if resolved_month is None:
+            return OperationResult(success=False, error_message="No month selected.")
 
-        if dimension is None:
-            message = "Dimension is required. Provide --dimension."
-            self._presenter.show_error(message)
-            return OperationResult(success=False, error_message=message)
+        resolved_dimension = self._resolve_dimension(dimension, allow_interactive)
+        if resolved_dimension is None:
+            return OperationResult(
+                success=False,
+                error_message="No dimension selected.",
+            )
+
+        resolved_currency = self._resolve_currency(
+            month=resolved_month,
+            dimension=resolved_dimension,
+            currency_code=currency_code,
+            status_scope=status_scope,
+            allow_interactive=allow_interactive,
+        )
+        if resolved_currency is _CANCELLED:
+            return OperationResult(
+                success=False,
+                error_message="No currency selected.",
+            )
+        if resolved_currency is _FAILED:
+            return OperationResult(
+                success=False,
+                error_message=(
+                    "Aggregation requires one currency. "
+                    "Provide --currency for mixed-currency months."
+                ),
+            )
 
         request = SingleMonthAggregationRequest(
-            month=month,
-            dimension=dimension,
-            currency_code=currency_code,
+            month=resolved_month,
+            dimension=resolved_dimension,
+            currency_code=resolved_currency,
             status_scope=status_scope,
         )
         result = self._aggregation_report.run(request)
         if not result.success or result.data is None:
             error_message = result.error_message or "Unable to build aggregated report."
+            error_message = error_message.replace(
+                "Provide currency_code", "Provide --currency"
+            )
             self._presenter.show_error(error_message)
             return OperationResult(success=False, error_message=error_message)
 
         if not result.data.groups:
             self._presenter.show_no_data_message(
-                month=month,
-                dimension=dimension,
+                month=resolved_month,
+                dimension=resolved_dimension,
                 status_scope=status_scope,
                 currency_code=result.data.currency_code,
             )
@@ -80,6 +105,73 @@ class SingleMonthAggregatedBalanceReport:
         self._presenter.display_aggregation_report(result.data)
         logger.info("Finished single-month aggregated balance report")
         return result
+
+    def _resolve_month(
+        self,
+        month: Month | None,
+        allow_interactive: bool,
+    ) -> Month | None:
+        if month is not None:
+            return month
+        if not allow_interactive:
+            self._presenter.show_error("Month is required. Provide --month.")
+            return None
+
+        balance_counts = self._fetcher.get_balance_count_per_month()
+        balance_counts.sort(key=lambda item: item[0], reverse=True)
+        selected_month = self._presenter.prompt_for_month_choice(balance_counts[:3])
+        if selected_month is None:
+            self._presenter.show_no_month_selected_message()
+            return None
+        return selected_month
+
+    def _resolve_dimension(
+        self,
+        dimension: AggregationDimension | None,
+        allow_interactive: bool,
+    ) -> AggregationDimension | None:
+        if dimension is not None:
+            return dimension
+        if not allow_interactive:
+            self._presenter.show_error("Dimension is required. Provide --dimension.")
+            return None
+
+        selected_dimension = self._presenter.prompt_for_dimension_choice()
+        if selected_dimension is None:
+            self._presenter.show_no_dimension_selected_message()
+            return None
+        return selected_dimension
+
+    def _resolve_currency(
+        self,
+        month: Month,
+        dimension: AggregationDimension,
+        currency_code: str | None,
+        status_scope: AccountStatusScope,
+        allow_interactive: bool,
+    ) -> str | None | object:
+        if currency_code is not None or dimension == AggregationDimension.CURRENCY:
+            return currency_code
+
+        currencies = self._fetcher.get_month_currencies(month, status_scope)
+        if len(currencies) <= 1:
+            return currency_code
+        if not allow_interactive:
+            self._presenter.show_error(
+                "Aggregation requires one currency. "
+                "Provide --currency for mixed-currency months."
+            )
+            return _FAILED
+
+        selected_currency = self._presenter.prompt_for_currency_choice(currencies)
+        if selected_currency is None:
+            self._presenter.show_no_currency_selected_message()
+            return _CANCELLED
+        return selected_currency
+
+
+_FAILED = object()
+_CANCELLED = object()
 
 
 def _parse_month(month: str | None) -> Month | None:
