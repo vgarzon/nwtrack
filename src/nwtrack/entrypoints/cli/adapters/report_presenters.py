@@ -8,6 +8,7 @@ from rich.prompt import IntPrompt, Prompt
 from nwtrack.application.dto import (
     AccountStatusScope,
     AggregationDimension,
+    HistoryAggregationResult,
     MonthlyCategoryBalance,
     SingleMonthAggregationResult,
 )
@@ -19,6 +20,7 @@ from nwtrack.entrypoints.cli.ui.renderers import (
     build_balances_table,
     build_category_summary_table,
     build_month_balances_table,
+    build_history_aggregation_table,
     build_networth_history_table,
     build_networth_history_total_change_table,
     build_networth_table,
@@ -394,6 +396,159 @@ class RichSingleMonthAggregationReportPresenter:
     ) -> None:
         """Display grouped balances for a successful aggregation request."""
         table = build_single_month_aggregation_table(result)
+        self._console.print(table)
+
+    def show_error(self, message: str) -> None:
+        """Display an error message."""
+        self._console.print(f"[error]{message}[/error]")
+
+
+class RichHistoryAggregationReportPresenter:
+    """Rich-based implementation of the aggregated history report presenter."""
+
+    def __init__(self, fetcher: FetchService, console: Console) -> None:
+        self._fetcher = fetcher
+        self._console = console
+        self._prompt = Prompt(console=console)
+
+    def show_header(self) -> None:
+        """Display report header using Rich."""
+        self._console.rule(
+            "[header]Grouped History Balance Report[/header]",
+            align="center",
+        )
+
+    def prompt_for_month_choice(
+        self, balance_counts: list[tuple[Month, int]]
+    ) -> Month | None:
+        """Present month selection with recent months or custom input."""
+        recent_months = [month for month, _ in balance_counts]
+        n_months = len(balance_counts)
+        default_choice = self._default_month_choice(balance_counts)
+
+        table = build_month_balances_table(balance_counts)
+        self._console.print(table)
+        self._console.print("Options:")
+        self._console.print("  [bold]A.[/bold] Enter year and month")
+        self._console.print("  [bold]Q.[/bold] Quit")
+
+        choice = self._prompt.ask(
+            "[bold]Enter choice[/bold]",
+            choices=[str(i + 1) for i in range(n_months)] + ["A", "Q"],
+            default=default_choice,
+            case_sensitive=False,
+        )
+
+        if choice.lower().strip() == "q":
+            return None
+        if choice.lower().strip() == "a":
+            return self._input_custom_month()
+
+        choice_idx = int(choice) - 1
+        return recent_months[choice_idx]
+
+    @staticmethod
+    def _default_month_choice(balance_counts: list[tuple[Month, int]]) -> str:
+        """Prefer the most complete recent month when choosing a default option."""
+        if not balance_counts:
+            return "1"
+        best_index = max(
+            range(len(balance_counts)),
+            key=lambda index: balance_counts[index][1],
+        )
+        return str(best_index + 1)
+
+    def _input_custom_month(self) -> Month | None:
+        """Input a specific month from user."""
+        from datetime import date
+
+        today = date.today()
+        int_prompt = IntPrompt(console=self._console)
+        _year = int_prompt.ask("Enter year as 'YYYY'", default=today.year)
+        _month = int_prompt.ask("Enter month as 'MM'", default=today.month)
+
+        try:
+            month = Month(year=_year, month=_month)
+        except ValueError:
+            self.show_error("Invalid month format. Please use YYYY-MM.")
+            return None
+
+        if not self._fetcher.check_month_in_balances(month):
+            self.show_error(f"No balance entries found in {month}.")
+            return None
+
+        return month
+
+    def prompt_for_dimension_choice(self) -> AggregationDimension | None:
+        """Prompt for one supported aggregation dimension."""
+        dimensions = list(AggregationDimension)
+        self._console.print("Dimensions:")
+        for index, dimension in enumerate(dimensions, start=1):
+            self._console.print(f"  [bold]{index}.[/bold] {dimension.value}")
+        self._console.print("  [bold]Q.[/bold] Quit")
+        choice = self._prompt.ask(
+            "[bold]Enter dimension choice[/bold]",
+            choices=[str(index) for index in range(1, len(dimensions) + 1)] + ["Q"],
+            default="1",
+            case_sensitive=False,
+        )
+        if choice.lower().strip() == "q":
+            return None
+        return dimensions[int(choice) - 1]
+
+    def prompt_for_currency_choice(self, currencies: list[str]) -> str | None:
+        """Prompt for one currency when a filter is required."""
+        self._console.print("Currencies:")
+        for index, currency in enumerate(currencies, start=1):
+            self._console.print(f"  [bold]{index}.[/bold] {currency}")
+        self._console.print("  [bold]Q.[/bold] Quit")
+        choice = self._prompt.ask(
+            "[bold]Enter currency choice[/bold]",
+            choices=[str(index) for index in range(1, len(currencies) + 1)] + ["Q"],
+            default="1",
+            case_sensitive=False,
+        )
+        if choice.lower().strip() == "q":
+            return None
+        return currencies[int(choice) - 1]
+
+    def show_no_start_month_selected_message(self) -> None:
+        """Display feedback when start-month selection is cancelled."""
+        self._console.print("[warning]No start month selected. Exiting report.[/warning]")
+
+    def show_no_end_month_selected_message(self) -> None:
+        """Display feedback when end-month selection is cancelled."""
+        self._console.print("[warning]No end month selected. Exiting report.[/warning]")
+
+    def show_no_dimension_selected_message(self) -> None:
+        """Display feedback when dimension selection is cancelled."""
+        self._console.print("[warning]No dimension selected. Exiting report.[/warning]")
+
+    def show_no_currency_selected_message(self) -> None:
+        """Display feedback when currency selection is cancelled."""
+        self._console.print("[warning]No currency selected. Exiting report.[/warning]")
+
+    def show_no_data_message(
+        self,
+        start_month: Month,
+        end_month: Month,
+        dimension: AggregationDimension,
+        status_scope: AccountStatusScope,
+        currency_code: str | None,
+    ) -> None:
+        """Display feedback for valid requests with no grouped results."""
+        currency_message = f" in {currency_code}" if currency_code is not None else ""
+        self._console.print(
+            f"[warning]No grouped balances found from {start_month} to "
+            f"{end_month} by {dimension.value}{currency_message}.[/warning]"
+        )
+
+    def display_history_aggregation_report(
+        self,
+        result: HistoryAggregationResult,
+    ) -> None:
+        """Display grouped balances for a successful history aggregation request."""
+        table = build_history_aggregation_table(result)
         self._console.print(table)
 
     def show_error(self, message: str) -> None:
