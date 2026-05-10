@@ -5,6 +5,7 @@ Reporting related queries protocols
 from typing import Protocol
 
 from nwtrack.application.dto import (
+    AccountStatusScope,
     MonthlyCategoryBalance,
     SingleMonthAggregationRequest,
     SingleMonthAggregationResult,
@@ -13,6 +14,12 @@ from nwtrack.domain.value_objects import Month
 
 
 class ReportingQueries(Protocol):
+    def get_month_currencies(
+        self, month: Month, status_scope: AccountStatusScope
+    ) -> list[str]:
+        """List distinct currencies for one month under a status filter."""
+        ...
+
     def aggregate_single_month(
         self, request: SingleMonthAggregationRequest
     ) -> SingleMonthAggregationResult:
