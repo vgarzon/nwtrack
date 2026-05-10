@@ -418,7 +418,21 @@ class RichHistoryAggregationReportPresenter:
             align="center",
         )
 
-    def prompt_for_month_choice(
+    def prompt_for_start_month_choice(
+        self, balance_counts: list[tuple[Month, int]]
+    ) -> Month | None:
+        """Present start-month selection with recent months or custom input."""
+        self._console.print("[bold]Select start month:[/bold]")
+        return self._prompt_for_month_choice(balance_counts)
+
+    def prompt_for_end_month_choice(
+        self, balance_counts: list[tuple[Month, int]]
+    ) -> Month | None:
+        """Present end-month selection with recent months or custom input."""
+        self._console.print("[bold]Select end month:[/bold]")
+        return self._prompt_for_month_choice(balance_counts)
+
+    def _prompt_for_month_choice(
         self, balance_counts: list[tuple[Month, int]]
     ) -> Month | None:
         """Present month selection with recent months or custom input."""
