@@ -8,7 +8,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Shared Single-Month Aggregation Use Case
 - [X] SQLAlchemy Aggregation Query Layer
 - [X] Wiring And Compatibility Boundary
-- [ ] Validation And Regression Coverage
+- [X] Validation And Regression Coverage
 
 ## Automated
 

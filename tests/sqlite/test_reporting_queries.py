@@ -92,7 +92,9 @@ def test_get_monthly_total_by_category(base_container, sample_entities) -> None:
     assert checking.amount == 200
 
 
-def test_get_month_currencies_honors_status_scope(base_container, sample_entities) -> None:
+def test_get_month_currencies_honors_status_scope(
+    base_container, sample_entities
+) -> None:
     """Distinct month currencies should respect the requested status scope."""
     container, month = _setup_reporting_fixture(base_container, sample_entities)
 
@@ -192,8 +194,9 @@ def test_aggregate_single_month_by_currency(base_container, sample_entities) -> 
     ]
 
 
-def test_aggregate_single_month_by_tag_includes_untagged_and_duplicates_multi_tag_amount(
-    base_container, sample_entities
+def test_aggregate_single_month_by_tag_includes_untagged_and_duplicates_multi_tag_amount(  # noqa: E501
+    base_container,
+    sample_entities,
 ) -> None:
     """Tag aggregation should duplicate multi-tag balances and include untagged."""
     container, month = _setup_reporting_fixture(base_container, sample_entities)
