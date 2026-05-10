@@ -241,3 +241,18 @@ class FetchService:
         with self._uow() as uow:
             currencies = uow.reporting.get_month_currencies(month, status_scope)
         return currencies
+
+    def get_range_currencies(
+        self,
+        start_month: Month,
+        end_month: Month,
+        status_scope: AccountStatusScope = AccountStatusScope.ACTIVE,
+    ) -> list[str]:
+        """Get distinct balance currencies across an inclusive month range."""
+        with self._uow() as uow:
+            currencies = uow.reporting.get_range_currencies(
+                start_month,
+                end_month,
+                status_scope,
+            )
+        return currencies
