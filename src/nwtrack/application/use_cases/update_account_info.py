@@ -70,10 +70,10 @@ class UpdateAccountInfo:
 
         # Update in database
         updated_account = self._build_account(updated_account_data)
-        self._update_account(updated_account)
+        self._update_account(updated_account, updated_account_data.tag_ids)
 
         # Verify update
-        success = self._verify_update(account_id, updated_account)
+        success = self._verify_update(account_id, updated_account, updated_account_data)
         if not success:
             _msg = "Account update verification failed."
             logger.error(_msg)
@@ -99,21 +99,29 @@ class UpdateAccountInfo:
         updated_account.id = update_data.account_id
         return updated_account
 
-    def _update_account(self, updated_account: Account) -> None:
+    def _update_account(self, updated_account: Account, tag_ids: list[int]) -> None:
         """Update account data in the database.
 
         Args:
             updated_account: New account data
+            tag_ids: Replacement tag assignments for the account
         """
         with self._uow() as uow:
             uow.accounts.update(updated_account)
+            uow.tags.replace_for_account(updated_account.id, tag_ids)
 
-    def _verify_update(self, account_id: int, update_data: Account) -> bool:
+    def _verify_update(
+        self,
+        account_id: int,
+        update_data: Account,
+        workflow_data: UpdatedAccountData,
+    ) -> bool:
         """Verify that the account was updated correctly.
 
         Args:
             account_id: Account ID
             update_data: Updated account data
+            workflow_data: Original workflow input including tag assignments
 
         Returns:
             True if update was successful, False otherwise
@@ -122,7 +130,13 @@ class UpdateAccountInfo:
         if retrieved_data is None:
             logger.error("Error retrieving updated account.")
             return False
-        return retrieved_data == update_data
+        if retrieved_data != update_data:
+            return False
+        expected_tag_ids = list(dict.fromkeys(workflow_data.tag_ids))
+        stored_tag_ids = [
+            tag.id for tag in self._fetcher.get_tags_for_account(account_id)
+        ]
+        return sorted(stored_tag_ids) == sorted(expected_tag_ids)
 
 
 def main() -> None:

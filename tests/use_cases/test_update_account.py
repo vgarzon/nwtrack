@@ -229,7 +229,6 @@ def test_account_updater_can_change_institution(
         monkeypatch,
         prompt_values=[
             "2",
-            "0",
             "bank_1_checking",
             "bank_1 checking",
         ],
@@ -258,6 +257,102 @@ def test_account_updater_can_change_institution(
     assert re.search(r"Institution: Fidelity", captured_output)
 
 
+def test_account_updater_can_keep_existing_tags(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Update should preserve the current tag set when the default is accepted."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    setup_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with setup_uow as uow:
+        liquid_id = uow.tags.insert(Tag(name="liquid", description="Quick access"))
+        core_id = uow.tags.insert(Tag(name="core", description="Core holding"))
+        uow.tags.replace_for_account(1, [liquid_id, core_id])
+
+    prompt_values = iter(
+        [
+            "1,2",
+            "bank_1_checking",
+            "bank_1 checking",
+        ]
+    )
+    int_values = iter([1, 1, 1, 1])
+    confirm_values = iter([True])
+
+    def mock_prompt(*args, **kwargs):
+        return next(prompt_values)
+
+    def mock_int_prompt(*args, **kwargs):
+        return next(int_values)
+
+    def mock_confirm_prompt(*args, **kwargs):
+        return next(confirm_values)
+
+    from rich.prompt import Confirm, IntPrompt, Prompt
+
+    monkeypatch.setattr(Prompt, "ask", mock_prompt)
+    monkeypatch.setattr(IntPrompt, "ask", mock_int_prompt)
+    monkeypatch.setattr(Confirm, "ask", mock_confirm_prompt)
+
+    result: OperationResult[None] = configured_container.resolve(
+        UpdateAccountInfo
+    ).run()
+
+    assert result.success
+
+    refresh_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with refresh_uow as uow:
+        stored_tags = uow.tags.get_for_account(1)
+
+    assert [tag.id for tag in stored_tags] == [liquid_id, core_id]
+
+
+def test_account_updater_can_replace_tags(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Update should replace one tag set with another."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    setup_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with setup_uow as uow:
+        liquid_id = uow.tags.insert(Tag(name="liquid", description="Quick access"))
+        core_id = uow.tags.insert(Tag(name="core", description="Core holding"))
+        income_id = uow.tags.insert(Tag(name="income", description="Income source"))
+        uow.tags.replace_for_account(1, [liquid_id, core_id])
+
+    _patch_update_prompts(
+        monkeypatch,
+        prompt_values=[
+            "3",
+            "bank_1_checking",
+            "bank_1 checking",
+        ],
+        int_values=[
+            1,
+            1,
+            1,
+            1,
+        ],
+        confirm_values=[True],
+    )
+
+    result: OperationResult[None] = configured_container.resolve(
+        UpdateAccountInfo
+    ).run()
+
+    assert result.success
+
+    refresh_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with refresh_uow as uow:
+        stored_tags = uow.tags.get_for_account(1)
+
+    assert [tag.id for tag in stored_tags] == [income_id]
+
+
 def test_account_updater_can_clear_institution(
     configured_container: Container,
     sample_entities: dict[str, list],
@@ -278,7 +373,6 @@ def test_account_updater_can_clear_institution(
     _patch_update_prompts(
         monkeypatch,
         prompt_values=[
-            "0",
             "0",
             "bank_1_checking",
             "bank_1 checking",
@@ -332,3 +426,45 @@ def test_account_updater_quits_when_institution_selector_receives_q(
 
     assert not result.success
     assert result.error_message == "Cancelled by user"
+
+
+def test_account_updater_can_clear_tags(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    """Update should clear all existing tags when the user selects 0."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    setup_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with setup_uow as uow:
+        liquid_id = uow.tags.insert(Tag(name="liquid", description="Quick access"))
+        uow.tags.replace_for_account(1, [liquid_id])
+
+    _patch_update_prompts(
+        monkeypatch,
+        prompt_values=[
+            "0",
+            "bank_1_checking",
+            "bank_1 checking",
+        ],
+        int_values=[
+            1,
+            1,
+            1,
+            1,
+        ],
+        confirm_values=[True],
+    )
+
+    result: OperationResult[None] = configured_container.resolve(
+        UpdateAccountInfo
+    ).run()
+
+    assert result.success
+
+    refresh_uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with refresh_uow as uow:
+        stored_tags = uow.tags.get_for_account(1)
+
+    assert stored_tags == []

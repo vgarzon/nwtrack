@@ -116,6 +116,7 @@ class AccountCreator:
                 logger.exception("Error inserting account: %s", e)
                 uow.rollback()
                 return None
+            uow.tags.replace_for_account(account_id, data.tag_ids)
             # Create Balance without id (init=False in ORM model)
             balance = Balance(
                 account_id=account_id,
@@ -160,6 +161,12 @@ class AccountCreator:
             return False, "Account status mismatch."
         if account.institution_id != data.institution_id:
             return False, "Account institution mismatch."
+        expected_tag_ids = list(dict.fromkeys(data.tag_ids))
+        stored_tag_ids = [
+            tag.id for tag in self._fetcher.get_tags_for_account(account_id)
+        ]
+        if sorted(stored_tag_ids) != sorted(expected_tag_ids):
+            return False, "Account tags mismatch."
         if balance is None:
             return False, "Balance not found."
         if balance.account_id != account_id:
