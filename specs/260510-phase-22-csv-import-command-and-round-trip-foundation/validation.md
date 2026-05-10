@@ -8,7 +8,7 @@ Update this checklist as task groups in `plan.md` are completed.
 - [X] Source Bundle Validation
 - [X] Database Bootstrap And Import Service Refactor
 - [X] Idempotent Persistence Behavior
-- [ ] Round-Trip And Regression Coverage
+- [X] Round-Trip And Regression Coverage
 - [ ] Validation And Documentation
 
 ## Automated
