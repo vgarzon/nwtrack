@@ -12,6 +12,7 @@ from nwtrack.application.dto import (
     AccountStatusScope,
     AccountUpdateData,
     AggregationDimension,
+    HistoryAggregationResult,
     InstitutionListItem,
     MonthlyCategoryBalance,
     NewAccountData,
@@ -234,6 +235,66 @@ class SingleMonthAggregationReportPresenter(Protocol):
         result: SingleMonthAggregationResult,
     ) -> None:
         """Display grouped balances for a successful aggregation request."""
+        ...
+
+    def show_error(self, message: str) -> None:
+        """Display an error message."""
+        ...
+
+
+class HistoryAggregationReportPresenter(Protocol):
+    """Presenter for the history aggregated balances report workflow."""
+
+    def show_header(self) -> None:
+        """Display report header."""
+        ...
+
+    def prompt_for_month_choice(
+        self, balance_counts: list[tuple[Month, int]]
+    ) -> Month | None:
+        """Present month selection with recent months or custom input."""
+        ...
+
+    def prompt_for_dimension_choice(self) -> AggregationDimension | None:
+        """Prompt for one supported aggregation dimension."""
+        ...
+
+    def prompt_for_currency_choice(self, currencies: list[str]) -> str | None:
+        """Prompt for one currency when a filter is required."""
+        ...
+
+    def show_no_start_month_selected_message(self) -> None:
+        """Display cancellation feedback when start-month selection ends empty."""
+        ...
+
+    def show_no_end_month_selected_message(self) -> None:
+        """Display cancellation feedback when end-month selection ends empty."""
+        ...
+
+    def show_no_dimension_selected_message(self) -> None:
+        """Display cancellation feedback when dimension selection ends empty."""
+        ...
+
+    def show_no_currency_selected_message(self) -> None:
+        """Display cancellation feedback when currency selection ends empty."""
+        ...
+
+    def show_no_data_message(
+        self,
+        start_month: Month,
+        end_month: Month,
+        dimension: AggregationDimension,
+        status_scope: AccountStatusScope,
+        currency_code: str | None,
+    ) -> None:
+        """Display feedback for valid requests with no grouped results."""
+        ...
+
+    def display_history_aggregation_report(
+        self,
+        result: HistoryAggregationResult,
+    ) -> None:
+        """Display grouped balances for a successful history aggregation request."""
         ...
 
     def show_error(self, message: str) -> None:
