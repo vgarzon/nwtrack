@@ -82,7 +82,7 @@ Expected outcomes:
 - Duplicate balance entries for the same account and month are rejected with clear validation
 - Existing balance update, delete, roll-forward, and transfer workflows remain unchanged during this phase
 
-### [ ] Phase 13: Tag Schema Foundation
+### [X] Phase 13: Tag Schema Foundation
 
 Goal:
 Add controlled tags and account-to-tag associations in the data model.
