@@ -10,6 +10,7 @@ from tests.helpers import init_db_tables_w_entities
 import nwtrack.application.use_cases.export_tables_csv
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.use_cases.export_tables_csv import (
+    ExportTablesCSVCLI,
     ExportTablesCSVInteractive,
 )
 from nwtrack.bootstrap.container import Container, Lifetime
@@ -237,3 +238,52 @@ def test_export_tables_csv_includes_institutions_and_tags_when_present(
         "1,2",
         "2,1",
     ]
+
+
+def test_export_tables_cli_includes_richer_table_set(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    tmp_path,
+) -> None:
+    """The non-interactive export path should write the richer Phase 21 table set."""
+    from rich.console import Console
+
+    from nwtrack.application.use_cases.export_tables_csv import ExportCSV
+
+    init_db_tables_w_entities(configured_container, sample_entities)
+    uow: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow:
+        institution_id = uow.institutions.insert(
+            Institution(name="Chase", description="Primary bank")
+        )
+        growth_id = uow.tags.insert(Tag(name="growth", description="Long-term"))
+        income_id = uow.tags.insert(Tag(name="income", description="Income focused"))
+        account = uow.accounts.get_by_id(1)
+        assert account is not None
+        account.institution_id = institution_id
+        uow.accounts.update(account)
+        uow.tags.replace_for_account(1, [income_id, growth_id])
+
+    exporter: ExportCSV = configured_container.resolve(ExportCSV)
+    console = Console(record=True)
+    ExportTablesCSVCLI(exporter=exporter, console=console).run(
+        target_dir=str(tmp_path),
+        create=False,
+    )
+
+    for table_name in [
+        "currencies",
+        "categories",
+        "institutions",
+        "tags",
+        "accounts",
+        "account_tags",
+        "balances",
+        "exchange_rates",
+    ]:
+        assert (tmp_path / f"{table_name}.csv").exists()
+
+    output = console.export_text()
+    assert "Exported 1 'institutions' records" in output
+    assert "Exported 2 'tags' records" in output
+    assert "Exported 2 'account_tags' records" in output
