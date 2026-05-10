@@ -52,6 +52,11 @@ class ExportTablesCSVBase:
         """
         export_summary = self._exporter.export_tables_to_dir(target_dir)
         for table_name, csv_path, n_records in export_summary:
+            if n_records == 0:
+                self._console.print(
+                    f"[info]Skipped empty[/info] '[bold]{table_name}[/bold]' table."
+                )
+                continue
             self._console.print(
                 f"[success]Exported[/success] {n_records} '[bold]{table_name}[/bold]' "
                 f"[success]records to[/success] [bold]{csv_path}[/bold]"
