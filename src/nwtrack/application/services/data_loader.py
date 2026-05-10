@@ -172,10 +172,16 @@ class InitDataService:
     def _import_records(self, records: dict[str, list[dict]]) -> None:
         """Import the supported CSV bundle into the database."""
         with self._uow() as uow:
+            session = getattr(uow, "_session", None)
+            if session is None:
+                raise ValueError("Unit of work session is unavailable for CSV import.")
+
             for name in self.IMPORT_ENTITY_TABLE_NAMES:
                 repo = getattr(uow, name)
                 entities = repo.hydrate_many(records[name])
-                repo.insert_many(entities)
+                for entity in entities:
+                    session.merge(entity)
+            session.flush()
 
             account_tag_map: dict[int, list[int]] = {}
             for row in records["account_tags"]:
