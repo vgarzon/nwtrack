@@ -15,6 +15,7 @@ from nwtrack.infra.persistence.orm.models import (
     NetWorth,
     Side,
     Status,
+    Tag,
 )
 
 __all__ = [
@@ -27,4 +28,5 @@ __all__ = [
     "NetWorth",
     "Side",
     "Status",
+    "Tag",
 ]
