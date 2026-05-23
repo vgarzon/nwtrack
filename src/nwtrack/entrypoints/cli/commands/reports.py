@@ -25,7 +25,14 @@ def category_summary_report_interactive():
 
 
 @reports_app.command("networth-history")
-def networth_history_report_interactive(n_months: int = 12, n_years: int | None = None):
+def networth_history_report_interactive(
+    n_months: int = 12,
+    n_years: int | None = None,
+    status_scope: Annotated[
+        AccountStatusScope,
+        typer.Option("--status-scope"),
+    ] = AccountStatusScope.ALL,
+):
     """
     Generate a networth history report interactively.
 
@@ -33,6 +40,7 @@ def networth_history_report_interactive(n_months: int = 12, n_years: int | None 
         n_months (int): Number of months to include in the report, defaults to 12
         n_years (int | None): Number of years to include in the report,
             overrides n_months if provided
+        status_scope: Account status filter, defaults to all
     """
     import nwtrack.application.use_cases.report_networth_history as report_networth
 
@@ -46,7 +54,7 @@ def networth_history_report_interactive(n_months: int = 12, n_years: int | None 
         )
         n_months = 12
 
-    sys.exit(report_networth.main(n_months=n_months))
+    sys.exit(report_networth.main(n_months=n_months, status_scope=status_scope))
 
 
 @reports_app.command("balances-aggregate")
@@ -87,7 +95,7 @@ def balances_aggregate_history_report(
     status_scope: Annotated[
         AccountStatusScope,
         typer.Option("--status-scope"),
-    ] = AccountStatusScope.ACTIVE,
+    ] = AccountStatusScope.ALL,
 ):
     """Generate a grouped history balance report."""
     from nwtrack.application.use_cases import (

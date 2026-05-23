@@ -44,13 +44,17 @@ class NetworthHistoryReport:
         self._aggregation_report = aggregation_report
 
     def run(
-        self, n_months: int = 12, currency_code: str = "USD"
+        self,
+        n_months: int = 12,
+        currency_code: str = "USD",
+        status_scope: AccountStatusScope = AccountStatusScope.ALL,
     ) -> OperationResult[None]:
         """Run the networth history report.
 
         Args:
             n_months: Number of months to include in the report, defaults to 12
             currency_code: Currency code for the report, defaults to "USD"
+            status_scope: Account status filter, defaults to ALL
 
         Returns:
             OperationResult indicating success/failure
@@ -61,7 +65,7 @@ class NetworthHistoryReport:
         available_months = self._fetcher.get_available_aggregation_months(
             AggregationDimension.SIDE,
             currency_code=currency_code,
-            status_scope=AccountStatusScope.ACTIVE,
+            status_scope=status_scope,
         )
         selected_months = available_months[-n_months:]
 
@@ -88,7 +92,7 @@ class NetworthHistoryReport:
                 end_month=selected_months[-1],
                 dimension=AggregationDimension.SIDE,
                 currency_code=currency_code,
-                status_scope=AccountStatusScope.ACTIVE,
+                status_scope=status_scope,
             )
         )
         if not aggregation_result.success or aggregation_result.data is None:
@@ -113,12 +117,17 @@ class NetworthHistoryReport:
         return OperationResult(success=True)
 
 
-def main(n_months: int = 12, currency_code: str = "USD") -> int:
+def main(
+    n_months: int = 12,
+    currency_code: str = "USD",
+    status_scope: AccountStatusScope = AccountStatusScope.ALL,
+) -> int:
     """Main entry point for networth history report script.
 
     Args:
         n_months: Number of months to include in the report, defaults to 12
         currency_code: Currency code for the report, defaults to "USD"
+        status_scope: Account status filter, defaults to ALL
 
     Returns:
         Exit code: 0 on success, 1 on failure
@@ -164,7 +173,7 @@ def main(n_months: int = 12, currency_code: str = "USD") -> int:
     )
 
     result: OperationResult[None] = container.resolve(NetworthHistoryReport).run(
-        n_months, currency_code
+        n_months, currency_code, status_scope
     )
     return 0 if result.success else 1
 
