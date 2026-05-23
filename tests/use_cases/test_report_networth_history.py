@@ -7,7 +7,7 @@ import re
 import pytest
 from tests.helpers import init_db_tables_w_entities
 
-from nwtrack.application.dto import OperationResult
+from nwtrack.application.dto import AccountStatusScope, OperationResult
 from nwtrack.application.use_cases.report_networth_history import (
     NetworthHistoryReport,
 )
@@ -79,7 +79,9 @@ def test_report_networth_history_default(
     sample_entities: dict[str, list],
 ) -> None:
     init_db_tables_w_entities(configured_container, sample_entities)
-    configured_container.resolve(NetworthHistoryReport).run(n_months=12)
+    configured_container.resolve(NetworthHistoryReport).run(
+        n_months=12, status_scope=AccountStatusScope.ACTIVE
+    )
     captured_out: str = configured_container.resolve(Console).export_text()
     assert len(captured_out.splitlines()) == 25
     assert re.search(r"2024-06 to 2025-11", captured_out)
@@ -92,7 +94,9 @@ def test_report_networth_history_n_months(
     sample_entities: dict[str, list],
 ) -> None:
     init_db_tables_w_entities(configured_container, sample_entities)
-    configured_container.resolve(NetworthHistoryReport).run(n_months=2)
+    configured_container.resolve(NetworthHistoryReport).run(
+        n_months=2, status_scope=AccountStatusScope.ACTIVE
+    )
     captured_out: str = configured_container.resolve(Console).export_text()
     assert len(captured_out.splitlines()) == 15
     assert re.search(r"2025-10 to 2025-11", captured_out)
@@ -100,6 +104,36 @@ def test_report_networth_history_n_months(
     assert re.search(r".+2025-10.+900.+700.+200.+\s{9}", captured_out)
     assert re.search(r".+2025-11.+700.+600.+100.+-100", captured_out)
     assert re.search(r".+-200.+-100.+-100", captured_out)
+
+
+def test_report_networth_history_all_scope_includes_inactive_accounts(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+) -> None:
+    """Default ALL scope must include inactive accounts in the aggregated totals."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+    # Default call — status_scope=ALL is the new default
+    configured_container.resolve(NetworthHistoryReport).run(n_months=12)
+    captured_out: str = configured_container.resolve(Console).export_text()
+    # The inactive mortgage account (id=4) has a -1800 balance in 2024-06.
+    # With ALL scope: liabilities = 600 (credit card) + 1800 (mortgage) = 2400,
+    # net = 2300 (assets) - 2400 (liabilities) = -100.
+    assert re.search(r"2024-06 to 2025-11", captured_out)
+    assert re.search(r".+2024-06.+2,300.+2,400.+-100", captured_out)
+
+
+def test_report_networth_history_active_scope_excludes_inactive_accounts(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+) -> None:
+    """Explicit ACTIVE scope must exclude inactive accounts from the totals."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+    configured_container.resolve(NetworthHistoryReport).run(
+        n_months=12, status_scope=AccountStatusScope.ACTIVE
+    )
+    captured_out: str = configured_container.resolve(Console).export_text()
+    # With ACTIVE scope: mortgage account excluded; 2024-06 liabilities = 600 only.
+    assert re.search(r".+2024-06.+2,300.+600.+1,700", captured_out)
 
 
 def test_report_networth_history_no_data_warning_is_preserved(
