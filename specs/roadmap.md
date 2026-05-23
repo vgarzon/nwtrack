@@ -164,7 +164,30 @@ Expected outcomes:
 - Compatibility differences are documented in release notes or feature specs
 - Mixed-currency compatibility reporting fails clearly until explicit conversion-based reporting exists
 
-### [ ] Phase 20: Institution Requirement Migration Plan
+### [X] Phase 20: Networth History All-Account Default
+
+Goal:
+Fix inaccurate historical networth reports by changing the default account filter from active-only to all accounts, and expose an opt-in flag for the previous active-only behavior.
+
+Background:
+`nwtrack reports networth-history` currently applies the current account status to all historical months, so accounts that were active in the past but are now inactive or closed are silently excluded from every historical data point.  Inactive and closed accounts should carry a zero balance, so including all accounts in historical aggregation produces a more accurate picture of networth over time without requiring schema changes.
+
+Expected outcomes:
+
+- `nwtrack reports networth-history` defaults to `AccountStatusScope.ALL`, including balances from accounts regardless of their current status
+- The command accepts an `--active-only` flag that restores the previous `AccountStatusScope.ACTIVE` behavior for users who want to filter on current status
+- `NetworthHistoryReport.run()` and its `main()` entry point accept and propagate a `status_scope` parameter so the scope is injectable and testable
+- The CLI command wires `--active-only` to `status_scope=AccountStatusScope.ACTIVE` and passes the resolved scope through to the use case
+- Tests cover the default all-account path and the `--active-only` opt-in path
+- Existing `balances-aggregate` and `balances-aggregate-history` commands are unchanged; they already expose `--status-scope` directly
+
+Validation:
+
+- `pytest` passes with tests for both status scope paths on the networth history use case
+- `ruff` and `mypy` pass
+- Manual verification: running `nwtrack reports networth-history` against a database with inactive accounts produces totals that include those accounts; running with `--active-only` excludes them
+
+### [ ] Phase 21: Institution Requirement Migration Plan
 
 Goal:
 Prepare the product to make institutions required on accounts in a later change without disrupting current users.
@@ -175,7 +198,7 @@ Expected outcomes:
 - CLI and validation rules can identify and remediate missing institutions
 - The spec defines the cutover criteria for making institution assignment mandatory
 
-### [X] Phase 21: CSV Export Coverage For Institutions And Tags
+### [X] Phase 22: CSV Export Coverage For Institutions And Tags
 
 Goal:
 Extend the existing CSV export workflow so exported table sets include the newer account classification tables needed for data portability.
@@ -186,7 +209,28 @@ Expected outcomes:
 - Exported CSV table sets are defined to remain consistent with the supported import format
 - CSV export behavior moves closer to full local backup and recovery for the current data model
 
-### [X] Phase 22: CSV Import Command And Round-Trip Foundation
+### [ ] Phase 23: Account Status History
+
+Goal:
+Record account status changes over time so that historical reports can apply each account's status as of each reporting month rather than projecting the current status backward.
+
+Background:
+Phase 20 improves historical accuracy by including all accounts unconditionally, which works as long as inactive accounts carry zero balances.  The root cause remains: the data model has no record of when an account's status changed.  This phase closes that gap with a dedicated status-history table and updates aggregation queries to join against it per month.
+
+Expected outcomes:
+
+- A new `account_status_history` table exists with columns `id`, `account_id`, `status`, and `effective_month` (`YYYY-MM`), where each row records the status that became effective at a given month
+- A database migration adds the table and seeds one initial row per account using the account's current status and a representative effective month derived from the account's earliest balance record or creation date
+- `AccountRepository` (or a dedicated status-history repository) exposes methods to insert status-history rows and look up an account's effective status for a given month
+- Aggregation queries in `ReportingQueries` can join `account_status_history` to filter by effective status at each balance month, replacing the current join on `Account.status`
+- `AccountStatusScope` semantics are updated or extended so reporting layers can request historically-accurate status filtering
+- `nwtrack reports networth-history` and aggregated history reports use the per-month effective status when available
+- The seeding migration logic and its assumptions are documented in the feature spec
+- Tests cover: status-history inserts, effective-status lookup at a given month, and history aggregation filtered by historical status across a multi-month range
+- `ruff`, `mypy`, and `pytest` pass
+- CSV export and import include `account_status_history` in supported table sets, or the feature spec explicitly defers that to a follow-on phase
+
+### [X] Phase 24: CSV Import Command And Round-Trip Foundation
 
 Goal:
 Add a first-class CLI import workflow for CSV table data and align import behavior with the current schema and portability goals.
@@ -199,7 +243,7 @@ Expected outcomes:
 - CSV import behavior is idempotent, with exact semantics defined in the feature spec
 - Export/import CSV round trips preserve the same database data for supported tables
 
-### [ ] Phase 23: Reporting UX Options
+### [ ] Phase 25: Reporting UX Options
 
 Goal:
 Improve aggregated reporting ergonomics with alternative history layouts and export-friendly output.
@@ -210,7 +254,7 @@ Expected outcomes:
 - Non-interactive aggregated history reporting can emit CSV output for downstream analysis
 - Output-format options are defined in a way that preserves current default behavior unless the user opts in
 
-### [ ] Phase 24: Single-Currency Conversion Reporting
+### [ ] Phase 26: Single-Currency Conversion Reporting
 
 Goal:
 Add conversion-backed reporting so aggregated views can be rendered in one explicit reporting currency instead of failing on mixed-currency totals.
