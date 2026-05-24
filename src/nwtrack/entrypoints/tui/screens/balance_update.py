@@ -133,7 +133,7 @@ class BalanceUpdateScreen(Screen):
             BalanceEditModal(
                 account_name=balance.account.name,
                 month=self._month,
-                current_amount_cents=balance.amount,
+                current_amount=balance.amount,
             )
         )
 
@@ -161,4 +161,4 @@ class BalanceUpdateScreen(Screen):
 
     @staticmethod
     def _format_amount(amount: int) -> str:
-        return f"${amount / 100:,.2f}"
+        return f"{amount:,}"
