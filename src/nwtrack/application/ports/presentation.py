@@ -1228,3 +1228,57 @@ class BalanceTransferPresenter(Protocol):
             message: Success message string
         """
         ...
+
+
+class AdminListUnassignedPresenter(Protocol):
+    """Presenter for the admin list-unassigned diagnostic command."""
+
+    def display_unassigned(self, accounts: list[Account]) -> None:
+        """Display accounts that have no institution assigned."""
+        ...
+
+    def show_empty_state(self) -> None:
+        """Display a positive message when all accounts have institutions."""
+        ...
+
+
+class AdminAssignInstitutionsPresenter(Protocol):
+    """Presenter for the admin assign-institutions remediation command."""
+
+    def show_header(self) -> None:
+        """Display the workflow header."""
+        ...
+
+    def display_unassigned(self, accounts: list[Account]) -> None:
+        """Display remaining accounts with no institution."""
+        ...
+
+    def show_empty_state(self) -> None:
+        """Display message when no accounts remain unassigned."""
+        ...
+
+    def select_account(self, accounts: list[Account]) -> int | None:
+        """Prompt user to pick an account by ID; return None to exit."""
+        ...
+
+    def select_institution(self, institutions: list[Institution]) -> int | None:
+        """Prompt user to pick an institution by index; return None to exit."""
+        ...
+
+    def show_no_institutions_error(self) -> None:
+        """Display error when no institutions exist in the database."""
+        ...
+
+    def confirm_assignment(self, account: Account, institution: Institution) -> bool:
+        """Prompt user to confirm the proposed assignment."""
+        ...
+
+    def show_assignment_success(
+        self, account: Account, institution: Institution
+    ) -> None:
+        """Display success message after one assignment is saved."""
+        ...
+
+    def show_session_summary(self, assigned_count: int) -> None:
+        """Display how many institutions were assigned in this session."""
+        ...
