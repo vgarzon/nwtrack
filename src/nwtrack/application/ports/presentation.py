@@ -6,6 +6,7 @@ and presentation adapters (UI implementations). Use cases depend on these
 protocols, not on concrete UI implementations like Rich.
 """
 
+from pathlib import Path
 from typing import Protocol
 
 from nwtrack.application.dto import (
@@ -809,6 +810,132 @@ class DBInitCSVPresenter(Protocol):
 
     def show_error(self, message: str) -> None:
         """Display error message."""
+        ...
+
+
+class ImportTablesCSVPresenter(Protocol):
+    """Presenter for CSV table import workflow."""
+
+    def show_header(self) -> None:
+        """Display workflow header."""
+        ...
+
+    def prompt_for_source_dir(self, default: str) -> str:
+        """Prompt user for source directory path.
+
+        Args:
+            default: Pre-filled default value for the prompt.
+
+        Returns:
+            Source directory path as entered by the user.
+        """
+        ...
+
+    def show_cancellation(self) -> None:
+        """Display cancellation message."""
+        ...
+
+    def show_import_success(self, source_dir: Path) -> None:
+        """Display successful import message.
+
+        Args:
+            source_dir: Directory from which tables were imported.
+        """
+        ...
+
+    def show_error(self, message: str) -> None:
+        """Display error message.
+
+        Args:
+            message: Error description.
+        """
+        ...
+
+
+class ExportTablesCSVPresenter(Protocol):
+    """Presenter for CSV table export workflow."""
+
+    def show_header(self) -> None:
+        """Display workflow header."""
+        ...
+
+    def prompt_for_target_dir(self, default: str) -> str:
+        """Prompt user for target directory path.
+
+        Args:
+            default: Pre-filled default value for the prompt.
+
+        Returns:
+            Target directory path as entered by the user.
+        """
+        ...
+
+    def confirm_create_directory(self, target_dir: str) -> bool:
+        """Confirm directory creation with the user.
+
+        Args:
+            target_dir: Directory path that would be created.
+
+        Returns:
+            True if the user confirms creation.
+        """
+        ...
+
+    def show_creating_directory(self, target_dir: Path) -> None:
+        """Display directory creation message.
+
+        Args:
+            target_dir: Directory being created.
+        """
+        ...
+
+    def show_directory_create_error(self, target_dir: Path, message: str) -> None:
+        """Display directory creation failure message.
+
+        Args:
+            target_dir: Directory that could not be created.
+            message: Underlying error description.
+        """
+        ...
+
+    def show_directory_not_found_error(self, target_dir: Path) -> None:
+        """Display missing directory error for non-interactive CLI mode.
+
+        Args:
+            target_dir: Directory that does not exist.
+        """
+        ...
+
+    def show_not_a_directory_error(self, target_dir: Path) -> None:
+        """Display path-is-not-a-directory error.
+
+        Args:
+            target_dir: Path that exists but is not a directory.
+        """
+        ...
+
+    def show_cancellation(self) -> None:
+        """Display cancellation message."""
+        ...
+
+    def show_table_exported(
+        self, table_name: str, csv_path: Path, n_records: int
+    ) -> None:
+        """Display per-table export success message.
+
+        Args:
+            table_name: Name of the exported table.
+            csv_path: Path to the written CSV file.
+            n_records: Number of records exported.
+        """
+        ...
+
+    def show_table_skipped(self, table_name: str) -> None:
+        """Display empty-table skip message.
+
+        Args:
+            table_name: Name of the skipped table.
+        """
         ...
 
 
