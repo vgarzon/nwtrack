@@ -1,80 +1,57 @@
 # Phase 27 — TUI Month Selection and Balance Screen Polish: Plan
 
-## Task Group 1 — Amount Parsing Helper
+## [X] Task Group 1 — Amount Parsing Helper
 
-These are pure functions with no Textual dependency, testable in isolation.
-
-1.1 Write `parse_amount_input(raw: str) -> int` in a shared TUI utilities module
-    (e.g. `entrypoints/tui/utils.py`). Accepts integer or decimal string, returns cents,
-    raises `ValueError` on invalid input (empty, non-numeric, negative).
-1.2 Write unit tests for `parse_amount_input` covering: valid integer, valid decimal,
-    empty string, non-numeric string, negative value, whitespace-only.
+1.1 `parse_amount_input(raw: str) -> int` implemented in `entrypoints/tui/utils.py`.
+1.2 Unit tests in `tests/entrypoints/test_tui_utils.py` — 9 cases, all passing.
 
 ---
 
-## Task Group 2 — Month Picker Logic
+## [X] Task Group 2 — Month Picker Logic
 
-2.1 Identify how to fetch available months from `FetchService` or a direct UoW query.
-    Confirm the method returns months sorted (ascending or descending) and what type
-    they are (`Month` value objects or strings).
-2.2 Write a helper `months_to_grid(months: list[Month], cols: int = 3) -> list[list[Month]]`
-    that arranges months into a row-major grid for display.
-2.3 Write unit tests for `months_to_grid` covering: empty list, fewer months than one row,
-    exact multiple of cols, non-multiple of cols.
+2.1 `FetchService.get_recent_months()` confirmed as the source — returns `list[Month]`
+    descending. Default `n_months=12`; pass a large value or use `get_balance_count_per_month()`
+    directly to get all available months.
+2.2 `months_to_grid(months, cols=3)` implemented in `entrypoints/tui/utils.py`.
+2.3 Unit tests in `tests/entrypoints/test_tui_utils.py` — 5 cases, all passing.
 
 ---
 
-## Task Group 3 — MonthPickerModal
+## [X] Task Group 3 — MonthPickerModal
 
-3.1 Create `entrypoints/tui/screens/month_picker.py` with `MonthPickerModal(ModalScreen[Month | None])`.
-3.2 Constructor accepts `current_month: Month` and `available_months: list[Month]`.
-3.3 Compose the modal: title label, month grid (static text or Buttons in a Grid layout),
-    Cancel/Select buttons or pure keybinding-driven selection.
-3.4 Pre-select the cell matching `current_month` on mount.
-3.5 Enter confirms the focused month and dismisses with that `Month`; Escape dismisses
-    with `None`.
-3.6 Arrow key navigation moves focus within the grid.
+3.1–3.6 `MonthPickerModal(ModalScreen[Month | None])` implemented in
+    `entrypoints/tui/screens/month_picker.py`. Button grid via Textual `Grid`, 3 columns.
+    Pre-selects current month on mount. `Binding("escape", "cancel")` dismisses with `None`.
+    Button press parses the month from the button ID and dismisses with the `Month`.
 
 ---
 
-## Task Group 4 — BalanceEditModal
+## [X] Task Group 4 — BalanceEditModal
 
-4.1 Create `entrypoints/tui/screens/balance_edit.py` with `BalanceEditModal(ModalScreen[int | None])`.
-4.2 Constructor accepts `account_name: str`, `month: Month`, `current_amount_cents: int`.
-4.3 Compose the modal: account/month/current-amount labels, `Input` widget, hidden error label,
-    Cancel/Save buttons (or Enter/Escape keybindings).
-4.4 On submit: call `parse_amount_input()`; on `ValueError` show error label and keep modal open;
-    on success dismiss with the parsed cents value.
-4.5 Escape dismisses with `None` at any point.
+4.1–4.5 `BalanceEditModal(ModalScreen[int | None])` implemented in
+    `entrypoints/tui/screens/balance_edit.py`. Shows account name, month, current amount,
+    and an `Input` field. `on_input_submitted` calls `parse_amount_input()`; on `ValueError`
+    sets error label text and returns without dismissing. Escape cancels via action.
 
 ---
 
-## Task Group 5 — BalanceUpdateScreen Wiring
+## [X] Task Group 5 — BalanceUpdateScreen Wiring
 
-5.1 Remove the inline `Input` widget and its `display` toggling from `BalanceUpdateScreen`.
-5.2 Remove the `net_worth: reactive[int]` declaration; confirm `_refresh_networth()` is the
-    sole update path and is called on mount and after each successful balance update.
-5.3 Update the screen title/header to show `"Update Balances — {month}"` using the currently
-    loaded `Month`.
-5.4 Add `BINDINGS` entry `("m", "pick_month", "Change month")` and implement
-    `action_pick_month()`:
-    - Fetch available months
-    - `await push_screen_wait(MonthPickerModal(self._current_month, available_months))`
-    - On non-None result: update `self._current_month`, reload balance rows, refresh header,
-      refresh net worth
-5.5 Update `on_data_table_row_selected()`:
-    - Remove inline Input toggling
-    - `await push_screen_wait(BalanceEditModal(account_name, month, current_cents))`
-    - On non-None result: write balance update via `UnitOfWork`, update cell, refresh net worth
+5.1 Inline `Input` widget and `on_key`/`on_input_submitted` handlers removed.
+5.2 `net_worth: reactive[int]` declaration removed; `_refresh_networth()` is sole update path.
+5.3 `self.sub_title` set to `"Update Balances — {month}"` in `_update_header()`.
+5.4 `Binding("m", "pick_month", "Change month")` added; `action_pick_month()` implemented
+    with `push_screen_wait(MonthPickerModal(...))`.
+5.5 `on_data_table_row_selected` now `async`; uses `push_screen_wait(BalanceEditModal(...))`.
 
 ---
 
-## Task Group 6 — Quality Gates
+## [X] Task Group 6 — Quality Gates
 
-6.1 Run `just check` (ruff + mypy + pytest) and fix any issues.
-6.2 Confirm `reactive[int]` declaration is absent from `balance_update.py` (grep check).
-6.3 Confirm `Input` display-toggling logic is absent from `balance_update.py`.
-6.4 Run `nwtrack tui launch` manually and walk through the validation checklist.
+6.1 `just check` passes — 262 tests, ruff clean, mypy clean.
+6.2 `reactive[int]` declaration absent from `balance_update.py` (grep confirmed).
+6.3 `inp.display` toggling absent from `balance_update.py` (grep confirmed).
+6.4 Manual walkthrough pending (see validation.md).
 
 ---
 
