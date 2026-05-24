@@ -84,7 +84,7 @@ class RichExportTablesCSVPresenter:
         self._console.print("[cancel]CSV export aborted by user.[/cancel]")
 
     def show_table_exported(
-        self, table_name: str, csv_path: Path, n_records: int
+        self, table_name: str, csv_path: str, n_records: int
     ) -> None:
         self._console.print(
             f"[success]Exported[/success] {n_records} '[bold]{table_name}[/bold]' "

@@ -919,7 +919,7 @@ class ExportTablesCSVPresenter(Protocol):
         ...
 
     def show_table_exported(
-        self, table_name: str, csv_path: Path, n_records: int
+        self, table_name: str, csv_path: str, n_records: int
     ) -> None:
         """Display per-table export success message.
 
