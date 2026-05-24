@@ -21,41 +21,19 @@ Phase 27 is complete when:
 just check   # ruff + mypy + pytest
 ```
 
-### Specific test assertions required
+**Status: PASSED** — 262 tests, ruff clean, mypy clean (181 source files).
 
-**`parse_amount_input` (in `tests/entrypoints/tui/test_utils.py` or similar):**
+### Specific test assertions — PASSED
 
-| Input | Expected outcome |
-|---|---|
-| `"8500"` | `850000` (cents) |
-| `"8500.00"` | `850000` (cents) |
-| `"8500.5"` | `850050` (cents) |
-| `"  1000  "` | `100000` (whitespace stripped) |
-| `""` | `ValueError` |
-| `"abc"` | `ValueError` |
-| `"-500"` | `ValueError` |
-| `"0"` | `0` (zero balance is valid) |
+Tests in `tests/entrypoints/test_tui_utils.py` (14 cases, all passing):
+- `parse_amount_input`: 9 cases covering valid int/decimal, whitespace, zero, empty, non-numeric, negative
+- `months_to_grid`: 5 cases covering empty list, partial row, exact multiple, non-multiple, single month
 
-**`months_to_grid`:**
-
-| Input | Expected outcome |
-|---|---|
-| `[]` | `[]` |
-| 2 months, cols=3 | One row with 2 entries |
-| 3 months, cols=3 | One row with 3 entries |
-| 4 months, cols=3 | Two rows: [3, 1] |
-| 6 months, cols=3 | Two rows of 3 |
-
-### Grep checks (confirm prototype debt is removed)
+### Grep checks — PASSED
 
 ```bash
-# reactive[int] declaration must be gone
-grep -n "reactive\[int\]" src/nwtrack/entrypoints/tui/screens/balance_update.py
-# should produce no output
-
-# Inline Input display toggling must be gone
-grep -n "inp.display" src/nwtrack/entrypoints/tui/screens/balance_update.py
-# should produce no output
+grep -n "reactive\[int\]" src/nwtrack/entrypoints/tui/screens/balance_update.py  # no output
+grep -n "inp.display" src/nwtrack/entrypoints/tui/screens/balance_update.py       # no output
 ```
 
 ---
