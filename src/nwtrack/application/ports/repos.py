@@ -141,6 +141,10 @@ class AccountsRepository(Repository[Account], Protocol):
         """Update account description."""
         ...
 
+    def get_without_institution(self) -> list[Account]:
+        """Get all accounts where institution_id is NULL, ordered by name."""
+        ...
+
 
 class InstitutionsRepository(Repository[Institution], Protocol):
     """Protocol for institution repository operations."""

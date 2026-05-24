@@ -71,6 +71,12 @@ class FetchService:
             institutions = uow.institutions.get_all()
         return institutions
 
+    def get_accounts_without_institution(self) -> list[Account]:
+        """Get accounts where institution_id is NULL, ordered by name."""
+        with self._uow() as uow:
+            accounts = uow.accounts.get_without_institution()
+        return accounts
+
     def get_all_tags(self) -> list[Tag]:
         """Get tags for account workflow selection."""
         with self._uow() as uow:

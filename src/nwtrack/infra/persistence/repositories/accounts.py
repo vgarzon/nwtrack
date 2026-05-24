@@ -106,6 +106,17 @@ class AccountsRepository(AccountsRepositoryProtocol):
         result = self._session.execute(select(Account)).scalars()
         return list(result)
 
+    def get_without_institution(self) -> list[Account]:
+        """Get all accounts where institution_id is NULL, ordered by name.
+
+        Returns:
+            List of account objects with no institution assigned
+        """
+        result = self._session.execute(
+            select(Account).where(Account.institution_id == None).order_by(Account.name)  # noqa: E711
+        ).scalars()
+        return list(result)
+
     def get_dict_id(self) -> dict[int, Account]:
         """Get all accounts in a dictionary indexed by account id.
 
