@@ -209,7 +209,38 @@ Expected outcomes:
 - Exported CSV table sets are defined to remain consistent with the supported import format
 - CSV export behavior moves closer to full local backup and recovery for the current data model
 
-### [ ] Phase 23: Account Status History
+### [X] Phase 23: CSV Import Command And Round-Trip Foundation
+
+Goal:
+Add a first-class CLI import workflow for CSV table data and align import behavior with the current schema and portability goals.
+
+Expected outcomes:
+
+- A new `import` CLI command group exists with a `tables-csv` command
+- The CSV import use case updates the current initialization/import path to include `institutions` and `tags`
+- Import can create the database file and required schema when starting from an empty or missing database
+- CSV import behavior is idempotent, with exact semantics defined in the feature spec
+- Export/import CSV round trips preserve the same database data for supported tables
+
+### [X] Phase 24: CSV Presenter Protocol Migration
+
+Goal:
+Complete the presenter protocol migration for the two remaining use cases that still performed
+direct console I/O, decoupling all interactive use cases from the presentation layer before
+TUI development begins.
+
+Expected outcomes:
+
+- `ImportTablesCSVPresenter` and `ExportTablesCSVPresenter` Protocol interfaces defined in
+  `application/ports/presentation.py`
+- `RichImportTablesCSVPresenter` and `RichExportTablesCSVPresenter` adapters implemented in
+  `entrypoints/cli/adapters/csv_presenters.py`
+- `import_tables_csv` and `export_tables_csv` use cases refactored to accept presenter via
+  constructor; direct Rich imports removed from both use case modules
+- All interactive use cases are now fully decoupled from the presentation layer
+- Tests updated to use mock presenters; presenter interaction assertions added for all paths
+
+### [ ] Phase 25: Account Status History
 
 Goal:
 Record account status changes over time so that historical reports can apply each account's status as of each reporting month rather than projecting the current status backward.
@@ -229,37 +260,6 @@ Expected outcomes:
 - Tests cover: status-history inserts, effective-status lookup at a given month, and history aggregation filtered by historical status across a multi-month range
 - `ruff`, `mypy`, and `pytest` pass
 - CSV export and import include `account_status_history` in supported table sets, or the feature spec explicitly defers that to a follow-on phase
-
-### [X] Phase 24: CSV Import Command And Round-Trip Foundation
-
-Goal:
-Add a first-class CLI import workflow for CSV table data and align import behavior with the current schema and portability goals.
-
-Expected outcomes:
-
-- A new `import` CLI command group exists with a `tables-csv` command
-- The CSV import use case updates the current initialization/import path to include `institutions` and `tags`
-- Import can create the database file and required schema when starting from an empty or missing database
-- CSV import behavior is idempotent, with exact semantics defined in the feature spec
-- Export/import CSV round trips preserve the same database data for supported tables
-
-### [X] Phase 25: CSV Presenter Protocol Migration
-
-Goal:
-Complete the presenter protocol migration for the two remaining use cases that still performed
-direct console I/O, decoupling all interactive use cases from the presentation layer before
-TUI development begins.
-
-Expected outcomes:
-
-- `ImportTablesCSVPresenter` and `ExportTablesCSVPresenter` Protocol interfaces defined in
-  `application/ports/presentation.py`
-- `RichImportTablesCSVPresenter` and `RichExportTablesCSVPresenter` adapters implemented in
-  `entrypoints/cli/adapters/csv_presenters.py`
-- `import_tables_csv` and `export_tables_csv` use cases refactored to accept presenter via
-  constructor; direct Rich imports removed from both use case modules
-- All interactive use cases are now fully decoupled from the presentation layer
-- Tests updated to use mock presenters; presenter interaction assertions added for all paths
 
 ### [ ] Phase 26: Reporting UX Options
 

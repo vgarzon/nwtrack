@@ -31,7 +31,7 @@ changes.
   deferred.
 - `reports balances-aggregate` (single-month): already exposes `--status-scope`; default
   unchanged in this phase.
-- Schema changes, status-history tables, or per-month effective-status logic: see Phase 23.
+- Schema changes, status-history tables, or per-month effective-status logic: see Phase 25.
 - Deprecation warnings or user-facing messaging when `--status-scope active` is used.
 
 ---
