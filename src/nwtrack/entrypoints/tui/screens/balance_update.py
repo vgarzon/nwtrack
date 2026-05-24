@@ -3,7 +3,7 @@ Balance update screen for the nwtrack TUI.
 
 The screen owns the full balance update workflow directly — it calls FetchService
 and UnitOfWork rather than driving BalanceUpdater.run() through a presenter adapter.
-See specs/260523-tui-step2-textual-balance-prototype/requirements.md (Findings) for
+See specs/260523-phase-25-tui-textual-balance-prototype/requirements.md (Findings) for
 why the adapter-swap pattern is not viable here.
 """
 

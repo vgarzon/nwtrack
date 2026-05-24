@@ -240,7 +240,146 @@ Expected outcomes:
 - All interactive use cases are now fully decoupled from the presentation layer
 - Tests updated to use mock presenters; presenter interaction assertions added for all paths
 
-### [ ] Phase 25: Account Status History
+### [X] Phase 25: TUI Prototype — Textual Balance Update Screen
+
+Goal:
+Validate that Textual can drive the balance update workflow against a real database, prove (or
+characterize) the adapter-swap pattern in practice, and establish the foundation for the full TUI
+buildout.
+
+Background:
+Step 1 of the TUI transition (presenter protocol migration) is complete as of Phase 24. This phase
+executes Step 2: build one Textual screen end-to-end to surface real constraints before committing
+to the full transition design. See `specs/tui-scope.md` and
+`specs/260523-phase-25-tui-textual-balance-prototype/` for full scope and plan.
+
+Expected outcomes:
+
+- `textual` added as a project dependency
+- `nwtrack tui launch` entry point launches a Textual application
+- A balance update screen presents active accounts for the most recent month in a scrollable
+  editable grid; editing a row persists the change to the real database
+- Net worth for the selected month is displayed and updated after each balance change
+- A separate TUI composition root wires `FetchService` and `UnitOfWork` without modifying the
+  CLI composition root
+- The existing `nwtrack balances update` CLI command is unmodified and fully functional
+- The Protocol compatibility tension (synchronous `BalanceUpdatePresenter` vs. Textual's async
+  model) is investigated and the finding is documented in the spec
+- `ruff`, `mypy`, and `pytest` pass
+
+### [ ] Phase 26: TUI Screen Model Design
+
+Goal:
+Design the full TUI screen hierarchy, navigation model, and interaction conventions before
+incremental screen buildout begins. This is a design-only phase; no production code.
+
+Background:
+The Phase 25 prototype validated that Textual can drive the balance workflow and surfaced the
+screen-owned workflow pattern as the correct implementation approach. Phase 26 answers the
+structural questions the prototype deliberately left open: how users navigate between workflows,
+what the home entry point looks like, and how the month selection UX works.
+
+Expected outcomes:
+
+- A screen inventory document listing every planned TUI screen, its primary workflow, and the
+  navigation paths that lead to and from it
+- ASCII wireframes for the home menu and the balance update screen (with month selection)
+- Keyboard navigation conventions confirmed and documented
+- The edit input UX decision settled: inline cell, overlay modal, or below-table (current
+  prototype approach) — with rationale
+- Open design questions from `specs/tui-prototype.md` (month selection, nav model, input UX)
+  are answered in the design document
+- No new implementation; the prototype code in Phase 25 remains the baseline
+
+Validation:
+
+- Design document and wireframes exist in `specs/` and are reviewed before Phase 27 begins
+- The document answers all three "Recommended Starting Point" questions from `specs/tui-prototype.md`
+
+### [ ] Phase 27: TUI Month Selection and Balance Screen Polish
+
+Goal:
+Add month selection UX to the balance update screen and address the deferred items from the
+prototype that affect daily usability.
+
+Background:
+The Phase 25 prototype hardcodes the most recent available month. Month selection is the most
+immediate gap before the balance update screen is useful for real monthly workflows.
+
+Expected outcomes:
+
+- The balance update screen allows the user to navigate to a different month (mechanism per
+  Phase 26 design — modal picker, sidebar, or screen push)
+- The selected month is reflected in the screen header or subtitle
+- Invalid amount input shows an error message rather than silently closing the edit input
+- The `reactive[int]` net_worth field is either wired to drive the label reactively or removed
+  in favor of the current imperative `_refresh_networth()` approach — one or the other, not both
+- `ruff`, `mypy`, and `pytest` pass
+
+### [ ] Phase 28: TUI Home Screen and Navigation Shell
+
+Goal:
+Add a home menu screen and a screen stack so the TUI has a proper entry point and navigation
+hierarchy rather than launching directly into the balance update screen.
+
+Background:
+`tui-scope.md` defines the navigation model as a screen stack: home screen presents a workflow
+menu; selecting an item pushes the workflow screen; Escape pops back to home. This phase
+implements that skeleton.
+
+Expected outcomes:
+
+- `NWTrackApp.on_mount` pushes a home screen rather than `BalanceUpdateScreen` directly
+- The home screen presents at minimum: Balances, Reports (placeholder), Accounts (placeholder)
+- Selecting Balances navigates to the balance update screen (with month selection from Phase 27)
+- Escape from any workflow screen returns to the home screen
+- `ruff`, `mypy`, and `pytest` pass
+
+### [ ] Phase 29: TUI Report Screens
+
+Goal:
+Add TUI screens for the single-month and history aggregated balance reports so the primary
+read-only workflows are accessible from the TUI.
+
+Background:
+Phases 33 and 34 (Reporting UX Options and Single-Currency Conversion Reporting) define the
+reporting model that TUI report screens should surface. Phase 29 may proceed against the current
+reporting surface and be updated once those phases land, or it may be deferred until after them.
+
+Expected outcomes:
+
+- A net worth history screen displays the history aggregation report in a scrollable DataTable
+- A single-month aggregation screen accepts an aggregation dimension and renders grouped balances
+- Report screens are reachable from the home menu and return to home on Escape
+- `ruff`, `mypy`, and `pytest` pass
+
+### [ ] Phase 30: TUI Account and Administrative Screens
+
+Goal:
+Add TUI screens for account listing and management, and for the administrative CRUD workflows
+(categories, institutions, tags).
+
+Expected outcomes:
+
+- An account list screen shows all accounts with status, category, institution, and tags
+- Account create/edit workflows are accessible from the account list screen
+- Category, institution, and tag list and create/edit screens exist under an Admin section
+- All screens are reachable from the home menu navigation hierarchy
+- `ruff`, `mypy`, and `pytest` pass
+
+### [ ] Phase 31: TUI Balance Operations
+
+Goal:
+Add TUI screens for balance roll-forward, delete, and transfer so the remaining balance
+workflows are accessible from the TUI.
+
+Expected outcomes:
+
+- Roll-forward, delete, and transfer balance operations are accessible from the TUI
+- These screens follow the screen-owned workflow pattern established in Phase 25
+- `ruff`, `mypy`, and `pytest` pass
+
+### [ ] Phase 32: Account Status History
 
 Goal:
 Record account status changes over time so that historical reports can apply each account's status as of each reporting month rather than projecting the current status backward.
@@ -261,7 +400,7 @@ Expected outcomes:
 - `ruff`, `mypy`, and `pytest` pass
 - CSV export and import include `account_status_history` in supported table sets, or the feature spec explicitly defers that to a follow-on phase
 
-### [ ] Phase 26: Reporting UX Options
+### [ ] Phase 33: Reporting UX Options
 
 Goal:
 Improve aggregated reporting ergonomics with alternative history layouts and export-friendly output.
@@ -272,7 +411,7 @@ Expected outcomes:
 - Non-interactive aggregated history reporting can emit CSV output for downstream analysis
 - Output-format options are defined in a way that preserves current default behavior unless the user opts in
 
-### [ ] Phase 27: Single-Currency Conversion Reporting
+### [ ] Phase 34: Single-Currency Conversion Reporting
 
 Goal:
 Add conversion-backed reporting so aggregated views can be rendered in one explicit reporting currency instead of failing on mixed-currency totals.
@@ -284,146 +423,7 @@ Expected outcomes:
 - Conversion rules and required exchange-rate inputs are defined clearly for reporting workflows
 - Compatibility and aggregated report commands can converge on accounting-correct single-currency output where conversion data exists
 
-### [X] Phase 28: TUI Prototype — Textual Balance Update Screen
-
-Goal:
-Validate that Textual can drive the balance update workflow against a real database, prove (or
-characterize) the adapter-swap pattern in practice, and establish the foundation for the full TUI
-buildout.
-
-Background:
-Step 1 of the TUI transition (presenter protocol migration) is complete as of Phase 24. This phase
-executes Step 2: build one Textual screen end-to-end to surface real constraints before committing
-to the full transition design. See `specs/tui-scope.md` and
-`specs/260523-tui-step2-textual-balance-prototype/` for full scope and plan.
-
-Expected outcomes:
-
-- `textual` added as a project dependency
-- `nwtrack tui launch` entry point launches a Textual application
-- A balance update screen presents active accounts for the most recent month in a scrollable
-  editable grid; editing a row persists the change to the real database
-- Net worth for the selected month is displayed and updated after each balance change
-- A separate TUI composition root wires `FetchService` and `UnitOfWork` without modifying the
-  CLI composition root
-- The existing `nwtrack balances update` CLI command is unmodified and fully functional
-- The Protocol compatibility tension (synchronous `BalanceUpdatePresenter` vs. Textual's async
-  model) is investigated and the finding is documented in the spec
-- `ruff`, `mypy`, and `pytest` pass
-
-### [ ] Phase 29: TUI Screen Model Design
-
-Goal:
-Design the full TUI screen hierarchy, navigation model, and interaction conventions before
-incremental screen buildout begins. This is a design-only phase; no production code.
-
-Background:
-The Phase 28 prototype validated that Textual can drive the balance workflow and surfaced the
-screen-owned workflow pattern as the correct implementation approach. Phase 29 answers the
-structural questions the prototype deliberately left open: how users navigate between workflows,
-what the home entry point looks like, and how the month selection UX works.
-
-Expected outcomes:
-
-- A screen inventory document listing every planned TUI screen, its primary workflow, and the
-  navigation paths that lead to and from it
-- ASCII wireframes for the home menu and the balance update screen (with month selection)
-- Keyboard navigation conventions confirmed and documented
-- The edit input UX decision settled: inline cell, overlay modal, or below-table (current
-  prototype approach) — with rationale
-- Open design questions from `specs/tui-prototype.md` (month selection, nav model, input UX)
-  are answered in the design document
-- No new implementation; the prototype code in Phase 28 remains the baseline
-
-Validation:
-
-- Design document and wireframes exist in `specs/` and are reviewed before Phase 30 begins
-- The document answers all three "Recommended Starting Point" questions from `specs/tui-prototype.md`
-
-### [ ] Phase 30: TUI Month Selection and Balance Screen Polish
-
-Goal:
-Add month selection UX to the balance update screen and address the deferred items from the
-prototype that affect daily usability.
-
-Background:
-The Phase 28 prototype hardcodes the most recent available month. Month selection is the most
-immediate gap before the balance update screen is useful for real monthly workflows.
-
-Expected outcomes:
-
-- The balance update screen allows the user to navigate to a different month (mechanism per
-  Phase 29 design — modal picker, sidebar, or screen push)
-- The selected month is reflected in the screen header or subtitle
-- Invalid amount input shows an error message rather than silently closing the edit input
-- The `reactive[int]` net_worth field is either wired to drive the label reactively or removed
-  in favor of the current imperative `_refresh_networth()` approach — one or the other, not both
-- `ruff`, `mypy`, and `pytest` pass
-
-### [ ] Phase 31: TUI Home Screen and Navigation Shell
-
-Goal:
-Add a home menu screen and a screen stack so the TUI has a proper entry point and navigation
-hierarchy rather than launching directly into the balance update screen.
-
-Background:
-`tui-scope.md` defines the navigation model as a screen stack: home screen presents a workflow
-menu; selecting an item pushes the workflow screen; Escape pops back to home. This phase
-implements that skeleton.
-
-Expected outcomes:
-
-- `NWTrackApp.on_mount` pushes a home screen rather than `BalanceUpdateScreen` directly
-- The home screen presents at minimum: Balances, Reports (placeholder), Accounts (placeholder)
-- Selecting Balances navigates to the balance update screen (with month selection from Phase 30)
-- Escape from any workflow screen returns to the home screen
-- `ruff`, `mypy`, and `pytest` pass
-
-### [ ] Phase 32: TUI Report Screens
-
-Goal:
-Add TUI screens for the single-month and history aggregated balance reports so the primary
-read-only workflows are accessible from the TUI.
-
-Background:
-Phases 26 and 27 (Reporting UX Options and Single-Currency Conversion Reporting) define the
-reporting model that TUI report screens should surface. Phase 32 should follow after those
-phases, or scope to the reporting surface that is stable at that point.
-
-Expected outcomes:
-
-- A net worth history screen displays the history aggregation report in a scrollable DataTable
-- A single-month aggregation screen accepts an aggregation dimension and renders grouped balances
-- Report screens are reachable from the home menu and return to home on Escape
-- `ruff`, `mypy`, and `pytest` pass
-
-### [ ] Phase 33: TUI Account and Administrative Screens
-
-Goal:
-Add TUI screens for account listing and management, and for the administrative CRUD workflows
-(categories, institutions, tags).
-
-Expected outcomes:
-
-- An account list screen shows all accounts with status, category, institution, and tags
-- Account create/edit workflows are accessible from the account list screen
-- Category, institution, and tag list and create/edit screens exist under an Admin section
-- All screens are reachable from the home menu navigation hierarchy
-- `ruff`, `mypy`, and `pytest` pass
-
-### [ ] Phase 34: TUI Balance Operations
-
-Goal:
-Add TUI screens for balance roll-forward, delete, and transfer so the remaining balance
-workflows are accessible from the TUI.
-
-Expected outcomes:
-
-- Roll-forward, delete, and transfer balance operations are accessible from the TUI
-- These screens follow the screen-owned workflow pattern established in Phase 28
-- `ruff`, `mypy`, and `pytest` pass
-
-### [ ] Phase 35: CLI Retirement
+### [ ] Phase 35 (Optional): CLI Retirement
 
 Goal:
 Retire the CLI entry points once the TUI covers the full workflow scope and has been validated
@@ -431,8 +431,9 @@ against real usage.
 
 Background:
 `tui-scope.md` defines CLI retirement as the final step: the `nwtrack tui` entry point
-becomes `nwtrack`. This phase should not begin until all workflows from Phases 30–34 are
-complete and have been validated against real data.
+becomes `nwtrack`. This phase should not begin until all workflows from Phases 27–31 are
+complete and have been validated against real data. It is marked optional because the CLI and
+TUI may coexist indefinitely if the dual-mode workflow proves useful in practice.
 
 Expected outcomes:
 
