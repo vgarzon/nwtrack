@@ -60,9 +60,7 @@ src/nwtrack/
   - Examples: `RichAccountCreationPresenter`, `RichBalanceUpdatePresenter`
   - Handle all console UI interactions (tables, prompts, formatting)
   - Injected into use cases via DI, enabling clean separation and testability
-- **Migration Status**: Ongoing refactoring to apply presentation layer to all interactive use cases
-  - **Refactored**: `create_account`, `update_account_info`, `create_category`, `update_balances`, `delete_balance`
-  - **Not yet refactored**: `roll_balances_forward` (still uses direct console access)
+- **Migration Status**: Presenter pattern is applied to all interactive use cases — migration is complete. No use case module imports Rich directly.
 
 **Infrastructure Layer**:
 - **Persistence Layer** (`infra/persistence/`) - Database-agnostic ORM components:
