@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import pytest
-from rich.console import Console
 from tests.helpers import init_db_tables_w_entities
 
 from nwtrack.application.ports.schema import SchemaManager
@@ -22,6 +21,32 @@ from nwtrack.infra.config.settings import Settings
 from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
 from nwtrack.infra.persistence.orm.models import account_tags_table
 from nwtrack.infra.persistence.schema import SchemaManager as SchemaManagerImpl
+
+
+class MockImportTablesCSVPresenter:
+    """Test double for ImportTablesCSVPresenter."""
+
+    def __init__(self, source_dir_response: str = "") -> None:
+        self._source_dir_response = source_dir_response
+        self.header_shown = False
+        self.cancellation_shown = False
+        self.errors: list[str] = []
+        self.success_dirs: list[Path] = []
+
+    def show_header(self) -> None:
+        self.header_shown = True
+
+    def prompt_for_source_dir(self, default: str) -> str:
+        return self._source_dir_response
+
+    def show_cancellation(self) -> None:
+        self.cancellation_shown = True
+
+    def show_import_success(self, source_dir: Path) -> None:
+        self.success_dirs.append(source_dir)
+
+    def show_error(self, message: str) -> None:
+        self.errors.append(message)
 
 
 def _write_bundle_file(
@@ -89,12 +114,91 @@ def file_db_container(tmp_path: Path) -> Container:
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
     )
-    container.register(
-        Console,
-        lambda _: Console(record=True),
-        lifetime=Lifetime.SINGLETON,
-    )
     return container
+
+
+def _make_importer_cli(container: Container) -> ImportTablesCSVCLI:
+    return ImportTablesCSVCLI(
+        importer=container.resolve(InitDataService),
+        admin_svc=container.resolve(DBAdminService),
+        presenter=MockImportTablesCSVPresenter(),
+    )
+
+
+# --- Presenter interaction tests ---
+
+
+def test_import_tables_interactive_calls_show_header_and_success(
+    file_db_container: Container, tmp_path: Path
+) -> None:
+    source_dir = tmp_path / "bundle"
+    source_dir.mkdir()
+    _write_minimal_bundle(source_dir)
+
+    presenter = MockImportTablesCSVPresenter(source_dir_response=str(source_dir))
+    ImportTablesCSVInteractive(
+        importer=file_db_container.resolve(InitDataService),
+        admin_svc=file_db_container.resolve(DBAdminService),
+        presenter=presenter,
+    ).run(defaults={})
+
+    assert presenter.header_shown
+    assert len(presenter.success_dirs) == 1
+    assert presenter.success_dirs[0] == source_dir
+    assert not presenter.cancellation_shown
+    assert not presenter.errors
+
+
+def test_import_tables_interactive_shows_cancellation_on_quit(
+    file_db_container: Container,
+) -> None:
+    presenter = MockImportTablesCSVPresenter(source_dir_response="q")
+    ImportTablesCSVInteractive(
+        importer=file_db_container.resolve(InitDataService),
+        admin_svc=file_db_container.resolve(DBAdminService),
+        presenter=presenter,
+    ).run(defaults={})
+
+    assert presenter.header_shown
+    assert presenter.cancellation_shown
+    assert not presenter.success_dirs
+    assert not presenter.errors
+
+
+def test_import_tables_cli_calls_show_header_and_success(
+    file_db_container: Container, tmp_path: Path
+) -> None:
+    source_dir = tmp_path / "bundle"
+    source_dir.mkdir()
+    _write_minimal_bundle(source_dir)
+
+    presenter = MockImportTablesCSVPresenter()
+    ImportTablesCSVCLI(
+        importer=file_db_container.resolve(InitDataService),
+        admin_svc=file_db_container.resolve(DBAdminService),
+        presenter=presenter,
+    ).run(source_dir=str(source_dir))
+
+    assert presenter.header_shown
+    assert len(presenter.success_dirs) == 1
+    assert not presenter.errors
+
+
+def test_import_tables_base_shows_error_on_service_exception(
+    file_db_container: Container, tmp_path: Path
+) -> None:
+    presenter = MockImportTablesCSVPresenter()
+    ImportTablesCSVCLI(
+        importer=file_db_container.resolve(InitDataService),
+        admin_svc=file_db_container.resolve(DBAdminService),
+        presenter=presenter,
+    ).run(source_dir=str(tmp_path / "nonexistent"))
+
+    assert presenter.errors
+    assert not presenter.success_dirs
+
+
+# --- Business logic tests ---
 
 
 def test_import_tables_cli_creates_missing_database_and_imports_supported_tables(
@@ -107,11 +211,7 @@ def test_import_tables_cli_creates_missing_database_and_imports_supported_tables
     db_path = Path(file_db_container.resolve(Settings).db_file_path)
     assert not db_path.exists()
 
-    ImportTablesCSVCLI(
-        importer=file_db_container.resolve(InitDataService),
-        admin_svc=file_db_container.resolve(DBAdminService),
-        console=file_db_container.resolve(Console),
-    ).run(source_dir=str(source_dir))
+    _make_importer_cli(file_db_container).run(source_dir=str(source_dir))
 
     assert db_path.exists()
 
@@ -135,12 +235,7 @@ def test_import_tables_cli_is_idempotent_for_repeated_bundle_imports(
     source_dir.mkdir()
     _write_minimal_bundle(source_dir)
 
-    importer = ImportTablesCSVCLI(
-        importer=file_db_container.resolve(InitDataService),
-        admin_svc=file_db_container.resolve(DBAdminService),
-        console=file_db_container.resolve(Console),
-    )
-
+    importer = _make_importer_cli(file_db_container)
     importer.run(source_dir=str(source_dir))
     importer.run(source_dir=str(source_dir))
 
@@ -166,11 +261,7 @@ def test_import_tables_cli_updates_matching_rows_by_bundle_identity(
     source_dir.mkdir()
     _write_minimal_bundle(source_dir)
 
-    importer = ImportTablesCSVCLI(
-        importer=file_db_container.resolve(InitDataService),
-        admin_svc=file_db_container.resolve(DBAdminService),
-        console=file_db_container.resolve(Console),
-    )
+    importer = _make_importer_cli(file_db_container)
     importer.run(source_dir=str(source_dir))
 
     _write_bundle_file(
@@ -207,29 +298,24 @@ def test_import_tables_cli_updates_matching_rows_by_bundle_identity(
 
 
 def test_import_tables_interactive_imports_valid_bundle(
-    file_db_container: Container, tmp_path: Path, monkeypatch
+    file_db_container: Container, tmp_path: Path
 ) -> None:
     source_dir = tmp_path / "bundle"
     source_dir.mkdir()
     _write_minimal_bundle(source_dir)
-    console: Console = file_db_container.resolve(Console)
 
-    monkeypatch.setattr(
-        "nwtrack.application.use_cases.import_tables_csv.Prompt.ask",
-        lambda *args, **kwargs: str(source_dir),
-    )
-
+    presenter = MockImportTablesCSVPresenter(source_dir_response=str(source_dir))
     ImportTablesCSVInteractive(
         importer=file_db_container.resolve(InitDataService),
         admin_svc=file_db_container.resolve(DBAdminService),
-        console=console,
+        presenter=presenter,
     ).run(defaults={"source_dir": str(source_dir)})
 
     typed_uow: UnitOfWork
     with file_db_container.resolve(UnitOfWork) as typed_uow:
         assert typed_uow.accounts.count() == 1
 
-    assert "Imported CSV tables from" in console.export_text()
+    assert len(presenter.success_dirs) == 1
 
 
 def test_import_tables_cli_leaves_unmatched_existing_rows_unchanged(
@@ -239,11 +325,7 @@ def test_import_tables_cli_leaves_unmatched_existing_rows_unchanged(
     source_dir.mkdir()
     _write_minimal_bundle(source_dir)
 
-    importer = ImportTablesCSVCLI(
-        importer=file_db_container.resolve(InitDataService),
-        admin_svc=file_db_container.resolve(DBAdminService),
-        console=file_db_container.resolve(Console),
-    )
+    importer = _make_importer_cli(file_db_container)
     importer.run(source_dir=str(source_dir))
 
     typed_uow_insert: UnitOfWork
@@ -268,12 +350,12 @@ def test_import_tables_cli_rolls_back_on_invalid_relationship_rows(
     source_dir = tmp_path / "bundle"
     source_dir.mkdir()
     _write_invalid_account_tag_bundle(source_dir)
-    console: Console = file_db_container.resolve(Console)
 
+    presenter = MockImportTablesCSVPresenter()
     ImportTablesCSVCLI(
         importer=file_db_container.resolve(InitDataService),
         admin_svc=file_db_container.resolve(DBAdminService),
-        console=console,
+        presenter=presenter,
     ).run(source_dir=str(source_dir))
 
     typed_uow: UnitOfWork
@@ -284,7 +366,7 @@ def test_import_tables_cli_rolls_back_on_invalid_relationship_rows(
         assert session is not None
         assert session.execute(account_tags_table.select()).all() == []
 
-    assert "Error:" in console.export_text()
+    assert presenter.errors
 
 
 def test_export_import_round_trip_reproduces_supported_bundle(
@@ -341,14 +423,11 @@ def test_export_import_round_trip_reproduces_supported_bundle(
         InitDataService,
         lambda c: InitDataService(uow=lambda: c.resolve(UnitOfWork)),
     )
-    target_container.register(
-        Console, lambda _: Console(record=True), lifetime=Lifetime.SINGLETON
-    )
 
     ImportTablesCSVCLI(
         importer=target_container.resolve(InitDataService),
         admin_svc=target_container.resolve(DBAdminService),
-        console=target_container.resolve(Console),
+        presenter=MockImportTablesCSVPresenter(),
     ).run(source_dir=str(source_export_dir))
 
     roundtrip_export_dir = tmp_path / "roundtrip-export"
