@@ -296,7 +296,7 @@ Validation:
 - Design document and wireframes exist in `specs/` and are reviewed before Phase 27 begins
 - The document answers all three "Recommended Starting Point" questions from `specs/tui-prototype.md`
 
-### [ ] Phase 27: TUI Month Selection and Balance Screen Polish
+### [X] Phase 27: TUI Month Selection and Balance Screen Polish
 
 Goal:
 Add month selection UX to the balance update screen and address the deferred items from the
