@@ -4,8 +4,6 @@ Export commands
 
 import logging
 
-from rich.console import Console
-
 from nwtrack.bootstrap.container import Container
 from nwtrack.entrypoints.cli.app import export_app
 
@@ -32,12 +30,9 @@ def main(
     )
 
     container: Container = bootstrap()
-    console: Console = container.resolve(Console)
 
     if interactive:
-        console.print("[bold]Running export in interactive mode...[/bold]")
         defaults = {"target_dir": target_dir, "create": create}
         run_interactive(container, defaults)
     else:
-        console.print("[bold]Running export in CLI mode...[/bold]")
         run_cli(container, target_dir, create)
