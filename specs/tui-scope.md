@@ -124,19 +124,35 @@ data-only query wrappers with no UI interaction; no presenter is needed.
 - Both use cases refactored to accept presenter via constructor; direct console imports removed
 - Both use cases unit-testable via mock presenter without a real terminal
 
-### Step 2: Prototype one Textual screen
+### ~~Step 2: Prototype one Textual screen~~ ✓ Done (Phase 28)
 
-Build a Textual presenter adapter for one high-value interactive workflow to validate the
-adapter-swap pattern end-to-end before committing to the full transition.
+#### Findings (final, as of 2026-05-24)
 
-Recommended candidate: **balance update workflow**. It is the most frequently used interactive
-workflow, is iterative by design, and benefits most from reactivity (live net worth as amounts
-change).
+The prototype validated that Textual can drive the balance update workflow against a real
+SQLite database. The adapter-swap pattern does **not** apply to interactive-prompt presenter
+methods: `BalanceUpdatePresenter.prompt_for_account_id()` and `show_current_balance_and_prompt()`
+are synchronous blocking calls incompatible with Textual's async event model without complex,
+fragile synchronization machinery.
 
-Deliverables:
-- A working Textual screen for balance updates
-- Textual composition root that wires the same use case to the new adapter
-- Confirmed that the CLI adapter for the same use case continues to work unmodified
+The correct pattern is **screen-owned workflow**: screens call `FetchService` and `UnitOfWork`
+directly from event handlers rather than driving existing `run()` methods through a presenter
+adapter. Display-only presenter methods could still be ported as adapters, but interactive
+prompt methods must be replaced by Textual event handlers wired to reactive state.
+
+Full findings documented in:
+- `specs/260523-tui-step2-textual-balance-prototype/requirements.md` (Findings section)
+- `specs/tui-prototype.md` (implementation patterns, API notes, deferred items)
+
+#### Deliverables (completed)
+
+- `textual>=3.0.0` added to `pyproject.toml` as a main dependency
+- `bootstrap/tui_composition.py` wires `FetchService` and `UnitOfWork` for the TUI without
+  modifying the CLI composition root
+- `entrypoints/tui/app.py` — `NWTrackApp` Textual application
+- `entrypoints/tui/screens/balance_update.py` — `BalanceUpdateScreen` with editable grid,
+  inline input on Enter, row and net worth updates after submission
+- `entrypoints/cli/commands/tui.py` — `nwtrack tui launch` CLI entry point
+- Existing `nwtrack balances update` CLI command confirmed unmodified; `just check` passes
 
 ### Step 3: Design the TUI screen model
 
