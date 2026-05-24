@@ -73,6 +73,52 @@ real database) is validated.
 Textual snapshot testing exists and is documented, but is deferred. This phase validates
 through manual interaction only.
 
+## Findings
+
+### Protocol compatibility spike result
+
+**Finding: the adapter-swap pattern is not viable for interactive prompt methods.**
+
+`BalanceUpdater.run()` was not driven from a Textual `@work` worker thread. Here is why.
+
+The `BalanceUpdatePresenter` Protocol has two blocking prompt methods:
+`prompt_for_account_id()` and `show_current_balance_and_prompt()`. Both are expected to
+block until the user submits a value. In the CLI they do so by calling Rich's `Prompt.ask()`,
+which reads from stdin.
+
+In a Textual application Textual owns the terminal — stdin is not available for arbitrary
+blocking reads. A worker-thread approach with `threading.Event` synchronization (worker blocks
+on the event; Textual's event handler sets the event after user submission) is theoretically
+possible but introduces:
+
+- **Deadlock risk**: If the worker holds a resource the event loop needs, or vice versa, the
+  application hangs. With sequential prompt→response cycles this is hard to avoid safely.
+- **Complexity without benefit**: The resulting presenter adapter would be difficult to reason
+  about, harder to test, and fragile under Textual version updates.
+- **Wrong UX model**: Even if synchronization worked, the resulting interaction would be
+  sequential (one prompt at a time) — identical to the CLI experience. The goal of the TUI
+  is a non-linear grid where the cursor navigates freely and edits any row in any order.
+
+**Conclusion:** The `BalanceUpdatePresenter` Protocol's sequential prompt model is
+incompatible with Textual's reactive event-driven model in practice, not just in theory.
+The adapter-swap pattern applies cleanly to display-only presenter methods (tables, headers,
+net worth display) but cannot be applied to the interactive prompt methods without significant
+synchronization machinery.
+
+**Implemented approach:** The `BalanceUpdateScreen` owns the full workflow. It calls
+`FetchService` and `UnitOfWork` directly — no `BalanceUpdater.run()` involved. The DataTable
+provides a non-linear cursor-driven grid; pressing Enter opens an inline `Input` pre-filled
+with the current amount; submission writes through `UnitOfWork` and refreshes the row and net
+worth label reactively.
+
+**Implications for Step 3 and Step 4:**
+
+- Display-only presenter methods can be ported to Textual adapters straightforwardly.
+- Interactive-prompt presenter methods need to be redesigned around Textual's event model
+  (event handlers + reactive state) rather than wrapped in synchronization machinery.
+- Future screens should own their workflow logic directly, calling services and the UoW from
+  event handlers, rather than driving existing `run()` methods through adapter presenters.
+
 ## Context
 
 - This is Step 2 of the TUI transition sequence defined in `specs/tui-scope.md`
