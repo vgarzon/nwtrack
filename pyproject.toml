@@ -8,6 +8,7 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "rich>=14.2.0",
     "sqlalchemy>=2.0.46",
+    "textual>=3.0.0",
     "typer>=0.21.1",
 ]
 
