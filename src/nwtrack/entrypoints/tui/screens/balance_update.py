@@ -11,7 +11,6 @@ from collections.abc import Callable
 from decimal import Decimal, InvalidOperation
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.coordinate import Coordinate
 from textual.events import Key
 from textual.reactive import reactive
@@ -27,10 +26,7 @@ from nwtrack.domain.value_objects import Month
 class BalanceUpdateScreen(Screen):
     """Editable grid of account balances for the most recent month."""
 
-    BINDINGS = [
-        Binding("escape,q", "app.quit", "Quit"),
-        Binding("enter", "edit_balance", "Edit", show=True),
-    ]
+    BINDINGS = [("escape,q", "app.quit", "Quit")]
 
     net_worth: reactive[int] = reactive(0)
 
@@ -109,14 +105,13 @@ class BalanceUpdateScreen(Screen):
         else:
             label.update("")
 
-    # ── Actions ──────────────────────────────────────────────────────────────
+    # ── Event handlers ───────────────────────────────────────────────────────
 
-    def action_edit_balance(self) -> None:
-        table = self.query_one("#balance-table", DataTable)
-        if table.cursor_row is None or not self._balances:
+    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        if not self._balances:
             return
 
-        row_idx = table.cursor_row
+        row_idx = event.cursor_row
         if row_idx >= len(self._balances):
             return
 
