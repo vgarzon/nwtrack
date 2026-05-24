@@ -243,7 +243,25 @@ Expected outcomes:
 - CSV import behavior is idempotent, with exact semantics defined in the feature spec
 - Export/import CSV round trips preserve the same database data for supported tables
 
-### [ ] Phase 25: Reporting UX Options
+### [X] Phase 25: CSV Presenter Protocol Migration
+
+Goal:
+Complete the presenter protocol migration for the two remaining use cases that still performed
+direct console I/O, decoupling all interactive use cases from the presentation layer before
+TUI development begins.
+
+Expected outcomes:
+
+- `ImportTablesCSVPresenter` and `ExportTablesCSVPresenter` Protocol interfaces defined in
+  `application/ports/presentation.py`
+- `RichImportTablesCSVPresenter` and `RichExportTablesCSVPresenter` adapters implemented in
+  `entrypoints/cli/adapters/csv_presenters.py`
+- `import_tables_csv` and `export_tables_csv` use cases refactored to accept presenter via
+  constructor; direct Rich imports removed from both use case modules
+- All interactive use cases are now fully decoupled from the presentation layer
+- Tests updated to use mock presenters; presenter interaction assertions added for all paths
+
+### [ ] Phase 26: Reporting UX Options
 
 Goal:
 Improve aggregated reporting ergonomics with alternative history layouts and export-friendly output.
@@ -254,7 +272,7 @@ Expected outcomes:
 - Non-interactive aggregated history reporting can emit CSV output for downstream analysis
 - Output-format options are defined in a way that preserves current default behavior unless the user opts in
 
-### [ ] Phase 26: Single-Currency Conversion Reporting
+### [ ] Phase 27: Single-Currency Conversion Reporting
 
 Goal:
 Add conversion-backed reporting so aggregated views can be rendered in one explicit reporting currency instead of failing on mixed-currency totals.
