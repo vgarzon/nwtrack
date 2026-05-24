@@ -9,6 +9,7 @@ why the adapter-swap pattern is not viable here.
 
 from collections.abc import Callable
 
+from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.coordinate import Coordinate
@@ -103,6 +104,7 @@ class BalanceUpdateScreen(Screen):
 
     # ── Actions ──────────────────────────────────────────────────────────────
 
+    @work
     async def action_pick_month(self) -> None:
         if self._month is None:
             return
@@ -118,6 +120,7 @@ class BalanceUpdateScreen(Screen):
 
     # ── Event handlers ───────────────────────────────────────────────────────
 
+    @work
     async def on_data_table_row_selected(
         self, event: DataTable.RowSelected
     ) -> None:
