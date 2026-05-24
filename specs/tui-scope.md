@@ -77,14 +77,10 @@ use case or domain code.
 
 ### What is incomplete
 
-Not all use cases have been migrated to the presenter pattern. Use cases that still access the
-console directly cannot be swapped to a Textual adapter without first completing the presenter
-migration. As of the time of this document:
-
-- `roll_balances_forward` — direct console access, not yet refactored to a presenter Protocol
-
-A full audit of remaining direct-console use cases should be completed before beginning Textual
-screen development.
+The presenter migration is complete as of Phase 24. All interactive use cases accept a presenter
+via constructor and have no direct console imports in their use case class bodies. Rich imports
+that remain in use case modules are scoped to `main()` DI wiring functions only and do not
+affect the use case class logic or TUI adapter compatibility.
 
 ## Dual-Mode Strategy
 
@@ -104,37 +100,27 @@ validated against real usage.
 
 ## Proposed Sequencing
 
-### Step 1: Complete presenter protocol migration (prerequisite)
+### ~~Step 1: Complete presenter protocol migration (prerequisite)~~ ✓ Done (Phase 24)
 
-Finish the refactoring for the two use cases that still perform direct console I/O. This is the
-concrete prerequisite for TUI development — the gap is smaller than anticipated.
+#### Audit results (final, as of 2026-05-23)
 
-#### Audit results
-
-As of 2026-05-23, the presenter migration is nearly complete. 30 of 32 use cases accept a
-presenter via constructor and have no direct console imports. Every defined Protocol has a
+The presenter migration is complete. All interactive use cases accept a presenter via constructor
+and have no direct console imports in use case class bodies. Every defined Protocol has a
 corresponding Rich adapter.
 
-**Migrated (30 use cases):** all account, category, institution, tag, balance, report, admin, and
-database init use cases.
+**Migrated:** all account, category, institution, tag, balance, report, admin, database init,
+import CSV, and export CSV use cases — including `roll_balances_forward`, which was migrated
+prior to the audit.
 
-**Not yet migrated (2 use cases):**
+**Not applicable:** `report_single_month_aggregation.py` and `report_history_aggregation.py` are
+data-only query wrappers with no UI interaction; no presenter is needed.
 
-| Use case | Classes | Direct imports |
-|---|---|---|
-| `import_tables_csv.py` | `ImportTablesCSVInteractive`, `ImportTablesCSVBase`, `ImportTablesCSVCLI` | `rich.console.Console`, `rich.prompt.Prompt` |
-| `export_tables_csv.py` | `ExportTablesCSVInteractive`, `ExportTablesCSVBase`, `ExportTablesCSVCLI` | `rich.console.Console`, `rich.prompt.Prompt`, `rich.prompt.Confirm` |
-
-**Not applicable (2 use cases):** `report_single_month_aggregation.py` and
-`report_history_aggregation.py` are data-only query wrappers with no UI interaction; no presenter
-is needed.
-
-#### Deliverables
+#### Deliverables (completed)
 
 - `ImportTablesCSVPresenter` Protocol defined in `application/ports/presentation.py`
 - `ExportTablesCSVPresenter` Protocol defined in `application/ports/presentation.py`
-- `RichImportTablesCSVPresenter` adapter implemented in `entrypoints/cli/adapters/`
-- `RichExportTablesCSVPresenter` adapter implemented in `entrypoints/cli/adapters/`
+- `RichImportTablesCSVPresenter` adapter implemented in `entrypoints/cli/adapters/csv_presenters.py`
+- `RichExportTablesCSVPresenter` adapter implemented in `entrypoints/cli/adapters/csv_presenters.py`
 - Both use cases refactored to accept presenter via constructor; direct console imports removed
 - Both use cases unit-testable via mock presenter without a real terminal
 
