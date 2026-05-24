@@ -77,16 +77,22 @@ class BalanceUpdateScreen(Screen):
             return
         table = self.query_one("#balance-table", DataTable)
         table.clear(columns=True)
-        table.add_columns("Account", "Category", "Currency", "Amount")
+        table.add_columns("Institution", "Account", "Category", "Side", "Amount")
 
         self._balances = self._fetcher.get_month_balances(
             self._month, active_only=True
         )
         for balance in self._balances:
+            institution = (
+                balance.account.institution.name
+                if balance.account.institution
+                else ""
+            )
             table.add_row(
+                institution,
                 balance.account.name,
                 balance.account.category.name,
-                balance.account.currency_code,
+                balance.account.category.side.value,
                 self._format_amount(balance.amount),
                 key=str(balance.account.id),
             )
@@ -151,7 +157,7 @@ class BalanceUpdateScreen(Screen):
 
         table = self.query_one("#balance-table", DataTable)
         table.update_cell_at(
-            Coordinate(row_idx, 3),
+            Coordinate(row_idx, 4),
             self._format_amount(result),
             update_width=True,
         )
