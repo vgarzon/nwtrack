@@ -4,8 +4,6 @@ Import commands.
 
 import logging
 
-from rich.console import Console
-
 from nwtrack.bootstrap.container import Container
 from nwtrack.entrypoints.cli.app import import_app
 
@@ -25,12 +23,9 @@ def main(
     )
 
     container: Container = bootstrap()
-    console: Console = container.resolve(Console)
 
     if interactive:
-        console.print("[bold]Running import in interactive mode...[/bold]")
         defaults = {"source_dir": source_dir}
         run_interactive(container, defaults)
     else:
-        console.print("[bold]Running import in CLI mode...[/bold]")
         run_cli(container, source_dir)
