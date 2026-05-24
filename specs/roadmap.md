@@ -187,7 +187,7 @@ Validation:
 - `ruff` and `mypy` pass
 - Manual verification: running `nwtrack reports networth-history` against a database with inactive accounts produces totals that include those accounts; running with `--active-only` excludes them
 
-### [ ] Phase 21: Institution Requirement Migration Plan
+### [X] Phase 21: Institution Requirement Migration Plan
 
 Goal:
 Prepare the product to make institutions required on accounts in a later change without disrupting current users.
