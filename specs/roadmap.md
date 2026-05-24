@@ -284,6 +284,33 @@ Expected outcomes:
 - Conversion rules and required exchange-rate inputs are defined clearly for reporting workflows
 - Compatibility and aggregated report commands can converge on accounting-correct single-currency output where conversion data exists
 
+### [ ] Phase 28: TUI Prototype — Textual Balance Update Screen
+
+Goal:
+Validate that Textual can drive the balance update workflow against a real database, prove (or
+characterize) the adapter-swap pattern in practice, and establish the foundation for the full TUI
+buildout.
+
+Background:
+Step 1 of the TUI transition (presenter protocol migration) is complete as of Phase 24. This phase
+executes Step 2: build one Textual screen end-to-end to surface real constraints before committing
+to the full transition design. See `specs/tui-scope.md` and
+`specs/260523-tui-step2-textual-balance-prototype/` for full scope and plan.
+
+Expected outcomes:
+
+- `textual` added as a project dependency
+- `nwtrack tui launch` entry point launches a Textual application
+- A balance update screen presents active accounts for the most recent month in a scrollable
+  editable grid; editing a row persists the change to the real database
+- Net worth for the selected month is displayed and updated after each balance change
+- A separate TUI composition root wires `FetchService` and `UnitOfWork` without modifying the
+  CLI composition root
+- The existing `nwtrack balances update` CLI command is unmodified and fully functional
+- The Protocol compatibility tension (synchronous `BalanceUpdatePresenter` vs. Textual's async
+  model) is investigated and the finding is documented in the spec
+- `ruff`, `mypy`, and `pytest` pass
+
 ## Planning Rules
 
 - Keep phases small enough to land independently.
