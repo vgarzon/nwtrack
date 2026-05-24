@@ -8,16 +8,16 @@ from nwtrack.entrypoints.tui.utils import months_to_grid, parse_amount_input
 
 class TestParseAmountInput:
     def test_integer_string(self) -> None:
-        assert parse_amount_input("8500") == 850000
+        assert parse_amount_input("8500") == 8500
 
-    def test_decimal_string(self) -> None:
-        assert parse_amount_input("8500.00") == 850000
+    def test_decimal_string_truncated(self) -> None:
+        assert parse_amount_input("8500.00") == 8500
 
-    def test_decimal_with_cents(self) -> None:
-        assert parse_amount_input("8500.50") == 850050
+    def test_decimal_truncates_to_whole(self) -> None:
+        assert parse_amount_input("8500.99") == 8500
 
     def test_whitespace_stripped(self) -> None:
-        assert parse_amount_input("  1000  ") == 100000
+        assert parse_amount_input("  1000  ") == 1000
 
     def test_zero_is_valid(self) -> None:
         assert parse_amount_input("0") == 0
