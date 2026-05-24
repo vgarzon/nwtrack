@@ -124,7 +124,7 @@ data-only query wrappers with no UI interaction; no presenter is needed.
 - Both use cases refactored to accept presenter via constructor; direct console imports removed
 - Both use cases unit-testable via mock presenter without a real terminal
 
-### ~~Step 2: Prototype one Textual screen~~ ✓ Done (Phase 28)
+### ~~Step 2: Prototype one Textual screen~~ ✓ Done (Phase 25)
 
 #### Findings (final, as of 2026-05-24)
 
@@ -140,7 +140,7 @@ adapter. Display-only presenter methods could still be ported as adapters, but i
 prompt methods must be replaced by Textual event handlers wired to reactive state.
 
 Full findings documented in:
-- `specs/260523-tui-step2-textual-balance-prototype/requirements.md` (Findings section)
+- `specs/260523-phase-25-tui-textual-balance-prototype/requirements.md` (Findings section)
 - `specs/tui-prototype.md` (implementation patterns, API notes, deferred items)
 
 #### Deliverables (completed)

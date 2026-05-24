@@ -3,7 +3,7 @@
 ## Purpose
 
 This document captures the architectural findings, implementation decisions, and lessons learned
-from the Phase 28 TUI prototype (Textual balance update screen). Its audience is the engineer
+from the Phase 25 TUI prototype (Textual balance update screen). Its audience is the engineer
 starting Step 3 (screen model design) or Step 4 (incremental screen buildout). It is not a spec;
 it is a reference for what the prototype proved and what it left open.
 
@@ -38,7 +38,7 @@ adapters cleanly. But the interactive-prompt methods need to be replaced by Text
 wired to reactive state — not wrapped in synchronization machinery.
 
 This finding is documented in full in
-`specs/260523-tui-step2-textual-balance-prototype/requirements.md` under "Findings".
+`specs/260523-phase-25-tui-textual-balance-prototype/requirements.md` under "Findings".
 
 ## Implementation Pattern: Screen-Owned Workflow
 
@@ -156,7 +156,7 @@ class NWTrackApp(App):
 These items are **not** present in the prototype and should be addressed in subsequent phases:
 
 - **Month selection**: The screen always loads the most recent available month. No UI exists for
-  choosing a different month. This is the most immediate gap to address in Phase 30.
+  choosing a different month. This is the most immediate gap to address in Phase 27.
 - **Screen navigation**: There is no home menu or screen stack. `nwtrack tui launch` goes
   directly to the balance update screen. A navigation hierarchy is a Step 3 design question.
 - **Inline cell editing**: The edit input appears below the table rather than inside the cell.
@@ -170,17 +170,17 @@ These items are **not** present in the prototype and should be addressed in subs
   are silently excluded from the total if no exchange rate exists.
 - **Multi-currency accounts**: No visual indicator distinguishes USD from non-USD account rows.
 
-## Recommended Starting Point for Phase 29
+## Recommended Starting Point for Phase 26
 
-Phase 29 (TUI Screen Model Design) should answer three questions before Phase 30 implementation:
+Phase 26 (TUI Screen Model Design) should answer three questions before Phase 27 implementation:
 
 1. **Month selection UX**: How does the user navigate to a different month? Options: a modal
    picker pushed on Enter from a month header, a sidebar, or a dedicated month selection screen.
 2. **Navigation model**: How does the user reach the balance update screen from a home menu?
-   The `tui-scope.md` already decided on a screen stack model — Phase 29 should produce the
+   The `tui-scope.md` already decided on a screen stack model — Phase 26 should produce the
    screen inventory and transition diagram.
 3. **Edit input UX**: Should the inline amount input stay below the table (current), appear as
    an overlay, or be rendered inside the cell? Decision informs how `BalanceUpdateScreen` is
-   refactored in Phase 30.
+   refactored in Phase 27.
 
-Phase 29 deliverables should be a design document and ASCII wireframes, not code.
+Phase 26 deliverables should be a design document and ASCII wireframes, not code.
