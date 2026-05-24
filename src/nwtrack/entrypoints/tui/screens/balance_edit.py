@@ -13,7 +13,7 @@ from nwtrack.entrypoints.tui.utils import parse_amount_input
 class BalanceEditModal(ModalScreen[int | None]):
     """Overlay modal for editing a single account balance.
 
-    Returns the new amount in cents on confirmation, or None on cancel.
+    Returns the new amount on confirmation, or None on cancel.
     Shows an inline error message on invalid input without dismissing.
     """
 
@@ -51,15 +51,15 @@ class BalanceEditModal(ModalScreen[int | None]):
         self,
         account_name: str,
         month: Month,
-        current_amount_cents: int,
+        current_amount: int,
     ) -> None:
         super().__init__()
         self._account_name = account_name
         self._month = month
-        self._current_amount_cents = current_amount_cents
+        self._current_amount = current_amount
 
     def compose(self) -> ComposeResult:
-        current_display = f"${self._current_amount_cents / 100:,.2f}"
+        current_display = f"{self._current_amount:,}"
         with Vertical(id="edit-container"):
             yield Label("Edit Balance", id="edit-title")
             yield Label(f"Account:  {self._account_name}")
