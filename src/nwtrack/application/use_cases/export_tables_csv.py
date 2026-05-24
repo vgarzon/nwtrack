@@ -15,7 +15,9 @@ logger = logging.getLogger(__name__)
 class ExportTablesCSVBase:
     """Base class for exporting database tables to CSV files."""
 
-    def __init__(self, exporter: ExportCSV, presenter: ExportTablesCSVPresenter) -> None:
+    def __init__(
+        self, exporter: ExportCSV, presenter: ExportTablesCSVPresenter
+    ) -> None:
         self._exporter = exporter
         self._presenter = presenter
 
