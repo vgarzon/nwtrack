@@ -267,7 +267,7 @@ Expected outcomes:
   model) is investigated and the finding is documented in the spec
 - `ruff`, `mypy`, and `pytest` pass
 
-### [ ] Phase 26: TUI Screen Model Design
+### [X] Phase 26: TUI Screen Model Design
 
 Goal:
 Design the full TUI screen hierarchy, navigation model, and interaction conventions before
