@@ -353,7 +353,7 @@ Expected outcomes:
 - Report screens are reachable from the home menu and return to home on Escape
 - `ruff`, `mypy`, and `pytest` pass
 
-### [ ] Phase 30: TUI Account and Administrative Screens
+### [X] Phase 30: TUI Account and Administrative Screens
 
 Goal:
 Add TUI screens for account listing and management, and for the administrative CRUD workflows
