@@ -44,5 +44,8 @@ class HomeScreen(Screen):
                 BalanceUpdateScreen,
             )
             self.app.push_screen(BalanceUpdateScreen(self._fetcher, self._uow))
+        elif section == "Reports":
+            from nwtrack.entrypoints.tui.screens.reports_menu import ReportsMenuScreen
+            self.app.push_screen(ReportsMenuScreen(self._fetcher, self._uow))
         else:
             self.app.push_screen(StubScreen(section))

@@ -19,9 +19,10 @@ class TestStubScreen:
             app = _make_app()
             async with app.run_test() as pilot:
                 await pilot.press("down")
+                await pilot.press("down")
                 await pilot.press("enter")
                 await pilot.pause()
-                assert app.screen.sub_title == "Reports"
+                assert app.screen.sub_title == "Accounts"
 
         asyncio.run(_run())
 
@@ -31,6 +32,7 @@ class TestStubScreen:
 
             app = _make_app()
             async with app.run_test() as pilot:
+                await pilot.press("down")
                 await pilot.press("down")
                 await pilot.press("enter")
                 await pilot.pause()
@@ -43,6 +45,7 @@ class TestStubScreen:
         async def _run() -> None:
             app = _make_app()
             async with app.run_test() as pilot:
+                await pilot.press("down")
                 await pilot.press("down")
                 await pilot.press("enter")
                 await pilot.pause()
