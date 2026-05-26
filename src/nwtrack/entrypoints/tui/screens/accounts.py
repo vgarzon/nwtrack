@@ -355,7 +355,12 @@ class AccountsListScreen(Screen):
                 severity="error",
             )
             return
-        self.call_after_refresh(self._refresh_table)
+        def _refresh_and_restore() -> None:
+            self._refresh_table()
+            table = self.query_one("#accounts-table", DataTable)
+            if row_idx < len(self._accounts):
+                table.move_cursor(row=row_idx)
+        self.call_after_refresh(_refresh_and_restore)
 
     @work
     async def action_delete(self) -> None:
