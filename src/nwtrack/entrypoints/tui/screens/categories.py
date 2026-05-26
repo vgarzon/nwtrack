@@ -73,7 +73,7 @@ class CategoryFormModal(ModalScreen[Category | None]):
             error.update("Name is required")
             self.query_one("#input-name", Input).focus()
             return
-        if side_select.value is Select.BLANK:
+        if side_select.value is Select.NULL:
             error.update("Side is required")
             side_select.focus()
             return
