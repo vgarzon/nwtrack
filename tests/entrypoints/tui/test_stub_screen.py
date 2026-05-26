@@ -1,28 +1,36 @@
-"""Tests for StubScreen placeholder behaviour."""
+"""Tests for StubScreen placeholder behaviour.
+
+The StubScreen is kept as a fallback but is no longer used by default navigation
+paths — Accounts and Admin now route to real screens. These tests verify the
+StubScreen itself still works correctly when used directly.
+"""
 
 import asyncio
-from unittest.mock import MagicMock
 
-from nwtrack.entrypoints.tui.app import NWTrackApp
-from nwtrack.entrypoints.tui.screens.home import HomeScreen
+from textual.app import App, ComposeResult
+
+from nwtrack.entrypoints.tui.screens.stub import StubScreen
 
 
-def _make_app() -> NWTrackApp:
-    fetcher = MagicMock()
-    fetcher.get_recent_months.return_value = []
-    return NWTrackApp(fetcher=fetcher, uow=MagicMock())
+class _StubApp(App):
+    """Minimal app that pushes a StubScreen immediately."""
+
+    def compose(self) -> ComposeResult:
+        from textual.widgets import Label
+
+        yield Label("root")
+
+    def on_mount(self) -> None:
+        self.push_screen(StubScreen("TestSection"))
 
 
 class TestStubScreen:
     def test_stub_screen_shows_section_name_in_subtitle(self) -> None:
         async def _run() -> None:
-            app = _make_app()
+            app = _StubApp()
             async with app.run_test() as pilot:
-                await pilot.press("down")
-                await pilot.press("down")
-                await pilot.press("enter")
                 await pilot.pause()
-                assert app.screen.sub_title == "Accounts"
+                assert app.screen.sub_title == "TestSection"
 
         asyncio.run(_run())
 
@@ -30,29 +38,22 @@ class TestStubScreen:
         async def _run() -> None:
             from textual.widgets import Label
 
-            app = _make_app()
+            app = _StubApp()
             async with app.run_test() as pilot:
-                await pilot.press("down")
-                await pilot.press("down")
-                await pilot.press("enter")
                 await pilot.pause()
                 label = app.screen.query_one("#stub-label", Label)
                 assert label is not None
 
         asyncio.run(_run())
 
-    def test_escape_from_stub_pops_to_home(self) -> None:
+    def test_escape_from_stub_pops_screen(self) -> None:
         async def _run() -> None:
-            app = _make_app()
+            app = _StubApp()
             async with app.run_test() as pilot:
-                await pilot.press("down")
-                await pilot.press("down")
-                await pilot.press("enter")
                 await pilot.pause()
-                stack_depth = len(app.screen_stack)
+                assert isinstance(app.screen, StubScreen)
                 await pilot.press("escape")
                 await pilot.pause()
-                assert isinstance(app.screen, HomeScreen)
-                assert len(app.screen_stack) == stack_depth - 1
+                assert not isinstance(app.screen, StubScreen)
 
         asyncio.run(_run())

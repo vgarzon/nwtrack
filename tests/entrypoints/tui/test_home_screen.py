@@ -3,13 +3,12 @@
 import asyncio
 from unittest.mock import MagicMock
 
-import pytest
-
 from nwtrack.entrypoints.tui.app import NWTrackApp
+from nwtrack.entrypoints.tui.screens.accounts import AccountsListScreen
+from nwtrack.entrypoints.tui.screens.admin_menu import AdminMenuScreen
 from nwtrack.entrypoints.tui.screens.balance_update import BalanceUpdateScreen
 from nwtrack.entrypoints.tui.screens.home import HomeScreen
 from nwtrack.entrypoints.tui.screens.reports_menu import ReportsMenuScreen
-from nwtrack.entrypoints.tui.screens.stub import StubScreen
 
 
 def _make_app() -> NWTrackApp:
@@ -77,24 +76,26 @@ class TestHomeScreenNavigation:
 
         asyncio.run(_run())
 
-    @pytest.mark.parametrize(
-        "steps,expected_subtitle",
-        [
-            (2, "Accounts"),
-            (3, "Admin"),
-        ],
-    )
-    def test_placeholder_items_push_stub_screen(
-        self, steps: int, expected_subtitle: str
-    ) -> None:
+    def test_accounts_pushes_accounts_list_screen(self) -> None:
         async def _run() -> None:
             app = _make_app()
             async with app.run_test() as pilot:
-                for _ in range(steps):
+                await pilot.press("down")
+                await pilot.press("down")
+                await pilot.press("enter")
+                await pilot.pause()
+                assert isinstance(app.screen, AccountsListScreen)
+
+        asyncio.run(_run())
+
+    def test_admin_pushes_admin_menu_screen(self) -> None:
+        async def _run() -> None:
+            app = _make_app()
+            async with app.run_test() as pilot:
+                for _ in range(3):
                     await pilot.press("down")
                 await pilot.press("enter")
                 await pilot.pause()
-                assert isinstance(app.screen, StubScreen)
-                assert app.screen.sub_title == expected_subtitle
+                assert isinstance(app.screen, AdminMenuScreen)
 
         asyncio.run(_run())
