@@ -35,6 +35,9 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         self._session = self._session_factory()
 
         # Import repository implementations here to avoid circular imports
+        from nwtrack.infra.persistence.repositories.account_status_history import (
+            AccountStatusHistoryRepository,
+        )
         from nwtrack.infra.persistence.repositories.accounts import (
             AccountsRepository,
         )
@@ -70,6 +73,7 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         self.balances = BalancesRepository(self._session)
         self.exchange_rates = ExchangeRatesRepository(self._session)
         self.net_worth = NetWorthRepository(self._session)
+        self.account_status_history = AccountStatusHistoryRepository(self._session)
         self.reporting = ReportingQueries(self._session)
         # Keep the legacy attribute during the reporting-layer transition.
         self._reporting = self.reporting

@@ -7,6 +7,7 @@ from typing import Protocol
 from nwtrack.application.ports.reporting import ReportingQueries
 from nwtrack.application.ports.repos import (
     AccountsRepository,
+    AccountStatusHistoryRepository,
     BalancesRepository,
     CategoriesRepository,
     CurrenciesRepository,
@@ -28,6 +29,7 @@ class UnitOfWork(Protocol):
     balances: BalancesRepository
     exchange_rates: ExchangeRatesRepository
     net_worth: NetWorthRepository
+    account_status_history: AccountStatusHistoryRepository
     reporting: ReportingQueries
     _reporting: ReportingQueries
 
