@@ -53,7 +53,7 @@
 
 ---
 
-### 4. CSV export + import
+### 4. CSV export + import ✓
 
 4.1 Add `"account_status_history"` to `ExportCSV._table_names` and
     `_field_orders` (fields: `id`, `account_id`, `status`, `effective_month`)  

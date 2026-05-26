@@ -82,6 +82,12 @@ def _write_minimal_bundle(target_dir: Path) -> None:
         "id,currency,month,rate",
         ["1,USD,2024-01,1.0"],
     )
+    _write_bundle_file(
+        target_dir,
+        "account_status_history",
+        "id,account_id,status,effective_month",
+        ["1,1,active,2024-01"],
+    )
 
 
 def _write_invalid_account_tag_bundle(target_dir: Path) -> None:

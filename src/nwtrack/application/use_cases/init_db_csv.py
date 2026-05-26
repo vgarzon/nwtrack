@@ -37,6 +37,7 @@ class DBInitializerCSV:
             "account_tags",
             "balances",
             "exchange_rates",
+            "account_status_history",
         ]
         self._file_paths: dict[str, str] = {}
 
