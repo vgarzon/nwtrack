@@ -275,6 +275,7 @@ class AccountsListScreen(Screen):
                 tag_names,
                 key=str(acc.id),
             )
+        table.refresh(layout=True)
 
     def _load_form_deps(
         self,
@@ -339,18 +340,14 @@ class AccountsListScreen(Screen):
         if result is None:
             return
         try:
+            acc.name = result.name
+            acc.description = result.description
+            acc.category_name = result.category_name
+            acc.currency_code = result.currency_code
+            acc.status = result.status
+            acc.institution_id = result.institution_id
             with self._uow() as uow:
-                uow.accounts.update_name(acc.id, result.name)
-                uow.accounts.update_description(acc.id, result.description)
-                uow.accounts.update_category(acc.id, result.category_name)
-                uow.accounts.update_currency(acc.id, result.currency_code)
-                uow.accounts.update_status(acc.id, result.status.value)
-                if result.institution_id is not None:
-                    acc.institution_id = result.institution_id
-                    uow.accounts.update(acc)
-                else:
-                    acc.institution_id = None
-                    uow.accounts.update(acc)
+                uow.accounts.update(acc)
                 uow.tags.replace_for_account(acc.id, result.tag_ids)
         except Exception:
             self.notify(
