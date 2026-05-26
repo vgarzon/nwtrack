@@ -81,9 +81,9 @@ just check   # ruff + mypy + pytest
 
 ## Definition of Done
 
-- [ ] `just check` passes (ruff, mypy, pytest)
-- [ ] All feature-specific test assertions above pass
+- [x] `just check` passes (ruff, mypy, pytest) — 323 tests pass
+- [x] All feature-specific test assertions above pass
 - [ ] Manual seeding check completed
-- [ ] `nwtrack reports` commands accept `--status-scope historical`
-- [ ] CSV export includes `account_status_history.csv`
-- [ ] Spec files committed alongside implementation
+- [x] `nwtrack reports` commands accept `--status-scope historical` (StrEnum-based)
+- [x] CSV export includes `account_status_history.csv`
+- [x] Spec files committed alongside implementation
