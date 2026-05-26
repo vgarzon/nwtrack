@@ -335,7 +335,7 @@ Expected outcomes:
 - Escape from any workflow screen returns to the home screen
 - `ruff`, `mypy`, and `pytest` pass
 
-### [ ] Phase 29: TUI Report Screens
+### [X] Phase 29: TUI Report Screens
 
 Goal:
 Add TUI screens for the single-month and history aggregated balance reports so the primary
