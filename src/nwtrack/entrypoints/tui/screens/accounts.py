@@ -132,7 +132,7 @@ class AccountFormModal(ModalScreen[AccountFormData | None]):
             yield Label("Category")
             yield Select(
                 options=category_options,
-                value=acc.category_name if acc else Select.BLANK,
+                value=acc.category_name if acc else Select.NULL,
                 prompt="Select category",
                 allow_blank=True,
                 id="select-category",
@@ -183,11 +183,11 @@ class AccountFormModal(ModalScreen[AccountFormData | None]):
             error.update("Name is required")
             self.query_one("#input-name", Input).focus()
             return
-        if category_select.value is Select.BLANK:
+        if category_select.value is Select.NULL:
             error.update("Category is required")
             category_select.focus()
             return
-        if currency_select.value is Select.BLANK:
+        if currency_select.value is Select.NULL:
             error.update("Currency is required")
             currency_select.focus()
             return
@@ -195,13 +195,13 @@ class AccountFormModal(ModalScreen[AccountFormData | None]):
         institution_select = self.query_one("#select-institution", Select)
         inst_raw = institution_select.value
         institution_id: int | None = (
-            int(str(inst_raw)) if inst_raw and inst_raw is not Select.BLANK else None
+            int(str(inst_raw)) if inst_raw and inst_raw is not Select.NULL else None
         )
 
         status = Status.ACTIVE
         if self._edit_mode:
             status_select = self.query_one("#select-status", Select)
-            if status_select.value is not Select.BLANK:
+            if status_select.value is not Select.NULL:
                 status = Status(str(status_select.value))
             else:
                 status = Status.ACTIVE
