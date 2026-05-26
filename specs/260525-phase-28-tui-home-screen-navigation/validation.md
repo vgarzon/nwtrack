@@ -51,11 +51,11 @@ just check
 
 ## Definition of Done
 
-- [ ] `HomeScreen` is the entry point when `nwtrack tui launch` runs
-- [ ] All four menu items are listed; Balances navigates to `BalanceUpdateScreen`
-- [ ] Reports, Accounts, Admin push `StubScreen` with the correct section name
-- [ ] Escape from any workflow screen returns to home; Escape from home quits
-- [ ] `q` quits from any screen
-- [ ] `Header` and `Footer` are visible on home screen, balance update screen, and stub screens
-- [ ] `just check` passes (ruff + mypy + pytest)
+- [x] `HomeScreen` is the entry point when `nwtrack tui launch` runs
+- [x] All four menu items are listed; Balances navigates to `BalanceUpdateScreen`
+- [x] Reports, Accounts, Admin push `StubScreen` with the correct section name
+- [x] Escape from any workflow screen returns to home; Escape from home quits
+- [x] `q` quits from any screen
+- [x] `Header` and `Footer` are visible on home screen, balance update screen, and stub screens
+- [x] `just check` passes (ruff + mypy + pytest) — 272 tests passed
 - [ ] Manual walkthrough completed against a real database
