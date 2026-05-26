@@ -134,6 +134,7 @@ class AccountFormModal(ModalScreen[AccountFormData | None]):
                 options=category_options,
                 value=acc.category_name if acc else Select.BLANK,
                 prompt="Select category",
+                allow_blank=True,
                 id="select-category",
             )
             yield Label("Institution (optional)")
