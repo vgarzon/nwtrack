@@ -77,6 +77,7 @@ def valid_file_paths() -> dict[str, str]:
         "account_tags": "tests/data/csv/account_tags.csv",
         "balances": "tests/data/csv/balances.csv",
         "exchange_rates": "tests/data/csv/exchange_rates.csv",
+        "account_status_history": "tests/data/csv/account_status_history.csv",
     }
 
 
@@ -144,6 +145,7 @@ def test_db_initializer_csv_requires_phase22_bundle(
             "account_tags",
             "balances",
             "exchange_rates",
+            "account_status_history",
         ]
         return valid_file_paths
 

@@ -37,6 +37,7 @@ class ExportCSV:
         ),
         "balances": ("id", "account_id", "month", "amount"),
         "exchange_rates": ("id", "currency", "month", "rate"),
+        "account_status_history": ("id", "account_id", "status", "effective_month"),
     }
 
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
@@ -51,6 +52,7 @@ class ExportCSV:
             "account_tags",
             "balances",
             "exchange_rates",
+            "account_status_history",
         ]
 
     @classmethod

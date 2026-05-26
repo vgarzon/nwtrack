@@ -25,6 +25,7 @@ class InitDataService:
         "account_tags",
         "balances",
         "exchange_rates",
+        "account_status_history",
     )
     IMPORT_HEADERS = {
         "currencies": ("code", "description"),
@@ -43,6 +44,7 @@ class InitDataService:
         "account_tags": ("account_id", "tag_id"),
         "balances": ("id", "account_id", "month", "amount"),
         "exchange_rates": ("id", "currency", "month", "rate"),
+        "account_status_history": ("id", "account_id", "status", "effective_month"),
     }
     IMPORT_ENTITY_TABLE_NAMES = (
         "currencies",
@@ -52,6 +54,7 @@ class InitDataService:
         "accounts",
         "balances",
         "exchange_rates",
+        "account_status_history",
     )
 
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
