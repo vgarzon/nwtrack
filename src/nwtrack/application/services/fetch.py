@@ -83,6 +83,11 @@ class FetchService:
             tags = uow.tags.get_all()
         return tags
 
+    def get_tags_for_account(self, account_id: int) -> list[Tag]:
+        """Get all tags linked to a specific account."""
+        with self._uow() as uow:
+            return uow.tags.get_for_account(account_id)
+
     def get_account_by_id(self, account_id: int) -> Account | None:
         """Get account by ID.
 
