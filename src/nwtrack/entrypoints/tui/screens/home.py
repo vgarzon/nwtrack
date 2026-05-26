@@ -9,7 +9,6 @@ from textual.widgets import Footer, Header, Label, ListItem, ListView
 
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.entrypoints.tui.screens.stub import StubScreen
 
 _MENU_ITEMS = ["Balances", "Reports", "Accounts", "Admin"]
 
@@ -47,5 +46,9 @@ class HomeScreen(Screen):
         elif section == "Reports":
             from nwtrack.entrypoints.tui.screens.reports_menu import ReportsMenuScreen
             self.app.push_screen(ReportsMenuScreen(self._fetcher, self._uow))
-        else:
-            self.app.push_screen(StubScreen(section))
+        elif section == "Accounts":
+            from nwtrack.entrypoints.tui.screens.accounts import AccountsListScreen
+            self.app.push_screen(AccountsListScreen(self._fetcher, self._uow))
+        elif section == "Admin":
+            from nwtrack.entrypoints.tui.screens.admin_menu import AdminMenuScreen
+            self.app.push_screen(AdminMenuScreen(self._fetcher, self._uow))
