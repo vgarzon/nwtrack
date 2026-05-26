@@ -190,6 +190,24 @@ class Balance(MappedAsDataclass, Base):
     )
 
 
+class AccountStatusHistory(MappedAsDataclass, Base):
+    """Records when an account's status became effective."""
+
+    __tablename__ = "account_status_history"
+    __table_args__ = (
+        UniqueConstraint(
+            "account_id", "effective_month", name="uq_ash_account_month"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
+    account_id: Mapped[int] = mapped_column(Integer, ForeignKey("accounts.id"))
+    status: Mapped[Status] = mapped_column(
+        SQLEnum(Status, values_callable=lambda x: [e.value for e in x])
+    )
+    effective_month: Mapped[Month] = mapped_column(MonthType)
+
+
 class ExchangeRate(MappedAsDataclass, Base):
     """Exchange rate entity."""
 
