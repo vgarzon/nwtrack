@@ -28,7 +28,7 @@ class BalanceUpdateScreen(Screen):
     """Editable grid of account balances for a selected month."""
 
     BINDINGS = [
-        Binding("escape,q", "app.quit", "Quit"),
+        Binding("escape", "app.pop_screen", "Back"),
         Binding("m", "pick_month", "Change month"),
     ]
 
