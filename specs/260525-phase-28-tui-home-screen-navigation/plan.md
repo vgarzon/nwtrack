@@ -2,7 +2,7 @@
 
 ## Task Groups
 
-### 1. New screens
+### 1. New screens ✓
 
 1.1 Create `entrypoints/tui/screens/stub.py`
    - `StubScreen(Screen)` — accepts `section: str` in constructor
@@ -21,7 +21,7 @@
      - `"Balances"` → `self.app.push_screen(BalanceUpdateScreen(self._fetcher, self._uow))`
      - `"Reports"` / `"Accounts"` / `"Admin"` → `self.app.push_screen(StubScreen(label))`
 
-### 2. Update existing files
+### 2. Update existing files ✓
 
 2.1 Update `entrypoints/tui/screens/balance_update.py`
    - Change `BINDINGS` entry for Escape from `Binding("escape,q", "app.quit", "Quit")` to
@@ -32,7 +32,7 @@
    - Import `HomeScreen` instead of `BalanceUpdateScreen`
    - Change `on_mount` to `self.push_screen(HomeScreen(self._fetcher, self._uow))`
 
-### 3. Tests
+### 3. Tests ✓
 
 3.1 Add `tests/entrypoints/tui/test_home_screen.py`
    - Test that `HomeScreen` composes without error (pilot smoke test)
@@ -46,7 +46,7 @@
 
 3.3 Verify existing `BalanceUpdateScreen` tests still pass after the binding change
 
-### 4. Quality gates
+### 4. Quality gates ✓
 
 4.1 `just lint` passes (ruff)
 4.2 `just typecheck` passes (mypy)
