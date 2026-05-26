@@ -316,7 +316,7 @@ Expected outcomes:
   in favor of the current imperative `_refresh_networth()` approach — one or the other, not both
 - `ruff`, `mypy`, and `pytest` pass
 
-### [ ] Phase 28: TUI Home Screen and Navigation Shell
+### [X] Phase 28: TUI Home Screen and Navigation Shell
 
 Goal:
 Add a home menu screen and a screen stack so the TUI has a proper entry point and navigation
