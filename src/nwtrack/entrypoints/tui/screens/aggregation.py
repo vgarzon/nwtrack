@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 
+from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -68,7 +69,7 @@ class AggregationScreen(Screen):
 
     def on_mount(self) -> None:
         table = self.query_one("#agg-table", DataTable)
-        table.add_columns("Group", "Amount")
+        table.add_columns("Group", Text("Amount", justify="right"))
 
         self._available = self._fetcher.get_available_aggregation_months(
             _DEFAULT_DIMENSION,
@@ -129,7 +130,7 @@ class AggregationScreen(Screen):
             (label for label, dim in _DIMENSION_OPTIONS if dim == self._dimension),
             "Group",
         )
-        table.add_columns(group_label, "Amount")
+        table.add_columns(group_label, Text("Amount", justify="right"))
 
         use_case = ReportSingleMonthAggregation(uow=self._uow)
         result = use_case.run(
@@ -149,7 +150,7 @@ class AggregationScreen(Screen):
         self._hide_error()
         self._update_subtitle()
         for group in result.data.groups:
-            table.add_row(group.label, f"{group.amount:,}")
+            table.add_row(group.label, Text(f"{group.amount:,}", justify="right"))
 
     def _show_error(self, message: str) -> None:
         label = self.query_one("#error-label", Label)
