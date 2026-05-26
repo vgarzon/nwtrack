@@ -379,7 +379,7 @@ Expected outcomes:
 - These screens follow the screen-owned workflow pattern established in Phase 25
 - `ruff`, `mypy`, and `pytest` pass
 
-### [ ] Phase 32: Account Status History
+### [x] Phase 32: Account Status History
 
 Goal:
 Record account status changes over time so that historical reports can apply each account's status as of each reporting month rather than projecting the current status backward.
