@@ -6,6 +6,7 @@ import logging
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.functions import coalesce
 
 from nwtrack.application.dto import (
     AccountStatusScope,
@@ -21,6 +22,7 @@ from nwtrack.application.dto import (
 from nwtrack.domain.value_objects import Month
 from nwtrack.infra.persistence.orm.models import (
     Account,
+    AccountStatusHistory,
     Balance,
     Category,
     Institution,
@@ -554,6 +556,19 @@ class ReportingQueries:
         """Apply account status filtering when requested."""
         if status_scope == AccountStatusScope.ACTIVE:
             stmt = stmt.where(Account.status == Status.ACTIVE)
+        elif status_scope == AccountStatusScope.HISTORICAL:
+            history_subq = (
+                select(AccountStatusHistory.status)
+                .where(AccountStatusHistory.account_id == Account.id)
+                .where(AccountStatusHistory.effective_month <= Balance.month)
+                .order_by(AccountStatusHistory.effective_month.desc())
+                .limit(1)
+                .correlate(Account, Balance)
+                .scalar_subquery()
+            )
+            stmt = stmt.where(
+                coalesce(history_subq, Account.status) == Status.ACTIVE
+            )
         return stmt
 
     def _resolve_result_currency_code(

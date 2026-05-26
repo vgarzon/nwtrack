@@ -24,6 +24,7 @@ class AccountStatusScope(StrEnum):
 
     ACTIVE = "active"
     ALL = "all"
+    HISTORICAL = "historical"
 
 
 @dataclass(frozen=True)

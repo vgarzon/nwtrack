@@ -38,7 +38,7 @@
 
 ---
 
-### 3. HISTORICAL scope + reporting queries
+### 3. HISTORICAL scope + reporting queries ✓
 
 3.1 Add `AccountStatusScope.HISTORICAL = "historical"` to `application/dto.py`  
 3.2 Update `ReportingQueries._apply_status_scope` to handle `HISTORICAL`:
