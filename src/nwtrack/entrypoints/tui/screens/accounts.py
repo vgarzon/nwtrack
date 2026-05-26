@@ -317,7 +317,7 @@ class AccountsListScreen(Screen):
                 severity="error",
             )
             return
-        self._refresh_table()
+        self.call_after_refresh(self._refresh_table)
 
     @work
     async def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
@@ -355,7 +355,7 @@ class AccountsListScreen(Screen):
                 severity="error",
             )
             return
-        self._refresh_table()
+        self.call_after_refresh(self._refresh_table)
 
     @work
     async def action_delete(self) -> None:
@@ -377,4 +377,4 @@ class AccountsListScreen(Screen):
         with self._uow() as uow:
             uow.balances.delete_by_account_id(acc.id)
             uow.accounts.delete_by_id(acc.id)
-        self._refresh_table()
+        self.call_after_refresh(self._refresh_table)
