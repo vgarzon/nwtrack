@@ -7,6 +7,7 @@ to maintain backward compatibility with existing code.
 
 from nwtrack.infra.persistence.orm.models import (
     Account,
+    AccountStatusHistory,
     Balance,
     Category,
     Currency,
@@ -20,6 +21,7 @@ from nwtrack.infra.persistence.orm.models import (
 
 __all__ = [
     "Account",
+    "AccountStatusHistory",
     "Balance",
     "Category",
     "Currency",

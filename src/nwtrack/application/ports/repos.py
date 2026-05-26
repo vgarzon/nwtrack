@@ -4,17 +4,20 @@ Repository protocols.
 
 from __future__ import annotations
 
-from typing import Protocol, TypeVar
+from collections.abc import Mapping
+from typing import Any, Protocol, TypeVar
 
 from nwtrack.application.ports.mappers import DBRecord
 from nwtrack.domain.models import (
     Account,
+    AccountStatusHistory,
     Balance,
     Category,
     Currency,
     ExchangeRate,
     Institution,
     NetWorth,
+    Status,
     Tag,
 )
 from nwtrack.domain.value_objects import Month
@@ -287,4 +290,36 @@ class NetWorthRepository(Protocol):
 
     def get_last_n(self, n: int, currency_code: str = "USD") -> list[NetWorth]:
         """Get last n net worth records for a given currency."""
+        ...
+
+
+class AccountStatusHistoryRepository(Protocol):
+    """Protocol for account status history repository operations."""
+
+    def insert(self, entry: AccountStatusHistory) -> int:
+        """Insert one history row and return its generated id."""
+        ...
+
+    def insert_many(self, entries: list[AccountStatusHistory]) -> None:
+        """Insert multiple history rows in bulk."""
+        ...
+
+    def get_all(self) -> list[AccountStatusHistory]:
+        """Return all history rows."""
+        ...
+
+    def get_effective_status(
+        self, account_id: int, month: Month
+    ) -> Status | None:
+        """Return the effective status for an account at a given month."""
+        ...
+
+    def hydrate(self, record: Mapping[str, Any]) -> AccountStatusHistory:
+        """Convert a dict record into an AccountStatusHistory instance."""
+        ...
+
+    def hydrate_many(
+        self, records: list[Mapping[str, Any]]
+    ) -> list[AccountStatusHistory]:
+        """Convert a list of dict records into AccountStatusHistory instances."""
         ...
