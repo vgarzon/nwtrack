@@ -73,6 +73,7 @@ def sample_data_file_paths() -> dict[str, str]:
         "accounts": "tests/data/csv/accounts.csv",
         "balances": "tests/data/csv/balances.csv",
         "exchange_rates": "tests/data/csv/exchange_rates.csv",
+        "account_status_history": "tests/data/csv/account_status_history.csv",
     }
 
 

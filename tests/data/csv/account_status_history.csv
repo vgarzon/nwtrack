@@ -1,0 +1,5 @@
+id,account_id,status,effective_month
+1,1,active,2024-01
+2,2,active,2024-01
+3,3,active,2024-01
+4,4,inactive,2024-01
