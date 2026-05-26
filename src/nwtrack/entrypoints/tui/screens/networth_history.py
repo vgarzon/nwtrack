@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 
+from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -58,7 +59,12 @@ class NetWorthHistoryScreen(Screen):
 
     def on_mount(self) -> None:
         table = self.query_one("#history-table", DataTable)
-        table.add_columns("Month", "Assets", "Liabilities", "Net Worth")
+        table.add_columns(
+            "Month",
+            Text("Assets", justify="right"),
+            Text("Liabilities", justify="right"),
+            Text("Net Worth", justify="right"),
+        )
 
         self._available = self._fetcher.get_available_aggregation_months(
             AggregationDimension.SIDE,
@@ -141,9 +147,9 @@ class NetWorthHistoryScreen(Screen):
         for nw in nws:
             table.add_row(
                 str(nw.month),
-                f"{nw.assets:,}",
-                f"{nw.liabilities:,}",
-                f"{nw.net_worth:,}",
+                Text(f"{nw.assets:,}", justify="right"),
+                Text(f"{nw.liabilities:,}", justify="right"),
+                Text(f"{nw.net_worth:,}", justify="right"),
             )
 
     def _show_error(self, message: str) -> None:
