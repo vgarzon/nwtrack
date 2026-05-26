@@ -63,7 +63,7 @@
 
 ---
 
-### 5. Tests
+### 5. Tests ✓
 
 5.1 `tests/sqlite/test_account_status_history_repo.py`  
   - `insert` + `get_all` round-trip  
