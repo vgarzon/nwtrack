@@ -82,7 +82,9 @@ class AggregationScreen(Screen):
 
         self._month = self._available[-1]
         self._update_button()
-        self._refresh_table()
+        # Defer until after first layout pass so the DataTable knows its rendered
+        # width and sizes columns correctly from the start.
+        self.call_after_refresh(self._refresh_table)
 
     # ── Actions ──────────────────────────────────────────────────────────────
 
