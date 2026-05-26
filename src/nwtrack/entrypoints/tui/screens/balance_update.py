@@ -22,6 +22,8 @@ from nwtrack.domain.models import Balance
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.tui.screens.balance_edit import BalanceEditModal
 from nwtrack.entrypoints.tui.screens.month_picker import MonthPickerModal
+from nwtrack.entrypoints.tui.screens.roll_forward import RollForwardModal
+from nwtrack.entrypoints.tui.screens.transfer import TransferModal
 
 
 class BalanceUpdateScreen(Screen):
@@ -30,6 +32,8 @@ class BalanceUpdateScreen(Screen):
     BINDINGS = [
         Binding("escape", "app.pop_screen", "Back"),
         Binding("m", "pick_month", "Change month"),
+        Binding("r", "roll_forward", "Roll forward"),
+        Binding("t", "transfer", "Transfer"),
     ]
 
     def __init__(
@@ -164,6 +168,37 @@ class BalanceUpdateScreen(Screen):
         self._balances[row_idx] = self._fetcher.get_balance_for_account_id(
             self._month, account_id
         )
+        self._refresh_networth()
+
+    @work
+    async def action_roll_forward(self) -> None:
+        if self._month is None:
+            return
+        result: Month | None = await self.app.push_screen_wait(
+            RollForwardModal(
+                fetcher=self._fetcher,
+                uow=self._uow,
+                source_month=self._month,
+            )
+        )
+        if result is not None:
+            self._month = result
+            self._update_header()
+            self.call_after_refresh(self._refresh_table)
+            self.call_after_refresh(self._refresh_networth)
+
+    @work
+    async def action_transfer(self) -> None:
+        if self._month is None:
+            return
+        await self.app.push_screen_wait(
+            TransferModal(
+                fetcher=self._fetcher,
+                uow=self._uow,
+                month=self._month,
+            )
+        )
+        self._refresh_table()
         self._refresh_networth()
 
     # ── Helpers ──────────────────────────────────────────────────────────────
