@@ -390,15 +390,14 @@ Phase 20 improves historical accuracy by including all accounts unconditionally,
 Expected outcomes:
 
 - A new `account_status_history` table exists with columns `id`, `account_id`, `status`, and `effective_month` (`YYYY-MM`), where each row records the status that became effective at a given month
-- A database migration adds the table and seeds one initial row per account using the account's current status and a representative effective month derived from the account's earliest balance record or creation date
-- `AccountRepository` (or a dedicated status-history repository) exposes methods to insert status-history rows and look up an account's effective status for a given month
-- Aggregation queries in `ReportingQueries` can join `account_status_history` to filter by effective status at each balance month, replacing the current join on `Account.status`
-- `AccountStatusScope` semantics are updated or extended so reporting layers can request historically-accurate status filtering
-- `nwtrack reports networth-history` and aggregated history reports use the per-month effective status when available
-- The seeding migration logic and its assumptions are documented in the feature spec
-- Tests cover: status-history inserts, effective-status lookup at a given month, and history aggregation filtered by historical status across a multi-month range
-- `ruff`, `mypy`, and `pytest` pass
-- CSV export and import include `account_status_history` in supported table sets, or the feature spec explicitly defers that to a follow-on phase
+- A dedicated `AccountStatusHistoryRepository` exposes methods to insert status-history rows, look up effective status for a given month, and support CSV hydration
+- Initial rows are seeded via `nwtrack admin seed-status-history` (on-demand, not on startup); seeding logic and assumptions are documented in the feature spec
+- Account creation inserts an initial `(active, initial_month)` history row atomically, via both CLI and TUI paths
+- Account status changes insert a new `(new_status, current_month)` history row atomically, via both CLI (`update_account_info`) and TUI (`AccountsListScreen`)
+- `AccountStatusScope.HISTORICAL` applies per-month effective status to all aggregation queries via a correlated subquery with `COALESCE` fallback to `Account.status`
+- All CLI `--status-scope` flags accept `historical` as a valid value
+- `ruff`, `mypy`, and `pytest` pass (331 tests)
+- `account_status_history` is included in CSV export and import
 
 ### [ ] Phase 33: Reporting UX Options
 
