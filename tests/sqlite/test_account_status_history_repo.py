@@ -157,7 +157,7 @@ class TestSchemaSeeding:
                 "VALUES (10, '2023-01', 200)"
             ))
 
-        SchemaManager(engine)._seed_account_status_history()
+        SchemaManager(engine).seed_account_status_history()
 
         from sqlalchemy import select
         from sqlalchemy.orm import Session
@@ -200,8 +200,8 @@ class TestSchemaSeeding:
             ))
 
         schema_mgr = SchemaManager(engine)
-        schema_mgr._seed_account_status_history()
-        schema_mgr._seed_account_status_history()
+        schema_mgr.seed_account_status_history()
+        schema_mgr.seed_account_status_history()
 
         from sqlalchemy import select
         from sqlalchemy.orm import Session
@@ -247,7 +247,7 @@ class TestSchemaSeeding:
                 "VALUES (30, '2024-06', 200)"
             ))
 
-        SchemaManager(engine)._seed_account_status_history()
+        SchemaManager(engine).seed_account_status_history()
 
         from sqlalchemy import select
         from sqlalchemy.orm import Session
@@ -303,7 +303,7 @@ class TestSchemaSeeding:
                 "VALUES (40, 'inactive', '2021-03')"
             ))
 
-        SchemaManager(engine)._seed_account_status_history()
+        SchemaManager(engine).seed_account_status_history()
 
         from sqlalchemy import select
         from sqlalchemy.orm import Session
