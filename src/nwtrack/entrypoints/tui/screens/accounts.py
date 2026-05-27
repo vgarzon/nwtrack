@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date
 
 from textual import work
 from textual.app import ComposeResult
@@ -21,8 +22,10 @@ from textual.widgets.selection_list import Selection
 
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
+from nwtrack.domain.value_objects import Month
 from nwtrack.infra.persistence.orm.models import (
     Account,
+    AccountStatusHistory,
     Category,
     Institution,
     Status,
@@ -312,6 +315,14 @@ class AccountsListScreen(Screen):
             with self._uow() as uow:
                 account_id = uow.accounts.insert(account)
                 uow.tags.replace_for_account(account_id, result.tag_ids)
+                today = date.today()
+                uow.account_status_history.insert(
+                    AccountStatusHistory(
+                        account_id=account_id,
+                        status=Status.ACTIVE,
+                        effective_month=Month(today.year, today.month),
+                    )
+                )
         except Exception:
             self.notify(
                 "Failed to create account — name may already exist",
@@ -341,6 +352,7 @@ class AccountsListScreen(Screen):
         if result is None:
             return
         try:
+            old_status = acc.status
             acc.name = result.name
             acc.description = result.description
             acc.category_name = result.category_name
@@ -350,6 +362,15 @@ class AccountsListScreen(Screen):
             with self._uow() as uow:
                 uow.accounts.update(acc)
                 uow.tags.replace_for_account(acc.id, result.tag_ids)
+                if old_status != result.status:
+                    today = date.today()
+                    uow.account_status_history.insert(
+                        AccountStatusHistory(
+                            account_id=acc.id,
+                            status=result.status,
+                            effective_month=Month(today.year, today.month),
+                        )
+                    )
         except Exception:
             self.notify(
                 "Failed to update account — name may already exist",

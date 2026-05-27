@@ -63,11 +63,19 @@ class SchemaManager:
             )
 
     def _seed_account_status_history(self) -> None:
-        """Seed one initial status-history row per account that lacks one.
+        """Seed status-history rows based on balance history and current account status.
 
-        Uses the account's current status and its earliest balance month
-        (or '1900-01' for accounts with no balance records).
-        Safe to call repeatedly — INSERT OR IGNORE prevents duplicates.
+        For active accounts: one row (active, first_balance_month).
+        For inactive accounts with distinct first/last balance months: two rows —
+        (active, first_balance_month) and (inactive, last_balance_month).
+        For inactive accounts with no balance history or a single balance month:
+        one row (inactive, that_month or '1900-01').
+
+        Also migrates old-style seeded rows: a single (inactive, first_month) row
+        for an account with a distinct last balance month is replaced with the
+        two-row form above.
+
+        Safe to call repeatedly — already-correct rows are left unchanged.
         """
         inspector = inspect(self._engine)
         if not inspector.has_table("account_status_history"):
@@ -76,18 +84,92 @@ class SchemaManager:
         if not inspector.has_table("accounts"):
             return
 
-        logger.info("Seeding account_status_history for accounts without history rows.")
-        with self._engine.begin() as connection:
-            connection.execute(
-                text(
-                    "INSERT OR IGNORE INTO account_status_history "
-                    "  (account_id, status, effective_month) "
-                    "SELECT a.id, a.status, COALESCE(MIN(b.month), '1900-01') "
-                    "FROM accounts a "
-                    "LEFT JOIN balances b ON b.account_id = a.id "
-                    "WHERE a.id NOT IN "
-                    "  (SELECT DISTINCT account_id FROM account_status_history) "
-                    "GROUP BY a.id, a.status"
+        from sqlalchemy import select
+        from sqlalchemy.orm import Session
+
+        from nwtrack.domain.value_objects import Month
+        from nwtrack.infra.persistence.orm.models import (
+            Account,
+            AccountStatusHistory,
+            Balance,
+            Status,
+        )
+
+        sentinel = Month(1900, 1)
+
+        logger.info("Seeding account_status_history...")
+        with Session(self._engine) as session:
+            accounts = session.execute(select(Account)).scalars().all()
+
+            for account in accounts:
+                existing = list(
+                    session.execute(
+                        select(AccountStatusHistory)
+                        .where(AccountStatusHistory.account_id == account.id)
+                        .order_by(AccountStatusHistory.effective_month)
+                    ).scalars().all()
                 )
-            )
+
+                balance_months = list(
+                    session.execute(
+                        select(Balance.month)
+                        .where(Balance.account_id == account.id)
+                        .order_by(Balance.month)
+                    ).scalars().all()
+                )
+
+                first_month: Month = balance_months[0] if balance_months else sentinel
+                last_month: Month | None = (
+                    balance_months[-1] if balance_months else None
+                )
+
+                if account.status == Status.ACTIVE:
+                    if not existing:
+                        session.add(AccountStatusHistory(
+                            account_id=account.id,
+                            status=Status.ACTIVE,
+                            effective_month=first_month,
+                        ))
+                else:
+                    if not existing:
+                        if last_month is not None and last_month != first_month:
+                            session.add(AccountStatusHistory(
+                                account_id=account.id,
+                                status=Status.ACTIVE,
+                                effective_month=first_month,
+                            ))
+                            session.add(AccountStatusHistory(
+                                account_id=account.id,
+                                status=account.status,
+                                effective_month=last_month,
+                            ))
+                        else:
+                            session.add(AccountStatusHistory(
+                                account_id=account.id,
+                                status=account.status,
+                                effective_month=(
+                                    last_month if last_month else first_month
+                                ),
+                            ))
+                    elif (
+                        len(existing) == 1
+                        and existing[0].status != Status.ACTIVE
+                        and last_month is not None
+                        and last_month != first_month
+                    ):
+                        # Migrate old-style seed: single non-active row → two rows
+                        session.delete(existing[0])
+                        session.flush()
+                        session.add(AccountStatusHistory(
+                            account_id=account.id,
+                            status=Status.ACTIVE,
+                            effective_month=first_month,
+                        ))
+                        session.add(AccountStatusHistory(
+                            account_id=account.id,
+                            status=account.status,
+                            effective_month=last_month,
+                        ))
+
+            session.commit()
         logger.info("account_status_history seeding complete.")
