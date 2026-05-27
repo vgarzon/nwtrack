@@ -17,3 +17,11 @@ def assign_institutions() -> None:
     import nwtrack.application.use_cases.admin_assign_institutions as uc
 
     uc.main()
+
+
+@admin_app.command("seed-status-history")
+def seed_status_history() -> None:
+    """Seed account_status_history from balance history and current account status."""
+    import nwtrack.application.use_cases.admin_seed_status_history as uc
+
+    uc.main()
