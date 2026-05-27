@@ -19,16 +19,23 @@ just check   # ruff + mypy + pytest
 - `hydrate` / `hydrate_many`: reconstruct `AccountStatusHistory` with correct types
 - `insert_many`: inserts multiple rows atomically
 
-**Schema seeding**
-- After `ensure_current_schema()` on an active account with balance history:
-  one row with `status=active` and `effective_month=first_balance_month`
-- After `ensure_current_schema()` on an inactive account with distinct first/last
-  balance months: two rows — `(active, first_month)` and `(inactive, last_month)`
-- After `ensure_current_schema()` on an inactive account with no balances:
-  one row with `status=inactive` and `effective_month='1900-01'`
+**Schema seeding** (`SchemaManager.seed_account_status_history()`)
+- Active account with balance history: one row with `status=active` and
+  `effective_month=first_balance_month`
+- Inactive account with distinct first/last balance months: two rows —
+  `(active, first_month)` and `(inactive, last_month)`
+- Inactive account with no balances: one row with `status=inactive` and
+  `effective_month='1900-01'`
 - Second call does not create duplicate rows (idempotency)
 - An existing single `(inactive, first_month)` row for an account with a distinct
-  last balance month is migrated to the two-row form on next seed call
+  last balance month is migrated to the two-row form on the next seed call
+
+**Admin seed use case**
+- `SeedAccountStatusHistory.run()` returns `OperationResult(success=True)` and
+  calls `presenter.show_header()` and `presenter.show_result(result)`
+- `result.seeded` counts accounts that received new rows from scratch
+- `result.migrated` counts accounts whose old-style row was replaced
+- `result.skipped` counts accounts left unchanged (already had correct rows)
 
 **Forward transition recording**
 - After `AccountCreator.run()` succeeds: one `account_status_history` row exists
@@ -56,10 +63,11 @@ just check   # ruff + mypy + pytest
 
 ### Seeding check
 
-1. Run `nwtrack` against an existing database
-2. Open SQLite: `SELECT * FROM account_status_history LIMIT 10;`
-3. Verify one row per account exists with correct status and an `effective_month`
-   matching the account's earliest balance record
+1. Run `nwtrack admin seed-status-history` against an existing database
+2. Verify the command prints a summary line (e.g. "N account(s) seeded")
+3. Open SQLite: `SELECT * FROM account_status_history LIMIT 10;`
+4. Verify rows exist with correct status and `effective_month` values matching
+   each account's balance history
 
 ### HISTORICAL scope via CLI
 
@@ -85,7 +93,7 @@ just check   # ruff + mypy + pytest
 | Inactive account with no balances | Seeded row has `effective_month = '1900-01'`, `status=inactive` |
 | Inactive account with single balance month | One seeded row with `status=inactive` at that month |
 | Inactive account with distinct first/last balance | Two seeded rows: `(active, first)` + `(inactive, last)` |
-| Old-style single inactive seed row, distinct balance range | Migrated to two-row form on next startup |
+| Old-style single inactive seed row, distinct balance range | Migrated to two-row form on next seed call |
 | HISTORICAL scope, no history rows for account | COALESCE falls back to `Account.status` |
 | HISTORICAL used with ALL other report types | Correlated subquery filters correctly |
 | Duplicate seed call | Accounts with 2+ rows are left unchanged; no error |
@@ -99,11 +107,13 @@ just check   # ruff + mypy + pytest
 
 ## Definition of Done
 
-- [x] `just check` passes (ruff, mypy, pytest) — 328 tests pass
+- [x] `just check` passes (ruff, mypy, pytest) — 331 tests pass
 - [x] All feature-specific test assertions above pass
-- [ ] Manual seeding check completed (seeding migration will run on next startup against production DB)
+- [ ] Manual seeding check completed (`nwtrack admin seed-status-history` run against production DB)
 - [x] `nwtrack reports` commands accept `--status-scope historical` (StrEnum-based)
 - [x] CSV export includes `account_status_history.csv`
 - [x] Account creation inserts initial history row (CLI and TUI)
 - [x] Account status change inserts transition history row (CLI and TUI)
+- [x] `nwtrack admin seed-status-history` command exists and calls `SeedAccountStatusHistory` use case
+- [x] Seeding is NOT called automatically on startup — on-demand only
 - [x] Spec files committed alongside implementation
