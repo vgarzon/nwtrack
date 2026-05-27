@@ -4,6 +4,7 @@ from rich.console import Console
 from rich.prompt import Confirm, IntPrompt
 from rich.table import Table
 
+from nwtrack.application.dto import SeedStatusHistoryResult
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Account, Institution
 from nwtrack.entrypoints.cli.ui.renderers import build_indexed_institutions_table
@@ -131,3 +132,24 @@ class RichAdminAssignInstitutionsPresenter:
                 f"[success]{assigned_count} institution(s) assigned "
                 "this session.[/success]"
             )
+
+
+class RichAdminSeedStatusHistoryPresenter:
+    """Rich implementation of AdminSeedStatusHistoryPresenter."""
+
+    def __init__(self, console: Console) -> None:
+        self._console = console
+
+    def show_header(self) -> None:
+        self._console.rule("[header]Seed Account Status History[/header]")
+
+    def show_result(self, result: SeedStatusHistoryResult) -> None:
+        parts = []
+        if result.seeded:
+            parts.append(f"{result.seeded} account(s) seeded")
+        if result.migrated:
+            parts.append(f"{result.migrated} account(s) migrated")
+        if result.skipped:
+            parts.append(f"{result.skipped} account(s) already up to date")
+        summary = ", ".join(parts) if parts else "nothing to do"
+        self._console.print(f"[success]{summary}.[/success]")

@@ -88,8 +88,12 @@ row for an account that has a distinct last balance month is replaced with the
 two-row form above.
 
 Seeding is safe to call repeatedly: accounts with more than one history row (i.e.,
-rows that were not created by the old single-row seed) are left unchanged. The
-seeding runs inside `SchemaManager.ensure_current_schema()` on every startup.
+rows that were not created by the old single-row seed) are left unchanged.
+
+The seeding is exposed as an on-demand admin command (`nwtrack admin seed-status-history`)
+and is **not** called automatically on startup. After the one-time migration has run
+and forward transition recording is in place, the command is only needed after bulk
+data imports that bypass the normal create/update workflows.
 
 ### D3 — HISTORICAL does not replace default scopes
 
@@ -122,6 +126,7 @@ inserted alongside the account and its first balance.
 
 - ORM models use `MappedAsDataclass`, `MonthType` for YYYY-MM columns, `id: Mapped[int] = mapped_column(init=False)`
 - Repositories follow `get_all()`, `insert()`, `hydrate()`, `hydrate_many()` conventions
-- `SchemaManager.ensure_current_schema()` uses ORM-based Python logic for the seeding migration
+- `SchemaManager.seed_account_status_history()` is a public ORM-based method; it is
+  NOT called from `ensure_current_schema()` — it runs only when `nwtrack admin seed-status-history` is invoked
 - `AccountStatusScope` is defined in `application/dto.py` as a `StrEnum`
 - `_apply_status_scope` is a private helper on `ReportingQueries`; all query methods route through it

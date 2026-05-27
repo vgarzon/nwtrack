@@ -17,6 +17,7 @@ from nwtrack.application.dto import (
     InstitutionListItem,
     MonthlyCategoryBalance,
     NewAccountData,
+    SeedStatusHistoryResult,
     SingleMonthAggregationResult,
     TagListItem,
 )
@@ -1408,4 +1409,17 @@ class AdminAssignInstitutionsPresenter(Protocol):
 
     def show_session_summary(self, assigned_count: int) -> None:
         """Display how many institutions were assigned in this session."""
+        ...
+        ...
+
+
+class AdminSeedStatusHistoryPresenter(Protocol):
+    """Presenter for the seed-status-history admin command."""
+
+    def show_header(self) -> None:
+        """Display the command header."""
+        ...
+
+    def show_result(self, result: SeedStatusHistoryResult) -> None:
+        """Display the seeding summary."""
         ...
