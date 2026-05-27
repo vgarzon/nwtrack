@@ -9,7 +9,7 @@ from nwtrack.application.dto import NewAccountData, OperationResult
 from nwtrack.application.ports.presentation import AccountCreationPresenter
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.domain.models import Account, Balance
+from nwtrack.domain.models import Account, AccountStatusHistory, Balance, Status
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +129,13 @@ class AccountCreator:
                 uow.rollback()
                 return None
             uow.tags.replace_for_account(account_id, data.tag_ids)
+            uow.account_status_history.insert(
+                AccountStatusHistory(
+                    account_id=account_id,
+                    status=Status.ACTIVE,
+                    effective_month=data.initial_month,
+                )
+            )
         return account_id, balance_id
 
     def _validate_created_account(

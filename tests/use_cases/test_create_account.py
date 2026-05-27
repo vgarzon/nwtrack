@@ -395,3 +395,80 @@ def test_account_creator_quits_when_institution_selector_returns_q(
     assert not result.success
     assert result.error_message == "Cancelled by user"
     assert call_order == ["institution"]
+
+
+def test_account_creator_records_initial_status_history_row(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+    monkeypatch,
+) -> None:
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_account_name",
+        lambda *args, **kwargs: "history_test_account",
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_account_description",
+        lambda *args, **kwargs: "",
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_category_choice",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_currency_choice",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_status_choice",
+        lambda *args, **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_optional_institution_choice",
+        lambda *args, **kwargs: pytest.fail("Should not prompt for institution"),
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_optional_tag_choices",
+        lambda *args, **kwargs: pytest.fail("Should not prompt for tags"),
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_month",
+        lambda *args, **kwargs: Month(2025, 10),
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_for_balance_amount",
+        lambda *args, **kwargs: 100,
+    )
+    monkeypatch.setattr(
+        nwtrack.entrypoints.cli.adapters.account_presenters,
+        "prompt_to_confirm_action",
+        lambda *args, **kwargs: True,
+    )
+
+    result: OperationResult[tuple[int, int]] = (
+        configured_container.resolve(AccountCreator).run()
+    )
+    assert result.success
+    assert result.data is not None
+    account_id, _ = result.data
+
+    uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow_manager as uow:
+        history = uow.account_status_history.get_all()
+
+    from nwtrack.domain.models import Status
+
+    rows_for_new = [r for r in history if r.account_id == account_id]
+    assert len(rows_for_new) == 1
+    assert rows_for_new[0].status == Status.ACTIVE
+    assert rows_for_new[0].effective_month == Month(2025, 10)

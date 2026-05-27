@@ -4,12 +4,14 @@ Demo interactive use case for updating account information.
 
 import logging
 from collections.abc import Callable
+from datetime import date
 
 from nwtrack.application.dto import AccountUpdateData, OperationResult
 from nwtrack.application.ports.presentation import AccountUpdatePresenter
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.domain.models import Account
+from nwtrack.domain.models import Account, AccountStatusHistory, Status
+from nwtrack.domain.value_objects import Month
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +71,7 @@ class UpdateAccountInfo:
             return OperationResult(success=False, error_message="User declined")
 
         # Update in database
-        self._update_account(update_data)
+        self._update_account(update_data, current_account.status)
 
         # Verify update
         success = self._verify_update(account_id, update_data)
@@ -85,11 +87,14 @@ class UpdateAccountInfo:
 
         return OperationResult(success=True)
 
-    def _update_account(self, update_data: AccountUpdateData) -> None:
+    def _update_account(
+        self, update_data: AccountUpdateData, old_status: Status
+    ) -> None:
         """Update account data in the database.
 
         Args:
             update_data: New account data
+            old_status: Previous account status, used to detect status transitions
         """
         with self._uow() as uow:
             updated_account = Account(
@@ -103,6 +108,15 @@ class UpdateAccountInfo:
             updated_account.id = update_data.account_id
             uow.accounts.update(updated_account)
             uow.tags.replace_for_account(update_data.account_id, update_data.tag_ids)
+            if old_status != update_data.status:
+                today = date.today()
+                uow.account_status_history.insert(
+                    AccountStatusHistory(
+                        account_id=update_data.account_id,
+                        status=update_data.status,
+                        effective_month=Month(today.year, today.month),
+                    )
+                )
 
     def _verify_update(self, account_id: int, update_data: AccountUpdateData) -> bool:
         """Verify that the account was updated correctly.
