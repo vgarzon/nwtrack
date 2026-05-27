@@ -20,13 +20,23 @@ just check   # ruff + mypy + pytest
 - `insert_many`: inserts multiple rows atomically
 
 **Schema seeding**
-- After `ensure_current_schema()` on a database with accounts and balances:
-  each account has exactly one seeded row with `status == account.status` and
-  `effective_month == earliest balance month for that account`
-- After `ensure_current_schema()` on an account with no balances:
-  seeded row has `effective_month == '1900-01'`
-- Second call to `ensure_current_schema()` does not create duplicate history rows
-  (idempotency)
+- After `ensure_current_schema()` on an active account with balance history:
+  one row with `status=active` and `effective_month=first_balance_month`
+- After `ensure_current_schema()` on an inactive account with distinct first/last
+  balance months: two rows — `(active, first_month)` and `(inactive, last_month)`
+- After `ensure_current_schema()` on an inactive account with no balances:
+  one row with `status=inactive` and `effective_month='1900-01'`
+- Second call does not create duplicate rows (idempotency)
+- An existing single `(inactive, first_month)` row for an account with a distinct
+  last balance month is migrated to the two-row form on next seed call
+
+**Forward transition recording**
+- After `AccountCreator.run()` succeeds: one `account_status_history` row exists
+  for the new account with `status=ACTIVE` and `effective_month=initial_month`
+- After `UpdateAccountInfo._update_account()` with a status change: a new history
+  row exists with `status=new_status` and `effective_month=current_month`
+- After `UpdateAccountInfo._update_account()` with no status change: no new
+  history rows are inserted
 
 **`AccountStatusScope.HISTORICAL` in reporting queries**
 - Single-month aggregation with `HISTORICAL`:
@@ -71,19 +81,29 @@ just check   # ruff + mypy + pytest
 
 | Scenario | Expected behaviour |
 |---|---|
-| Account with no balances | Seeded row has `effective_month = '1900-01'` |
+| Active account with no balances | Seeded row has `effective_month = '1900-01'`, `status=active` |
+| Inactive account with no balances | Seeded row has `effective_month = '1900-01'`, `status=inactive` |
+| Inactive account with single balance month | One seeded row with `status=inactive` at that month |
+| Inactive account with distinct first/last balance | Two seeded rows: `(active, first)` + `(inactive, last)` |
+| Old-style single inactive seed row, distinct balance range | Migrated to two-row form on next startup |
 | HISTORICAL scope, no history rows for account | COALESCE falls back to `Account.status` |
 | HISTORICAL used with ALL other report types | Correlated subquery filters correctly |
-| Duplicate seed call | `INSERT OR IGNORE` prevents duplicates; no error |
+| Duplicate seed call | Accounts with 2+ rows are left unchanged; no error |
 | Import with existing rows | `session.merge` is idempotent |
+| Account created via CLI | Initial `(active, initial_month)` row inserted atomically |
+| Account created via TUI | Initial `(active, current_month)` row inserted atomically |
+| Status change via CLI or TUI | New `(new_status, current_month)` row inserted |
+| Non-status field update (name, description, etc.) | No history row inserted |
 
 ---
 
 ## Definition of Done
 
-- [x] `just check` passes (ruff, mypy, pytest) — 323 tests pass
+- [x] `just check` passes (ruff, mypy, pytest) — 328 tests pass
 - [x] All feature-specific test assertions above pass
-- [ ] Manual seeding check completed
+- [ ] Manual seeding check completed (seeding migration will run on next startup against production DB)
 - [x] `nwtrack reports` commands accept `--status-scope historical` (StrEnum-based)
 - [x] CSV export includes `account_status_history.csv`
+- [x] Account creation inserts initial history row (CLI and TUI)
+- [x] Account status change inserts transition history row (CLI and TUI)
 - [x] Spec files committed alongside implementation

@@ -15,8 +15,12 @@ accounts that were already inactive.
 
 - A new `account_status_history` table records the status that became effective
   for each account starting from a given `YYYY-MM` month
-- A migration seeds one initial row per existing account from the current status
-  and earliest balance month
+- A migration seeds initial rows per existing account based on balance history and
+  current status (see D2 for the two-row inactive-account approach)
+- Account creation inserts an initial `(active, initial_month)` history row in the
+  same transaction as the account and balance, via both CLI and TUI paths
+- Account status changes insert a new `(new_status, current_month)` history row in
+  both the CLI `update_account_info` use case and the TUI `AccountsListScreen`
 - A new `AccountStatusScope.HISTORICAL` filter applies per-month effective status
   to all aggregation queries via a correlated subquery with fallback to `Account.status`
 - All CLI `--status-scope` flags accept the new `historical` value
@@ -24,9 +28,6 @@ accounts that were already inactive.
 
 ### What this phase does NOT cover
 
-- Automatic history row creation when `Account.status` changes via TUI/CLI update
-  workflows (TUI and CLI account update do not insert history rows in this phase;
-  this is a follow-on gap documented in decisions)
 - Changing the default scope of any existing report command (HISTORICAL is opt-in
   via `--status-scope historical`)
 
@@ -67,30 +68,44 @@ Using `Balance.month` (the ORM column) as the correlation variable means the
 same `_apply_status_scope` code path works for both single-month and history
 queries without a signature change.
 
-### D2 — Seeding: current status + earliest balance month
+### D2 — Seeding: inferred history from balance range and current status
 
-The migration seeds one row per account:
-- `status` = `Account.status` at migration time
-- `effective_month` = the earliest month from `balances` for that account, or
-  `'1900-01'` as a sentinel when the account has no balance records
+The migration seeds rows per account using the following assumptions:
+- All accounts were active at the time of their first balance entry.
+- No account has transitioned between active and inactive more than once.
+- Currently inactive accounts became inactive at their last balance month.
 
-Seeding is idempotent: accounts that already have a row in `account_status_history`
-are skipped. The seeding runs inside `SchemaManager.ensure_current_schema()` so it
-fires automatically on startup.
+Resulting seed logic:
+- **Active accounts**: one row `(active, first_balance_month)`, or `(active, '1900-01')`
+  if no balances exist.
+- **Inactive accounts with distinct first/last balance months**: two rows —
+  `(active, first_balance_month)` and `(inactive, last_balance_month)`.
+- **Inactive accounts with a single balance month or no balances**: one row
+  `(inactive, that_month_or_'1900-01')`.
+
+The seeding also migrates old-style seeded rows: a single `(inactive, first_month)`
+row for an account that has a distinct last balance month is replaced with the
+two-row form above.
+
+Seeding is safe to call repeatedly: accounts with more than one history row (i.e.,
+rows that were not created by the old single-row seed) are left unchanged. The
+seeding runs inside `SchemaManager.ensure_current_schema()` on every startup.
 
 ### D3 — HISTORICAL does not replace default scopes
 
 Existing defaults (`ALL` for networth-history, `ACTIVE` for single-month
 aggregation) are unchanged. `HISTORICAL` is a new opt-in scope value.
 
-### D4 — Status-change tracking gap is deferred
+### D4 — Forward transition recording
 
-When a user updates an account's status (via CLI or TUI), no new
-`account_status_history` row is inserted in this phase. This means the seeded
-row remains the only history entry. The result is still more accurate than
-`ACTIVE` (which uses current status for all history) because the seeded row
-captures the status at the earliest known point. Full status-change tracking
-(inserting a row every time status changes) is deferred to a follow-on phase.
+When a user updates an account's status via `update_account_info` (CLI) or
+`AccountsListScreen` (TUI), a new `account_status_history` row is inserted in the
+same transaction with `effective_month = current_month`. No row is inserted if the
+status did not change.
+
+When a user creates a new account via `create_account` (CLI) or
+`AccountsListScreen` (TUI), an initial `(active, initial_month)` history row is
+inserted alongside the account and its first balance.
 
 ### D5 — CSV export/import
 
@@ -107,6 +122,6 @@ captures the status at the earliest known point. Full status-change tracking
 
 - ORM models use `MappedAsDataclass`, `MonthType` for YYYY-MM columns, `id: Mapped[int] = mapped_column(init=False)`
 - Repositories follow `get_all()`, `insert()`, `hydrate()`, `hydrate_many()` conventions
-- `SchemaManager.ensure_current_schema()` uses raw `ALTER TABLE` / `INSERT OR IGNORE` for compatibility migrations
+- `SchemaManager.ensure_current_schema()` uses ORM-based Python logic for the seeding migration
 - `AccountStatusScope` is defined in `application/dto.py` as a `StrEnum`
 - `_apply_status_scope` is a private helper on `ReportingQueries`; all query methods route through it
