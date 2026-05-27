@@ -9,20 +9,22 @@
     `effective_month` (MonthType)  
   - `__table_args__`: UniqueConstraint(`account_id`, `effective_month`)  
 1.2 Re-export `AccountStatusHistory` from `domain/models.py`  
-1.3 Update `SchemaManager.ensure_current_schema()` to call `_seed_account_status_history()`
-    after `create_all`  
-1.4 Implement `_seed_account_status_history()` (ORM-based Python loop, no raw SQL):
+1.3 `SchemaManager.ensure_current_schema()` creates the `account_status_history` table via
+    `Base.metadata.create_all()` — **seeding is not called automatically on startup**  
+1.4 Implement public `seed_account_status_history() -> SeedStatusHistoryResult`
+    (ORM-based Python loop, no raw SQL):
   - Skips if `account_status_history` table does not exist (defensive)
   - For each account, fetches existing history rows and balance months via ORM
-  - **Active accounts**: inserts `(active, first_month)` if no rows exist
+  - **Active accounts**: inserts `(active, first_month)` if no rows exist; otherwise skipped
   - **Inactive accounts, no existing rows, distinct first/last**: inserts
     `(active, first_month)` + `(inactive, last_month)`
   - **Inactive accounts, no existing rows, same/no balance**: inserts
     `(inactive, last_or_sentinel_month)`
   - **Migration path**: a single existing `(inactive, *)` row for an account with a
     distinct last balance month is deleted and replaced with the two-row form
-  - Accounts with 2+ history rows are left unchanged
+  - Accounts with 2+ history rows are left unchanged (skipped)
   - Safe to call repeatedly
+  - Returns `SeedStatusHistoryResult(seeded, migrated, skipped)`
 
 ---
 
@@ -82,6 +84,23 @@
 
 ---
 
+### 5b. Admin seed-status-history command ✓
+
+5b.1 Add `SeedStatusHistoryResult` dataclass to `application/dto.py`
+     (fields: `seeded: int`, `migrated: int`, `skipped: int`)  
+5b.2 Add `seed_account_status_history() -> SeedStatusHistoryResult` to
+     `application/ports/schema.py` (`SchemaManager` Protocol)  
+5b.3 Add `AdminSeedStatusHistoryPresenter` Protocol to
+     `application/ports/presentation.py`  
+5b.4 Create `src/nwtrack/application/use_cases/admin_seed_status_history.py`
+     (`SeedAccountStatusHistory` class with `run()` + `main()`)  
+5b.5 Add `RichAdminSeedStatusHistoryPresenter` to
+     `entrypoints/cli/adapters/admin_presenters.py`  
+5b.6 Register `nwtrack admin seed-status-history` command in
+     `entrypoints/cli/commands/admin.py`
+
+---
+
 ### 5. Tests ✓
 
 5.1 `tests/sqlite/test_account_status_history_repo.py`  
@@ -117,9 +136,15 @@
   - Status change from active to inactive inserts a new history row at current month  
   - No history row is inserted when status is unchanged  
 
+5.7 `tests/use_cases/test_admin_seed_status_history.py` (new)  
+  - `SeedAccountStatusHistory.run()` returns `OperationResult(success=True)` and
+    calls presenter hooks  
+  - Seeds accounts that have no history rows  
+  - Skips already-seeded accounts; migrates old-style single inactive rows
+
 ---
 
 ## Recommended Implementation Order
 
-Groups 1 → 2 → 3 → 4 → 5.  
+Groups 1 → 2 → 3 → 4 → 5a → 5b → 5.  
 Groups 3 and 4 are independent once Group 2 is done.
