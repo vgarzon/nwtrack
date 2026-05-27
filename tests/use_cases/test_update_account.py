@@ -441,3 +441,99 @@ def test_account_updater_quits_when_tag_selector_receives_q(
 
     assert not result.success
     assert result.error_message == "Cancelled by user"
+
+
+def test_account_updater_records_history_row_on_status_change(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+) -> None:
+    from datetime import date
+    from unittest.mock import MagicMock
+
+    from nwtrack.application.dto import AccountUpdateData
+    from nwtrack.application.ports.presentation import AccountUpdatePresenter
+    from nwtrack.domain.models import Status
+    from nwtrack.domain.value_objects import Month
+
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    def uow_factory() -> UnitOfWork:
+        return configured_container.resolve(UnitOfWork)
+
+    use_case = UpdateAccountInfo(
+        uow=uow_factory,
+        fetcher=configured_container.resolve(FetchService),
+        presenter=MagicMock(spec=AccountUpdatePresenter),
+    )
+
+    with uow_factory() as uow:
+        acct = uow.accounts.get_by_id(1)
+    assert acct is not None
+    assert acct.status == Status.ACTIVE
+
+    update_data = AccountUpdateData(
+        account_id=1,
+        account_name=acct.name,
+        description=acct.description or "",
+        category_name=acct.category_name,
+        currency_code=acct.currency_code,
+        status=Status.INACTIVE,
+        institution_id=acct.institution_id,
+        tag_ids=[],
+    )
+    use_case._update_account(update_data, old_status=Status.ACTIVE)
+
+    today = date.today()
+    with uow_factory() as uow:
+        history = uow.account_status_history.get_all()
+
+    transition_rows = [
+        r for r in history
+        if r.account_id == 1 and r.status == Status.INACTIVE
+    ]
+    assert len(transition_rows) == 1
+    assert transition_rows[0].effective_month == Month(today.year, today.month)
+
+
+def test_account_updater_no_history_row_when_status_unchanged(
+    configured_container: Container,
+    sample_entities: dict[str, list],
+) -> None:
+    from unittest.mock import MagicMock
+
+    from nwtrack.application.dto import AccountUpdateData
+    from nwtrack.application.ports.presentation import AccountUpdatePresenter
+    from nwtrack.domain.models import Status
+
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    def uow_factory() -> UnitOfWork:
+        return configured_container.resolve(UnitOfWork)
+
+    use_case = UpdateAccountInfo(
+        uow=uow_factory,
+        fetcher=configured_container.resolve(FetchService),
+        presenter=MagicMock(spec=AccountUpdatePresenter),
+    )
+
+    with uow_factory() as uow:
+        acct = uow.accounts.get_by_id(1)
+        history_before = uow.account_status_history.get_all()
+    assert acct is not None
+
+    update_data = AccountUpdateData(
+        account_id=1,
+        account_name=acct.name,
+        description="Updated description",
+        category_name=acct.category_name,
+        currency_code=acct.currency_code,
+        status=Status.ACTIVE,
+        institution_id=acct.institution_id,
+        tag_ids=[],
+    )
+    use_case._update_account(update_data, old_status=Status.ACTIVE)
+
+    with uow_factory() as uow:
+        history_after = uow.account_status_history.get_all()
+
+    assert len(history_after) == len(history_before)
