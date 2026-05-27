@@ -367,7 +367,7 @@ Expected outcomes:
 - All screens are reachable from the home menu navigation hierarchy
 - `ruff`, `mypy`, and `pytest` pass
 
-### [ ] Phase 31: TUI Balance Operations
+### [X] Phase 31: TUI Balance Operations
 
 Goal:
 Add TUI screens for balance roll-forward, delete, and transfer so the remaining balance
@@ -379,7 +379,7 @@ Expected outcomes:
 - These screens follow the screen-owned workflow pattern established in Phase 25
 - `ruff`, `mypy`, and `pytest` pass
 
-### [x] Phase 32: Account Status History
+### [X] Phase 32: Account Status History
 
 Goal:
 Record account status changes over time so that historical reports can apply each account's status as of each reporting month rather than projecting the current status backward.
