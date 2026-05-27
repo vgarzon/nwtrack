@@ -11,14 +11,18 @@
 1.2 Re-export `AccountStatusHistory` from `domain/models.py`  
 1.3 Update `SchemaManager.ensure_current_schema()` to call `_seed_account_status_history()`
     after `create_all`  
-1.4 Implement `_seed_account_status_history()`:
-  - Skips if `account_status_history` table does not exist (defensive)  
-  - Uses raw SQL `INSERT OR IGNORE INTO account_status_history (account_id, status, effective_month)
-    SELECT a.id, a.status, COALESCE(MIN(b.month), '1900-01')
-    FROM accounts a LEFT JOIN balances b ON b.account_id = a.id
-    WHERE a.id NOT IN (SELECT DISTINCT account_id FROM account_status_history)
-    GROUP BY a.id, a.status`  
-  - Idempotent: safe to call repeatedly
+1.4 Implement `_seed_account_status_history()` (ORM-based Python loop, no raw SQL):
+  - Skips if `account_status_history` table does not exist (defensive)
+  - For each account, fetches existing history rows and balance months via ORM
+  - **Active accounts**: inserts `(active, first_month)` if no rows exist
+  - **Inactive accounts, no existing rows, distinct first/last**: inserts
+    `(active, first_month)` + `(inactive, last_month)`
+  - **Inactive accounts, no existing rows, same/no balance**: inserts
+    `(inactive, last_or_sentinel_month)`
+  - **Migration path**: a single existing `(inactive, *)` row for an account with a
+    distinct last balance month is deleted and replaced with the two-row form
+  - Accounts with 2+ history rows are left unchanged
+  - Safe to call repeatedly
 
 ---
 
@@ -63,6 +67,21 @@
 
 ---
 
+### 5a. Forward transition recording ✓
+
+5a.1 `create_account.py` — in `_create_account_and_balance`, insert
+     `(active, data.initial_month)` history row in the same UoW transaction  
+5a.2 `update_account_info.py` — pass `old_status` to `_update_account`; if
+     `old_status != update_data.status`, insert `(new_status, current_month)`
+     history row in the same UoW transaction  
+5a.3 `entrypoints/tui/screens/accounts.py` (`AccountsListScreen`):
+  - `action_create`: insert `(active, current_month)` after account creation  
+  - `on_data_table_row_selected`: capture `old_status` before mutating `acc`;
+    if status changed, insert `(new_status, current_month)` in the same UoW
+    transaction
+
+---
+
 ### 5. Tests ✓
 
 5.1 `tests/sqlite/test_account_status_history_repo.py`  
@@ -72,10 +91,12 @@
   - `get_effective_status`: returns None when no row exists at or before the month  
   - `hydrate` / `hydrate_many` round-trip  
 
-5.2 `tests/sqlite/test_schema_migration.py` (or additions to existing)  
-  - Seeding creates one row per account with correct status and earliest month  
+5.2 `tests/sqlite/test_account_status_history_repo.py` (additions)
+  - Seeding creates one row per active account with earliest balance month  
   - Seeding is idempotent (second call does not duplicate rows)  
   - Seeding with accounts with no balances uses `'1900-01'` sentinel  
+  - Seeding inactive account with distinct first/last balance months → two rows  
+  - Seeding migrates old-style single inactive row → two-row form  
 
 5.3 `tests/sqlite/test_reporting_queries.py` additions  
   - `HISTORICAL` scope on single-month aggregation: includes account active in that
@@ -87,6 +108,14 @@
 5.4 `tests/use_cases/test_export_tables_csv.py` / `test_import_tables_csv.py` additions  
   - Export includes `account_status_history.csv`  
   - Import round-trip preserves rows  
+
+5.5 `tests/use_cases/test_create_account.py` addition  
+  - After successful account creation, `account_status_history` contains one row
+    for the new account with `status=ACTIVE` and `effective_month=initial_month`  
+
+5.6 `tests/use_cases/test_update_account.py` additions  
+  - Status change from active to inactive inserts a new history row at current month  
+  - No history row is inserted when status is unchanged  
 
 ---
 
