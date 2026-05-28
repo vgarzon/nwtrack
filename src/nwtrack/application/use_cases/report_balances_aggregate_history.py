@@ -40,7 +40,7 @@ class _HistoryAggregationFetchService(Protocol):
         self,
         start_month: Month,
         end_month: Month,
-        status_scope: AccountStatusScope = AccountStatusScope.ACTIVE,
+        status_scope: AccountStatusScope = AccountStatusScope.HISTORICAL,
     ) -> list[str]: ...
 
 
@@ -63,7 +63,7 @@ class HistoryAggregatedBalanceReport:
         end_month: Month | None = None,
         dimension: AggregationDimension | None = None,
         currency_code: str | None = None,
-        status_scope: AccountStatusScope = AccountStatusScope.ALL,
+        status_scope: AccountStatusScope = AccountStatusScope.HISTORICAL,
         allow_interactive: bool = True,
     ) -> OperationResult[HistoryAggregationResult]:
         """Run the grouped history report."""
@@ -247,7 +247,7 @@ def main(
     end_month: str | None = None,
     dimension: AggregationDimension | None = None,
     currency_code: str | None = None,
-    status_scope: AccountStatusScope = AccountStatusScope.ALL,
+    status_scope: AccountStatusScope = AccountStatusScope.HISTORICAL,
 ) -> int:
     """Main entry point for the grouped history balances report."""
     from dotenv import load_dotenv

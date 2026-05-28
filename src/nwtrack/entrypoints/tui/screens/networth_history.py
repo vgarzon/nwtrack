@@ -24,7 +24,7 @@ from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.tui.screens.month_picker import MonthPickerModal
 
 _CURRENCY = "USD"
-_STATUS_SCOPE = AccountStatusScope.ALL
+_STATUS_SCOPE = AccountStatusScope.HISTORICAL
 _DEFAULT_MONTHS = 12
 
 

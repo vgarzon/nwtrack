@@ -34,7 +34,7 @@ class FakeFetchService:
         self,
         start_month: Month,
         end_month: Month,
-        status_scope: AccountStatusScope = AccountStatusScope.ALL,
+        status_scope: AccountStatusScope = AccountStatusScope.HISTORICAL,
     ) -> list[str]:
         return list(
             self.range_currencies.get((start_month, end_month, status_scope), [])
@@ -498,7 +498,7 @@ def test_run_prompts_for_currency_for_interactive_mixed_currency_request() -> No
         end_month,
         AggregationDimension.CATEGORY,
         "CHF",
-        AccountStatusScope.ALL,
+        AccountStatusScope.HISTORICAL,
         [
             HistoryAggregationRow(
                 month=start_month,
@@ -511,7 +511,7 @@ def test_run_prompts_for_currency_for_interactive_mixed_currency_request() -> No
     )
     fetcher = FakeFetchService(
         range_currencies={
-            (start_month, end_month, AccountStatusScope.ALL): ["CHF", "USD"]
+            (start_month, end_month, AccountStatusScope.HISTORICAL): ["CHF", "USD"]
         }
     )
     aggregation_report = FakeAggregationReport(
@@ -551,7 +551,7 @@ def test_run_fails_cleanly_for_non_interactive_mixed_currency_request() -> None:
     workflow = HistoryAggregatedBalanceReport(
         fetcher=FakeFetchService(
             range_currencies={
-                (start_month, end_month, AccountStatusScope.ALL): ["CHF", "USD"]
+                (start_month, end_month, AccountStatusScope.HISTORICAL): ["CHF", "USD"]
             }
         ),
         aggregation_report=aggregation_report,
@@ -648,7 +648,7 @@ def test_run_quits_cleanly_when_currency_selection_is_cancelled() -> None:
     workflow = HistoryAggregatedBalanceReport(
         fetcher=FakeFetchService(
             range_currencies={
-                (start_month, end_month, AccountStatusScope.ALL): ["CHF", "USD"]
+                (start_month, end_month, AccountStatusScope.HISTORICAL): ["CHF", "USD"]
             }
         ),
         aggregation_report=FakeAggregationReport(

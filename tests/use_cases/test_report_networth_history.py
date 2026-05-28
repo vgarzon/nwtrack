@@ -110,10 +110,11 @@ def test_report_networth_history_all_scope_includes_inactive_accounts(
     configured_container: Container,
     sample_entities: dict[str, list],
 ) -> None:
-    """Default ALL scope must include inactive accounts in the aggregated totals."""
+    """Explicit ALL scope must include inactive accounts in the aggregated totals."""
     init_db_tables_w_entities(configured_container, sample_entities)
-    # Default call — status_scope=ALL is the new default
-    configured_container.resolve(NetworthHistoryReport).run(n_months=12)
+    configured_container.resolve(NetworthHistoryReport).run(
+        n_months=12, status_scope=AccountStatusScope.ALL
+    )
     captured_out: str = configured_container.resolve(Console).export_text()
     # The inactive mortgage account (id=4) has a -1800 balance in 2024-06.
     # With ALL scope: liabilities = 600 (credit card) + 1800 (mortgage) = 2400,
