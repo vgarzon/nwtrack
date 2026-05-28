@@ -39,7 +39,7 @@ class _AggregationReportFetchService(Protocol):
     def get_month_currencies(
         self,
         month: Month,
-        status_scope: AccountStatusScope = AccountStatusScope.ACTIVE,
+        status_scope: AccountStatusScope = AccountStatusScope.HISTORICAL,
     ) -> list[str]: ...
 
 
@@ -61,7 +61,7 @@ class SingleMonthAggregatedBalanceReport:
         month: Month | None = None,
         dimension: AggregationDimension | None = None,
         currency_code: str | None = None,
-        status_scope: AccountStatusScope = AccountStatusScope.ACTIVE,
+        status_scope: AccountStatusScope = AccountStatusScope.HISTORICAL,
         allow_interactive: bool = True,
     ) -> OperationResult[SingleMonthAggregationResult]:
         """Run the grouped single-month report."""
@@ -198,7 +198,7 @@ def main(
     month: str | None = None,
     dimension: AggregationDimension | None = None,
     currency_code: str | None = None,
-    status_scope: AccountStatusScope = AccountStatusScope.ACTIVE,
+    status_scope: AccountStatusScope = AccountStatusScope.HISTORICAL,
 ) -> int:
     """Main entry point for the grouped single-month balances report."""
     from dotenv import load_dotenv

@@ -47,14 +47,14 @@ class NetworthHistoryReport:
         self,
         n_months: int = 12,
         currency_code: str = "USD",
-        status_scope: AccountStatusScope = AccountStatusScope.ALL,
+        status_scope: AccountStatusScope = AccountStatusScope.HISTORICAL,
     ) -> OperationResult[None]:
         """Run the networth history report.
 
         Args:
             n_months: Number of months to include in the report, defaults to 12
             currency_code: Currency code for the report, defaults to "USD"
-            status_scope: Account status filter, defaults to ALL
+            status_scope: Account status filter, defaults to HISTORICAL
 
         Returns:
             OperationResult indicating success/failure
@@ -120,14 +120,14 @@ class NetworthHistoryReport:
 def main(
     n_months: int = 12,
     currency_code: str = "USD",
-    status_scope: AccountStatusScope = AccountStatusScope.ALL,
+    status_scope: AccountStatusScope = AccountStatusScope.HISTORICAL,
 ) -> int:
     """Main entry point for networth history report script.
 
     Args:
         n_months: Number of months to include in the report, defaults to 12
         currency_code: Currency code for the report, defaults to "USD"
-        status_scope: Account status filter, defaults to ALL
+        status_scope: Account status filter, defaults to HISTORICAL
 
     Returns:
         Exit code: 0 on success, 1 on failure

@@ -23,7 +23,7 @@ from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.tui.screens.month_picker import MonthPickerModal
 
 _DEFAULT_DIMENSION = AggregationDimension.CATEGORY
-_STATUS_SCOPE = AccountStatusScope.ACTIVE
+_STATUS_SCOPE = AccountStatusScope.HISTORICAL
 
 _DIMENSION_OPTIONS: list[tuple[str, AggregationDimension]] = [
     ("Category", AggregationDimension.CATEGORY),
