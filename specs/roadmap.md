@@ -399,7 +399,28 @@ Expected outcomes:
 - `ruff`, `mypy`, and `pytest` pass (331 tests)
 - `account_status_history` is included in CSV export and import
 
-### [ ] Phase 33: Reporting UX Options
+### [ ] Phase 33: TUI Status Scope Selector
+
+Goal:
+Expose status scope selection in TUI report screens so users can switch between `historical`,
+`active`, and `all` filtering without leaving the TUI.
+
+Background:
+Phase 32 wired `AccountStatusScope.HISTORICAL` as the new default across all CLI and TUI report
+surfaces. TUI screens currently hardcode their scope and offer no user control. This phase adds
+a scope selector widget to the net worth history screen and the single-month aggregation screen,
+matching the scope control already available on the CLI via `--status-scope`.
+
+Expected outcomes:
+
+- `NetWorthHistoryScreen` exposes a scope selector (toggle or segmented control); changing the
+  scope refreshes the report in place
+- `AggregationScreen` exposes the same scope selector with the same interaction model
+- Both screens default to `AccountStatusScope.HISTORICAL` (consistent with CLI defaults)
+- Scope selection follows the screen-owned workflow pattern established in earlier TUI phases
+- `ruff`, `mypy`, and `pytest` pass
+
+### [ ] Phase 34: Reporting UX Options
 
 Goal:
 Improve aggregated reporting ergonomics with alternative history layouts and export-friendly output.
@@ -410,7 +431,7 @@ Expected outcomes:
 - Non-interactive aggregated history reporting can emit CSV output for downstream analysis
 - Output-format options are defined in a way that preserves current default behavior unless the user opts in
 
-### [ ] Phase 34: Single-Currency Conversion Reporting
+### [ ] Phase 35: Single-Currency Conversion Reporting
 
 Goal:
 Add conversion-backed reporting so aggregated views can be rendered in one explicit reporting currency instead of failing on mixed-currency totals.
@@ -422,7 +443,7 @@ Expected outcomes:
 - Conversion rules and required exchange-rate inputs are defined clearly for reporting workflows
 - Compatibility and aggregated report commands can converge on accounting-correct single-currency output where conversion data exists
 
-### [ ] Phase 35 (Optional): CLI Retirement
+### [ ] Phase 36 (Optional): CLI Retirement
 
 Goal:
 Retire the CLI entry points once the TUI covers the full workflow scope and has been validated
@@ -430,7 +451,7 @@ against real usage.
 
 Background:
 `tui-scope.md` defines CLI retirement as the final step: the `nwtrack tui` entry point
-becomes `nwtrack`. This phase should not begin until all workflows from Phases 27–31 are
+becomes `nwtrack`. This phase should not begin until all workflows from Phases 27–35 are
 complete and have been validated against real data. It is marked optional because the CLI and
 TUI may coexist indefinitely if the dual-mode workflow proves useful in practice.
 
@@ -443,7 +464,7 @@ Expected outcomes:
 - Existing `tests/entrypoints/` CLI tests are removed or migrated to TUI equivalents
 - `ruff`, `mypy`, and `pytest` pass with no orphaned CLI references
 
-### [ ] Phase 36 (Future): Database Migration Tooling
+### [ ] Phase 37 (Future): Database Migration Tooling
 
 Goal:
 Replace the current hand-rolled `SchemaManager` with a proper migration tool (Alembic or
