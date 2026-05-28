@@ -33,7 +33,7 @@ class FakeFetchService:
     def get_month_currencies(
         self,
         month: Month,
-        status_scope: AccountStatusScope = AccountStatusScope.ACTIVE,
+        status_scope: AccountStatusScope = AccountStatusScope.HISTORICAL,
     ) -> list[str]:
         return list(self.month_currencies.get((month, status_scope), []))
 
@@ -332,7 +332,7 @@ def test_run_prompts_for_currency_for_interactive_mixed_currency_request() -> No
         month=month,
         dimension=AggregationDimension.CATEGORY,
         currency_code="CHF",
-        status_scope=AccountStatusScope.ACTIVE,
+        status_scope=AccountStatusScope.HISTORICAL,
         groups=[
             SingleMonthAggregationGroup(
                 group_key="checking",
@@ -343,7 +343,7 @@ def test_run_prompts_for_currency_for_interactive_mixed_currency_request() -> No
         ],
     )
     fetcher = FakeFetchService(
-        month_currencies={(month, AccountStatusScope.ACTIVE): ["CHF", "USD"]}
+        month_currencies={(month, AccountStatusScope.HISTORICAL): ["CHF", "USD"]}
     )
     aggregation_report = FakeAggregationReport(
         OperationResult(success=True, data=expected)
@@ -379,7 +379,7 @@ def test_run_fails_cleanly_for_non_interactive_mixed_currency_request() -> None:
     presenter = RecordingPresenter()
     workflow = SingleMonthAggregatedBalanceReport(
         fetcher=FakeFetchService(
-            month_currencies={(month, AccountStatusScope.ACTIVE): ["CHF", "USD"]}
+            month_currencies={(month, AccountStatusScope.HISTORICAL): ["CHF", "USD"]}
         ),
         aggregation_report=aggregation_report,
         presenter=presenter,
@@ -448,7 +448,7 @@ def test_run_quits_cleanly_when_currency_selection_is_cancelled() -> None:
     presenter = RecordingPresenter()
     workflow = SingleMonthAggregatedBalanceReport(
         fetcher=FakeFetchService(
-            month_currencies={(month, AccountStatusScope.ACTIVE): ["CHF", "USD"]}
+            month_currencies={(month, AccountStatusScope.HISTORICAL): ["CHF", "USD"]}
         ),
         aggregation_report=FakeAggregationReport(
             OperationResult(success=True, data=None)
