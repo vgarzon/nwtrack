@@ -413,12 +413,15 @@ matching the scope control already available on the CLI via `--status-scope`.
 
 Expected outcomes:
 
-- `NetWorthHistoryScreen` exposes a scope selector (toggle or segmented control); changing the
-  scope refreshes the report in place
-- `AggregationScreen` exposes the same scope selector with the same interaction model
+- `NetWorthHistoryScreen` exposes a `Select` scope dropdown (Historical / Active / All);
+  changing scope refreshes the report in place without resetting pinned start/end dates
+- `AggregationScreen` exposes the same `Select` scope dropdown; the existing dimension Select
+  and the new scope Select share a single `on_select_changed` handler disambiguated by value type
 - Both screens default to `AccountStatusScope.HISTORICAL` (consistent with CLI defaults)
-- Scope selection follows the screen-owned workflow pattern established in earlier TUI phases
-- `ruff`, `mypy`, and `pytest` pass
+- `NetWorthHistoryScreen` DataTable adds a Delta column (month-over-month net worth change)
+  and a Total summary row
+- Amount column in `BalanceUpdateScreen` is right-justified
+- `ruff`, `mypy`, and `pytest` pass (340 tests)
 
 ### [ ] Phase 34: Reporting UX Options
 
