@@ -7,7 +7,15 @@ from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.screen import Screen
-from textual.widgets import Button, DataTable, Footer, Header, Label
+from textual.widgets import (
+    Button,
+    DataTable,
+    Footer,
+    Header,
+    Label,
+    RadioButton,
+    RadioSet,
+)
 
 from nwtrack.application.dto import (
     AccountStatusScope,
@@ -24,8 +32,13 @@ from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.tui.screens.month_picker import MonthPickerModal
 
 _CURRENCY = "USD"
-_STATUS_SCOPE = AccountStatusScope.HISTORICAL
 _DEFAULT_MONTHS = 12
+
+_SCOPE_BUTTON_IDS: dict[str, AccountStatusScope] = {
+    "scope-historical": AccountStatusScope.HISTORICAL,
+    "scope-active": AccountStatusScope.ACTIVE,
+    "scope-all": AccountStatusScope.ALL,
+}
 
 
 class NetWorthHistoryScreen(Screen):
@@ -44,6 +57,7 @@ class NetWorthHistoryScreen(Screen):
         self._start_month: Month | None = None
         self._end_month: Month | None = None
         self._available: list[Month] = []
+        self._status_scope: AccountStatusScope = AccountStatusScope.HISTORICAL
 
     # ── Layout ──────────────────────────────────────────────────────────────
 
@@ -51,6 +65,12 @@ class NetWorthHistoryScreen(Screen):
         yield Header()
         yield Button("Start: —", id="btn-start")
         yield Button("End: —", id="btn-end")
+        yield RadioSet(
+            RadioButton("Historical", id="scope-historical", value=True),
+            RadioButton("Active", id="scope-active"),
+            RadioButton("All", id="scope-all"),
+            id="scope-selector",
+        )
         yield Label("", id="error-label")
         yield DataTable(id="history-table", zebra_stripes=True)
         yield Footer()
@@ -69,7 +89,7 @@ class NetWorthHistoryScreen(Screen):
         self._available = self._fetcher.get_available_aggregation_months(
             AggregationDimension.SIDE,
             currency_code=_CURRENCY,
-            status_scope=_STATUS_SCOPE,
+            status_scope=self._status_scope,
         )
         if not self._available:
             self._show_error("No net worth data found in USD.")
@@ -82,6 +102,12 @@ class NetWorthHistoryScreen(Screen):
         self._refresh_table()
 
     # ── Actions ──────────────────────────────────────────────────────────────
+
+    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+        button_id = event.pressed.id
+        if button_id and button_id in _SCOPE_BUTTON_IDS:
+            self._status_scope = _SCOPE_BUTTON_IDS[button_id]
+            self._reload_for_scope()
 
     @work
     async def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -104,6 +130,21 @@ class NetWorthHistoryScreen(Screen):
 
     # ── Helpers ──────────────────────────────────────────────────────────────
 
+    def _reload_for_scope(self) -> None:
+        self._available = self._fetcher.get_available_aggregation_months(
+            AggregationDimension.SIDE,
+            currency_code=_CURRENCY,
+            status_scope=self._status_scope,
+        )
+        if not self._available:
+            self._show_error("No net worth data found in USD.")
+            return
+        self._end_month = self._available[-1]
+        start_idx = max(0, len(self._available) - _DEFAULT_MONTHS)
+        self._start_month = self._available[start_idx]
+        self._update_buttons()
+        self._refresh_table()
+
     def _update_buttons(self) -> None:
         self.query_one("#btn-start", Button).label = (
             f"Start: {self._start_month}" if self._start_month else "Start: —"
@@ -112,7 +153,10 @@ class NetWorthHistoryScreen(Screen):
             f"End: {self._end_month}" if self._end_month else "End: —"
         )
         if self._start_month and self._end_month:
-            self.sub_title = f"{self._start_month} → {self._end_month} ({_CURRENCY})"
+            self.sub_title = (
+                f"{self._start_month} → {self._end_month}"
+                f" ({_CURRENCY}) | {self._status_scope.value}"
+            )
 
     def _refresh_table(self) -> None:
         if self._start_month is None or self._end_month is None:
@@ -132,7 +176,7 @@ class NetWorthHistoryScreen(Screen):
                 end_month=self._end_month,
                 dimension=AggregationDimension.SIDE,
                 currency_code=_CURRENCY,
-                status_scope=_STATUS_SCOPE,
+                status_scope=self._status_scope,
             )
         )
 

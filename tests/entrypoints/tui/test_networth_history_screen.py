@@ -114,6 +114,105 @@ class TestNetWorthHistoryScreenNavigation:
 
         asyncio.run(_run())
 
+    def test_default_status_scope_is_historical(self) -> None:
+        months = _make_months((2025, 1), (2025, 2))
+        rows = [
+            HistoryAggregationRow(Month(2025, 1), "asset", "asset", 100_000, "USD"),
+        ]
+        result = _make_history_result(months, rows)
+        app = _make_app(months, result)
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await pilot.press("down")  # Reports
+                await pilot.press("enter")
+                await pilot.pause()
+                await pilot.press("enter")  # Net Worth History
+                await pilot.pause()
+                screen = app.screen
+                assert isinstance(screen, NetWorthHistoryScreen)
+                assert screen._status_scope == AccountStatusScope.HISTORICAL
+
+        asyncio.run(_run())
+
+    def test_scope_selector_widget_is_present(self) -> None:
+        from textual.widgets import RadioSet
+
+        months = _make_months((2025, 1), (2025, 2))
+        rows = [
+            HistoryAggregationRow(Month(2025, 1), "asset", "asset", 100_000, "USD"),
+        ]
+        result = _make_history_result(months, rows)
+        app = _make_app(months, result)
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await pilot.press("down")  # Reports
+                await pilot.press("enter")
+                await pilot.pause()
+                await pilot.press("enter")  # Net Worth History
+                await pilot.pause()
+                screen = app.screen
+                assert isinstance(screen, NetWorthHistoryScreen)
+                selector = screen.query_one("#scope-selector", RadioSet)
+                assert selector is not None
+
+        asyncio.run(_run())
+
+    def test_scope_change_to_active_updates_status_scope(self) -> None:
+        from textual.widgets import RadioButton, RadioSet
+
+        months = _make_months((2025, 1), (2025, 2))
+        rows = [
+            HistoryAggregationRow(Month(2025, 1), "asset", "asset", 100_000, "USD"),
+        ]
+        result = _make_history_result(months, rows)
+        app = _make_app(months, result)
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await pilot.press("down")  # Reports
+                await pilot.press("enter")
+                await pilot.pause()
+                await pilot.press("enter")  # Net Worth History
+                await pilot.pause()
+                screen = app.screen
+                assert isinstance(screen, NetWorthHistoryScreen)
+                radio_set = screen.query_one("#scope-selector", RadioSet)
+                active_btn = screen.query_one("#scope-active", RadioButton)
+                radio_set.post_message(RadioSet.Changed(radio_set, active_btn))
+                await pilot.pause()
+                assert screen._status_scope == AccountStatusScope.ACTIVE
+
+        asyncio.run(_run())
+
+    def test_scope_change_to_all_updates_status_scope(self) -> None:
+        from textual.widgets import RadioButton, RadioSet
+
+        months = _make_months((2025, 1), (2025, 2))
+        rows = [
+            HistoryAggregationRow(Month(2025, 1), "asset", "asset", 100_000, "USD"),
+        ]
+        result = _make_history_result(months, rows)
+        app = _make_app(months, result)
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await pilot.press("down")  # Reports
+                await pilot.press("enter")
+                await pilot.pause()
+                await pilot.press("enter")  # Net Worth History
+                await pilot.pause()
+                screen = app.screen
+                assert isinstance(screen, NetWorthHistoryScreen)
+                radio_set = screen.query_one("#scope-selector", RadioSet)
+                all_btn = screen.query_one("#scope-all", RadioButton)
+                radio_set.post_message(RadioSet.Changed(radio_set, all_btn))
+                await pilot.pause()
+                assert screen._status_scope == AccountStatusScope.ALL
+
+        asyncio.run(_run())
+
     def test_show_error_makes_label_visible_and_clears_table(self) -> None:
         from textual.widgets import DataTable, Label
 
