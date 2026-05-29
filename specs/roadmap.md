@@ -399,7 +399,7 @@ Expected outcomes:
 - `ruff`, `mypy`, and `pytest` pass (331 tests)
 - `account_status_history` is included in CSV export and import
 
-### [ ] Phase 33: TUI Status Scope Selector
+### [X] Phase 33: TUI Status Scope Selector
 
 Goal:
 Expose status scope selection in TUI report screens so users can switch between `historical`,
