@@ -82,6 +82,7 @@ class NetWorthHistoryScreen(Screen):
             Text("Assets", justify="right"),
             Text("Liabilities", justify="right"),
             Text("Net Worth", justify="right"),
+            Text("Delta", justify="right"),
         )
 
         self._available = self._fetcher.get_available_aggregation_months(
@@ -186,12 +187,19 @@ class NetWorthHistoryScreen(Screen):
         nws.sort(key=lambda x: x.month)
 
         self._hide_error()
-        for nw in nws:
+        for i, nw in enumerate(nws):
+            if i == 0:
+                delta_cell: Text | str = ""
+            else:
+                delta = nw.net_worth - nws[i - 1].net_worth
+                sign = "+" if delta >= 0 else ""
+                delta_cell = Text(f"{sign}{delta:,}", justify="right")
             table.add_row(
                 str(nw.month),
                 Text(f"{nw.assets:,}", justify="right"),
                 Text(f"{nw.liabilities:,}", justify="right"),
                 Text(f"{nw.net_worth:,}", justify="right"),
+                delta_cell,
             )
 
     def _show_error(self, message: str) -> None:
