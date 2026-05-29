@@ -7,7 +7,16 @@ from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.screen import Screen
-from textual.widgets import Button, DataTable, Footer, Header, Label, Select
+from textual.widgets import (
+    Button,
+    DataTable,
+    Footer,
+    Header,
+    Label,
+    RadioButton,
+    RadioSet,
+    Select,
+)
 
 from nwtrack.application.dto import (
     AccountStatusScope,
@@ -23,7 +32,6 @@ from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.tui.screens.month_picker import MonthPickerModal
 
 _DEFAULT_DIMENSION = AggregationDimension.CATEGORY
-_STATUS_SCOPE = AccountStatusScope.HISTORICAL
 
 _DIMENSION_OPTIONS: list[tuple[str, AggregationDimension]] = [
     ("Category", AggregationDimension.CATEGORY),
@@ -32,6 +40,12 @@ _DIMENSION_OPTIONS: list[tuple[str, AggregationDimension]] = [
     ("Currency", AggregationDimension.CURRENCY),
     ("Tag", AggregationDimension.TAG),
 ]
+
+_SCOPE_BUTTON_IDS: dict[str, AccountStatusScope] = {
+    "scope-historical": AccountStatusScope.HISTORICAL,
+    "scope-active": AccountStatusScope.ACTIVE,
+    "scope-all": AccountStatusScope.ALL,
+}
 
 
 class AggregationScreen(Screen):
@@ -50,6 +64,7 @@ class AggregationScreen(Screen):
         self._month: Month | None = None
         self._dimension: AggregationDimension = _DEFAULT_DIMENSION
         self._available: list[Month] = []
+        self._status_scope: AccountStatusScope = AccountStatusScope.HISTORICAL
 
     # ── Layout ──────────────────────────────────────────────────────────────
 
@@ -60,6 +75,12 @@ class AggregationScreen(Screen):
             options=[(label, dim) for label, dim in _DIMENSION_OPTIONS],
             value=_DEFAULT_DIMENSION,
             id="dim-select",
+        )
+        yield RadioSet(
+            RadioButton("Historical", id="scope-historical", value=True),
+            RadioButton("Active", id="scope-active"),
+            RadioButton("All", id="scope-all"),
+            id="scope-selector",
         )
         yield Label("", id="error-label")
         yield DataTable(id="agg-table", zebra_stripes=True)
@@ -74,7 +95,7 @@ class AggregationScreen(Screen):
         self._available = self._fetcher.get_available_aggregation_months(
             _DEFAULT_DIMENSION,
             currency_code=None,
-            status_scope=_STATUS_SCOPE,
+            status_scope=self._status_scope,
         )
         if not self._available:
             self._show_error("No balance data found.")
@@ -105,7 +126,26 @@ class AggregationScreen(Screen):
             self._dimension = event.value
             self._refresh_table()
 
+    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+        button_id = event.pressed.id
+        if button_id and button_id in _SCOPE_BUTTON_IDS:
+            self._status_scope = _SCOPE_BUTTON_IDS[button_id]
+            self._reload_for_scope()
+
     # ── Helpers ──────────────────────────────────────────────────────────────
+
+    def _reload_for_scope(self) -> None:
+        self._available = self._fetcher.get_available_aggregation_months(
+            self._dimension,
+            currency_code=None,
+            status_scope=self._status_scope,
+        )
+        if not self._available:
+            self._show_error("No balance data found.")
+            return
+        self._month = self._available[-1]
+        self._update_button()
+        self._refresh_table()
 
     def _update_button(self) -> None:
         self.query_one("#btn-month", Button).label = (
@@ -118,7 +158,9 @@ class AggregationScreen(Screen):
             self._dimension.value.capitalize(),
         )
         self.sub_title = (
-            f"{self._month} — by {dim_label}" if self._month else "Aggregation"
+            f"{self._month} — by {dim_label} | {self._status_scope.value}"
+            if self._month
+            else "Aggregation"
         )
 
     def _refresh_table(self) -> None:
@@ -140,7 +182,7 @@ class AggregationScreen(Screen):
                 month=self._month,
                 dimension=self._dimension,
                 currency_code=None,
-                status_scope=_STATUS_SCOPE,
+                status_scope=self._status_scope,
             )
         )
 
