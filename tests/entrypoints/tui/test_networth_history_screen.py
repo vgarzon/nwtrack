@@ -213,6 +213,40 @@ class TestNetWorthHistoryScreenNavigation:
 
         asyncio.run(_run())
 
+    def test_scope_change_preserves_start_and_end_month(self) -> None:
+        from textual.widgets import RadioButton, RadioSet
+
+        months = _make_months((2025, 1), (2025, 2), (2025, 3))
+        rows = [HistoryAggregationRow(Month(2025, 1), "asset", "asset", 100_000, "USD")]
+        result = _make_history_result(months, rows)
+        app = _make_app(months, result)
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await pilot.press("down")  # Reports
+                await pilot.press("enter")
+                await pilot.pause()
+                await pilot.press("enter")  # Net Worth History
+                await pilot.pause()
+                screen = app.screen
+                assert isinstance(screen, NetWorthHistoryScreen)
+
+                # Pin non-default start/end months
+                screen._start_month = months[0]
+                screen._end_month = months[1]
+
+                # Change scope
+                radio_set = screen.query_one("#scope-selector", RadioSet)
+                active_btn = screen.query_one("#scope-active", RadioButton)
+                radio_set.post_message(RadioSet.Changed(radio_set, active_btn))
+                await pilot.pause()
+
+                # Pinned dates must survive the scope change
+                assert screen._start_month == months[0]
+                assert screen._end_month == months[1]
+
+        asyncio.run(_run())
+
     def test_show_error_makes_label_visible_and_clears_table(self) -> None:
         from textual.widgets import DataTable, Label
 
