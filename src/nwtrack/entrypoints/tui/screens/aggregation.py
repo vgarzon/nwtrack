@@ -13,8 +13,6 @@ from textual.widgets import (
     Footer,
     Header,
     Label,
-    RadioButton,
-    RadioSet,
     Select,
 )
 
@@ -41,11 +39,11 @@ _DIMENSION_OPTIONS: list[tuple[str, AggregationDimension]] = [
     ("Tag", AggregationDimension.TAG),
 ]
 
-_SCOPE_BUTTON_IDS: dict[str, AccountStatusScope] = {
-    "scope-historical": AccountStatusScope.HISTORICAL,
-    "scope-active": AccountStatusScope.ACTIVE,
-    "scope-all": AccountStatusScope.ALL,
-}
+_SCOPE_OPTIONS: list[tuple[str, AccountStatusScope]] = [
+    ("Historical", AccountStatusScope.HISTORICAL),
+    ("Active", AccountStatusScope.ACTIVE),
+    ("All", AccountStatusScope.ALL),
+]
 
 
 class AggregationScreen(Screen):
@@ -76,11 +74,10 @@ class AggregationScreen(Screen):
             value=_DEFAULT_DIMENSION,
             id="dim-select",
         )
-        yield RadioSet(
-            RadioButton("Historical", id="scope-historical", value=True),
-            RadioButton("Active", id="scope-active"),
-            RadioButton("All", id="scope-all"),
-            id="scope-selector",
+        yield Select(
+            options=_SCOPE_OPTIONS,
+            value=AccountStatusScope.HISTORICAL,
+            id="scope-select",
         )
         yield Label("", id="error-label")
         yield DataTable(id="agg-table", zebra_stripes=True)
@@ -125,11 +122,8 @@ class AggregationScreen(Screen):
         if isinstance(event.value, AggregationDimension):
             self._dimension = event.value
             self._refresh_table()
-
-    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
-        button_id = event.pressed.id
-        if button_id and button_id in _SCOPE_BUTTON_IDS:
-            self._status_scope = _SCOPE_BUTTON_IDS[button_id]
+        elif isinstance(event.value, AccountStatusScope):
+            self._status_scope = event.value
             self._reload_for_scope()
 
     # ── Helpers ──────────────────────────────────────────────────────────────
