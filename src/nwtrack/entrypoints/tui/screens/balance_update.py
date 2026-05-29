@@ -9,6 +9,7 @@ why the adapter-swap pattern is not viable here.
 
 from collections.abc import Callable
 
+from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -77,7 +78,10 @@ class BalanceUpdateScreen(Screen):
             return
         table = self.query_one("#balance-table", DataTable)
         table.clear(columns=True)
-        table.add_columns("Institution", "Account", "Category", "Side", "Amount")
+        table.add_columns(
+            "Institution", "Account", "Category", "Side",
+            Text("Amount", justify="right"),
+        )
 
         self._balances = self._fetcher.get_month_balances(
             self._month, active_only=True
@@ -93,7 +97,7 @@ class BalanceUpdateScreen(Screen):
                 balance.account.name,
                 balance.account.category.name,
                 balance.account.category.side.value,
-                self._format_amount(balance.amount),
+                Text(self._format_amount(balance.amount), justify="right"),
                 key=str(balance.account.id),
             )
 
@@ -158,7 +162,7 @@ class BalanceUpdateScreen(Screen):
         table = self.query_one("#balance-table", DataTable)
         table.update_cell_at(
             Coordinate(row_idx, 4),
-            self._format_amount(result),
+            Text(self._format_amount(result), justify="right"),
             update_width=True,
         )
         self._balances[row_idx] = self._fetcher.get_balance_for_account_id(
