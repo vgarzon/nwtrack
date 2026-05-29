@@ -202,6 +202,17 @@ class NetWorthHistoryScreen(Screen):
                 delta_cell,
             )
 
+        if len(nws) > 1:
+            total_delta = nws[-1].net_worth - nws[0].net_worth
+            sign = "+" if total_delta >= 0 else ""
+            table.add_row(
+                "Total",
+                "",
+                "",
+                "",
+                Text(f"{sign}{total_delta:,}", justify="right"),
+            )
+
     def _show_error(self, message: str) -> None:
         label = self.query_one("#error-label", Label)
         label.update(message)
