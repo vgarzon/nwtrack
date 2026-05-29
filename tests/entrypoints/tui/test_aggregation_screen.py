@@ -152,7 +152,7 @@ class TestAggregationScreenNavigation:
         asyncio.run(_run())
 
     def test_scope_selector_widget_is_present(self) -> None:
-        from textual.widgets import RadioSet
+        from textual.widgets import Select
 
         months = _make_months((2025, 3),)
         groups = [SingleMonthAggregationGroup("cat1", "Savings", 50_000, "USD")]
@@ -169,13 +169,13 @@ class TestAggregationScreenNavigation:
                 await pilot.pause()
                 screen = app.screen
                 assert isinstance(screen, AggregationScreen)
-                selector = screen.query_one("#scope-selector", RadioSet)
+                selector = screen.query_one("#scope-select", Select)
                 assert selector is not None
 
         asyncio.run(_run())
 
     def test_scope_change_to_active_updates_status_scope(self) -> None:
-        from textual.widgets import RadioButton, RadioSet
+        from textual.widgets import Select
 
         months = _make_months((2025, 3),)
         groups = [SingleMonthAggregationGroup("cat1", "Savings", 50_000, "USD")]
@@ -192,16 +192,15 @@ class TestAggregationScreenNavigation:
                 await pilot.pause()
                 screen = app.screen
                 assert isinstance(screen, AggregationScreen)
-                radio_set = screen.query_one("#scope-selector", RadioSet)
-                active_btn = screen.query_one("#scope-active", RadioButton)
-                radio_set.post_message(RadioSet.Changed(radio_set, active_btn))
+                sel = screen.query_one("#scope-select", Select)
+                sel.post_message(Select.Changed(sel, AccountStatusScope.ACTIVE))
                 await pilot.pause()
                 assert screen._status_scope == AccountStatusScope.ACTIVE
 
         asyncio.run(_run())
 
     def test_scope_change_to_all_updates_status_scope(self) -> None:
-        from textual.widgets import RadioButton, RadioSet
+        from textual.widgets import Select
 
         months = _make_months((2025, 3),)
         groups = [SingleMonthAggregationGroup("cat1", "Savings", 50_000, "USD")]
@@ -218,9 +217,8 @@ class TestAggregationScreenNavigation:
                 await pilot.pause()
                 screen = app.screen
                 assert isinstance(screen, AggregationScreen)
-                radio_set = screen.query_one("#scope-selector", RadioSet)
-                all_btn = screen.query_one("#scope-all", RadioButton)
-                radio_set.post_message(RadioSet.Changed(radio_set, all_btn))
+                sel = screen.query_one("#scope-select", Select)
+                sel.post_message(Select.Changed(sel, AccountStatusScope.ALL))
                 await pilot.pause()
                 assert screen._status_scope == AccountStatusScope.ALL
 

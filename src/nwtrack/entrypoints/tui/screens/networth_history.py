@@ -13,8 +13,7 @@ from textual.widgets import (
     Footer,
     Header,
     Label,
-    RadioButton,
-    RadioSet,
+    Select,
 )
 
 from nwtrack.application.dto import (
@@ -34,11 +33,11 @@ from nwtrack.entrypoints.tui.screens.month_picker import MonthPickerModal
 _CURRENCY = "USD"
 _DEFAULT_MONTHS = 12
 
-_SCOPE_BUTTON_IDS: dict[str, AccountStatusScope] = {
-    "scope-historical": AccountStatusScope.HISTORICAL,
-    "scope-active": AccountStatusScope.ACTIVE,
-    "scope-all": AccountStatusScope.ALL,
-}
+_SCOPE_OPTIONS: list[tuple[str, AccountStatusScope]] = [
+    ("Historical", AccountStatusScope.HISTORICAL),
+    ("Active", AccountStatusScope.ACTIVE),
+    ("All", AccountStatusScope.ALL),
+]
 
 
 class NetWorthHistoryScreen(Screen):
@@ -65,11 +64,10 @@ class NetWorthHistoryScreen(Screen):
         yield Header()
         yield Button("Start: —", id="btn-start")
         yield Button("End: —", id="btn-end")
-        yield RadioSet(
-            RadioButton("Historical", id="scope-historical", value=True),
-            RadioButton("Active", id="scope-active"),
-            RadioButton("All", id="scope-all"),
-            id="scope-selector",
+        yield Select(
+            options=_SCOPE_OPTIONS,
+            value=AccountStatusScope.HISTORICAL,
+            id="scope-select",
         )
         yield Label("", id="error-label")
         yield DataTable(id="history-table", zebra_stripes=True)
@@ -103,10 +101,9 @@ class NetWorthHistoryScreen(Screen):
 
     # ── Actions ──────────────────────────────────────────────────────────────
 
-    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
-        button_id = event.pressed.id
-        if button_id and button_id in _SCOPE_BUTTON_IDS:
-            self._status_scope = _SCOPE_BUTTON_IDS[button_id]
+    def on_select_changed(self, event: Select.Changed) -> None:
+        if isinstance(event.value, AccountStatusScope):
+            self._status_scope = event.value
             self._reload_for_scope()
 
     @work
