@@ -136,7 +136,7 @@ class TestNetWorthHistoryScreenNavigation:
         asyncio.run(_run())
 
     def test_scope_selector_widget_is_present(self) -> None:
-        from textual.widgets import RadioSet
+        from textual.widgets import Select
 
         months = _make_months((2025, 1), (2025, 2))
         rows = [
@@ -154,13 +154,13 @@ class TestNetWorthHistoryScreenNavigation:
                 await pilot.pause()
                 screen = app.screen
                 assert isinstance(screen, NetWorthHistoryScreen)
-                selector = screen.query_one("#scope-selector", RadioSet)
+                selector = screen.query_one("#scope-select", Select)
                 assert selector is not None
 
         asyncio.run(_run())
 
     def test_scope_change_to_active_updates_status_scope(self) -> None:
-        from textual.widgets import RadioButton, RadioSet
+        from textual.widgets import Select
 
         months = _make_months((2025, 1), (2025, 2))
         rows = [
@@ -178,16 +178,15 @@ class TestNetWorthHistoryScreenNavigation:
                 await pilot.pause()
                 screen = app.screen
                 assert isinstance(screen, NetWorthHistoryScreen)
-                radio_set = screen.query_one("#scope-selector", RadioSet)
-                active_btn = screen.query_one("#scope-active", RadioButton)
-                radio_set.post_message(RadioSet.Changed(radio_set, active_btn))
+                sel = screen.query_one("#scope-select", Select)
+                sel.post_message(Select.Changed(sel, AccountStatusScope.ACTIVE))
                 await pilot.pause()
                 assert screen._status_scope == AccountStatusScope.ACTIVE
 
         asyncio.run(_run())
 
     def test_scope_change_to_all_updates_status_scope(self) -> None:
-        from textual.widgets import RadioButton, RadioSet
+        from textual.widgets import Select
 
         months = _make_months((2025, 1), (2025, 2))
         rows = [
@@ -205,16 +204,15 @@ class TestNetWorthHistoryScreenNavigation:
                 await pilot.pause()
                 screen = app.screen
                 assert isinstance(screen, NetWorthHistoryScreen)
-                radio_set = screen.query_one("#scope-selector", RadioSet)
-                all_btn = screen.query_one("#scope-all", RadioButton)
-                radio_set.post_message(RadioSet.Changed(radio_set, all_btn))
+                sel = screen.query_one("#scope-select", Select)
+                sel.post_message(Select.Changed(sel, AccountStatusScope.ALL))
                 await pilot.pause()
                 assert screen._status_scope == AccountStatusScope.ALL
 
         asyncio.run(_run())
 
     def test_scope_change_preserves_start_and_end_month(self) -> None:
-        from textual.widgets import RadioButton, RadioSet
+        from textual.widgets import Select
 
         months = _make_months((2025, 1), (2025, 2), (2025, 3))
         rows = [HistoryAggregationRow(Month(2025, 1), "asset", "asset", 100_000, "USD")]
@@ -236,9 +234,8 @@ class TestNetWorthHistoryScreenNavigation:
                 screen._end_month = months[1]
 
                 # Change scope
-                radio_set = screen.query_one("#scope-selector", RadioSet)
-                active_btn = screen.query_one("#scope-active", RadioButton)
-                radio_set.post_message(RadioSet.Changed(radio_set, active_btn))
+                sel = screen.query_one("#scope-select", Select)
+                sel.post_message(Select.Changed(sel, AccountStatusScope.ACTIVE))
                 await pilot.pause()
 
                 # Pinned dates must survive the scope change
