@@ -139,9 +139,10 @@ class NetWorthHistoryScreen(Screen):
         if not self._available:
             self._show_error("No net worth data found in USD.")
             return
-        self._end_month = self._available[-1]
-        start_idx = max(0, len(self._available) - _DEFAULT_MONTHS)
-        self._start_month = self._available[start_idx]
+        if self._start_month is None or self._end_month is None:
+            self._end_month = self._available[-1]
+            start_idx = max(0, len(self._available) - _DEFAULT_MONTHS)
+            self._start_month = self._available[start_idx]
         self._update_buttons()
         self._refresh_table()
 
