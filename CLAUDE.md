@@ -16,11 +16,11 @@ This project follows a clean architecture pattern with clear separation of conce
 src/nwtrack/
 ├── domain/           # Core business entities and value objects
 ├── application/      # Business logic layer
-│   ├── ports/        # Interface protocols (Repository, UnitOfWork, etc.)
+│   ├── ports/        # Interface protocols (Repository, UnitOfWork, Presenter, etc.)
 │   ├── registries/   # Dynamic registration of mappers and repositories
 │   ├── services/     # Application services
 │   └── use_cases/    # Entry points for business operations
-├── bootstrap/        # Dependency injection and composition
+├── bootstrap/        # Dependency injection and composition (CLI + TUI roots)
 ├── infra/            # Infrastructure implementations
 │   ├── config/       # Settings and configuration
 │   ├── fileio/       # CSV file operations
@@ -32,7 +32,8 @@ src/nwtrack/
 │   └── db/           # Database dialect-specific implementations
 │       └── sqlite/   # SQLite session manager with PRAGMAs
 └── entrypoints/      # External interfaces
-    └── cli/          # Typer-based CLI application
+    ├── cli/          # Typer-based CLI with Rich presenter adapters
+    └── tui/          # Textual TUI application with screen hierarchy
 ```
 
 ### Key Architectural Patterns
@@ -47,6 +48,7 @@ src/nwtrack/
   - `InitDataService`: Database initialization with CSV data
   - `DBAdminService`: Database administration operations
   - `ExportCSVService`: CSV export operations
+  - `ReportCompatibilityService`: Transforms raw aggregation query results into compatibility report shapes (networth, category, history)
 - **Use Cases**: Each use case is a class-based module with:
   - Constructor dependency injection (UoW, services, presenters)
   - A `run()` method that returns `OperationResult[T]`
@@ -61,6 +63,11 @@ src/nwtrack/
   - Handle all console UI interactions (tables, prompts, formatting)
   - Injected into use cases via DI, enabling clean separation and testability
 - **Migration Status**: Presenter pattern is applied to all interactive use cases — migration is complete. No use case module imports Rich directly.
+- **TUI Layer** (`entrypoints/tui/`): Textual application with screen-stack navigation
+  - `app.py`: `NWTrackApp` entry point; mounts home screen on startup
+  - `screens/`: one module per screen (home, balance\_update, accounts, networth\_history, aggregation, roll\_forward, transfer, categories, institutions, tags, admin\_menu, reports\_menu, month\_picker, confirm\_modal, stub)
+  - Each screen owns its workflow end-to-end; use cases and services are resolved from `bootstrap/tui_composition.py`
+  - Launched via `nwtrack tui launch`
 
 **Infrastructure Layer**:
 - **Persistence Layer** (`infra/persistence/`) - Database-agnostic ORM components:
@@ -77,9 +84,9 @@ src/nwtrack/
 - All database queries use SQLAlchemy ORM exclusively (no raw SQL)
 - `SchemaManager` implementation abstracts schema operations (create/drop tables) from application layer
 
-**Dependency Injection**: A custom lightweight DI container (`bootstrap/container.py`) supports singleton and transient lifetimes. Each use case's `main()` function extends the base container from `bootstrap/composition.py` with its specific dependencies.
+**Dependency Injection**: A custom lightweight DI container (`bootstrap/container.py`) supports singleton and transient lifetimes. Each use case's `main()` function extends the base container from `bootstrap/composition.py` with its specific dependencies. The TUI uses a separate composition root at `bootstrap/tui_composition.py`.
 
-**CLI Layer**: Uses Typer with sub-apps for different command groups (accounts, balances, categories, reports, export). Commands are thin wrappers that import and invoke use case `main()` functions.
+**CLI Layer**: Uses Typer with sub-apps for different command groups: `accounts`, `balances`, `categories`, `institutions`, `tags`, `reports`, `export`, `import`, `admin`, `tui`. Commands are thin wrappers that import and invoke use case `main()` functions.
 
 ### Important Design Decisions
 
@@ -149,7 +156,7 @@ just format            # Format code with ruff
 just typecheck         # Run mypy type checker
 just check             # Run all checks (lint + typecheck + test)
 
-# CLI commands
+# CLI/TUI commands
 just cli-help          # Show CLI help
 just accounts-list     # List accounts
 just balances-update   # Update balances interactively
@@ -173,12 +180,24 @@ just clean             # Remove Python cache files
 # Run CLI using uv
 uv run nwtrack --help
 
-# Common commands
+# Launch the TUI (primary interface)
+uv run nwtrack tui launch
+
+# Common CLI commands
 uv run nwtrack accounts list
 uv run nwtrack accounts create
 uv run nwtrack balances update
-uv run nwtrack reports networth
+uv run nwtrack balances create
+uv run nwtrack balances roll-forward
+uv run nwtrack balances transfer
+uv run nwtrack institutions list
+uv run nwtrack tags list
+uv run nwtrack reports networth-history
+uv run nwtrack reports balances-aggregate
+uv run nwtrack reports balances-aggregate-history
 uv run nwtrack export csv
+uv run nwtrack import tables-csv
+uv run nwtrack admin seed-status-history
 
 # Or use just targets (recommended for common operations)
 just accounts-list
@@ -251,9 +270,10 @@ The database schema is managed entirely through SQLAlchemy ORM models in `src/nw
 
 The application uses:
 - SQLite database (default: `data/sqlite/nwtrack.db`)
-- Tables: currencies, categories, accounts, balances, exchange_rates
-- ORM models with CHECK constraints (Category.side, Account.status) and composite UNIQUE constraints (Balance, ExchangeRate)
-- NetWorth aggregations computed via SQLAlchemy queries (replaces previous networth_history view)
+- Tables: `currencies`, `categories`, `institutions`, `tags`, `accounts`, `account_status_history`, `balances`, `exchange_rates`
+- ORM models with CHECK constraints (`Category.side`, `Account.status`) and composite UNIQUE constraints (`Balance`, `ExchangeRate`)
+- NetWorth aggregations computed via SQLAlchemy queries
+- `account_status_history` records per-month effective status for each account, enabling historical reporting via `AccountStatusScope.HISTORICAL`
 
 Environment variables are loaded from `.env` (see `.env_example` for template):
 - `NWTRACK_DB_FILE_PATH`: Database file location (default: `data/sqlite/nwtrack.db`)
