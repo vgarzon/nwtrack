@@ -10,7 +10,7 @@ This document defines the default implementation choices for `nwtrack` and the e
 - Package and environment management: `uv`
 - CLI framework: Typer (retained during TUI transition; retired after TUI covers full scope)
 - Terminal rendering: Rich (also used natively inside Textual widgets)
-- TUI framework: Textual (active; TUI development begins in Phase 29)
+- TUI framework: Textual (active; TUI screens cover all primary workflows as of Phase 33)
 - Database: SQLite
 - ORM and persistence layer: SQLAlchemy 2.x
 - Test framework: Pytest
