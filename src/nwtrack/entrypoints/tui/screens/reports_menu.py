@@ -10,7 +10,7 @@ from textual.widgets import Footer, Header, Label, ListItem, ListView
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 
-_MENU_ITEMS = ["Net Worth History", "Aggregation"]
+_MENU_ITEMS = ["Net Worth History", "Aggregation", "Account History"]
 
 
 class ReportsMenuScreen(Screen):
@@ -49,3 +49,10 @@ class ReportsMenuScreen(Screen):
         elif item_id == "report-aggregation":
             from nwtrack.entrypoints.tui.screens.aggregation import AggregationScreen
             self.app.push_screen(AggregationScreen(self._fetcher, self._uow))
+        elif item_id == "report-account-history":
+            from nwtrack.entrypoints.tui.screens.account_balance_history import (
+                AccountBalanceHistoryScreen,
+            )
+            self.app.push_screen(
+                AccountBalanceHistoryScreen(self._fetcher, self._uow)
+            )
