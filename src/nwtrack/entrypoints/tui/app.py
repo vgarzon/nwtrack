@@ -20,7 +20,7 @@ class NWTrackApp(App):
     CSS = SHARED_CSS
     BINDINGS = [
         Binding("q", "quit", "Quit"),
-        Binding("d", "toggle_dark", "Toggle theme"),
+        Binding("ctrl+t", "toggle_dark", "Toggle theme", priority=True),
     ]
 
     def __init__(
