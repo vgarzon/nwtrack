@@ -22,28 +22,8 @@ class BalanceEditModal(ModalScreen[int | None]):
     ]
 
     DEFAULT_CSS = """
-    BalanceEditModal {
-        align: center middle;
-    }
     #edit-container {
         width: 44;
-        height: auto;
-        border: thick $primary;
-        background: $surface;
-        padding: 1 2;
-    }
-    #edit-title {
-        text-align: center;
-        margin-bottom: 1;
-    }
-    #edit-error {
-        color: $error;
-        margin-top: 1;
-    }
-    #edit-buttons {
-        margin-top: 1;
-        align: right middle;
-        height: auto;
     }
     """
 
@@ -60,14 +40,14 @@ class BalanceEditModal(ModalScreen[int | None]):
 
     def compose(self) -> ComposeResult:
         current_display = f"{self._current_amount:,}"
-        with Vertical(id="edit-container"):
-            yield Label("Edit Balance", id="edit-title")
+        with Vertical(id="edit-container", classes="modal-container"):
+            yield Label("Edit Balance", id="edit-title", classes="modal-title")
             yield Label(f"Account:  {self._account_name}")
             yield Label(f"Month:    {self._month}")
             yield Label(f"Current:  {current_display}")
             yield Input(placeholder="New amount", id="edit-input")
-            yield Label("", id="edit-error")
-            with Vertical(id="edit-buttons"):
+            yield Label("", id="edit-error", classes="error-text")
+            with Vertical(id="edit-buttons", classes="button-row"):
                 yield Footer()
 
     def on_mount(self) -> None:

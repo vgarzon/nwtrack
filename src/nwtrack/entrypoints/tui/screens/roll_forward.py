@@ -32,30 +32,11 @@ class RollForwardModal(ModalScreen[Month | None]):
     ]
 
     DEFAULT_CSS = """
-    RollForwardModal {
-        align: center middle;
-    }
     #rf-container {
         width: 56;
-        height: auto;
-        border: thick $primary;
-        background: $surface;
-        padding: 1 2;
-    }
-    #rf-title {
-        text-align: center;
-        margin-bottom: 1;
     }
     #rf-warning {
         color: $warning;
-        margin-top: 1;
-    }
-    #rf-error {
-        color: $error;
-        margin-top: 1;
-    }
-    #rf-hint {
-        color: $text-muted;
         margin-top: 1;
     }
     """
@@ -74,13 +55,17 @@ class RollForwardModal(ModalScreen[Month | None]):
         self._target_has_balances = False
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="rf-container"):
-            yield Label("Roll Balances Forward", id="rf-title")
+        with Vertical(id="rf-container", classes="modal-container"):
+            yield Label("Roll Balances Forward", id="rf-title", classes="modal-title")
             yield Label("", id="rf-source")
             yield Label("", id="rf-target")
             yield Label("", id="rf-warning")
-            yield Label("", id="rf-error")
-            yield Label("Ctrl+S to confirm  ·  M to change source", id="rf-hint")
+            yield Label("", id="rf-error", classes="error-text")
+            yield Label(
+                "Ctrl+S to confirm  ·  M to change source",
+                id="rf-hint",
+                classes="hint-text",
+            )
             yield Footer()
 
     def on_mount(self) -> None:

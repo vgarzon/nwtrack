@@ -34,31 +34,12 @@ class TransferModal(ModalScreen[bool]):
     ]
 
     DEFAULT_CSS = """
-    TransferModal {
-        align: center middle;
-    }
     #tr-container {
         width: 64;
-        height: auto;
         max-height: 90%;
-        border: thick $primary;
-        background: $surface;
-        padding: 1 2;
         overflow-y: auto;
     }
-    #tr-title {
-        text-align: center;
-        margin-bottom: 1;
-    }
     #tr-preview {
-        margin-top: 1;
-    }
-    #tr-error {
-        color: $error;
-        margin-top: 1;
-    }
-    #tr-hint {
-        color: $text-muted;
         margin-top: 1;
     }
     """
@@ -79,8 +60,8 @@ class TransferModal(ModalScreen[bool]):
         self._accounts = self._fetcher.get_accounts(active_only=True)
         account_options = [(a.name, str(a.id)) for a in self._accounts]
 
-        with Vertical(id="tr-container"):
-            yield Label("Transfer Balance", id="tr-title")
+        with Vertical(id="tr-container", classes="modal-container"):
+            yield Label("Transfer Balance", id="tr-title", classes="modal-title")
             yield Label(f"Month: [bold]{self._month}[/bold]", id="tr-month")
             yield Label("From Account")
             yield Select(
@@ -97,8 +78,12 @@ class TransferModal(ModalScreen[bool]):
             yield Label("Amount")
             yield Input(placeholder="Amount", id="input-amount")
             yield Label("", id="tr-preview")
-            yield Label("", id="tr-error")
-            yield Label("Ctrl+S to execute  ·  M to change month", id="tr-hint")
+            yield Label("", id="tr-error", classes="error-text")
+            yield Label(
+                "Ctrl+S to execute  ·  M to change month",
+                id="tr-hint",
+                classes="hint-text",
+            )
             yield Footer()
 
     def on_mount(self) -> None:

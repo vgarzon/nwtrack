@@ -23,19 +23,8 @@ class MonthPickerModal(ModalScreen[Month | None]):
     ]
 
     DEFAULT_CSS = """
-    MonthPickerModal {
-        align: center middle;
-    }
     #picker-container {
         width: 44;
-        height: auto;
-        border: thick $primary;
-        background: $surface;
-        padding: 1 2;
-    }
-    #picker-title {
-        text-align: center;
-        margin-bottom: 1;
     }
     #month-table {
         height: auto;
@@ -53,8 +42,8 @@ class MonthPickerModal(ModalScreen[Month | None]):
         self._grid = months_to_grid(available_months, cols=3)
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="picker-container"):
-            yield Label("Select Month", id="picker-title")
+        with Vertical(id="picker-container", classes="modal-container"):
+            yield Label("Select Month", id="picker-title", classes="modal-title")
             yield DataTable(
                 id="month-table",
                 cursor_type="cell",
@@ -78,9 +67,7 @@ class MonthPickerModal(ModalScreen[Month | None]):
         table.move_cursor(row=cursor_row, column=cursor_col)
         table.focus()
 
-    def on_data_table_cell_selected(
-        self, event: DataTable.CellSelected
-    ) -> None:
+    def on_data_table_cell_selected(self, event: DataTable.CellSelected) -> None:
         row_idx = event.coordinate.row
         col_idx = event.coordinate.column
         if row_idx < len(self._grid) and col_idx < len(self._grid[row_idx]):

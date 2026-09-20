@@ -25,29 +25,16 @@ class CategoryFormModal(ModalScreen[Category | None]):
     BINDINGS = [Binding("escape", "cancel", "Cancel")]
 
     DEFAULT_CSS = """
-    CategoryFormModal {
-        align: center middle;
-    }
     #category-form-container {
         width: 54;
-        height: auto;
-        border: thick $primary;
-        background: $surface;
-        padding: 1 2;
-    }
-    #category-form-title {
-        text-align: center;
-        margin-bottom: 1;
-    }
-    #category-form-error {
-        color: $error;
-        margin-top: 1;
     }
     """
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="category-form-container"):
-            yield Label("Create Category", id="category-form-title")
+        with Vertical(id="category-form-container", classes="modal-container"):
+            yield Label(
+                "Create Category", id="category-form-title", classes="modal-title"
+            )
             yield Label("Name")
             yield Input(placeholder="Category name", id="input-name")
             yield Label("Side")
@@ -56,7 +43,7 @@ class CategoryFormModal(ModalScreen[Category | None]):
                 prompt="Select side",
                 id="select-side",
             )
-            yield Label("", id="category-form-error")
+            yield Label("", id="category-form-error", classes="error-text")
             yield Footer()
 
     def on_mount(self) -> None:

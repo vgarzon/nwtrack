@@ -59,29 +59,10 @@ class AccountFormModal(ModalScreen[AccountFormData | None]):
     ]
 
     DEFAULT_CSS = """
-    AccountFormModal {
-        align: center middle;
-    }
     #account-form-container {
         width: 64;
-        height: auto;
         max-height: 90%;
-        border: thick $primary;
-        background: $surface;
-        padding: 1 2;
         overflow-y: auto;
-    }
-    #account-form-title {
-        text-align: center;
-        margin-bottom: 1;
-    }
-    #account-form-error {
-        color: $error;
-        margin-top: 1;
-    }
-    #account-form-hint {
-        color: $text-muted;
-        margin-top: 1;
     }
     """
 
@@ -118,8 +99,8 @@ class AccountFormModal(ModalScreen[AccountFormData | None]):
             for t in self._all_tags
         ]
 
-        with Vertical(id="account-form-container"):
-            yield Label(title, id="account-form-title")
+        with Vertical(id="account-form-container", classes="modal-container"):
+            yield Label(title, id="account-form-title", classes="modal-title")
             yield Label("Name")
             yield Input(
                 value=acc.name if acc else "",
@@ -165,8 +146,8 @@ class AccountFormModal(ModalScreen[AccountFormData | None]):
             if self._all_tags:
                 yield Label("Tags")
                 yield SelectionList[int](*tag_selections, id="select-tags")
-            yield Label("", id="account-form-error")
-            yield Label("Ctrl+S to save", id="account-form-hint")
+            yield Label("", id="account-form-error", classes="error-text")
+            yield Label("Ctrl+S to save", id="account-form-hint", classes="hint-text")
             yield Footer()
 
     def on_mount(self) -> None:
@@ -261,8 +242,14 @@ class AccountsListScreen(Screen):
         table = self.query_one("#accounts-table", DataTable)
         table.clear(columns=True)
         table.add_columns(
-            "ID", "Name", "Status", "Category",
-            "Side", "Institution", "Currency", "Tags",
+            "ID",
+            "Name",
+            "Status",
+            "Category",
+            "Side",
+            "Institution",
+            "Currency",
+            "Tags",
         )
         self._accounts = self._fetcher.get_accounts(active_only=False)
         for acc in self._accounts:
@@ -377,11 +364,13 @@ class AccountsListScreen(Screen):
                 severity="error",
             )
             return
+
         def _refresh_and_restore() -> None:
             self._refresh_table()
             table = self.query_one("#accounts-table", DataTable)
             if row_idx < len(self._accounts):
                 table.move_cursor(row=row_idx)
+
         self.call_after_refresh(_refresh_and_restore)
 
     @work
@@ -392,6 +381,7 @@ class AccountsListScreen(Screen):
             return
         acc = self._accounts[row_idx]
         from nwtrack.entrypoints.tui.screens.confirm_modal import ConfirmModal
+
         warning = (
             f"Delete account '{acc.name}'? All balance records for this account"
             " will also be deleted. This cannot be undone."
