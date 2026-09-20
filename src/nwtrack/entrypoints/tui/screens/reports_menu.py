@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 from textual.app import ComposeResult
 from textual.binding import Binding
+from textual.containers import Vertical
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Label, ListItem, ListView
 
@@ -23,7 +24,7 @@ class ReportsMenuScreen(Screen):
         fetcher: FetchService,
         uow: Callable[[], UnitOfWork],
     ) -> None:
-        super().__init__()
+        super().__init__(classes="menu-screen")
         self._fetcher = fetcher
         self._uow = uow
 
@@ -36,7 +37,10 @@ class ReportsMenuScreen(Screen):
             ListItem(Label(item), id=f"report-{item.lower().replace(' ', '-')}")
             for item in _MENU_ITEMS
         ]
-        yield ListView(*items, id="reports-menu")
+        with Vertical(id="reports-menu-panel", classes="menu-panel"):
+            yield Label("Reports", classes="menu-title")
+            yield ListView(*items, id="reports-menu")
+            yield Label("Esc back", classes="menu-hint")
         yield Footer()
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
@@ -45,14 +49,15 @@ class ReportsMenuScreen(Screen):
             from nwtrack.entrypoints.tui.screens.networth_history import (
                 NetWorthHistoryScreen,
             )
+
             self.app.push_screen(NetWorthHistoryScreen(self._fetcher, self._uow))
         elif item_id == "report-aggregation":
             from nwtrack.entrypoints.tui.screens.aggregation import AggregationScreen
+
             self.app.push_screen(AggregationScreen(self._fetcher, self._uow))
         elif item_id == "report-account-history":
             from nwtrack.entrypoints.tui.screens.account_balance_history import (
                 AccountBalanceHistoryScreen,
             )
-            self.app.push_screen(
-                AccountBalanceHistoryScreen(self._fetcher, self._uow)
-            )
+
+            self.app.push_screen(AccountBalanceHistoryScreen(self._fetcher, self._uow))

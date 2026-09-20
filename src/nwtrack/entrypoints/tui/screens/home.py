@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 from textual.app import ComposeResult
 from textual.binding import Binding
+from textual.containers import Vertical
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Label, ListItem, ListView
 
@@ -23,16 +24,22 @@ class HomeScreen(Screen):
         fetcher: FetchService,
         uow: Callable[[], UnitOfWork],
     ) -> None:
-        super().__init__()
+        super().__init__(classes="menu-screen")
         self._fetcher = fetcher
         self._uow = uow
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield ListView(
-            *[ListItem(Label(item), id=f"menu-{item.lower()}") for item in _MENU_ITEMS],
-            id="home-menu",
-        )
+        with Vertical(id="home-menu-panel", classes="menu-panel"):
+            yield Label("nwtrack", classes="menu-title")
+            yield ListView(
+                *[
+                    ListItem(Label(item), id=f"menu-{item.lower()}")
+                    for item in _MENU_ITEMS
+                ],
+                id="home-menu",
+            )
+            yield Label("↑↓ navigate · Enter select", classes="menu-hint")
         yield Footer()
 
     def on_mount(self) -> None:
