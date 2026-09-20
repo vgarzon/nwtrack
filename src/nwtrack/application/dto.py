@@ -102,6 +102,42 @@ class HistoryAggregationResult:
 
 
 @dataclass(frozen=True)
+class AccountBalanceHistoryRow:
+    """One month's balance and month-over-month delta for a single account."""
+
+    month: Month
+    balance: int | None
+    delta: int | None
+
+
+@dataclass(frozen=True)
+class AccountBalanceHistorySummary:
+    """Trend summary computed over months with an actual balance record."""
+
+    min_balance: int
+    max_balance: int
+    average_balance: float
+    total_change: int
+    first_month: Month
+    last_month: Month
+
+
+@dataclass(frozen=True)
+class AccountBalanceHistoryResult:
+    """Result of a single-account balance history query."""
+
+    account_id: int
+    account_name: str
+    category_name: str
+    currency_code: str
+    institution_name: str | None
+    start_month: Month
+    end_month: Month
+    rows: list[AccountBalanceHistoryRow]
+    summary: AccountBalanceHistorySummary | None
+
+
+@dataclass(frozen=True)
 class NewAccountData:
     """Data class for new account creation use case."""
 
