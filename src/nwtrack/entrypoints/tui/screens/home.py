@@ -35,6 +35,14 @@ class HomeScreen(Screen):
         )
         yield Footer()
 
+    def on_mount(self) -> None:
+        self._update_theme_indicator()
+        self.watch(self.app, "theme", self._update_theme_indicator)
+
+    def _update_theme_indicator(self) -> None:
+        is_dark = self.app.current_theme.dark
+        self.sub_title = "Dark mode" if is_dark else "Light mode"
+
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         label = event.item.id or ""
         section = label.removeprefix("menu-").capitalize()
@@ -42,13 +50,17 @@ class HomeScreen(Screen):
             from nwtrack.entrypoints.tui.screens.balance_update import (
                 BalanceUpdateScreen,
             )
+
             self.app.push_screen(BalanceUpdateScreen(self._fetcher, self._uow))
         elif section == "Reports":
             from nwtrack.entrypoints.tui.screens.reports_menu import ReportsMenuScreen
+
             self.app.push_screen(ReportsMenuScreen(self._fetcher, self._uow))
         elif section == "Accounts":
             from nwtrack.entrypoints.tui.screens.accounts import AccountsListScreen
+
             self.app.push_screen(AccountsListScreen(self._fetcher, self._uow))
         elif section == "Admin":
             from nwtrack.entrypoints.tui.screens.admin_menu import AdminMenuScreen
+
             self.app.push_screen(AdminMenuScreen(self._fetcher, self._uow))
