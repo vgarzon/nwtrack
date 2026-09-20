@@ -529,7 +529,7 @@ Expected outcomes:
   feature spec) rather than silently skipped
 - `ruff`, `mypy`, and `pytest` pass
 
-### [ ] Phase 39: TUI Visual Design System
+### [X] Phase 39: TUI Visual Design System
 
 Goal:
 Introduce a reusable Textual theme module with dark and light modes and apply consistent
@@ -543,15 +543,19 @@ layout and spacing polish under the new theme.
 
 Expected outcomes:
 
-- A shared Textual theme module defines colors, spacing, and CSS variables for dark and
-  light modes
+- A shared Textual theme module (`entrypoints/tui/theme.py`) defines reusable CSS classes
+  (modal chrome, titles, error/hint labels, button rows) and spacing constants, registered
+  globally via `NWTrackApp.CSS`; dark/light mode reuses Textual's own built-in theme
+  mechanism (`App.theme` / `action_toggle_dark`) rather than a hand-rolled color palette
 - All existing TUI screens (home, balances, reports, accounts, admin) reference the shared
-  theme rather than ad-hoc per-screen styling
-- A user-facing toggle switches between dark and light mode; the selection is applied
-  consistently across screens
+  theme classes rather than duplicating modal/error/hint styling per screen
+- A user-facing toggle (`ctrl+t`, a global priority binding so it works even while a modal's
+  input field has focus) switches between dark and light mode; the home screen subtitle
+  shows the current mode and updates live
 - Layout and spacing on existing screens are revisited for visual hierarchy and consistency
-  under the new theme, without changing underlying screen workflows or navigation
-- `ruff`, `mypy`, and `pytest` pass
+  under the new theme (notably: error labels on report screens now render consistently with
+  modal error labels), without changing underlying screen workflows or navigation
+- `ruff`, `mypy`, and `pytest` pass (388 tests)
 
 ### [ ] Phase 40: HTML Graphical Reports
 
