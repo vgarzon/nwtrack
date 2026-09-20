@@ -35,19 +35,26 @@
 
 ## Manual Validation
 
-1. Run `nwtrack reports account-history --account-name <existing account>
-   --start <YYYY-MM> --end <YYYY-MM>` against a real local database with a
-   full run of monthly balances for that account. Confirm the table shows
-   correct month-over-month deltas and the summary block matches
-   hand-computed min/max/average/total change.
-2. Repeat against an account with at least one missing month in the
-   selected range. Confirm the missing month displays as blank, the next
-   real month's delta reflects the last real balance (not zero and not the
-   immediately preceding calendar month), and the missing month is excluded
-   from the summary stats.
-3. Run the same report for a range with zero balance records for the
-   selected account. Confirm a clear "no balance records in range" message
-   is shown instead of an empty or malformed table.
+1. [DONE] Ran `nwtrack reports account-history --account-name
+   bank_1_checking --start 2024-06 --end 2024-11` against a database
+   imported from `tests/data/csv/`. Table showed correct month-over-month
+   deltas (`+0, +0, -100, +0, +0`) and the summary block matched
+   hand-computed min=200, max=300, average=250.00, total change=-100.
+2. [DONE] Repeated with `--account-id 1 --start 2024-10 --end 2025-07`
+   (account 1 has a real gap from 2024-12 to 2025-05 in the sample data).
+   Missing months displayed as `—` with a blank delta; 2025-06's delta
+   correctly reflected the last real balance from 2024-11 rather than zero
+   or an adjacent gap month.
+3. [DEFERRED — not directly exercised] A zero-balance-record range was
+   covered by the automated use case test
+   (`test_zero_record_range_returns_no_summary`) and by the CLI workflow
+   test (`test_run_shows_no_data_message_when_summary_is_none`); not
+   separately re-run manually against a live database, since the code
+   path is identical to the automated coverage.
+   Also manually verified: `--account-id` and `--account-name` together is
+   rejected ("Provide either --account-id or --account-name, not both.",
+   exit 1), and an invalid range (`--start` after `--end`) is rejected
+   ("Start month must be earlier than or equal to end month.", exit 1).
 4. Launch `nwtrack tui launch`, navigate Reports → Account History, select
    an account via the picker, enter a start/end month range, and confirm
    the on-screen table and summary match the CLI output for the same

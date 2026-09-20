@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.prompt import IntPrompt, Prompt
 
 from nwtrack.application.dto import (
+    AccountBalanceHistoryResult,
     AccountStatusScope,
     AggregationDimension,
     HistoryAggregationResult,
@@ -16,6 +17,8 @@ from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Account, Balance, NetWorth
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.ui.renderers import (
+    build_account_balance_history_summary_table,
+    build_account_balance_history_table,
     build_accounts_table,
     build_balances_table,
     build_category_summary_table,
@@ -570,6 +573,44 @@ class RichHistoryAggregationReportPresenter:
         """Display grouped balances for a successful history aggregation request."""
         table = build_history_aggregation_table(result)
         self._console.print(table)
+
+    def show_error(self, message: str) -> None:
+        """Display an error message."""
+        self._console.print(f"[error]{message}[/error]")
+
+
+class RichAccountBalanceHistoryPresenter:
+    """Rich-based implementation of the account balance history presenter."""
+
+    def __init__(self, console: Console) -> None:
+        self._console = console
+
+    def show_header(self) -> None:
+        """Display report header using Rich."""
+        self._console.rule(
+            "[header]Account Balance History Report[/header]",
+            align="center",
+        )
+
+    def display_account_balance_history(
+        self,
+        result: AccountBalanceHistoryResult,
+    ) -> None:
+        """Display one account's balance history, deltas, and trend summary."""
+        institution = result.institution_name or "None"
+        self._console.print(
+            f"[bold]{result.account_name}[/bold] "
+            f"({result.category_name}, {result.currency_code}, {institution})"
+        )
+        self._console.print(build_account_balance_history_table(result))
+        self._console.print(build_account_balance_history_summary_table(result))
+
+    def show_no_data_message(self, result: AccountBalanceHistoryResult) -> None:
+        """Display feedback when the range has no balance records."""
+        self._console.print(
+            f"[warning]No balance history found for {result.account_name} "
+            f"from {result.start_month} to {result.end_month}.[/warning]"
+        )
 
     def show_error(self, message: str) -> None:
         """Display an error message."""

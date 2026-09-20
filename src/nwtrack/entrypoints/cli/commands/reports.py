@@ -83,6 +83,26 @@ def balances_aggregate_report(
     )
 
 
+@reports_app.command("account-history")
+def account_balance_history_report(
+    start: Annotated[str, typer.Option("--start")],
+    end: Annotated[str, typer.Option("--end")],
+    account_id: Annotated[int | None, typer.Option("--account-id")] = None,
+    account_name: Annotated[str | None, typer.Option("--account-name")] = None,
+):
+    """Generate one account's balance history report."""
+    import nwtrack.application.use_cases.report_account_balance_history as report_account_history  # noqa: E501
+
+    sys.exit(
+        report_account_history.main(
+            start_month=start,
+            end_month=end,
+            account_id=account_id,
+            account_name=account_name,
+        )
+    )
+
+
 @reports_app.command("balances-aggregate-history")
 def balances_aggregate_history_report(
     start_month: Annotated[str | None, typer.Option("--start-month")] = None,
