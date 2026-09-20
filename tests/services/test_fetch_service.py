@@ -89,6 +89,43 @@ def test_fetch_service_get_account_by_id_exposes_assigned_tags(
     assert [tag.name for tag in account.tags] == ["core", "liquid"]
 
 
+def test_fetch_service_get_account_by_name_returns_matching_account(
+    configured_container: Container, sample_entities
+) -> None:
+    """Account-name CLI selection should resolve through FetchService."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+    fetcher = FetchService(uow=lambda: configured_container.resolve(UnitOfWork))
+
+    account = fetcher.get_account_by_name("bank_1_checking")
+
+    assert account is not None
+    assert account.id == 1
+
+
+def test_fetch_service_get_account_by_name_returns_none_for_unknown_name(
+    configured_container: Container, sample_entities
+) -> None:
+    """Unknown account names should resolve to None rather than raise."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+    fetcher = FetchService(uow=lambda: configured_container.resolve(UnitOfWork))
+
+    assert fetcher.get_account_by_name("does-not-exist") is None
+
+
+def test_fetch_service_get_balances_for_account_orders_by_month(
+    configured_container: Container, sample_entities
+) -> None:
+    """Single-account balance history reads should come back ordered by month."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+    fetcher = FetchService(uow=lambda: configured_container.resolve(UnitOfWork))
+
+    balances = fetcher.get_balances_for_account(1)
+
+    months = [str(balance.month) for balance in balances]
+    assert months == sorted(months)
+    assert all(balance.account_id == 1 for balance in balances)
+
+
 def test_fetch_service_lists_available_aggregation_months(
     configured_container: Container, sample_entities
 ) -> None:

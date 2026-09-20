@@ -101,6 +101,32 @@ class FetchService:
             account = uow.accounts.get_by_id(account_id)
         return account
 
+    def get_account_by_name(self, account_name: str) -> Account | None:
+        """Get account by name.
+
+        Args:
+            account_name (str): Account name
+
+        Returns:
+            Account | None: Account instance if found, else None.
+        """
+        with self._uow() as uow:
+            account = uow.accounts.get_by_name(account_name)
+        return account
+
+    def get_balances_for_account(self, account_id: int) -> list[Balance]:
+        """Get all balance records for one account, ordered by month.
+
+        Args:
+            account_id (int): Account ID
+
+        Returns:
+            list[Balance]: List of Balance objects for the account.
+        """
+        with self._uow() as uow:
+            balances = uow.balances.get_all_by_account_id(account_id)
+        return balances
+
     def get_balance_by_id(self, balance_id: int) -> Balance | None:
         """Get balance by ID.
 
