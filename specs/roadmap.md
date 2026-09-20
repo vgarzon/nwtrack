@@ -499,7 +499,7 @@ Phases 34–37 are on hold. Phases 38–41 below take priority as the current ac
 work. Phases 34–37 remain defined and will resume after 38–41 land, in their
 original relative order, unless a future roadmap update says otherwise.
 
-### [ ] Phase 38: Single Account Balance History Report
+### [X] Phase 38: Single Account Balance History Report
 
 Goal:
 Add a report that shows one account's balance history over a month range, with

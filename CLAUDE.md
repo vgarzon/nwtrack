@@ -195,6 +195,7 @@ uv run nwtrack tags list
 uv run nwtrack reports networth-history
 uv run nwtrack reports balances-aggregate
 uv run nwtrack reports balances-aggregate-history
+uv run nwtrack reports account-history
 uv run nwtrack export csv
 uv run nwtrack import tables-csv
 uv run nwtrack admin seed-status-history
