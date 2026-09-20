@@ -423,7 +423,7 @@ Expected outcomes:
 - Amount column in `BalanceUpdateScreen` is right-justified
 - `ruff`, `mypy`, and `pytest` pass (340 tests)
 
-### [ ] Phase 34: Reporting UX Options
+### [ ] Phase 34 (On Hold): Reporting UX Options
 
 Goal:
 Improve aggregated reporting ergonomics with alternative history layouts and export-friendly output.
@@ -434,7 +434,7 @@ Expected outcomes:
 - Non-interactive aggregated history reporting can emit CSV output for downstream analysis
 - Output-format options are defined in a way that preserves current default behavior unless the user opts in
 
-### [ ] Phase 35: Single-Currency Conversion Reporting
+### [ ] Phase 35 (On Hold): Single-Currency Conversion Reporting
 
 Goal:
 Add conversion-backed reporting so aggregated views can be rendered in one explicit reporting currency instead of failing on mixed-currency totals.
@@ -446,7 +446,7 @@ Expected outcomes:
 - Conversion rules and required exchange-rate inputs are defined clearly for reporting workflows
 - Compatibility and aggregated report commands can converge on accounting-correct single-currency output where conversion data exists
 
-### [ ] Phase 36 (Optional): CLI Retirement
+### [ ] Phase 36 (On Hold, Optional): CLI Retirement
 
 Goal:
 Retire the CLI entry points once the TUI covers the full workflow scope and has been validated
@@ -467,7 +467,7 @@ Expected outcomes:
 - Existing `tests/entrypoints/` CLI tests are removed or migrated to TUI equivalents
 - `ruff`, `mypy`, and `pytest` pass with no orphaned CLI references
 
-### [ ] Phase 37 (Future): Database Migration Tooling
+### [ ] Phase 37 (On Hold, Future): Database Migration Tooling
 
 Goal:
 Replace the current hand-rolled `SchemaManager` with a proper migration tool (Alembic or
@@ -492,6 +492,127 @@ Expected outcomes:
   a versioned Alembic migration
 - `ruff`, `mypy`, and `pytest` pass; existing test fixtures continue to create schemas
   via `Base.metadata.create_all` (test isolation is unchanged)
+
+## Reprioritization Note
+
+Phases 34–37 are on hold. Phases 38–41 below take priority as the current active
+work. Phases 34–37 remain defined and will resume after 38–41 land, in their
+original relative order, unless a future roadmap update says otherwise.
+
+### [ ] Phase 38: Single Account Balance History Report
+
+Goal:
+Add a report that shows one account's balance history over a month range, with
+month-over-month deltas and summary trend statistics, available from both the CLI
+and the TUI.
+
+Background:
+Existing reporting surfaces aggregate across accounts (by category, side, institution,
+currency, or tag). There is no report focused on a single account's own trajectory over
+time. Unlike the shared aggregation model in `specs/tech-stack.md`, a single-account
+history is not a cross-account grouping, so it is implemented as a dedicated per-account
+query rather than routed through the shared aggregation core.
+
+Expected outcomes:
+
+- A new use case computes one account's balance for each month in a start/end `YYYY-MM`
+  range, including a month-over-month delta and summary trend stats (min, max, average,
+  total change over the range)
+- A new CLI report command accepts an account selection and a start/end month range and
+  renders the history, deltas, and trend summary
+- A new TUI report screen offers the same workflow: account selection, month range input,
+  and a scrollable table of balances, deltas, and a trend summary
+- The report defaults to `AccountStatusScope.HISTORICAL`, consistent with other report
+  surfaces (Phase 32/33); no status-scope selector is required since the report is scoped
+  to a single account
+- Missing balance months within the selected range are handled explicitly (defined in the
+  feature spec) rather than silently skipped
+- `ruff`, `mypy`, and `pytest` pass
+
+### [ ] Phase 39: TUI Visual Design System
+
+Goal:
+Introduce a reusable Textual theme module with dark and light modes and apply consistent
+layout and spacing polish across all existing TUI screens.
+
+Background:
+TUI screens have accumulated incrementally since Phase 25 without a shared visual design
+system. This phase adds one reusable theme/CSS module that all screens reference, so
+future screens inherit consistent styling automatically, and revisits existing screens for
+layout and spacing polish under the new theme.
+
+Expected outcomes:
+
+- A shared Textual theme module defines colors, spacing, and CSS variables for dark and
+  light modes
+- All existing TUI screens (home, balances, reports, accounts, admin) reference the shared
+  theme rather than ad-hoc per-screen styling
+- A user-facing toggle switches between dark and light mode; the selection is applied
+  consistently across screens
+- Layout and spacing on existing screens are revisited for visual hierarchy and consistency
+  under the new theme, without changing underlying screen workflows or navigation
+- `ruff`, `mypy`, and `pytest` pass
+
+### [ ] Phase 40: HTML Graphical Reports
+
+Goal:
+Add the ability to export the net worth history report and the new single-account balance
+history report (Phase 38) as self-contained HTML files with embedded charts, triggered from
+both the CLI and the TUI.
+
+Background:
+Current reporting output is limited to terminal tables (Rich/Textual) and CSV. Some
+reporting needs — sharing a trend visually, reviewing net worth trajectory graphically —
+are better served by a chart than a table. Per the local-first, dependency-light standard
+in `specs/tech-stack.md`, generated HTML files must be self-contained: viewable offline in
+a browser with no network calls, using an embedded minimal charting library rather than a
+CDN dependency.
+
+Expected outcomes:
+
+- A new export use case renders the net worth history report as a single self-contained
+  HTML file with an embedded line chart (net worth, assets, and liabilities over time),
+  with no external network dependency required to view it
+- The same export path supports the single-account balance history report (Phase 38) as a
+  line chart of balance over time
+- A new CLI command (e.g. `nwtrack reports export-html`) accepts a report selection and
+  target file path, mirroring the existing CSV export command pattern
+- A TUI action on the relevant report screens triggers the same export use case and reports
+  the output file path to the user
+- Output-format and file-path handling preserve current default behavior for existing
+  report commands; HTML export is strictly additive
+- `ruff`, `mypy`, and `pytest` pass
+
+### [ ] Phase 41: macOS Packaging And Deployment
+
+Goal:
+Package `nwtrack` for local installation on macOS via a `uv`-based install path, with
+configuration and data files relocated to standard macOS application-support locations.
+
+Background:
+`nwtrack` currently runs from a source checkout via `uv run` with `.env`-based
+configuration and a working-directory-relative database path. A packaged macOS install
+should let a user install and run both the CLI and TUI entry points without manually
+managing a source checkout, while keeping the install mechanism Python/`uv`-native rather
+than introducing a compiled-binary toolchain. Code signing and notarization are explicitly
+out of scope for this phase.
+
+Expected outcomes:
+
+- An install path (e.g. `uv tool install`) installs `nwtrack` such that both the CLI
+  (`nwtrack ...`) and TUI (`nwtrack tui launch`) entry points are available on `PATH`
+- Default configuration resolves to standard macOS locations when no `.env` is present:
+  database under `~/Library/Application Support/nwtrack/`, logs under
+  `~/Library/Logs/nwtrack/`
+- Existing `.env`-based configuration continues to work unchanged for users who set it
+  explicitly, preserving the current local-first configuration model
+- First-run behavior creates required application-support and log directories
+  automatically if missing
+- Packaging and install steps are documented for a macOS user without requiring a source
+  checkout beyond the documented install command
+- Code signing and notarization are explicitly out of scope for this phase; unsigned
+  Gatekeeper behavior is documented
+- `ruff`, `mypy`, and `pytest` pass
 
 ## Planning Rules
 
