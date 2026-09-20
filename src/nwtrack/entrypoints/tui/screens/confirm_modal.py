@@ -16,26 +16,11 @@ class ConfirmModal(ModalScreen[bool]):
     BINDINGS = [Binding("escape", "cancel", "Cancel")]
 
     DEFAULT_CSS = """
-    ConfirmModal {
-        align: center middle;
-    }
     #confirm-container {
         width: 54;
-        height: auto;
-        border: thick $warning;
-        background: $surface;
-        padding: 1 2;
     }
     #confirm-message {
         margin-bottom: 1;
-    }
-    #confirm-buttons {
-        margin-top: 1;
-        align: right middle;
-        height: auto;
-    }
-    #confirm-buttons Button {
-        margin-left: 1;
     }
     """
 
@@ -51,9 +36,12 @@ class ConfirmModal(ModalScreen[bool]):
         self._cancel_label = cancel_label
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="confirm-container"):
+        with Vertical(
+            id="confirm-container",
+            classes="modal-container modal-container-warning",
+        ):
             yield Label(self._message, id="confirm-message")
-            with Horizontal(id="confirm-buttons"):
+            with Horizontal(id="confirm-buttons", classes="button-row"):
                 yield Button(self._cancel_label, id="btn-cancel", variant="default")
                 yield Button(self._confirm_label, id="btn-confirm", variant="warning")
         yield Footer()

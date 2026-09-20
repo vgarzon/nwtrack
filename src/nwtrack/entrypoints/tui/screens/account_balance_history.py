@@ -60,7 +60,7 @@ class AccountBalanceHistoryScreen(Screen):
         )
         yield Button("Start: —", id="btn-start")
         yield Button("End: —", id="btn-end")
-        yield Label("", id="error-label")
+        yield Label("", id="error-label", classes="error-text")
         yield DataTable(id="history-table", zebra_stripes=True)
         yield Label("", id="summary-label")
         yield Footer()

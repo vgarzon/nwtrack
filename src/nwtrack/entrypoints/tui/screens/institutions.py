@@ -24,23 +24,8 @@ class InstitutionFormModal(ModalScreen[Institution | None]):
     BINDINGS = [Binding("escape", "cancel", "Cancel")]
 
     DEFAULT_CSS = """
-    InstitutionFormModal {
-        align: center middle;
-    }
     #institution-form-container {
         width: 54;
-        height: auto;
-        border: thick $primary;
-        background: $surface;
-        padding: 1 2;
-    }
-    #institution-form-title {
-        text-align: center;
-        margin-bottom: 1;
-    }
-    #institution-form-error {
-        color: $error;
-        margin-top: 1;
     }
     """
 
@@ -53,8 +38,8 @@ class InstitutionFormModal(ModalScreen[Institution | None]):
         title = "Edit Institution" if self._edit_mode else "Create Institution"
         name_default = self._institution.name if self._institution else ""
         desc_default = self._institution.description or "" if self._institution else ""
-        with Vertical(id="institution-form-container"):
-            yield Label(title, id="institution-form-title")
+        with Vertical(id="institution-form-container", classes="modal-container"):
+            yield Label(title, id="institution-form-title", classes="modal-title")
             yield Label("Name")
             yield Input(
                 value=name_default,
@@ -63,7 +48,7 @@ class InstitutionFormModal(ModalScreen[Institution | None]):
             )
             yield Label("Description (optional)")
             yield Input(value=desc_default, placeholder="Description", id="input-desc")
-            yield Label("", id="institution-form-error")
+            yield Label("", id="institution-form-error", classes="error-text")
             yield Footer()
 
     def on_mount(self) -> None:
@@ -197,6 +182,7 @@ class InstitutionsListScreen(Screen):
             + " This cannot be undone."
         )
         from nwtrack.entrypoints.tui.screens.confirm_modal import ConfirmModal
+
         confirmed: bool = await self.app.push_screen_wait(
             ConfirmModal(warning, confirm_label="Delete")
         )

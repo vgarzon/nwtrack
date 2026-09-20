@@ -69,7 +69,7 @@ class NetWorthHistoryScreen(Screen):
             value=AccountStatusScope.HISTORICAL,
             id="scope-select",
         )
-        yield Label("", id="error-label")
+        yield Label("", id="error-label", classes="error-text")
         yield DataTable(id="history-table", zebra_stripes=True)
         yield Footer()
 

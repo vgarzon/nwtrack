@@ -24,23 +24,8 @@ class TagFormModal(ModalScreen[Tag | None]):
     BINDINGS = [Binding("escape", "cancel", "Cancel")]
 
     DEFAULT_CSS = """
-    TagFormModal {
-        align: center middle;
-    }
     #tag-form-container {
         width: 54;
-        height: auto;
-        border: thick $primary;
-        background: $surface;
-        padding: 1 2;
-    }
-    #tag-form-title {
-        text-align: center;
-        margin-bottom: 1;
-    }
-    #tag-form-error {
-        color: $error;
-        margin-top: 1;
     }
     """
 
@@ -53,13 +38,13 @@ class TagFormModal(ModalScreen[Tag | None]):
         title = "Edit Tag" if self._edit_mode else "Create Tag"
         name_default = self._tag.name if self._tag else ""
         desc_default = self._tag.description or "" if self._tag else ""
-        with Vertical(id="tag-form-container"):
-            yield Label(title, id="tag-form-title")
+        with Vertical(id="tag-form-container", classes="modal-container"):
+            yield Label(title, id="tag-form-title", classes="modal-title")
             yield Label("Name")
             yield Input(value=name_default, placeholder="Tag name", id="input-name")
             yield Label("Description (optional)")
             yield Input(value=desc_default, placeholder="Description", id="input-desc")
-            yield Label("", id="tag-form-error")
+            yield Label("", id="tag-form-error", classes="error-text")
             yield Footer()
 
     def on_mount(self) -> None:
@@ -185,6 +170,7 @@ class TagsListScreen(Screen):
             + " This cannot be undone."
         )
         from nwtrack.entrypoints.tui.screens.confirm_modal import ConfirmModal
+
         confirmed: bool = await self.app.push_screen_wait(
             ConfirmModal(warning, confirm_label="Delete")
         )

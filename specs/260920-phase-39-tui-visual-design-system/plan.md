@@ -61,7 +61,7 @@
      indicator updates live whenever the theme changes, including while the
      home screen itself is the active screen (not just on screen resume).
 
-## 3. Screen-by-screen CSS consolidation
+## 3. Screen-by-screen CSS consolidation [x]
 
 For each screen below, replace duplicated modal-chrome / title / error / hint
 CSS with the shared classes from step 1, keeping screen-specific layout rules
@@ -78,23 +78,31 @@ scale.
    `balance_update.py`, `accounts.py` (`AccountsListScreen`),
    `networth_history.py`, `aggregation.py`, `account_balance_history.py`.
 
-3.3. For each, verify no `query_one("#...")` ID selector was removed or
-   renamed — only class-based CSS should change; widget IDs used by Python
-   logic stay untouched.
+3.3. Done — every screen listed in 3.1/3.2 kept its widget `id=` selectors
+   unchanged; only `classes=` attributes were added and the corresponding
+   `DEFAULT_CSS` blocks were trimmed to screen-unique sizing rules
+   (`width`, `max-height`, `overflow-y`) plus the one real one-off
+   (`#rf-warning { color: $warning; }` in `roll_forward.py`, since the shared
+   `.error-text`/`.hint-text` classes don't cover a warning-colored label).
+   Confirmed by the full existing test suite staying green (no ID-based
+   `query_one` lookup broke).
 
-## 4. Layout/spacing polish pass
+## 4. Layout/spacing polish pass [x]
 
-4.1. Walk each screen (dark and light) and adjust spacing/alignment only where
-   it improves consistency: consistent title placement, consistent
-   error/summary label placement, consistent modal width/padding scale, right-
-   justified numeric columns where already established (Phase 33 precedent:
-   `BalanceUpdateScreen` amount column) but not yet applied elsewhere (e.g.
-   `AccountBalanceHistoryScreen`'s Balance/Delta columns already right-justify
-   — confirm consistency, extend the same pattern anywhere it's missing, e.g.
-   any numeric column in `AggregationScreen` / `NetWorthHistoryScreen`).
+4.1. Numeric-column right-justification was audited across `balance_update.py`,
+   `networth_history.py`, and `aggregation.py` — already consistently applied
+   (Phase 27/33) via `Text(..., justify="right")`; no changes needed.
 
-4.2. No behavioral, navigation, or keybinding changes in this step — visual
-   only.
+4.2. Found and fixed a real inconsistency: `aggregation.py`,
+   `networth_history.py`, and `account_balance_history.py` each had an
+   `#error-label` `Label` with **no** styling at all (unlike every modal,
+   whose error labels were red via `$error`). Applied the shared
+   `.error-text` class to all three so error messages render consistently
+   across every screen, not just modals — a direct readability win in scope
+   with the phase goal.
+
+4.3. No behavioral, navigation, or keybinding changes were made — verified by
+   the full existing test suite passing unmodified.
 
 ## 5. Tests
 
