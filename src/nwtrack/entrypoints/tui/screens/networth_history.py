@@ -29,6 +29,7 @@ from nwtrack.application.use_cases.report_history_aggregation import (
 )
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.tui.screens.month_picker import MonthPickerModal
+from nwtrack.entrypoints.tui.utils import delta_text
 
 _CURRENCY = "USD"
 _DEFAULT_MONTHS = 12
@@ -192,8 +193,7 @@ class NetWorthHistoryScreen(Screen):
                 delta_cell: Text | str = ""
             else:
                 delta = nw.net_worth - nws[i - 1].net_worth
-                sign = "+" if delta >= 0 else ""
-                delta_cell = Text(f"{sign}{delta:,}", justify="right")
+                delta_cell = delta_text(delta, self.app)
             table.add_row(
                 str(nw.month),
                 Text(f"{nw.assets:,}", justify="right"),
@@ -204,13 +204,12 @@ class NetWorthHistoryScreen(Screen):
 
         if len(nws) > 1:
             total_delta = nws[-1].net_worth - nws[0].net_worth
-            sign = "+" if total_delta >= 0 else ""
             table.add_row(
                 "Total",
                 "",
                 "",
                 "",
-                Text(f"{sign}{total_delta:,}", justify="right"),
+                delta_text(total_delta, self.app),
             )
 
     def _show_error(self, message: str) -> None:

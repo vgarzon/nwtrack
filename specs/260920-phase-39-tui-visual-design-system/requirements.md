@@ -33,6 +33,22 @@ attached screenshot). This is now explicitly in scope:
   this is a pure layout/visual change on top of the already-shipped shared
   theme module.
 
+### In scope — addendum 2 (delta color coding)
+
+Further post-PR feedback: historical reports would benefit from contrasting
+color for positive vs. negative deltas (green/red), not just plain text with
+a `+`/`-` sign. Added:
+
+- `entrypoints/tui/utils.py:delta_text()` — a shared helper that formats a
+  signed integer delta as Rich `Text`, colored with the active Textual
+  theme's `success` color (positive) or `error` color (negative); zero stays
+  the default/neutral text color since "+0" is neither a gain nor a loss.
+  Colors are read from `app.current_theme` at render time (not hardcoded
+  `"green"`/`"red"`) so they stay correct if the theme changes.
+- Applied to `AccountBalanceHistoryScreen`'s Delta column and its "Total
+  change" summary label, and to `NetWorthHistoryScreen`'s Delta column
+  (including the Total row).
+
 ### In scope
 
 - A shared Textual theme module (`entrypoints/tui/theme.py`) that defines:

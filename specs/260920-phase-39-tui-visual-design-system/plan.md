@@ -189,3 +189,33 @@ across the full terminal). See the addendum in `requirements.md`.
    SVG's `<text>` elements, since this session has no interactive terminal)
    that all three menus render as a centered, rounded, bordered panel with
    correct title/items/hint text in both themes — see `validation.md`.
+
+## 9. Delta color coding [x] (post-PR feedback)
+
+Third round of feedback: historical report deltas should use contrasting
+color (green/red) rather than plain `+`/`-` text — see the addendum in
+`requirements.md`.
+
+9.1. Added `delta_text(value: int, app: App, *, justify=...) -> Text` to
+   `entrypoints/tui/utils.py`. Colors come from `app.current_theme.success`
+   / `.error` (both themes currently resolve to `#4EBF71` / `#ba3c5b`) rather
+   than hardcoded Rich color names, with a `"green"`/`"red"` fallback only
+   for the type-checker-required `None` case (`Theme.success`/`.error` are
+   typed `str | None`, though the built-in themes always set them).
+   `justify` defaults to `"right"` for `DataTable` cells; callers pass
+   `justify=None` when assembling the value inline into a `Text.assemble(...)`
+   sentence.
+
+9.2. Wired into `AccountBalanceHistoryScreen` (Delta column +
+   `Text.assemble` in the "Total change" summary label) and
+   `NetWorthHistoryScreen` (Delta column + Total row), replacing the
+   duplicated `sign = "+" if x >= 0 else ""` + plain `Text(...)` pattern at
+   each of the 4 call sites.
+
+9.3. Verified with a headless script that pushes `NetWorthHistoryScreen`
+   with mixed positive/negative/zero deltas and inspects each `DataTable`
+   cell's Rich `Text.spans` — confirms positive deltas carry
+   `app.current_theme.success`, negative deltas carry `.error`, and zero
+   carries no style. Added permanent unit tests
+   (`tests/entrypoints/test_tui_utils.py::TestDeltaText`, 4 tests) covering
+   the same three cases plus the `justify=None` inline-use path.

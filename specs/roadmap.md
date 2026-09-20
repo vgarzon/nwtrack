@@ -558,7 +558,10 @@ Expected outcomes:
 - The top-level navigation menus (home, reports, admin) render as a centered, rounded,
   bordered panel with a title and navigation hint, instead of a bare `ListView` stretched
   across the full terminal
-- `ruff`, `mypy`, and `pytest` pass (389 tests)
+- Historical report deltas (net worth history, account balance history) render in a
+  contrasting color by direction — the active theme's success color for positive, error
+  color for negative — via a shared `delta_text()` helper instead of plain `+`/`-` text
+- `ruff`, `mypy`, and `pytest` pass (393 tests)
 
 ### [ ] Phase 40: HTML Graphical Reports
 
