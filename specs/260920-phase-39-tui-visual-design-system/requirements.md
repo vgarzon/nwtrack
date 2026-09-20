@@ -49,6 +49,25 @@ a `+`/`-` sign. Added:
   change" summary label, and to `NetWorthHistoryScreen`'s Delta column
   (including the Total row).
 
+### In scope — addendum 3 (filter control layout)
+
+Further post-PR feedback (with screenshot): the filter pull-down controls
+across the top of report screens (Start/End month buttons, dimension/scope
+`Select`s, account `Select`) each stretched full-terminal-width and stacked
+one per row, reading as broken rather than a compact toolbar. Added:
+
+- `.filter-bar` shared class in `theme.py`: a `Horizontal` container
+  (`height: auto`, `margin-bottom: 1`) whose child `Button`/`Select` widgets
+  get capped widths (`Button` auto with `min-width: 14`, `Select` `width:
+  26`) instead of stretching to `1fr`.
+- Wrapped the filter controls in `NetWorthHistoryScreen`,
+  `AggregationScreen`, and `AccountBalanceHistoryScreen` in
+  `Horizontal(classes="filter-bar")`, so Start/End/scope/dimension/account
+  controls sit side-by-side above the table instead of stacking.
+- `AccountBalanceHistoryScreen`'s account `Select` gets a screen-local
+  width override (34, wider than the shared 26) since account names run
+  longer than dimension/scope option labels.
+
 ### In scope
 
 - A shared Textual theme module (`entrypoints/tui/theme.py`) that defines:
