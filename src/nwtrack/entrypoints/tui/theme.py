@@ -13,6 +13,11 @@ background, padding), title/error/hint label styling, and button-row layout.
 once via `NWTrackApp.CSS`, so screens apply `classes="modal-container"` etc.
 instead of re-declaring the same rules per screen. Screen-specific sizing
 (width, max-height, table columns) stays local to each screen.
+
+The `.menu-screen`/`.menu-panel` classes give the three top-level navigation
+menus (home, reports, admin) a centered, bordered, fixed-width panel instead
+of a bare `ListView` stretched across the full terminal — the same visual
+language as the modal panels, applied to plain (non-modal) screens.
 """
 
 SPACING_SM = 1
@@ -57,5 +62,39 @@ ModalScreen {
 
 .button-row Button {
     margin-left: 1;
+}
+
+.menu-screen {
+    align: center middle;
+}
+
+.menu-panel {
+    width: 44;
+    height: auto;
+    border: round $primary;
+    background: $surface;
+    padding: 1 2;
+}
+
+.menu-panel .menu-title {
+    text-align: center;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.menu-panel ListView {
+    height: auto;
+    background: transparent;
+    scrollbar-size: 0 0;
+}
+
+.menu-panel ListItem {
+    padding: 0 1;
+}
+
+.menu-panel .menu-hint {
+    color: $text-muted;
+    text-align: center;
+    margin-top: 1;
 }
 """

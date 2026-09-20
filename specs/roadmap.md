@@ -555,6 +555,9 @@ Expected outcomes:
 - Layout and spacing on existing screens are revisited for visual hierarchy and consistency
   under the new theme (notably: error labels on report screens now render consistently with
   modal error labels), without changing underlying screen workflows or navigation
+- The top-level navigation menus (home, reports, admin) render as a centered, rounded,
+  bordered panel with a title and navigation hint, instead of a bare `ListView` stretched
+  across the full terminal
 - `ruff`, `mypy`, and `pytest` pass (389 tests)
 
 ### [ ] Phase 40: HTML Graphical Reports

@@ -163,3 +163,29 @@ scale.
    module name without describing per-screen styling conventions, and this
    phase doesn't change the screen inventory or navigation, so no update was
    necessary there.
+
+## 8. Menu layout redesign [x] (post-PR feedback)
+
+After the PR was opened, the user provided a screenshot of the home screen
+and clarified the primary motivation for this phase is visual appeal — the
+top-level menus specifically read as unstyled (a bare `ListView` stretched
+across the full terminal). See the addendum in `requirements.md`.
+
+8.1. Added `.menu-screen` (align center middle, applied to the `Screen`
+   itself via `classes="menu-screen"` in `__init__`) and `.menu-panel`
+   (`width: 44`, `height: auto`, `border: round $primary`, `background:
+   $surface`, `padding: 1 2`) to `theme.py`, plus `.menu-title` (bold,
+   centered), `.menu-hint` (muted, centered), and scoped `ListView`/`ListItem`
+   rules (`height: auto`, transparent background, no scrollbar, `padding: 0
+   1` per item) so the list breathes inside the panel instead of stretching
+   full-width.
+
+8.2. `home.py`, `reports_menu.py`, `admin_menu.py`: wrapped the existing
+   `ListView` in a `Vertical(classes="menu-panel")` with a title `Label`
+   above and a hint `Label` below. `ListItem` ids and `on_list_view_selected`
+   handlers are untouched — only the container/wrapping changed.
+
+8.3. Verified via headless `Pilot` + `App.export_screenshot()` (parsing the
+   SVG's `<text>` elements, since this session has no interactive terminal)
+   that all three menus render as a centered, rounded, bordered panel with
+   correct title/items/hint text in both themes — see `validation.md`.

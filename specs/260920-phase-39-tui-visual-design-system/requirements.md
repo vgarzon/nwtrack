@@ -12,6 +12,27 @@ under it.
 
 ## Scope
 
+### In scope — addendum (post-PR feedback)
+
+After the first implementation pass, the user clarified the primary
+motivation for this phase is making the TUI more visually appealing, and
+flagged the top-level navigation menus (home, reports, admin) specifically:
+each rendered as a bare `ListView` stretched across the full terminal width
+and height with no framing, which reads as unstyled/unfinished (see the
+attached screenshot). This is now explicitly in scope:
+
+- Home, Reports, and Admin menu screens are redesigned around a centered,
+  bordered, fixed-width panel (`.menu-screen` / `.menu-panel` shared classes
+  in `theme.py`) instead of a full-bleed `ListView`, reusing the same visual
+  language (rounded border, `$surface` background, padding) already
+  established for modal panels.
+- Each panel gets a short title label (`nwtrack` / `Reports` / `Admin`) and a
+  small navigation hint below the list (`↑↓ navigate · Enter select` /
+  `Esc back`).
+- No change to navigation logic, `ListView` widget IDs, or keybindings —
+  this is a pure layout/visual change on top of the already-shipped shared
+  theme module.
+
 ### In scope
 
 - A shared Textual theme module (`entrypoints/tui/theme.py`) that defines:

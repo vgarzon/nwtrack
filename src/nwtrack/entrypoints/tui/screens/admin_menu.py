@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 from textual.app import ComposeResult
 from textual.binding import Binding
+from textual.containers import Vertical
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Label, ListItem, ListView
 
@@ -23,7 +24,7 @@ class AdminMenuScreen(Screen):
         fetcher: FetchService,
         uow: Callable[[], UnitOfWork],
     ) -> None:
-        super().__init__()
+        super().__init__(classes="menu-screen")
         self._fetcher = fetcher
         self._uow = uow
 
@@ -33,10 +34,12 @@ class AdminMenuScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
         items = [
-            ListItem(Label(item), id=f"admin-{item.lower()}")
-            for item in _MENU_ITEMS
+            ListItem(Label(item), id=f"admin-{item.lower()}") for item in _MENU_ITEMS
         ]
-        yield ListView(*items, id="admin-menu")
+        with Vertical(id="admin-menu-panel", classes="menu-panel"):
+            yield Label("Admin", classes="menu-title")
+            yield ListView(*items, id="admin-menu")
+            yield Label("Esc back", classes="menu-hint")
         yield Footer()
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
@@ -45,12 +48,15 @@ class AdminMenuScreen(Screen):
             from nwtrack.entrypoints.tui.screens.institutions import (
                 InstitutionsListScreen,
             )
+
             self.app.push_screen(InstitutionsListScreen(self._fetcher, self._uow))
         elif item_id == "admin-tags":
             from nwtrack.entrypoints.tui.screens.tags import TagsListScreen
+
             self.app.push_screen(TagsListScreen(self._fetcher, self._uow))
         elif item_id == "admin-categories":
             from nwtrack.entrypoints.tui.screens.categories import (
                 CategoriesListScreen,
             )
+
             self.app.push_screen(CategoriesListScreen(self._fetcher, self._uow))

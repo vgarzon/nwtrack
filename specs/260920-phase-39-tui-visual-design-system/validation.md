@@ -55,6 +55,20 @@ themes):
       — meaning each one mounts, renders its `DataTable`/`Select`/form
       widgets, and responds to its documented keybindings exactly as before.
 
+Addendum — menu layout redesign (post-PR feedback):
+
+- [x] Home, Reports, and Admin menus render as a centered, rounded, bordered
+      panel (title + list + hint) instead of a full-bleed `ListView` —
+      confirmed by rendering each screen via `App.export_screenshot()` and
+      reading the resulting SVG's `<text>` elements back (no interactive
+      terminal available in this session): all three panels show the
+      expected border glyphs (`╭─...─╮` / `╰─...─╯`), title, item labels,
+      and hint text, roughly centered in the 100×40 test viewport.
+- [x] Existing navigation (arrow keys, Enter, Escape) and `ListView.Selected`
+      handling verified unchanged — `tests/entrypoints/tui/test_home_screen.py`
+      and the reports/admin navigation tests pass unmodified, since only the
+      wrapping container changed, not widget IDs or event handlers.
+
 Not independently verified by this implementation pass — recommended
 follow-up for the user with an interactive terminal:
 
