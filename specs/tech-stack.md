@@ -56,6 +56,11 @@ Default architectural expectations:
 - Infrastructure details stay behind ports where practical.
 - Interactive behavior should move through presenter-style boundaries instead of mixing business logic with console I/O.
 - Shared reporting logic should live below the CLI layer so compatibility commands and new aggregation commands use the same query and presentation primitives.
+- TUI screens share one visual design system: `entrypoints/tui/theme.py` defines
+  reusable CSS classes (modal chrome, titles, error/hint labels, button rows)
+  registered globally via `NWTrackApp.CSS`, and screens apply those classes
+  instead of duplicating structural CSS per screen. Dark/light mode uses
+  Textual's own built-in theme mechanism rather than a hand-rolled palette.
 
 ## Current Platform Decisions
 

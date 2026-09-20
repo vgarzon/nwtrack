@@ -93,3 +93,46 @@ class TestThemeToggle:
                 assert name_input.value == ""
 
         asyncio.run(_run())
+
+
+class TestLightModeScreenSmoke:
+    """Confirm representative full screens and modals mount cleanly once the
+    app is already in light mode — a plain dark-mode pytest run can't catch
+    a CSS rule that only misbehaves under the light theme's variable set.
+    """
+
+    def test_full_screen_and_modals_mount_in_light_mode(self) -> None:
+        async def _run() -> None:
+            from nwtrack.entrypoints.tui.screens.categories import (
+                CategoryFormModal,
+            )
+            from nwtrack.entrypoints.tui.screens.confirm_modal import ConfirmModal
+
+            app = _make_app()
+            async with app.run_test() as pilot:
+                app.theme = "textual-light"
+                await pilot.pause()
+                assert app.current_theme.dark is False
+
+                for _ in range(3):
+                    await pilot.press("down")  # Admin
+                await pilot.press("enter")
+                await pilot.pause()
+                for _ in range(2):
+                    await pilot.press("down")  # Categories (3rd admin item)
+                await pilot.press("enter")
+                await pilot.pause()
+
+                await pilot.press("c")  # CategoryFormModal — .modal-container
+                await pilot.pause()
+                assert isinstance(app.screen, CategoryFormModal)
+                await pilot.press("escape")
+                await pilot.pause()
+
+                await app.push_screen(
+                    ConfirmModal("Delete this?")
+                )  # .modal-container-warning
+                await pilot.pause()
+                assert isinstance(app.screen, ConfirmModal)
+
+        asyncio.run(_run())

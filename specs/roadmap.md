@@ -555,7 +555,7 @@ Expected outcomes:
 - Layout and spacing on existing screens are revisited for visual hierarchy and consistency
   under the new theme (notably: error labels on report screens now render consistently with
   modal error labels), without changing underlying screen workflows or navigation
-- `ruff`, `mypy`, and `pytest` pass (388 tests)
+- `ruff`, `mypy`, and `pytest` pass (389 tests)
 
 ### [ ] Phase 40: HTML Graphical Reports
 
