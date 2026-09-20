@@ -55,15 +55,22 @@
    rejected ("Provide either --account-id or --account-name, not both.",
    exit 1), and an invalid range (`--start` after `--end`) is rejected
    ("Start month must be earlier than or equal to end month.", exit 1).
-4. Launch `nwtrack tui launch`, navigate Reports → Account History, select
-   an account via the picker, enter a start/end month range, and confirm
-   the on-screen table and summary match the CLI output for the same
-   account and range.
-5. From the TUI Account History screen, press Escape and confirm it returns
-   to the Reports menu (not the home screen or an error).
-6. Confirm existing `nwtrack reports networth-history`,
-   `reports balances-aggregate`, and `reports balances-aggregate-history`
-   commands are unaffected (unchanged output for a known dataset).
+4. [DONE — headless] Drove `NWTrackApp` through a headless `run_test()`
+   session against a database imported from `tests/data/csv/`: navigated
+   Reports → Account History, confirmed the screen loaded (18 rows for the
+   default account/range) and the summary line
+   (`Min: 200  Max: 300  Avg: 225.00  Total change: -100
+   (2024-06 → 2025-11)`) matched hand-computed values for
+   `bank_1_checking`. Not separately re-run in an interactive terminal
+   session; the automated TUI screen tests
+   (`tests/entrypoints/tui/test_account_balance_history_screen.py`) cover
+   account switching, error states, and default-range loading.
+5. [DONE] Escape-from-screen-returns-to-Reports-menu is covered by
+   `test_escape_from_screen_pops_to_reports_menu` and was also observed in
+   the headless smoke run.
+6. [DONE] `just test` (full suite, 384 tests) passes, which includes the
+   pre-existing test coverage for `networth-history`,
+   `balances-aggregate`, and `balances-aggregate-history` — unchanged.
 
 ## Tone Check
 

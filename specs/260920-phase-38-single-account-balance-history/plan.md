@@ -111,25 +111,39 @@
      invalid-range rejection all produced the expected Rich output and
      exit codes.
 
-## 6. TUI Screen
+## 6. TUI Screen [DONE — revised]
 
-6.1. Add `src/nwtrack/entrypoints/tui/screens/account_balance_history.py`:
-     - Account `Select` widget (populated from `FetchService`)
-     - Start/end month inputs, reusing existing month-input conventions
-       from `networth_history.py` / `aggregation.py` / `month_picker.py`
-     - `DataTable` for per-month rows (month, balance, delta)
-     - A summary area (min/max/average/total change) below or beside the
-       table
-     - Resolves `AccountBalanceHistoryReport` via
-       `bootstrap/tui_composition.py`
-     - Escape returns to the Reports menu
-6.2. Add a "Account History" entry to `reports_menu.py` that pushes the new
+6.1. **Discovered during implementation**: TUI screens do not use the
+     presenter layer at all — `NetWorthHistoryScreen` and `AggregationScreen`
+     instantiate the presenter-free core use case directly
+     (`ReportHistoryAggregation(uow=self._uow)`) and build their `DataTable`
+     rows by hand. No changes to `bootstrap/tui_composition.py` were needed
+     or made; screens only depend on `FetchService` + the `uow` factory,
+     both already provided by the container.
+6.2. Added `src/nwtrack/entrypoints/tui/screens/account_balance_history.py`
+     (`AccountBalanceHistoryScreen`):
+     - Account `Select` widget populated in `compose()` from
+       `fetcher.get_accounts(active_only=False)` (all accounts, not just
+       active, since balance history is meaningful for inactive accounts
+       too), options as `(name, str(id))` pairs — matches the pattern in
+       `transfer.py`
+     - Start/end month `Button`s + `MonthPickerModal`, scoped to the
+       selected account's own available months via the new
+       `FetchService.get_balances_for_account()`
+     - `DataTable` for per-month rows (month, balance, delta), gap months
+       rendered as `—`
+     - A `Label` summary line (min/max/average/total change/range) below
+       the table
+     - Calls `ReportAccountBalanceHistory(uow=self._uow).run(...)` directly
+       — the same core use case class used by the CLI wrapper
+     - Escape returns to the Reports menu (inherited `BINDINGS` pattern)
+6.3. Added an "Account History" entry to `_MENU_ITEMS` in
+     `reports_menu.py` and a matching `elif` branch that pushes the new
      screen.
-6.3. Wire the use case and presenter into `bootstrap/tui_composition.py`
-     (a TUI-side presenter implementation, or a lightweight adapter that
-     hands data to the screen directly — follow whatever pattern
-     `AggregationScreen` / `NetWorthHistoryScreen` already use for
-     presenter vs. direct-data-binding).
+6.4. Verified with a headless `run_test()` smoke script against a real
+     SQLite database imported from `tests/data/csv/`: navigated
+     Reports → Account History, confirmed 18 rows loaded for the default
+     account/range and the summary line matched hand-computed values.
 
 ## 7. Tests
 
