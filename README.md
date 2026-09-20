@@ -51,6 +51,7 @@ uv run nwtrack admin seed-status-history
 uv run nwtrack reports networth-history
 uv run nwtrack reports balances-aggregate
 uv run nwtrack reports balances-aggregate-history
+uv run nwtrack reports account-history --account-name <name> --start YYYY-MM --end YYYY-MM
 
 # Account and reference-data administration
 uv run nwtrack accounts list
