@@ -24,6 +24,7 @@ from nwtrack.application.use_cases.report_account_history import (
 from nwtrack.domain.models import Account
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.tui.screens.month_picker import MonthPickerModal
+from nwtrack.entrypoints.tui.utils import delta_text
 
 _DEFAULT_MONTHS = 12
 
@@ -183,23 +184,22 @@ class AccountBalanceHistoryScreen(Screen):
                 table.add_row(str(row.month), Text("—", justify="right"), "")
                 continue
             balance_cell = Text(f"{row.balance:,}", justify="right")
-            if row.delta is None:
-                delta_cell: Text | str = ""
-            else:
-                sign = "+" if row.delta >= 0 else ""
-                delta_cell = Text(f"{sign}{row.delta:,}", justify="right")
+            delta_cell: Text | str = (
+                "" if row.delta is None else delta_text(row.delta, self.app)
+            )
             table.add_row(str(row.month), balance_cell, delta_cell)
 
         if data.summary is None:
             summary_label.update("No balance records in selected range.")
         else:
             summary = data.summary
-            sign = "+" if summary.total_change >= 0 else ""
             summary_label.update(
-                f"Min: {summary.min_balance:,}  Max: {summary.max_balance:,}  "
-                f"Avg: {summary.average_balance:,.2f}  "
-                f"Total change: {sign}{summary.total_change:,} "
-                f"({summary.first_month} → {summary.last_month})"
+                Text.assemble(
+                    f"Min: {summary.min_balance:,}  Max: {summary.max_balance:,}  "
+                    f"Avg: {summary.average_balance:,.2f}  Total change: ",
+                    delta_text(summary.total_change, self.app, justify=None),
+                    f" ({summary.first_month} → {summary.last_month})",
+                )
             )
 
     def _show_error(self, message: str) -> None:

@@ -69,6 +69,22 @@ Addendum — menu layout redesign (post-PR feedback):
       and the reports/admin navigation tests pass unmodified, since only the
       wrapping container changed, not widget IDs or event handlers.
 
+Addendum 2 — delta color coding (further post-PR feedback):
+
+- [x] `tests/entrypoints/test_tui_utils.py::TestDeltaText` (4 tests, permanent
+      regression coverage): positive delta carries `app.current_theme.success`,
+      negative carries `.error`, zero carries no style, and `justify=None`
+      produces unjustified `Text` for inline label use.
+- [x] Headless verification: pushed `NetWorthHistoryScreen` with a 3-month
+      mixed-sign series and inspected each `DataTable` row's Rich `Text.spans`
+      directly — confirmed `-10,000` renders with `#ba3c5b` (error) and
+      `+30,000`/`+20,000` render with `#4EBF71` (success), matching
+      `app.current_theme` exactly.
+- [x] `AccountBalanceHistoryScreen`'s existing test suite
+      (`test_account_balance_history_screen.py`, 7 tests) passes unmodified —
+      confirms the summary label's `Text.assemble(...)` change didn't break
+      anything asserting on its content.
+
 Not independently verified by this implementation pass — recommended
 follow-up for the user with an interactive terminal:
 
@@ -89,7 +105,7 @@ follow-up for the user with an interactive terminal:
 - [x] `ruff format` run on every file touched this phase (not repo-wide —
       pre-existing formatting debt in untouched files is out of scope).
 - [x] `mypy src/ tests/` — `Success: no issues found in 214 source files`.
-- [x] `pytest tests/` — 389 passed, including the 5 new theme-toggle tests
+- [x] `pytest tests/` — 393 passed, including the 5 theme-toggle tests and 4 delta-color tests
       and the full unmodified `tests/entrypoints/tui/` suite.
 
 ## Regression / Compatibility Risks
