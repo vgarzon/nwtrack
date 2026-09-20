@@ -561,6 +561,9 @@ Expected outcomes:
 - Historical report deltas (net worth history, account balance history) render in a
   contrasting color by direction — the active theme's success color for positive, error
   color for negative — via a shared `delta_text()` helper instead of plain `+`/`-` text
+- Filter controls (Start/End month buttons, dimension/scope/account `Select`s) on report
+  screens render as a compact horizontal toolbar via a shared `.filter-bar` class, instead
+  of each stretching full-width and stacking one per row
 - `ruff`, `mypy`, and `pytest` pass (393 tests)
 
 ### [ ] Phase 40: HTML Graphical Reports

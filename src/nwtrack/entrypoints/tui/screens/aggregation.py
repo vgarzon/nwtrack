@@ -6,6 +6,7 @@ from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
+from textual.containers import Horizontal
 from textual.screen import Screen
 from textual.widgets import (
     Button,
@@ -68,17 +69,18 @@ class AggregationScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Button("Month: —", id="btn-month")
-        yield Select(
-            options=[(label, dim) for label, dim in _DIMENSION_OPTIONS],
-            value=_DEFAULT_DIMENSION,
-            id="dim-select",
-        )
-        yield Select(
-            options=_SCOPE_OPTIONS,
-            value=AccountStatusScope.HISTORICAL,
-            id="scope-select",
-        )
+        with Horizontal(classes="filter-bar"):
+            yield Button("Month: —", id="btn-month")
+            yield Select(
+                options=[(label, dim) for label, dim in _DIMENSION_OPTIONS],
+                value=_DEFAULT_DIMENSION,
+                id="dim-select",
+            )
+            yield Select(
+                options=_SCOPE_OPTIONS,
+                value=AccountStatusScope.HISTORICAL,
+                id="scope-select",
+            )
         yield Label("", id="error-label", classes="error-text")
         yield DataTable(id="agg-table", zebra_stripes=True)
         yield Footer()

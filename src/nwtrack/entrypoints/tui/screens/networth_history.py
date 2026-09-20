@@ -6,6 +6,7 @@ from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
+from textual.containers import Horizontal
 from textual.screen import Screen
 from textual.widgets import (
     Button,
@@ -63,13 +64,14 @@ class NetWorthHistoryScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Button("Start: —", id="btn-start")
-        yield Button("End: —", id="btn-end")
-        yield Select(
-            options=_SCOPE_OPTIONS,
-            value=AccountStatusScope.HISTORICAL,
-            id="scope-select",
-        )
+        with Horizontal(classes="filter-bar"):
+            yield Button("Start: —", id="btn-start")
+            yield Button("End: —", id="btn-end")
+            yield Select(
+                options=_SCOPE_OPTIONS,
+                value=AccountStatusScope.HISTORICAL,
+                id="scope-select",
+            )
         yield Label("", id="error-label", classes="error-text")
         yield DataTable(id="history-table", zebra_stripes=True)
         yield Footer()

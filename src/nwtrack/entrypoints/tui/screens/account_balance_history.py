@@ -6,6 +6,7 @@ from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
+from textual.containers import Horizontal
 from textual.screen import Screen
 from textual.widgets import (
     Button,
@@ -34,6 +35,12 @@ class AccountBalanceHistoryScreen(Screen):
 
     BINDINGS = [Binding("escape", "app.pop_screen", "Back")]
 
+    DEFAULT_CSS = """
+    #account-select {
+        width: 34;
+    }
+    """
+
     def __init__(
         self,
         fetcher: FetchService,
@@ -54,13 +61,14 @@ class AccountBalanceHistoryScreen(Screen):
         yield Header()
         self._accounts = self._fetcher.get_accounts(active_only=False)
         account_options = [(a.name, str(a.id)) for a in self._accounts]
-        yield Select(
-            options=account_options,
-            prompt="Select account",
-            id="account-select",
-        )
-        yield Button("Start: —", id="btn-start")
-        yield Button("End: —", id="btn-end")
+        with Horizontal(classes="filter-bar"):
+            yield Select(
+                options=account_options,
+                prompt="Select account",
+                id="account-select",
+            )
+            yield Button("Start: —", id="btn-start")
+            yield Button("End: —", id="btn-end")
         yield Label("", id="error-label", classes="error-text")
         yield DataTable(id="history-table", zebra_stripes=True)
         yield Label("", id="summary-label")
