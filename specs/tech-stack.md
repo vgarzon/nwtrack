@@ -47,6 +47,7 @@ The codebase follows a layered, ports-and-adapters style:
 - `bootstrap/`: composition and dependency injection
 - `infra/`: SQLite, SQLAlchemy, configuration, persistence, and file I/O
 - `entrypoints/cli/`: Typer commands, presenters, prompts, and terminal UI
+- `entrypoints/tui/`: Textual application, screen-stack navigation, and screen-owned workflows
 
 Default architectural expectations:
 
