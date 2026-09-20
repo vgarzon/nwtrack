@@ -1,6 +1,18 @@
 # Phase 39: TUI Visual Design System — Plan
 
-## 1. Theme module
+> **Implementation note**: The installed Textual version (8.2.7, satisfying
+> `textual>=3.0.0`) removed the `App.dark: bool` reactive assumed in
+> `requirements.md`. Textual 8.x uses a named `App.theme: str` reactive
+> (`"textual-dark"` / `"textual-light"`, etc.) plus a built-in
+> `action_toggle_dark()` action that already flips between those two themes.
+> The implementation below uses `self.theme` / the built-in
+> `action_toggle_dark` action instead of a boolean `dark` field, and
+> `app.current_theme.dark` (a `Theme.dark: bool` field) to read the current
+> mode. This preserves the spec's decision ("use Textual's built-in
+> mechanism, don't hand-roll a parallel light/dark scheme") — only the
+> specific attribute names differ from what was assumed at spec-writing time.
+
+## 1. Theme module [x]
 
 1.1. Create `src/nwtrack/entrypoints/tui/theme.py`:
    - Semantic color constants (as CSS variable name strings and/or literal
@@ -29,26 +41,25 @@
    classes applied via `classes=` over per-screen string interpolation, since
    Textual supports global `CSS`/`CSS_PATH` on `App`.
 
-## 2. App-level wiring
+## 2. App-level wiring [x]
 
 2.1. In `src/nwtrack/entrypoints/tui/app.py`:
-   - Add `NWTrackApp.CSS` (or `CSS_PATH` pointing at a `.tcss` file, whichever
-     fits the theme module design from 1.2) importing/embedding the shared
-     class definitions from `theme.py` so they're available globally to every
-     screen without per-screen duplication.
-   - Add the dark/light toggle `Binding` (e.g. `Binding("d", "toggle_dark",
-     "Toggle theme")`) and an `action_toggle_dark` method flipping `self.dark`.
-     Confirm the chosen key doesn't collide with any existing screen-level
-     binding (checked in step 0 survey: `m`, `r`, `t`, `q`, `escape`,
-     `ctrl+s` are taken — avoid those).
-   - Ensure `watch_dark` (Textual's built-in reactive watcher) or an explicit
-     refresh is sufficient for live re-styling; add a minimal `on_dark_change`
-     hook only if needed to update the home screen indicator.
+   - Added `NWTrackApp.CSS = SHARED_CSS`, making the shared classes available
+     globally to every screen without per-screen duplication.
+   - Added `Binding("d", "toggle_dark", "Toggle theme")` to `BINDINGS`, reusing
+     Textual's built-in `App.action_toggle_dark()` (no custom action method
+     needed — see implementation note above). Confirmed `d` does not collide
+     with any existing screen-level binding (`m`, `r`, `t`, `q`, `escape`,
+     `ctrl+s`, `c` were the ones in use).
+   - No explicit re-render hook was needed — Textual's `theme` reactive
+     already triggers a full re-style on change.
 
 2.2. In `src/nwtrack/entrypoints/tui/screens/home.py`:
-   - Reflect current mode in `self.sub_title` (e.g. "Dark mode" / "Light mode"),
-     set on mount and updated when the toggle fires (via a message/callback from
-     the app, or by re-reading `self.app.dark` in `on_screen_resume`).
+   - `HomeScreen.on_mount` sets `self.sub_title` from
+     `self.app.current_theme.dark` and registers
+     `self.watch(self.app, "theme", self._update_theme_indicator)` so the
+     indicator updates live whenever the theme changes, including while the
+     home screen itself is the active screen (not just on screen resume).
 
 ## 3. Screen-by-screen CSS consolidation
 

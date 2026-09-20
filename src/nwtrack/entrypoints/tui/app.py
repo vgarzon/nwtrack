@@ -5,17 +5,23 @@ Textual TUI application for nwtrack.
 from collections.abc import Callable
 
 from textual.app import App
+from textual.binding import Binding
 
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.entrypoints.tui.screens.home import HomeScreen
+from nwtrack.entrypoints.tui.theme import SHARED_CSS
 
 
 class NWTrackApp(App):
     """nwtrack Textual application."""
 
     TITLE = "nwtrack"
-    BINDINGS = [("q", "quit", "Quit")]
+    CSS = SHARED_CSS
+    BINDINGS = [
+        Binding("q", "quit", "Quit"),
+        Binding("d", "toggle_dark", "Toggle theme"),
+    ]
 
     def __init__(
         self,
