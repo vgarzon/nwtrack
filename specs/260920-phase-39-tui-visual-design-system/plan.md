@@ -46,11 +46,21 @@
 2.1. In `src/nwtrack/entrypoints/tui/app.py`:
    - Added `NWTrackApp.CSS = SHARED_CSS`, making the shared classes available
      globally to every screen without per-screen duplication.
-   - Added `Binding("d", "toggle_dark", "Toggle theme")` to `BINDINGS`, reusing
-     Textual's built-in `App.action_toggle_dark()` (no custom action method
-     needed — see implementation note above). Confirmed `d` does not collide
-     with any existing screen-level binding (`m`, `r`, `t`, `q`, `escape`,
-     `ctrl+s`, `c` were the ones in use).
+   - Added `Binding("ctrl+t", "toggle_dark", "Toggle theme", priority=True)`
+     to `BINDINGS`, reusing Textual's built-in `App.action_toggle_dark()` (no
+     custom action method needed — see implementation note above).
+   - **Bug found and fixed during validation**: the first attempt used
+     `Binding("d", "toggle_dark", ...)` without `priority=True`. Two problems
+     surfaced under test: (1) `"d"` is already bound to `"delete"` on every
+     admin list screen (`accounts.py`, `institutions.py`, `tags.py`,
+     `categories.py`), so the screen-level binding would have shadowed the
+     app-level one there; (2) even on screens without that collision, a
+     non-priority binding is swallowed by whatever widget has focus — every
+     form modal auto-focuses an `Input` on mount, so pressing `d` typed the
+     letter into the name field instead of toggling the theme. Switched to
+     `ctrl+t` with `priority=True`, which reaches the app regardless of focus
+     without blocking normal text entry (confirmed via headless
+     `pilot.press()` scripts and a new regression test — see step 5).
    - No explicit re-render hook was needed — Textual's `theme` reactive
      already triggers a full re-style on change.
 
@@ -108,34 +118,48 @@ scale.
 
 5.1. Added `tests/entrypoints/tui/test_theme_toggle.py` using Textual's test
    harness (`App.run_test()`):
-   - `test_toggle_binding_flips_theme` — boots `NWTrackApp`, presses `d`,
-     asserts `app.theme` changed.
+   - `test_toggle_binding_flips_theme` — boots `NWTrackApp`, presses
+     `ctrl+t`, asserts `app.theme` changed.
    - `test_toggle_twice_returns_to_original_theme` — toggles twice, asserts
      round-trip back to the original theme.
    - `test_home_screen_indicator_reflects_mode` — asserts the home screen's
      `sub_title` matches `app.current_theme.dark` both on initial mount and
      after toggling.
-   All 3 pass.
+   - `test_toggle_works_while_input_is_focused_in_a_modal` — regression test
+     for the focus-swallowing bug found during validation: opens the
+     Institution create modal, confirms the name `Input` has focus, presses
+     `ctrl+t`, and asserts the theme changed **and** the input's value is
+     still empty (i.e. the keypress reached the app, not the text field).
+   All 4 pass.
 
-5.2. Ran the full existing `tests/entrypoints/tui/` suite (88 tests) and the
-   full project suite (387 tests) — all green, confirming no widget ID or
-   behavioral assertion broke from the CSS refactor.
+5.2. Ran the full existing `tests/entrypoints/tui/` suite and the full project
+   suite (388 tests) — all green, confirming no widget ID or behavioral
+   assertion broke from the CSS refactor.
 
-## 6. Quality gates
+## 6. Quality gates [x]
 
-6.1. `just lint-fix` / `just format` to normalize the new/edited files.
+6.1. Ran `ruff format` on only the files touched this phase (not the whole
+   repo — there was pre-existing formatting debt in unrelated files that is
+   out of scope for this change).
 
-6.2. `just typecheck` — confirm `theme.py` and touched screens type-check
-   cleanly (CSS strings are just `str`, no typing concerns expected).
+6.2. `mypy src/ tests/` — `Success: no issues found in 214 source files`.
 
-6.3. `just test` — full suite green.
+6.3. `pytest tests/` — 387 passed, full suite green after every task group.
 
-## 7. Docs
+6.4. `ruff check src/ tests/` — `All checks passed!`.
 
-7.1. Update `specs/roadmap.md` Phase 39 checkbox to `[X]` once complete, per
-   the existing pattern from Phases 1–38.
+## 7. Docs [x]
 
-7.2. If CLAUDE.md's TUI section needs a one-line mention of the shared theme
-   module (it currently describes screens but not styling conventions), add a
-   brief note — optional, only if it materially helps future navigation of the
-   codebase.
+7.1. `specs/roadmap.md` Phase 39 marked `[X]`; expected-outcomes bullets
+   updated to describe the actual implementation (shared CSS classes reusing
+   Textual's built-in theme mechanism, rather than a hand-rolled color
+   palette — see the implementation note at the top of this file).
+
+7.2. `specs/tech-stack.md` Architecture section gained a bullet documenting
+   the shared TUI theme module convention, since it's a lasting architectural
+   pattern future TUI screens should follow (not just a one-phase detail).
+
+7.3. CLAUDE.md was left unchanged — its TUI section already lists screens by
+   module name without describing per-screen styling conventions, and this
+   phase doesn't change the screen inventory or navigation, so no update was
+   necessary there.

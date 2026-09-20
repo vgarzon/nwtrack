@@ -72,12 +72,21 @@ repository, use case, or CLI changes.
   overrides or a small computed set applied in `on_mount`/`watch_dark`).
   Rationale: reuses Textual's already-correct light/dark base palette instead of
   re-deriving one, minimizing maintenance surface.
-- **Toggle placement**: A global `Binding` (key TBD during implementation, e.g.
-  `"d"`, avoiding collision with existing per-screen bindings like `m`/`r`/`t`)
-  registered on `NWTrackApp` (not per-screen) so it works from any screen. Not
-  persisted — resets to the default (dark) on every launch. The home screen
-  shows the current mode (e.g. `sub_title = "Dark mode" / "Light mode"`) as the
-  lightweight indicator; no dedicated settings screen.
+- **Toggle placement**: A global `Binding("ctrl+t", "toggle_dark", ...,
+  priority=True)` registered on `NWTrackApp` (not per-screen) so it works from
+  any screen. `priority=True` is required, not optional: form modals
+  auto-focus an `Input` on mount, and a non-priority letter binding is
+  swallowed by the focused `Input` instead of reaching the app (confirmed via
+  a headless regression test before settling on this — see
+  `tests/entrypoints/tui/test_theme_toggle.py::test_toggle_works_while_input_is_focused_in_a_modal`).
+  A plain letter key (originally `"d"`) was also found to collide with the
+  existing `Binding("d", "delete", "Delete")` used on every admin list screen
+  (accounts, institutions, tags, categories) — `ctrl+t` avoids both problems:
+  it isn't typeable text, so `priority=True` doesn't block users from typing
+  `t`/`d`/etc. into any input field, and it doesn't collide with any existing
+  binding. Not persisted — resets to the default (dark) on every launch. The
+  home screen shows the current mode (e.g. `sub_title = "Dark mode" / "Light
+  mode"`) as the lightweight indicator; no dedicated settings screen.
 - **Color palette source**: No external brand palette provided. Use Textual's
   default theme variables as the base and choose nwtrack's semantic accent/
   success/warning colors from Textual's standard named colors, favoring
