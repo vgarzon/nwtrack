@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.table import Table
 
 from nwtrack.application.dto import (
+    AccountBalanceHistoryResult,
     HistoryAggregationResult,
     InstitutionListItem,
     MonthlyCategoryBalance,
@@ -351,6 +352,52 @@ def build_history_aggregation_table(
             row.label,
             f"{row.amount:8,}",
         )
+    return table
+
+
+def build_account_balance_history_table(
+    result: AccountBalanceHistoryResult,
+) -> Table:
+    """Build a Rich table for a single account's balance history and deltas."""
+    title = f"{result.account_name} Balance History {result.start_month} to {result.end_month}"  # noqa: E501
+    table = Table(title=title)
+    table.add_column("Month", style="col.name")
+    table.add_column("Balance", justify="right", style="col.amount")
+    table.add_column("Delta", justify="right")
+    for row in result.rows:
+        if row.balance is None:
+            table.add_row(str(row.month), "—", "")
+            continue
+        if row.delta is None:
+            delta_str = ""
+        else:
+            color_str = "delta.negative" if row.delta < 0 else "delta.positive"
+            delta_str = f"[{color_str}]{row.delta:+,}[/{color_str}]"
+        table.add_row(str(row.month), f"{row.balance:,}", delta_str)
+    return table
+
+
+def build_account_balance_history_summary_table(
+    result: AccountBalanceHistoryResult,
+) -> Table:
+    """Build a Rich table for the account balance history trend summary."""
+    table = Table(title="Trend Summary")
+    table.add_column("Min", justify="right", style="col.amount")
+    table.add_column("Max", justify="right", style="col.amount")
+    table.add_column("Average", justify="right", style="col.amount")
+    table.add_column("Total Change", justify="right")
+    table.add_column("Range", style="col.name")
+    summary = result.summary
+    if summary is None:
+        return table
+    color_str = "delta.negative" if summary.total_change < 0 else "delta.positive"
+    table.add_row(
+        f"{summary.min_balance:,}",
+        f"{summary.max_balance:,}",
+        f"{summary.average_balance:,.2f}",
+        f"[{color_str}]{summary.total_change:+,}[/{color_str}]",
+        f"{summary.first_month} → {summary.last_month}",
+    )
     return table
 
 

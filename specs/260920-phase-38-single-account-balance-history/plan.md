@@ -69,29 +69,47 @@
      zero-record range, single-record range, invalid range, unknown
      account, and header-context fields.
 
-## 4. Presentation
+## 4. Presentation [DONE]
 
-4.1. Add `AccountBalanceHistoryPresenter` Protocol to
-     `application/ports/presentation.py`: `show_header()`, `show_report(
-     result: AccountBalanceHistoryResult)`, `show_no_data_warning(...)`,
-     `show_error(...)`.
-4.2. Add `RichAccountBalanceHistoryPresenter` to
-     `entrypoints/cli/adapters/report_presenters.py`: renders the per-month
-     table (month, balance, delta) and a summary panel/table (min, max,
-     average, total change), matching the Rich table conventions already
-     used for `NetworthHistoryPresenter`.
+4.1. Added `AccountBalanceHistoryPresenter` Protocol to
+     `application/ports/presentation.py`: `show_header()`,
+     `display_account_balance_history(result)`, `show_no_data_message(result)`,
+     `show_error(message)`.
+4.2. Added `RichAccountBalanceHistoryPresenter` to
+     `entrypoints/cli/adapters/report_presenters.py`, plus two renderer
+     helpers in `entrypoints/cli/ui/renderers.py`:
+     `build_account_balance_history_table` (month/balance/delta, blank
+     balance rendered as `—`, colored `+`/`-` deltas via the existing
+     `delta.negative`/`delta.positive` styles) and
+     `build_account_balance_history_summary_table` (min/max/average/total
+     change/range).
 
-## 5. CLI Command
+## 5. CLI Command [DONE]
 
-5.1. Add `account-history` command to
+5.1. **Revised**: added a small CLI-only wrapper use case,
+     `AccountBalanceHistoryReport` in
+     `report_account_balance_history.py`, that resolves
+     `--account-id`/`--account-name` into one `account_id` (rejecting both
+     or neither being supplied), calls the core
+     `ReportAccountBalanceHistory` use case, and drives the presenter. This
+     mirrors the existing core/CLI-wrapper split used by
+     `report_history_aggregation.py` /
+     `report_balances_aggregate_history.py`.
+5.2. Added `account-history` command to
      `src/nwtrack/entrypoints/cli/commands/reports.py`:
-     - `nwtrack reports account-history --account-id INT | --account-name TEXT
-       --start YYYY-MM --end YYYY-MM`
-     - Mutually exclusive `--account-id` / `--account-name` (mirror existing
-       account-selection option patterns elsewhere in the CLI, if any exist;
-       otherwise require exactly one)
-     - Lazy import of the use case module, per existing CLI command
-       convention
+     `nwtrack reports account-history --account-id INT | --account-name TEXT
+     --start YYYY-MM --end YYYY-MM`. `--start`/`--end` are required Typer
+     options (no interactive fallback, since the spec does not call for
+     one); `--account-id`/`--account-name` are optional and mutually
+     exclusive, enforced in the CLI wrapper use case rather than in Typer,
+     so the error message is consistent between CLI and any future caller.
+     Lazy import of the use case module, per existing CLI command
+     convention.
+5.3. Manually smoke-tested against a real SQLite DB imported from
+     `tests/data/csv/`: full contiguous range, a gap range (blank rows,
+     delta skips the gap), the dual-selector rejection, and the
+     invalid-range rejection all produced the expected Rich output and
+     exit codes.
 
 ## 6. TUI Screen
 
