@@ -1,9 +1,14 @@
 """Unit tests for TUI utility helpers."""
 
 import pytest
+from textual.app import App
 
 from nwtrack.domain.value_objects import Month
-from nwtrack.entrypoints.tui.utils import months_to_grid, parse_amount_input
+from nwtrack.entrypoints.tui.utils import (
+    delta_text,
+    months_to_grid,
+    parse_amount_input,
+)
 
 
 class TestParseAmountInput:
@@ -62,7 +67,35 @@ class TestMonthsToGrid:
         assert len(result[0]) == 3
         assert len(result[1]) == 1
 
+
     def test_single_month(self) -> None:
         months = [Month(2026, 3)]
         result = months_to_grid(months, cols=3)
         assert result == [[Month(2026, 3)]]
+
+
+class TestDeltaText:
+    def test_positive_delta_uses_success_color(self) -> None:
+        app: App[None] = App()
+        text = delta_text(1_000, app)
+        assert str(text) == "+1,000"
+        assert text.spans
+        assert text.spans[0].style == app.current_theme.success
+
+    def test_negative_delta_uses_error_color(self) -> None:
+        app: App[None] = App()
+        text = delta_text(-1_000, app)
+        assert str(text) == "-1,000"
+        assert text.spans
+        assert text.spans[0].style == app.current_theme.error
+
+    def test_zero_delta_is_unstyled(self) -> None:
+        app: App[None] = App()
+        text = delta_text(0, app)
+        assert str(text) == "+0"
+        assert not text.spans
+
+    def test_justify_none_for_inline_use(self) -> None:
+        app: App[None] = App()
+        text = delta_text(500, app, justify=None)
+        assert text.justify is None

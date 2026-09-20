@@ -1,5 +1,9 @@
 """Shared utilities for TUI screens."""
 
+from rich.console import JustifyMethod
+from rich.text import Text
+from textual.app import App
+
 from nwtrack.domain.value_objects import Month
 
 
@@ -35,3 +39,30 @@ def months_to_grid(months: list[Month], cols: int = 3) -> list[list[Month]]:
     if not months:
         return []
     return [months[i : i + cols] for i in range(0, len(months), cols)]
+
+
+_FALLBACK_SUCCESS = "green"
+_FALLBACK_ERROR = "red"
+
+
+def delta_text(
+    value: int, app: App, *, justify: JustifyMethod | None = "right"
+) -> Text:
+    """Format a signed delta as Text, colored by direction.
+
+    Positive deltas use the active theme's success color, negative deltas
+    use its error color, and zero stays the default (neutral) text color —
+    "+0" isn't a gain or a loss. Pulling the color from `app.current_theme`
+    (rather than a hardcoded "green"/"red") keeps it correct across themes;
+    the plain color names are only a fallback for the (untyped-as-required)
+    case where a theme doesn't define one.
+    `justify` defaults to "right" for DataTable cells; pass `None` when
+    assembling the value inline into a sentence (e.g. a summary Label).
+    """
+    sign = "+" if value >= 0 else ""
+    text = Text(f"{sign}{value:,}", justify=justify)
+    if value > 0:
+        text.stylize(app.current_theme.success or _FALLBACK_SUCCESS)
+    elif value < 0:
+        text.stylize(app.current_theme.error or _FALLBACK_ERROR)
+    return text
