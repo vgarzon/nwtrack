@@ -104,16 +104,22 @@ scale.
 4.3. No behavioral, navigation, or keybinding changes were made — verified by
    the full existing test suite passing unmodified.
 
-## 5. Tests
+## 5. Tests [x]
 
-5.1. Add a small test (e.g. `tests/entrypoints/tui/test_theme_toggle.py`) using
-   Textual's test harness (`App.run_test()`) that:
-   - Boots `NWTrackApp`, asserts default `app.dark` value.
-   - Simulates the toggle keypress, asserts `app.dark` flipped.
-   - Asserts the home screen's `sub_title` reflects the new mode.
+5.1. Added `tests/entrypoints/tui/test_theme_toggle.py` using Textual's test
+   harness (`App.run_test()`):
+   - `test_toggle_binding_flips_theme` — boots `NWTrackApp`, presses `d`,
+     asserts `app.theme` changed.
+   - `test_toggle_twice_returns_to_original_theme` — toggles twice, asserts
+     round-trip back to the original theme.
+   - `test_home_screen_indicator_reflects_mode` — asserts the home screen's
+     `sub_title` matches `app.current_theme.dark` both on initial mount and
+     after toggling.
+   All 3 pass.
 
-5.2. Run the full existing `tests/entrypoints/tui/` suite unmodified to confirm
-   no widget ID or behavioral assertions broke from the CSS refactor.
+5.2. Ran the full existing `tests/entrypoints/tui/` suite (88 tests) and the
+   full project suite (387 tests) — all green, confirming no widget ID or
+   behavioral assertion broke from the CSS refactor.
 
 ## 6. Quality gates
 
