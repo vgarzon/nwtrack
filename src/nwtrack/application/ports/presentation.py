@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Protocol
 
 from nwtrack.application.dto import (
+    AccountBalanceHistoryResult,
     AccountStatusScope,
     AccountUpdateData,
     AggregationDimension,
@@ -303,6 +304,29 @@ class HistoryAggregationReportPresenter(Protocol):
         result: HistoryAggregationResult,
     ) -> None:
         """Display grouped balances for a successful history aggregation request."""
+        ...
+
+    def show_error(self, message: str) -> None:
+        """Display an error message."""
+        ...
+
+
+class AccountBalanceHistoryPresenter(Protocol):
+    """Presenter for the single-account balance history report workflow."""
+
+    def show_header(self) -> None:
+        """Display report header."""
+        ...
+
+    def display_account_balance_history(
+        self,
+        result: AccountBalanceHistoryResult,
+    ) -> None:
+        """Display one account's balance history, deltas, and trend summary."""
+        ...
+
+    def show_no_data_message(self, result: AccountBalanceHistoryResult) -> None:
+        """Display feedback when the range has no balance records."""
         ...
 
     def show_error(self, message: str) -> None:
