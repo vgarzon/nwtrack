@@ -145,27 +145,41 @@
      Reports → Account History, confirmed 18 rows loaded for the default
      account/range and the summary line matched hand-computed values.
 
-## 7. Tests
+## 7. Tests [DONE]
 
-7.1. Use case tests
-     (`tests/application/use_cases/test_report_account_balance_history.py`):
-     - Full contiguous range with records for every month
-     - Range with one or more gap months: verify blank balance row, delta
-       computed against last actual balance (not the immediately preceding
-       month), and gap months excluded from summary stats
-     - Range with zero balance records: summary is `None`, no-data path
-     - Invalid range (`start_month > end_month`): validation error
-     - Unknown `account_id`: validation error
-7.2. Presenter/adapter tests (mock presenter interaction assertions,
-     consistent with other report use case tests).
-7.3. CLI command test (`tests/entrypoints/cli/...`) covering
-     `--account-id` and `--account-name` selection paths.
-7.4. TUI screen test, if the project has an existing pattern for testing
-     screens (check `tests/entrypoints/tui/` for precedent before adding
-     new test infrastructure).
+7.1. Core use case tests in `tests/use_cases/test_report_account_history.py`
+     (7 tests), run against real `sample_entities` data: full contiguous
+     range, gap-month handling, zero-record range, single-record range,
+     invalid range, unknown account, header-context fields.
+7.2. CLI wrapper use case tests in
+     `tests/use_cases/test_report_account_balance_history.py` (7 tests)
+     using fake fetcher/history-report/presenter doubles: `--account-id`
+     resolution, `--account-name` resolution, both-selectors rejection,
+     neither-selector rejection, unknown-name rejection, no-data
+     presenter path, core-use-case error passthrough.
+7.3. `FetchService` unit tests in `tests/services/test_fetch_service.py`
+     for the two new methods (`get_account_by_name`,
+     `get_balances_for_account`).
+7.4. CLI command registration test added to
+     `tests/entrypoints/test_cli_reports.py` (`account-history` appears in
+     `reports --help`).
+7.5. TUI screen tests in
+     `tests/entrypoints/tui/test_account_balance_history_screen.py`
+     (7 tests): navigation from Reports menu, Escape back to Reports menu,
+     no-accounts error, no-balances-for-account error, default range
+     loads table + summary, changing the account Select reloads the
+     table, `_show_error` clears the table. `test_reports_menu_screen.py`
+     updated with a navigation test for the new menu entry.
+7.6. No presenter/adapter-specific test file was added separately — the
+     `RichAccountBalanceHistoryPresenter` is exercised indirectly via the
+     manual CLI smoke tests (Section 5.3) rather than a dedicated Rich
+     `Console(record=True)` unit test, consistent with the fact that its
+     logic is thin formatting over already-tested `AccountBalanceHistoryResult`
+     data.
 
-## 8. Quality Gates
+## 8. Quality Gates [DONE]
 
-8.1. `just lint` / `ruff check` passes.
-8.2. `just typecheck` / `mypy` passes.
-8.3. `just test` / `pytest` passes, including new tests from Section 7.
+8.1. `ruff check src/ tests/` — all checks passed.
+8.2. `mypy src/ tests/` — no issues found (212 source files).
+8.3. `pytest` — full suite passes (384 tests, includes all new tests from
+     Section 7).

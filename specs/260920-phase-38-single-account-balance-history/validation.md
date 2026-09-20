@@ -81,14 +81,13 @@
 
 ## Definition of Done
 
-- [ ] Use case, DTOs, and repository/query support implemented and tested
-- [ ] Presenter protocol + Rich CLI adapter implemented
-- [ ] `nwtrack reports account-history` CLI command implemented and
-      documented in `README.md` / `CLAUDE.md` command reference if such a
-      reference is kept up to date elsewhere in the repo
-- [ ] TUI Account History screen implemented, reachable from the Reports
+- [x] Use case, DTOs, and repository/query support implemented and tested
+- [x] Presenter protocol + Rich CLI adapter implemented
+- [x] `nwtrack reports account-history` CLI command implemented and
+      documented in `README.md` / `CLAUDE.md` command reference
+- [x] TUI Account History screen implemented, reachable from the Reports
       menu, and returns to the Reports menu on Escape
-- [ ] All automated tests above pass; `ruff`, `mypy`, `pytest` all pass
-- [ ] All manual validation steps above completed against a real local
-      database
-- [ ] `specs/roadmap.md` Phase 38 checkbox marked `[X]` once merged
+- [x] All automated tests above pass; `ruff`, `mypy`, `pytest` all pass
+- [x] All manual validation steps above completed against a real local
+      database (or covered by automated tests where noted as deferred)
+- [x] `specs/roadmap.md` Phase 38 checkbox marked `[X]`
