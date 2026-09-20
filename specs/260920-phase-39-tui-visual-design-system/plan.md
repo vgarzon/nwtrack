@@ -219,3 +219,33 @@ color (green/red) rather than plain `+`/`-` text — see the addendum in
    carries no style. Added permanent unit tests
    (`tests/entrypoints/test_tui_utils.py::TestDeltaText`, 4 tests) covering
    the same three cases plus the `justify=None` inline-use path.
+
+## 10. Filter control layout (post-PR feedback)
+
+Fourth round of feedback (with screenshot): the Start/End/dimension/scope
+`Select` and `Button` filter controls on report screens each stretched
+full-width and stacked one per row — see the addendum in `requirements.md`.
+This was explored first via `AskUserQuestion` (recommendation: wrap in a
+`Horizontal` toolbar with capped widths) before implementing, since it was
+framed as an open exploration rather than a specified change.
+
+10.1. Added `.filter-bar` (Horizontal container, `height: auto`,
+   `margin-bottom: 1`) plus scoped `.filter-bar Button`/`.filter-bar Select`
+   width rules to `theme.py`.
+
+10.2. Wrapped the existing filter widgets in `Horizontal(classes=
+   "filter-bar")` in `networth_history.py`, `aggregation.py`, and
+   `account_balance_history.py`. No widget IDs, event handlers, or
+   validation logic changed — purely a container/CSS change.
+   `account_balance_history.py` also got a screen-local `#account-select {
+   width: 34; }` override since account names need more room than the
+   shared 26-column default sized for short option labels
+   (Historical/Active/All, Category/Side/Institution/...).
+
+10.3. Verified via headless `Pilot` + `App.export_screenshot()`, this time
+   extracting each `<text>` element's `(x, y)` position (not just its
+   content) to confirm the controls land on the same row: all three
+   screens show their filter widgets sharing one `y` coordinate instead of
+   three separate rows. Existing test suites for all three screens
+   (`test_networth_history_screen.py`, `test_aggregation_screen.py`,
+   `test_account_balance_history_screen.py`) pass unmodified.

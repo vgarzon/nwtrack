@@ -18,6 +18,14 @@ The `.menu-screen`/`.menu-panel` classes give the three top-level navigation
 menus (home, reports, admin) a centered, bordered, fixed-width panel instead
 of a bare `ListView` stretched across the full terminal — the same visual
 language as the modal panels, applied to plain (non-modal) screens.
+
+The `.filter-bar` class fixes the same "full-width block" default on report
+screens' filter controls: a bare `Button`/`Select` yielded directly into a
+`Screen` stretches to the full terminal width and stacks one per row (a
+`Select`'s own `DEFAULT_CSS` doesn't set a width, so it falls back to the
+container's `1fr`). Wrapping them in `Horizontal(classes="filter-bar")` and
+capping each control's width turns Month/Start/End buttons and
+dimension/scope `Select`s into a compact toolbar row above the table.
 """
 
 SPACING_SM = 1
@@ -96,5 +104,21 @@ ModalScreen {
     color: $text-muted;
     text-align: center;
     margin-top: 1;
+}
+
+.filter-bar {
+    height: auto;
+    margin-bottom: 1;
+}
+
+.filter-bar Button {
+    width: auto;
+    min-width: 14;
+    margin-right: 1;
+}
+
+.filter-bar Select {
+    width: 26;
+    margin-right: 1;
 }
 """

@@ -85,6 +85,18 @@ Addendum 2 — delta color coding (further post-PR feedback):
       confirms the summary label's `Text.assemble(...)` change didn't break
       anything asserting on its content.
 
+Addendum 3 — filter control layout (further post-PR feedback):
+
+- [x] Headless verification with `(x, y)` position extraction from
+      `App.export_screenshot()`'s SVG `<text>` elements (not just content,
+      this time): confirmed Start/End buttons + scope `Select` on
+      `NetWorthHistoryScreen`, Month button + dimension `Select` + scope
+      `Select` on `AggregationScreen`, and account `Select` + Start/End
+      buttons on `AccountBalanceHistoryScreen` all share one `y` row —
+      i.e. render as a horizontal toolbar rather than three stacked rows.
+- [x] Existing test suites for all three screens pass unmodified — the
+      change is container/CSS-only, no widget IDs or event handlers moved.
+
 Not independently verified by this implementation pass — recommended
 follow-up for the user with an interactive terminal:
 
