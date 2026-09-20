@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-nwtrack is a personal net worth tracking application with a CLI interface. Data is stored in a local SQLite database, and the application allows users to track assets and liabilities across different accounts, categories, and currencies over time.
+nwtrack is a personal net worth tracking application with CLI and TUI interfaces. Data is stored in a local SQLite database, and the application allows users to track assets and liabilities across different accounts, categories, and currencies over time. The Textual TUI is the target interface and now covers all primary workflows; the Typer CLI remains fully functional during the transition (see `specs/roadmap.md`).
 
 ## Architecture
 
@@ -17,7 +17,6 @@ src/nwtrack/
 ├── domain/           # Core business entities and value objects
 ├── application/      # Business logic layer
 │   ├── ports/        # Interface protocols (Repository, UnitOfWork, Presenter, etc.)
-│   ├── registries/   # Dynamic registration of mappers and repositories
 │   ├── services/     # Application services
 │   └── use_cases/    # Entry points for business operations
 ├── bootstrap/        # Dependency injection and composition (CLI + TUI roots)
@@ -42,7 +41,6 @@ src/nwtrack/
 
 **Application Layer**:
 - **Ports**: Python Protocols defining interfaces for repositories, mappers, presenters, and the Unit of Work pattern
-- **Registries**: `MapperRegistry` and `RepositoryRegistry` enable dynamic registration of domain types to their infrastructure implementations
 - **Services**: Application services provide cross-cutting concerns:
   - `FetchService`: Read-only data retrieval operations (no side effects)
   - `InitDataService`: Database initialization with CSV data
@@ -65,7 +63,7 @@ src/nwtrack/
 - **Migration Status**: Presenter pattern is applied to all interactive use cases — migration is complete. No use case module imports Rich directly.
 - **TUI Layer** (`entrypoints/tui/`): Textual application with screen-stack navigation
   - `app.py`: `NWTrackApp` entry point; mounts home screen on startup
-  - `screens/`: one module per screen (home, balance\_update, accounts, networth\_history, aggregation, roll\_forward, transfer, categories, institutions, tags, admin\_menu, reports\_menu, month\_picker, confirm\_modal, stub)
+  - `screens/`: one module per screen (home, balance\_update, balance\_edit, accounts, networth\_history, aggregation, account\_balance\_history, roll\_forward, transfer, categories, institutions, tags, admin\_menu, reports\_menu, month\_picker, confirm\_modal, stub)
   - Each screen owns its workflow end-to-end; use cases and services are resolved from `bootstrap/tui_composition.py`
   - Launched via `nwtrack tui launch`
 
@@ -188,7 +186,8 @@ uv run nwtrack accounts list
 uv run nwtrack accounts create
 uv run nwtrack balances update
 uv run nwtrack balances create
-uv run nwtrack balances roll-forward
+uv run nwtrack balances roll
+uv run nwtrack balances delete
 uv run nwtrack balances transfer
 uv run nwtrack institutions list
 uv run nwtrack tags list
@@ -230,11 +229,10 @@ uv run pytest -k "test_account"
 just test-pattern "test_account"
 ```
 
-**Test Structure**: Tests mirror the source structure. The `conftest.py` provides fixtures for:
-- `base_container`: DI container with SQLAlchemy-based UoW and temporary file database
+**Test Structure**: Tests mirror the source structure (`tests/domain/`, `tests/use_cases/`, `tests/services/`, `tests/bootstrap/`, `tests/sqlite/`, `tests/entrypoints/` (incl. `tests/entrypoints/tui/`), `tests/ui/`). The `conftest.py` provides fixtures for:
+- `base_container`: DI container with SQLAlchemy-based UoW backed by a `:memory:` SQLite database
 - `sample_entities`: Preloaded test data from CSV files in `tests/data/csv/`
-- `base_config`: Settings configured for temporary file database (enables SQLAlchemy + DBConnectionManager sharing)
-- Note: Tests use temp files instead of `:memory:` to allow both SQLAlchemy and legacy DBConnectionManager to access the same database
+- `base_config`: `Settings` configured with `db_file_path=":memory:"` for fast, isolated test execution
 
 ### Linting and Type Checking
 
