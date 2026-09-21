@@ -144,8 +144,6 @@ def main() -> int:
     Returns:
         int: Exit code (0 for success, 1 for failure)
     """
-    from dotenv import load_dotenv
-
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.application.use_cases.report_single_month_aggregation import (
         ReportSingleMonthAggregation,
@@ -158,9 +156,10 @@ def main() -> int:
     )
     from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
     from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
+    from nwtrack.infra.config.load import load_settings
 
-    load_dotenv()
-    setup_logging()
+    settings = load_settings()
+    setup_logging(settings)
 
     console_defaults = ConsoleSettings(record=False)
 

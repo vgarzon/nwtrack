@@ -105,7 +105,13 @@ def _read_bundle_contents(source_dir: Path) -> dict[str, str]:
 @pytest.fixture
 def file_db_container(tmp_path: Path) -> Container:
     """Configure a container backed by a temporary SQLite file."""
-    settings = Settings(db_file_path=str(tmp_path / "phase22-import.db"))
+    settings = Settings(
+        db_file_path=str(tmp_path / "phase22-import.db"),
+        log_file=str(tmp_path / "nwtrack-test.log"),
+        log_file_level="INFO",
+        log_rotation_mb=10,
+        log_backup_count=7,
+    )
     container = build_base_container()
     container.register(Settings, lambda _: settings, lifetime=Lifetime.SINGLETON)
     container.register(
@@ -414,7 +420,13 @@ def test_export_import_round_trip_reproduces_supported_bundle(
     target_container = build_base_container()
     target_container.register(
         Settings,
-        lambda _: Settings(db_file_path=str(tmp_path / "roundtrip.db")),
+        lambda _: Settings(
+            db_file_path=str(tmp_path / "roundtrip.db"),
+            log_file=str(tmp_path / "nwtrack-test.log"),
+            log_file_level="INFO",
+            log_rotation_mb=10,
+            log_backup_count=7,
+        ),
         lifetime=Lifetime.SINGLETON,
     )
     target_container.register(

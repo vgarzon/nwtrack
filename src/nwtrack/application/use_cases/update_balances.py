@@ -164,7 +164,6 @@ def main() -> int:
     Returns:
         int: Exit code (0 for success, 1 for failure)
     """
-    from dotenv import load_dotenv
     from rich.console import Console
 
     from nwtrack.bootstrap.composition import build_base_container
@@ -174,9 +173,10 @@ def main() -> int:
         RichBalanceUpdatePresenter,
     )
     from nwtrack.entrypoints.cli.ui.console import build_console
+    from nwtrack.infra.config.load import load_settings
 
-    load_dotenv()
-    setup_logging()
+    settings = load_settings()
+    setup_logging(settings)
 
     container = build_base_container()
     container.register(

@@ -33,7 +33,6 @@ class SeedAccountStatusHistory:
 
 
 def main() -> int:
-    from dotenv import load_dotenv
     from rich.console import Console
 
     from nwtrack.application.ports.schema import SchemaManager as SchemaManagerPort
@@ -44,11 +43,12 @@ def main() -> int:
         RichAdminSeedStatusHistoryPresenter,
     )
     from nwtrack.entrypoints.cli.ui.console import build_console
+    from nwtrack.infra.config.load import load_settings
     from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
     from nwtrack.infra.persistence.schema import SchemaManager as SchemaManagerImpl
 
-    load_dotenv()
-    setup_logging()
+    settings = load_settings()
+    setup_logging(settings)
 
     container = build_base_container()
     container.register(

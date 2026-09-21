@@ -19,7 +19,13 @@ def test_ensure_database_upgrades_legacy_sqlite_schema(tmp_path: Path) -> None:
     db_path = tmp_path / "legacy.db"
     _create_legacy_database(db_path)
 
-    settings = Settings(db_file_path=str(db_path))
+    settings = Settings(
+        db_file_path=str(db_path),
+        log_file=str(tmp_path / "nwtrack-test.log"),
+        log_file_level="INFO",
+        log_rotation_mb=10,
+        log_backup_count=7,
+    )
     session_manager = SQLiteSessionManager(settings)
     schema_manager = SchemaManagerImpl(session_manager.engine)
     service = DBAdminService(settings, schema_manager)
@@ -44,7 +50,13 @@ def test_ensure_database_creates_tag_tables_for_legacy_sqlite_schema(
     db_path = tmp_path / "legacy_tags.db"
     _create_legacy_database(db_path)
 
-    settings = Settings(db_file_path=str(db_path))
+    settings = Settings(
+        db_file_path=str(db_path),
+        log_file=str(tmp_path / "nwtrack-test.log"),
+        log_file_level="INFO",
+        log_rotation_mb=10,
+        log_backup_count=7,
+    )
     session_manager = SQLiteSessionManager(settings)
     schema_manager = SchemaManagerImpl(session_manager.engine)
     service = DBAdminService(settings, schema_manager)

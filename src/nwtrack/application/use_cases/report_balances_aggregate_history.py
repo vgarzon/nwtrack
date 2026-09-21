@@ -250,7 +250,6 @@ def main(
     status_scope: AccountStatusScope = AccountStatusScope.HISTORICAL,
 ) -> int:
     """Main entry point for the grouped history balances report."""
-    from dotenv import load_dotenv
     from rich.console import Console
 
     from nwtrack.application.ports.uow import UnitOfWork
@@ -260,9 +259,10 @@ def main(
         RichHistoryAggregationReportPresenter,
     )
     from nwtrack.entrypoints.cli.ui.console import build_console
+    from nwtrack.infra.config.load import load_settings
 
-    load_dotenv()
-    setup_logging()
+    settings = load_settings()
+    setup_logging(settings)
 
     try:
         parsed_start_month = _parse_month(start_month)

@@ -151,7 +151,6 @@ class CreateCategoryInteractive:
 
 def main() -> None:
     """Main entry point for category creation script."""
-    from dotenv import load_dotenv
     from rich.console import Console
 
     from nwtrack.bootstrap.composition import Lifetime, build_base_container
@@ -160,9 +159,10 @@ def main() -> None:
         RichCategoryCreationPresenter,
     )
     from nwtrack.entrypoints.cli.ui.console import build_console
+    from nwtrack.infra.config.load import load_settings
 
-    load_dotenv()
-    setup_logging()
+    settings = load_settings()
+    setup_logging(settings)
 
     container = build_base_container()
     container.register(
