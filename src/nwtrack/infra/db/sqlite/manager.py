@@ -7,6 +7,7 @@ equivalents without affecting the ORM layer.
 """
 
 import logging
+from pathlib import Path
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
@@ -27,6 +28,8 @@ class SQLiteSessionManager:
             config: Application settings with database configuration
         """
         db_path = config.db_file_path
+        if db_path != ":memory:":
+            Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         url = f"sqlite:///{db_path}" if db_path != ":memory:" else "sqlite://"
 
         logger.info("Creating SQLAlchemy engine with URL: %s", url)

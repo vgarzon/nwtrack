@@ -87,7 +87,6 @@ def main() -> int:
     Returns:
         int: Exit code, 0 for success, non-zero for failure
     """
-    from dotenv import load_dotenv
     from rich.console import Console
 
     from nwtrack.application.ports.presentation import DBInitCSVPresenter
@@ -100,11 +99,12 @@ def main() -> int:
     )
     from nwtrack.entrypoints.cli.ui.console import ConsoleSettings
     from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
+    from nwtrack.infra.config.load import load_settings
     from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
     from nwtrack.infra.persistence.schema import SchemaManager as SchemaManagerImpl
 
-    load_dotenv()
-    setup_logging()
+    settings = load_settings()
+    setup_logging(settings)
 
     console_defaults = ConsoleSettings(record=False)
 

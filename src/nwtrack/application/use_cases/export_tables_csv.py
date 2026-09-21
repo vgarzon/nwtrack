@@ -110,8 +110,6 @@ class ExportTablesCSVCLI(ExportTablesCSVBase):
 
 
 def bootstrap() -> Container:
-    from dotenv import load_dotenv
-
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.bootstrap.composition import build_base_container
     from nwtrack.bootstrap.logging_config import setup_logging
@@ -119,9 +117,10 @@ def bootstrap() -> Container:
         RichExportTablesCSVPresenter,
     )
     from nwtrack.entrypoints.cli.ui.console import build_console
+    from nwtrack.infra.config.load import load_settings
 
-    load_dotenv()
-    setup_logging()
+    settings = load_settings()
+    setup_logging(settings)
     container = build_base_container()
     container.register(
         ExportCSV,

@@ -44,7 +44,6 @@ def main(active_only: bool = True) -> int:
     Returns:
         Exit code: 0 on success, 1 on failure.
     """
-    from dotenv import load_dotenv
     from rich.console import Console
 
     from nwtrack.application.ports.uow import UnitOfWork
@@ -54,9 +53,10 @@ def main(active_only: bool = True) -> int:
         RichAccountListPresenter,
     )
     from nwtrack.entrypoints.cli.ui.console import build_console
+    from nwtrack.infra.config.load import load_settings
 
-    load_dotenv()
-    setup_logging()
+    settings = load_settings()
+    setup_logging(settings)
 
     container = build_base_container()
     container.register(

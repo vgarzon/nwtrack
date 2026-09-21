@@ -1,23 +1,23 @@
 # Phase 40: TOML-Based Configuration Management — Plan
 
-## 1. Dependencies
+## 1. Dependencies [x]
 
-1.1. Add `platformdirs` to `pyproject.toml` dependencies.
-1.2. Remove `python-dotenv` from `pyproject.toml` dependencies.
-1.3. `uv sync` / `uv lock` to update the lockfile.
+1.1. [x] Add `platformdirs` to `pyproject.toml` dependencies.
+1.2. [x] Remove `python-dotenv` from `pyproject.toml` dependencies.
+1.3. [x] `uv sync` / `uv lock` to update the lockfile.
 
-## 2. Settings shape
+## 2. Settings shape [x]
 
-2.1. Expand `infra/config/settings.py`'s `Settings` dataclass to carry all current
+2.1. [x] Expand `infra/config/settings.py`'s `Settings` dataclass to carry all current
      configuration fields (still a plain frozen dataclass, no validation library):
      `db_file_path: str`, `log_file: str`, `log_file_level: str`, `log_rotation_mb: int`,
      `log_backup_count: int`.
-2.2. Keep `Settings` free of any TOML/env-parsing logic — it stays a pure data container,
+2.2. [x] Keep `Settings` free of any TOML/env-parsing logic — it stays a pure data container,
      consistent with existing conventions.
 
-## 3. Config path resolution
+## 3. Config path resolution [x]
 
-3.1. Add a small module (e.g. `infra/config/paths.py`) exposing:
+3.1. [x] Add a small module (e.g. `infra/config/paths.py`) exposing:
      - `resolve_config_file() -> Path | None` — searches, in order:
        `platformdirs.user_config_dir("nwtrack")/config.toml`,
        `~/.config/nwtrack/config.toml`, `./config/nwtrack/config.toml`; returns the first
@@ -26,18 +26,23 @@
        the write target for `nwtrack config init`.
      - `default_db_file_path() -> Path` — `platformdirs.user_data_dir("nwtrack") / "nwtrack.db"`.
      - `default_log_file_path() -> Path` — `platformdirs.user_log_dir("nwtrack") / "nwtrack.log"`.
-3.2. Ensure parent directories are created (`Path.mkdir(parents=True, exist_ok=True)`) at
+3.2. [x] Ensure parent directories are created (`Path.mkdir(parents=True, exist_ok=True)`) at
      the point a file is actually written (config init, db init, log setup) — not eagerly
-     on import.
-3.3. A relative `db_file_path`/`log_file` string read from `config.toml` is resolved via
+     on import. **Implementation note**: also applied to `SQLiteSessionManager.__init__`
+     (`infra/db/sqlite/manager.py`), since opening the SQLite engine is the point the DB
+     file is actually created — this wasn't explicitly called out per-module in the plan but
+     follows directly from the "point a file is actually written" principle. Without it, a
+     fresh install with no `data/` directory yet would fail with
+     `sqlite3.OperationalError: unable to open database file` the first time any command ran.
+3.3. [x] A relative `db_file_path`/`log_file` string read from `config.toml` is resolved via
      `Path(value).resolve()` (relative to the process's current working directory) — never
      relative to `config.toml`'s own location. Absolute paths pass through unchanged. This
      resolution happens in `load.py` (section 4), not in `paths.py`, since it applies to
      user-supplied TOML values rather than the platformdirs-derived defaults.
 
-## 4. Config file loading
+## 4. Config file loading [x]
 
-4.1. Rewrite `infra/config/load.py`:
+4.1. [x] Rewrite `infra/config/load.py`:
      - Remove `load_dotenv`/`find_dotenv` usage and the `python-dotenv` import.
      - Locate `config.toml` via `resolve_config_file()`. If found, parse with stdlib
        `tomllib` into a dict; if not found, log/print guidance (paths searched, how to run
@@ -53,12 +58,29 @@
        types (e.g. non-integer `log_rotation_mb`) — do not silently fall back on parse
        errors, only on a missing file.
      - Return a fully populated `Settings`.
-4.2. Update `bootstrap/logging_config.py` to accept/consume `Settings` (or the four logging
+     - **Implementation note**: `db_file_path == ":memory:"` is special-cased and skipped
+       during path resolution (not passed through `Path(...).resolve()`), so tests and users
+       can still configure an in-memory SQLite database via `config.toml` or the env
+       override.
+4.2. [x] Update `bootstrap/logging_config.py` to accept/consume `Settings` (or the four logging
      fields) instead of calling `os.getenv("NWTRACK_LOG_FILE", ...)` etc. directly, so
      `load_settings()` is the single source of truth for all configuration.
-4.3. Update the composition roots (`bootstrap/composition.py`, `bootstrap/tui_composition.py`)
+     **Implementation**: `setup_logging(settings: Settings) -> None` now takes `Settings` as
+     a required parameter rather than reading the environment itself.
+4.3. [x] Update the composition roots (`bootstrap/composition.py`, `bootstrap/tui_composition.py`)
      and wherever `logging_config` is invoked at startup to thread the loaded `Settings`
      through instead of relying on ambient environment state.
+     **Implementation note**: `bootstrap/composition.py` and `bootstrap/tui_composition.py`
+     needed no changes — both already resolved `Settings` via `load_settings()` through the
+     DI container. The 22 use-case `main()` functions and `entrypoints/cli/commands/tui.py`
+     (all of which previously called bare `load_dotenv(); setup_logging()`) were updated to
+     `settings = load_settings(); setup_logging(settings)` instead.
+     **Test isolation note** (supports validation, not in original plan): added an
+     `autouse` fixture `_isolate_config_env` in `tests/conftest.py` that sets
+     `NWTRACK_DATABASE__DB_FILE_PATH=:memory:` and a tmp-path `NWTRACK_LOGGING__LOG_FILE`
+     for every test. Without it, CLI smoke tests that invoke the real `app.py` callback
+     (which always calls `load_settings()`) would read/write real files under the
+     developer's home directory during test runs, since defaults are no longer `:memory:`.
 
 ## 5. `nwtrack config init` command
 

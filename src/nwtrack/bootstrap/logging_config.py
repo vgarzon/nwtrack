@@ -4,9 +4,10 @@ Must be called exactly once at startup.
 """
 
 import logging
-import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+
+from nwtrack.infra.config.settings import Settings
 
 _LEVELS = {
     "CRITICAL": logging.CRITICAL,
@@ -24,12 +25,11 @@ def _level(name: str | None, default: int) -> int:
     return _LEVELS.get(name.upper(), default)
 
 
-def setup_logging() -> None:
-    # ---- env ----
-    log_file = os.getenv("NWTRACK_LOG_FILE", "./logs/nwtrack.log")
-    file_level = _level(os.getenv("NWTRACK_LOG_FILE_LEVEL"), logging.INFO)
-    rotation_bytes = int(os.getenv("NWTRACK_LOG_ROTATION_MB", 10)) * 1024 * 1024
-    backup_count = int(os.getenv("NWTRACK_LOG_BACKUP_COUNT", 7))
+def setup_logging(settings: Settings) -> None:
+    log_file = settings.log_file
+    file_level = _level(settings.log_file_level, logging.INFO)
+    rotation_bytes = settings.log_rotation_mb * 1024 * 1024
+    backup_count = settings.log_backup_count
 
     Path(log_file).parent.mkdir(parents=True, exist_ok=True)
 
