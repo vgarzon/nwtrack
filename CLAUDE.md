@@ -84,7 +84,7 @@ src/nwtrack/
 
 **Dependency Injection**: A custom lightweight DI container (`bootstrap/container.py`) supports singleton and transient lifetimes. Each use case's `main()` function extends the base container from `bootstrap/composition.py` with its specific dependencies. The TUI uses a separate composition root at `bootstrap/tui_composition.py`.
 
-**CLI Layer**: Uses Typer with sub-apps for different command groups: `accounts`, `balances`, `categories`, `institutions`, `tags`, `reports`, `export`, `import`, `admin`, `tui`. Commands are thin wrappers that import and invoke use case `main()` functions.
+**CLI Layer**: Uses Typer with sub-apps for different command groups: `accounts`, `balances`, `categories`, `institutions`, `tags`, `reports`, `export`, `import`, `admin`, `tui`, `config`. Commands are thin wrappers that import and invoke use case `main()` functions.
 
 ### Important Design Decisions
 
@@ -229,10 +229,11 @@ uv run pytest -k "test_account"
 just test-pattern "test_account"
 ```
 
-**Test Structure**: Tests mirror the source structure (`tests/domain/`, `tests/use_cases/`, `tests/services/`, `tests/bootstrap/`, `tests/sqlite/`, `tests/entrypoints/` (incl. `tests/entrypoints/tui/`), `tests/ui/`). The `conftest.py` provides fixtures for:
+**Test Structure**: Tests mirror the source structure (`tests/domain/`, `tests/use_cases/`, `tests/services/`, `tests/bootstrap/`, `tests/sqlite/`, `tests/infra/config/`, `tests/entrypoints/` (incl. `tests/entrypoints/tui/`), `tests/ui/`). The `conftest.py` provides fixtures for:
 - `base_container`: DI container with SQLAlchemy-based UoW backed by a `:memory:` SQLite database
 - `sample_entities`: Preloaded test data from CSV files in `tests/data/csv/`
 - `base_config`: `Settings` configured with `db_file_path=":memory:"` for fast, isolated test execution
+- `_isolate_config_env` (autouse): sets `NWTRACK_DATABASE__DB_FILE_PATH`/`NWTRACK_LOGGING__LOG_FILE` env overrides for every test, so tests that build a container without overriding `Settings` (e.g. CLI smoke tests) never read/write real `platformdirs` paths under the developer's home directory
 
 ### Linting and Type Checking
 
