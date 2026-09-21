@@ -37,7 +37,7 @@ trajectory over a `YYYY-MM` month range, available from both the CLI and the TUI
 ### Out of scope (this phase)
 
 - Multi-account comparison or overlay views (single account only).
-- Charting/graphical output (deferred to Phase 40: HTML Graphical Reports,
+- Charting/graphical output (deferred to Phase 41: HTML Graphical Reports,
   which explicitly plans to reuse this report's data for a line chart).
 - CSV export of this report (deferred to Phase 34, currently on hold).
 - Editing balances from this screen (read-only report).
