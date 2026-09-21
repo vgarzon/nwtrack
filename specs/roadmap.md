@@ -566,7 +566,7 @@ Expected outcomes:
   of each stretching full-width and stacking one per row
 - `ruff`, `mypy`, and `pytest` pass (393 tests)
 
-### [ ] Phase 40: TOML-Based Configuration Management
+### [X] Phase 40: TOML-Based Configuration Management
 
 Goal:
 Replace `.env`-based configuration with a `config.toml` file resolved from standard
