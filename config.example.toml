@@ -1,0 +1,28 @@
+# Example nwtrack configuration.
+#
+# Copy this file to one of the following locations (checked in this order;
+# the first one found wins), or run `nwtrack config init` to generate one
+# with platform-appropriate defaults already filled in:
+#
+#   1. ~/Library/Application Support/nwtrack/config.toml   (macOS)
+#      ~/.local/share/nwtrack/config.toml                  (Linux, via platformdirs)
+#   2. ~/.config/nwtrack/config.toml
+#   3. ./config/nwtrack/config.toml                        (relative to the working
+#                                                            directory, e.g. a source
+#                                                            checkout)
+#
+# Every setting below can also be overridden with a shell environment variable
+# of the same name, using NWTRACK_<SECTION>__<KEY> (double underscore), e.g.
+# NWTRACK_DATABASE__DB_FILE_PATH or NWTRACK_LOGGING__LOG_FILE_LEVEL.
+#
+# Relative paths (e.g. "./data/sqlite/nwtrack.db") resolve against the current
+# working directory at process start, not against this file's location.
+
+[database]
+db_file_path = "./data/sqlite/nwtrack.db"
+
+[logging]
+log_file = "./logs/nwtrack.log"
+log_file_level = "INFO"
+log_rotation_mb = 10
+log_backup_count = 7
