@@ -29,6 +29,11 @@
 3.2. Ensure parent directories are created (`Path.mkdir(parents=True, exist_ok=True)`) at
      the point a file is actually written (config init, db init, log setup) — not eagerly
      on import.
+3.3. A relative `db_file_path`/`log_file` string read from `config.toml` is resolved via
+     `Path(value).resolve()` (relative to the process's current working directory) — never
+     relative to `config.toml`'s own location. Absolute paths pass through unchanged. This
+     resolution happens in `load.py` (section 4), not in `paths.py`, since it applies to
+     user-supplied TOML values rather than the platformdirs-derived defaults.
 
 ## 4. Config file loading
 

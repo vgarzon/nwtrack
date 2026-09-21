@@ -49,8 +49,11 @@
 6. Place a `config.toml` at `~/.config/nwtrack/config.toml` only (no file at the
    `platformdirs` default location) — confirm it is found and used, validating the fallback
    search order.
-7. Place a `config.toml` at `./config/nwtrack/config.toml` (project-relative) only — confirm
-   it is found and used as the final fallback.
+7. Place a `config.toml` at `./config/nwtrack/config.toml` (project-relative) only, with
+   `db_file_path = "./data/sqlite/nwtrack.db"` and `log_file = "logs/nwtrack.log"` — confirm
+   it is found and used as the final fallback, and that the DB/log files are created
+   relative to the current working directory (not relative to `./config/nwtrack/`), matching
+   the current in-repo layout.
 8. Put invalid TOML (or a non-integer `log_rotation_mb`) in `config.toml` — confirm
    `nwtrack` exits with a clear, actionable error message rather than a raw traceback or
    silent fallback.
