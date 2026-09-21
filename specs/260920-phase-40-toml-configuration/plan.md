@@ -110,16 +110,24 @@
      `config init` prompts and correctly no-ops on decline; a subsequent `accounts list`
      picks up the written `config.toml` (DB and log file created at the configured paths).
 
-## 6. Documentation and example files
+## 6. Documentation and example files [x]
 
-6.1. Remove `.env_example`; add `config.example.toml` at the repo root showing the sectioned
-     format with commented defaults.
-6.2. Update `README.md` (and any `.env`-referencing setup instructions) to describe
+6.1. [x] Remove `.env_example`; add `config.example.toml` at the repo root showing the
+     sectioned format with commented defaults.
+6.2. [x] Update `README.md` (and any `.env`-referencing setup instructions) to describe
      `config.toml`, the search-path order, the env var override names, and
-     `nwtrack config init`.
-6.3. Update `CLAUDE.md`'s "Environment variables are loaded from `.env`" section to describe
-     the new config.toml + env-override model instead (this is the checked-in project
-     guidance file, not the spec — update once implementation lands and matches).
+     `nwtrack config init`. Added a new "Configuration" section between "Installation" and
+     "Usage".
+6.3. [x] Update `CLAUDE.md`'s "Environment variables are loaded from `.env`" section to
+     describe the new config.toml + env-override model instead. Also updated the stale
+     "SQLite database (default: `data/sqlite/nwtrack.db`)" line under Database Operations,
+     since the default is now platformdirs-based rather than a fixed repo-relative path.
+     **Beyond original plan scope**: also added a "Configuration Model" section to
+     `specs/tech-stack.md` (new default-implementation-choices section, between "Storage
+     Model" and "Domain Model Defaults") documenting the TOML/platformdirs/env-override
+     model as a standing tech-stack decision, and added `/config` to `.gitignore` (a
+     repo-relative `config.toml` under `./config/nwtrack/` is a local dev file, not meant to
+     be committed).
 
 ## 7. Tests
 
