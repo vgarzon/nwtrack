@@ -1,33 +1,42 @@
 # Phase 40: TOML-Based Configuration Management — Validation
 
-## Automated
+## Automated [x]
 
-- `just check` (ruff + mypy + pytest) passes with no orphaned `.env`/`python-dotenv`
-  references.
+- [x] `just check` (ruff + mypy + pytest) passes with no orphaned `.env`/`python-dotenv`
+  references. Confirmed: 413 tests passed, ruff and mypy clean, zero `dotenv` matches in
+  `src/`.
 - New/updated tests assert:
-  - `resolve_config_file()` honors the three-location search order and returns `None` when
-    nothing is found (see `plan.md` 7.1).
-  - `load_settings()` correctly parses a well-formed `[database]`/`[logging]` `config.toml`
-    into `Settings` (see `plan.md` 7.2).
-  - `load_settings()` falls back to `platformdirs`-based defaults (not `:memory:` /
+  - [x] `resolve_config_file()` honors the three-location search order and returns `None`
+    when nothing is found (`tests/infra/config/test_paths.py`, see `plan.md` 7.1).
+  - [x] `load_settings()` correctly parses a well-formed `[database]`/`[logging]`
+    `config.toml` into `Settings` (`tests/infra/config/test_load.py`, see `plan.md` 7.2).
+  - [x] `load_settings()` falls back to `platformdirs`-based defaults (not `:memory:` /
     working-directory defaults) when `config.toml` is absent, without raising.
-  - `load_settings()` raises a clear error on malformed TOML or wrong value types (e.g.
+  - [x] `load_settings()` raises a clear error on malformed TOML or wrong value types (e.g.
     `log_rotation_mb = "ten"`), rather than silently coercing or falling back.
-  - Each `NWTRACK_DATABASE__DB_FILE_PATH`, `NWTRACK_LOGGING__LOG_FILE`,
+  - [x] Each `NWTRACK_DATABASE__DB_FILE_PATH`, `NWTRACK_LOGGING__LOG_FILE`,
     `NWTRACK_LOGGING__LOG_FILE_LEVEL`, `NWTRACK_LOGGING__LOG_ROTATION_MB`,
     `NWTRACK_LOGGING__LOG_BACKUP_COUNT` env var overrides its corresponding TOML value when
     both are present.
-  - `init_config` use case writes a default `config.toml` to
-    `platformdirs.user_config_dir("nwtrack")` when none exists.
-  - `init_config` use case, via a mock `InitConfigPresenter`, aborts without writing when
+  - [x] `init_config` use case writes a default `config.toml` to
+    `platformdirs.user_config_dir("nwtrack")` when none exists
+    (`tests/use_cases/test_init_config.py`).
+  - [x] `init_config` use case, via a mock `InitConfigPresenter`, aborts without writing when
     the user declines the overwrite confirmation, and overwrites when they accept.
-  - `bootstrap/logging_config.py` no longer calls `os.getenv("NWTRACK_...")` directly —
-    logging configuration is sourced entirely from the `Settings` passed in.
-  - `grep -rn "NWTRACK_" src/` (or an equivalent test-time check) shows env var names only
-    in the new `infra/config/load.py` override logic, not scattered across other modules.
-- Existing test suite continues to pass with fixtures updated for the new `Settings` shape
-  (`base_config` fixture in `conftest.py` likely needs its constructor call updated to the
-  expanded `Settings` fields).
+  - [x] `bootstrap/logging_config.py` no longer calls `os.getenv("NWTRACK_...")` directly —
+    logging configuration is sourced entirely from the `Settings` passed in. Confirmed by
+    code inspection: `setup_logging(settings: Settings)` reads only from `settings.*`.
+  - [x] `grep -rn "NWTRACK_" src/` shows env var names only in `infra/config/load.py`'s
+    override logic, not scattered across other modules.
+- [x] Existing test suite continues to pass with fixtures updated for the new `Settings`
+  shape (`base_config` in `conftest.py`, plus 5 other direct `Settings(...)` construction
+  sites across `tests/use_cases/test_import_tables_csv.py` and
+  `tests/services/test_db_admin_service.py`).
+- **CLI wiring test** (`tests/entrypoints/test_cli_config.py`): `nwtrack config --help`
+  registers the group; `nwtrack config init` invokes the use case's `main()`.
+- **Test isolation**: added `tests/conftest.py`'s autouse `_isolate_config_env` fixture so
+  the suite never touches real platformdirs paths under the developer's home directory (see
+  `plan.md` 4.3).
 
 ## Manual
 
