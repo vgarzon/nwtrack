@@ -129,11 +129,12 @@
      repo-relative `config.toml` under `./config/nwtrack/` is a local dev file, not meant to
      be committed).
 
-## 7. Tests
+## 7. Tests [x]
 
-7.1. Unit tests for `infra/config/paths.py`: search-order precedence (each of the three
-     locations, in priority order), and the `None`/missing case.
-7.2. Unit tests for `infra/config/load.py`:
+7.1. [x] Unit tests for `infra/config/paths.py` (`tests/infra/config/test_paths.py`, 6
+     tests): search-order precedence (each of the three locations, in priority order), and
+     the `None`/missing case.
+7.2. [x] Unit tests for `infra/config/load.py` (`tests/infra/config/test_load.py`, 9 tests):
      - Loads values correctly from a well-formed `config.toml`.
      - Missing `config.toml` → falls back to defaults without raising.
      - Malformed TOML / wrong types → raises a clear error.
@@ -141,14 +142,24 @@
        TOML value.
      - Defaults resolve via `platformdirs` (`default_db_file_path()`, `default_log_file_path()`)
        when a key is absent from `config.toml` and no matching env var is set.
-7.3. Tests for the `init_config` use case: writes expected file when none exists; prompts
-     and respects confirm/decline via a mock presenter when a file already exists.
-7.4. CLI test for `nwtrack config init` wiring (command exists, invokes the use case).
-7.5. Update/remove any existing tests that assumed `.env` loading or the old flat
-     `NWTRACK_DB_FILE_PATH`-style env vars.
+7.3. [x] Tests for the `init_config` use case (`tests/use_cases/test_init_config.py`, 3
+     tests): writes expected file when none exists; prompts and respects confirm/decline via
+     a mock presenter when a file already exists.
+7.4. [x] CLI test for `nwtrack config init` wiring (`tests/entrypoints/test_cli_config.py`,
+     2 tests: command exists, invokes the use case's `main()`).
+7.5. [x] Update/remove any existing tests that assumed `.env` loading or the old flat
+     `NWTRACK_DB_FILE_PATH`-style env vars. **Finding**: none existed (grep found zero
+     matches) — no test previously exercised config loading directly. The 5
+     `Settings(db_file_path=...)` construction sites (`tests/conftest.py`,
+     `tests/use_cases/test_import_tables_csv.py` x2, `tests/services/test_db_admin_service.py`
+     x2) were updated in task group 4's commit to supply the new required logging fields.
+     393 → 413 tests total (20 new).
 
-## 8. Cleanup
+## 8. Cleanup [x]
 
-8.1. Remove all remaining `python-dotenv` imports/usages across the codebase.
-8.2. Confirm no other module reads `NWTRACK_*` env vars directly (grep check) — all
-     configuration should flow through `Settings`/`load_settings()`.
+8.1. [x] Remove all remaining `python-dotenv` imports/usages across the codebase. Verified:
+     `grep -rn "dotenv" src/` returns nothing; `python-dotenv` absent from `pyproject.toml`
+     and `uv.lock`.
+8.2. [x] Confirm no other module reads `NWTRACK_*` env vars directly (grep check) — all
+     configuration should flow through `Settings`/`load_settings()`. Verified: `grep -rn
+     "NWTRACK_" src/` matches only `infra/config/load.py`.
