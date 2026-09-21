@@ -82,23 +82,33 @@
      (which always calls `load_settings()`) would read/write real files under the
      developer's home directory during test runs, since defaults are no longer `:memory:`.
 
-## 5. `nwtrack config init` command
+## 5. `nwtrack config init` command [x]
 
-5.1. Define an `InitConfigPresenter` Protocol in `application/ports/presentation.py`
+5.1. [x] Define an `InitConfigPresenter` Protocol in `application/ports/presentation.py`
      (`show_target_path`, `confirm_overwrite`, `show_success`, `show_cancelled`) following
      the existing presenter-protocol pattern.
-5.2. Implement `RichInitConfigPresenter` in `entrypoints/cli/adapters/` using
-     `rich.prompt.Confirm`, matching the style in `db_admin_presenters.py`.
-5.3. Add an `init_config` use case (`application/use_cases/`) that:
+5.2. [x] Implement `RichInitConfigPresenter` in `entrypoints/cli/adapters/config_presenters.py`
+     using `rich.prompt.Confirm`, matching the style in `db_admin_presenters.py`.
+5.3. [x] Add an `init_config` use case (`application/use_cases/init_config.py`, class
+     `InitConfig`) that:
      - Resolves the default config target path (`default_config_dir()/config.toml`).
      - If the file exists, asks the presenter to confirm overwrite; aborts cleanly if
        declined.
      - Writes a default `config.toml` (sectioned, with resolved platformdirs-based default
-       paths filled in as comments or literal values — literal values are more useful to a
-       first-time editor) to the target path, creating parent directories as needed.
+       paths filled in as literal values — chosen over comments since a first-time editor
+       benefits more from seeing real resolved values to edit than commented-out examples)
+       to the target path, creating parent directories as needed.
      - Returns `OperationResult[Path]`.
-5.4. Add a `config` Typer sub-app (`entrypoints/cli/`) with an `init` command wired to the
-     use case, following the existing CLI command-group registration pattern.
+     - **Implementation note**: `main()` intentionally does *not* call
+       `build_base_container()`/`load_settings()`/`setup_logging()` — config init is a
+       bootstrapping command that must work before any config or database exists, so it
+       only wires a `Console` + presenter, no DB/Settings dependency.
+5.4. [x] Add a `config` Typer sub-app (`entrypoints/cli/app.py`, command module
+     `entrypoints/cli/commands/config.py`) with an `init` command wired to the use case,
+     following the existing CLI command-group registration pattern. Manually verified: fresh
+     `config init` writes the expected sectioned file with resolved default paths; a second
+     `config init` prompts and correctly no-ops on decline; a subsequent `accounts list`
+     picks up the written `config.toml` (DB and log file created at the configured paths).
 
 ## 6. Documentation and example files
 

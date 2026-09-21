@@ -1447,3 +1447,23 @@ class AdminSeedStatusHistoryPresenter(Protocol):
     def show_result(self, result: SeedStatusHistoryResult) -> None:
         """Display the seeding summary."""
         ...
+
+
+class InitConfigPresenter(Protocol):
+    """Presenter for the config init workflow."""
+
+    def show_target_path(self, path: Path) -> None:
+        """Display where the default config.toml will be written."""
+        ...
+
+    def confirm_overwrite(self, path: Path) -> bool:
+        """Prompt to confirm overwriting an existing config.toml."""
+        ...
+
+    def show_success(self, path: Path) -> None:
+        """Display success message after config.toml is written."""
+        ...
+
+    def show_cancelled(self) -> None:
+        """Display message when the user declines to overwrite."""
+        ...
