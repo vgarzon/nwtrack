@@ -268,18 +268,28 @@ just check
 The database schema is managed entirely through SQLAlchemy ORM models in `src/nwtrack/infra/persistence/orm/models.py`. Schema creation is handled by `Base.metadata.create_all()` via the `SchemaManager` implementation.
 
 The application uses:
-- SQLite database (default: `data/sqlite/nwtrack.db`)
+- SQLite database (default location: `platformdirs.user_data_dir("nwtrack")/nwtrack.db`, overridable via `config.toml`)
 - Tables: `currencies`, `categories`, `institutions`, `tags`, `accounts`, `account_status_history`, `balances`, `exchange_rates`
 - ORM models with CHECK constraints (`Category.side`, `Account.status`) and composite UNIQUE constraints (`Balance`, `ExchangeRate`)
 - NetWorth aggregations computed via SQLAlchemy queries
 - `account_status_history` records per-month effective status for each account, enabling historical reporting via `AccountStatusScope.HISTORICAL`
 
-Environment variables are loaded from `.env` (see `.env_example` for template):
-- `NWTRACK_DB_FILE_PATH`: Database file location (default: `data/sqlite/nwtrack.db`)
-- `NWTRACK_LOG_FILE`: Log file location (default: `./logs/nwtrack.log`)
-- `NWTRACK_LOG_FILE_LEVEL`: Logging level (default: `INFO`)
-- `NWTRACK_LOG_ROTATION_MB`: Log file rotation size in MB (default: `10`)
-- `NWTRACK_LOG_BACKUP_COUNT`: Number of backup log files to keep (default: `7`)
+Settings are loaded from `config.toml`, resolved via `platformdirs` from one of (first found
+wins): `user_config_dir("nwtrack")` (e.g. `~/Library/Application Support/nwtrack/` on
+macOS), `~/.config/nwtrack/`, or `./config/nwtrack/` (relative to the working directory).
+See `config.example.toml` for the format, or run `nwtrack config init` to generate one with
+platform-appropriate defaults. If no `config.toml` is found, built-in defaults are used
+(database and log paths resolve via `platformdirs.user_data_dir`/`user_log_dir`) and
+guidance is printed/logged. Every setting can be overridden with a shell environment
+variable of the same name, using `NWTRACK_<SECTION>__<KEY>`:
+- `[database] db_file_path` / `NWTRACK_DATABASE__DB_FILE_PATH`: Database file location
+- `[logging] log_file` / `NWTRACK_LOGGING__LOG_FILE`: Log file location
+- `[logging] log_file_level` / `NWTRACK_LOGGING__LOG_FILE_LEVEL`: Logging level (default: `INFO`)
+- `[logging] log_rotation_mb` / `NWTRACK_LOGGING__LOG_ROTATION_MB`: Log file rotation size in MB (default: `10`)
+- `[logging] log_backup_count` / `NWTRACK_LOGGING__LOG_BACKUP_COUNT`: Number of backup log files to keep (default: `7`)
+
+Relative paths in `config.toml` resolve against the current working directory at process
+start, not against `config.toml`'s own location.
 
 **Note**: File logging is enabled by default. The application automatically creates the log directory if it doesn't exist and uses rotating file handlers to prevent unbounded log growth.
 

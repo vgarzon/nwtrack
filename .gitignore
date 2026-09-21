@@ -11,6 +11,7 @@ wheels/
 
 # project files
 .env
+/config
 /data
 /tmp
 /logs

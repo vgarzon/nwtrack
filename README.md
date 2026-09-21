@@ -26,6 +26,30 @@ uv sync
 uv run nwtrack --help
 ```
 
+## Configuration
+
+nwtrack reads settings from `config.toml`, searched in this order (first found wins):
+
+1. `~/Library/Application Support/nwtrack/config.toml` (macOS) /
+   `~/.local/share/nwtrack/config.toml` (Linux, via [`platformdirs`](https://github.com/tox-dev/platformdirs))
+2. `~/.config/nwtrack/config.toml`
+3. `./config/nwtrack/config.toml` (relative to the working directory — convenient for a
+   source checkout)
+
+Run `nwtrack config init` to write a default `config.toml` (with platform-appropriate
+default database and log paths already filled in) to the first location above. See
+[`config.example.toml`](./config.example.toml) for the full format.
+
+If no `config.toml` is found, nwtrack falls back to built-in defaults and prints/logs the
+paths it searched.
+
+Every setting can be overridden with a shell environment variable of the same name, using
+`NWTRACK_<SECTION>__<KEY>` (double underscore), e.g. `NWTRACK_DATABASE__DB_FILE_PATH` or
+`NWTRACK_LOGGING__LOG_FILE_LEVEL`. Relative paths in `config.toml` (e.g.
+`"./data/sqlite/nwtrack.db"`) resolve against the current working directory at process
+start, not against the config file's own location — this is what lets a source checkout use
+a `./config/nwtrack/config.toml` with repo-relative paths.
+
 ## Usage
 
 ```bash

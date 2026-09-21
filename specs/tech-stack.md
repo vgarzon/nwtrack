@@ -25,6 +25,20 @@ This document defines the default implementation choices for `nwtrack` and the e
 - Money representation: integer smallest-unit amounts
 - Exchange-rate handling: manual and local for now
 
+## Configuration Model
+
+- Configuration format: TOML (`config.toml`), parsed with the Python 3.12+ standard library
+  `tomllib` — no external validation dependency (e.g. no `pydantic`) by default.
+- Configuration location: resolved via `platformdirs`, searched in order —
+  `platformdirs.user_config_dir("nwtrack")`, `~/.config/nwtrack/`, then
+  `./config/nwtrack/` (working-directory-relative, for running from a source checkout).
+- Database and log file defaults resolve via `platformdirs.user_data_dir`/`user_log_dir`
+  when not set explicitly in `config.toml`.
+- Every `config.toml` setting is overridable by a shell environment variable named
+  `NWTRACK_<SECTION>__<KEY>` (double underscore section delimiter).
+- `.env`-based configuration is not used; there is no `python-dotenv` dependency.
+- `nwtrack config init` is the supported way to bootstrap a default `config.toml`.
+
 ## Domain Model Defaults
 
 The default data model should continue to center on accounts and monthly balances, with explicit support for controlled reference data.
