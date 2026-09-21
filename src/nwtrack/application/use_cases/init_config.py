@@ -1,5 +1,9 @@
 """
 Write a default config.toml to the highest-priority config location.
+
+Prompts before overwriting a file already at that location, and separately
+prompts before writing a new file there if doing so would shadow an existing,
+lower-priority config.toml that is currently in effect.
 """
 
 import logging
@@ -11,6 +15,7 @@ from nwtrack.infra.config.paths import (
     default_config_dir,
     default_db_file_path,
     default_log_file_path,
+    resolve_config_file,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,10 +45,21 @@ class InitConfig:
         target_path = default_config_dir() / _CONFIG_FILE_NAME
         self._presenter.show_target_path(target_path)
 
-        if target_path.exists() and not self._presenter.confirm_overwrite(target_path):
-            self._presenter.show_cancelled()
-            logger.info("InitConfig cancelled: user declined overwrite")
-            return OperationResult(success=False)
+        if target_path.exists():
+            if not self._presenter.confirm_overwrite(target_path):
+                self._presenter.show_cancelled()
+                logger.info("InitConfig cancelled: user declined overwrite")
+                return OperationResult(success=False)
+        else:
+            active_path = resolve_config_file()
+            if active_path is not None and active_path != target_path:
+                if not self._presenter.confirm_shadow(target_path, active_path):
+                    self._presenter.show_cancelled()
+                    logger.info(
+                        "InitConfig cancelled: user declined to shadow %s",
+                        active_path,
+                    )
+                    return OperationResult(success=False)
 
         target_path.parent.mkdir(parents=True, exist_ok=True)
         target_path.write_text(

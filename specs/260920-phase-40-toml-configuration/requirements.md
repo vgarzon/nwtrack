@@ -122,3 +122,66 @@ environment variables).
   matching other destructive CLI confirmations) rather than introducing a new prompt style.
 - No new external dependency beyond `platformdirs`; `tomllib` is stdlib (Python 3.12+, which
   this project already requires).
+
+## Addendum: `config init` shadow protection + `config show` (2026-09-21)
+
+Post-merge review of the original design surfaced a gap: `InitConfig` always wrote to the
+highest-priority location (`default_config_dir()/config.toml`) and only checked whether a
+file already existed *there*. If a user had a config.toml active at a lower-priority
+location (e.g. `./config/nwtrack/config.toml`) but nothing yet at the platformdirs location,
+running `config init` would silently write a new file that took priority going forward —
+the existing, actively-used config would be shadowed with no warning.
+
+Two changes close this gap and add visibility into the resolved configuration:
+
+### Scope
+
+- **`config init` shadow protection**: before writing to a target path where no file
+  currently exists, `InitConfig` now also checks `resolve_config_file()`. If that returns a
+  different, existing path (a lower-priority config is currently active), the presenter
+  warns which file is in effect and prompts for confirmation before proceeding — writing
+  anyway is allowed (the new file just becomes authoritative), but it is no longer silent.
+  This is in addition to, not a replacement for, the existing overwrite-confirmation when a
+  file already exists at the target path itself.
+- **New `nwtrack config show` command**: read-only diagnostic command that displays:
+  - The config search-path priority order, with each path's existence and whether it is the
+    currently active one.
+  - The fully-resolved effective `Settings` (same values `load_settings()` would produce),
+    with each setting's source (`config.toml`, environment variable override, or built-in
+    default) called out explicitly.
+
+### Decisions
+
+- **Effective (resolved) settings, not raw file contents.** Showing the final values
+  `nwtrack` will actually use — factoring in env var overrides and defaults — is more useful
+  for diagnosing "why is nwtrack using this path" than dumping the raw TOML file, which the
+  user can already `cat` themselves.
+- **Env var overrides are flagged per-setting**, not just implied by a source column that
+  only distinguishes file vs. default. A user debugging unexpected behavior needs to see
+  *which* setting an env var is currently clobbering.
+- **Shadow protection warns and asks, rather than warning-only or refusing outright** — this
+  matches the existing `confirm_overwrite` UX pattern (same presenter, same `Confirm.ask`
+  style) rather than introducing a new interaction shape, and still lets a user who
+  deliberately wants to promote a config to the higher-priority location do so in one step.
+- **Landed as additional commits on the existing `phase-40-toml-config` branch/PR**, not a
+  new roadmap phase — this fixes a gap in work that had not yet merged, not new scope.
+- **No new presentation port beyond `ShowConfigPresenter`**: source-tracking logic lives in
+  `infra/config/load.py` (`describe_settings()`, sharing its config-resolution internals with
+  `load_settings()` via a private `_resolve()` helper) and is exposed to the presentation
+  layer via new DTOs (`ConfigPathInfo`, `ConfigFieldInfo`, `ConfigShowResult`,
+  `ConfigValueSource`) in `application/dto.py`, following the existing pattern of infra
+  returning application-layer DTOs (precedent: `infra/persistence/schema.py`).
+
+### Validation
+
+- Unit tests: `InitConfig` shadow-confirm/decline paths
+  (`tests/use_cases/test_init_config.py`); `describe_settings()` source-tracking
+  (`tests/infra/config/test_load.py`); `ShowConfig` use case
+  (`tests/use_cases/test_show_config.py`); CLI wiring for `config show`
+  (`tests/entrypoints/test_cli_config.py`).
+- Manual: verified end-to-end with a repo-relative `./config/nwtrack/config.toml` active —
+  `config show` correctly listed it as the active path with `config.toml`-sourced values;
+  `config init` warned about shadowing it, declining left it untouched, confirming wrote the
+  higher-priority file and `config show` then reflected the new file as active (with the
+  lower-priority file still shown as existing but no longer active); an env var override was
+  correctly flagged with source `env var`.

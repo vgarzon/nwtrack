@@ -4,6 +4,7 @@ Data transfer objects (DTOs).
 
 from dataclasses import dataclass, field
 from enum import StrEnum
+from pathlib import Path
 
 from nwtrack.domain.models import Category, Institution, Status, Tag
 from nwtrack.domain.value_objects import Month
@@ -197,6 +198,40 @@ class SeedStatusHistoryResult:
     seeded: int    # accounts with no prior rows that received new rows
     migrated: int  # accounts whose old single-inactive row was replaced
     skipped: int   # accounts left unchanged (already had correct rows)
+
+
+class ConfigValueSource(StrEnum):
+    """Where a resolved config.toml setting's value came from."""
+
+    ENV = "env"
+    FILE = "file"
+    DEFAULT = "default"
+
+
+@dataclass(frozen=True)
+class ConfigPathInfo:
+    """One config.toml search-path candidate and whether it's in use."""
+
+    path: Path
+    exists: bool
+    is_active: bool
+
+
+@dataclass(frozen=True)
+class ConfigFieldInfo:
+    """One resolved configuration setting and where its value came from."""
+
+    name: str
+    value: str
+    source: ConfigValueSource
+
+
+@dataclass(frozen=True)
+class ConfigShowResult:
+    """Full picture of nwtrack's resolved configuration, for `config show`."""
+
+    search_paths: list[ConfigPathInfo]
+    fields: list[ConfigFieldInfo]
 
 
 @dataclass(frozen=True)

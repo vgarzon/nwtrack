@@ -8,6 +8,12 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+from nwtrack.application.dto import (
+    ConfigFieldInfo,
+    ConfigPathInfo,
+    ConfigShowResult,
+    ConfigValueSource,
+)
 from nwtrack.infra.config.paths import (
     config_search_paths,
     default_db_file_path,
@@ -21,6 +27,14 @@ logger = logging.getLogger(__name__)
 _DEFAULT_LOG_FILE_LEVEL = "INFO"
 _DEFAULT_LOG_ROTATION_MB = 10
 _DEFAULT_LOG_BACKUP_COUNT = 7
+
+_ENV_VARS: dict[str, str] = {
+    "db_file_path": "NWTRACK_DATABASE__DB_FILE_PATH",
+    "log_file": "NWTRACK_LOGGING__LOG_FILE",
+    "log_file_level": "NWTRACK_LOGGING__LOG_FILE_LEVEL",
+    "log_rotation_mb": "NWTRACK_LOGGING__LOG_ROTATION_MB",
+    "log_backup_count": "NWTRACK_LOGGING__LOG_BACKUP_COUNT",
+}
 
 
 def _resolve_path(value: str) -> str:
@@ -58,13 +72,8 @@ def _str_value(section: dict[str, Any], key: str, default: str, table_name: str)
     return value
 
 
-def load_settings() -> Settings:
-    """
-    Load settings from config.toml (if found), with environment variable overrides.
-
-    Returns:
-        Settings: An instance of the Settings dataclass with resolved configuration.
-    """
+def _resolve() -> tuple[Settings, dict[str, ConfigValueSource]]:
+    """Resolve Settings from config.toml + env overrides, tracking each source."""
     config_file = resolve_config_file()
 
     database: dict[str, Any] = {}
@@ -82,6 +91,34 @@ def load_settings() -> Settings:
             searched,
         )
 
+    sources: dict[str, ConfigValueSource] = {
+        "db_file_path": (
+            ConfigValueSource.FILE
+            if "db_file_path" in database
+            else ConfigValueSource.DEFAULT
+        ),
+        "log_file": (
+            ConfigValueSource.FILE
+            if "log_file" in logging_section
+            else ConfigValueSource.DEFAULT
+        ),
+        "log_file_level": (
+            ConfigValueSource.FILE
+            if "log_file_level" in logging_section
+            else ConfigValueSource.DEFAULT
+        ),
+        "log_rotation_mb": (
+            ConfigValueSource.FILE
+            if "log_rotation_mb" in logging_section
+            else ConfigValueSource.DEFAULT
+        ),
+        "log_backup_count": (
+            ConfigValueSource.FILE
+            if "log_backup_count" in logging_section
+            else ConfigValueSource.DEFAULT
+        ),
+    }
+
     db_file_path = _str_value(
         database, "db_file_path", str(default_db_file_path()), "database"
     )
@@ -98,6 +135,10 @@ def load_settings() -> Settings:
         logging_section, "log_backup_count", _DEFAULT_LOG_BACKUP_COUNT, "logging"
     )
 
+    for field_name, env_var in _ENV_VARS.items():
+        if env_var in os.environ:
+            sources[field_name] = ConfigValueSource.ENV
+
     if "NWTRACK_DATABASE__DB_FILE_PATH" in os.environ:
         db_file_path = os.environ["NWTRACK_DATABASE__DB_FILE_PATH"]
     if "NWTRACK_LOGGING__LOG_FILE" in os.environ:
@@ -113,10 +154,66 @@ def load_settings() -> Settings:
         db_file_path = _resolve_path(db_file_path)
     log_file = _resolve_path(log_file)
 
-    return Settings(
+    settings = Settings(
         db_file_path=db_file_path,
         log_file=log_file,
         log_file_level=log_file_level,
         log_rotation_mb=log_rotation_mb,
         log_backup_count=log_backup_count,
     )
+    return settings, sources
+
+
+def load_settings() -> Settings:
+    """
+    Load settings from config.toml (if found), with environment variable overrides.
+
+    Returns:
+        Settings: An instance of the Settings dataclass with resolved configuration.
+    """
+    settings, _sources = _resolve()
+    return settings
+
+
+def describe_settings() -> ConfigShowResult:
+    """
+    Describe the resolved configuration for display: search-path status and the
+    effective value + source of every setting.
+
+    Returns:
+        ConfigShowResult: search paths (with existence/active flags) and resolved
+        settings (with their source: env, file, or default).
+    """
+    settings, sources = _resolve()
+    active = resolve_config_file()
+
+    search_paths = [
+        ConfigPathInfo(path=p, exists=p.is_file(), is_active=(p == active))
+        for p in config_search_paths()
+    ]
+    fields = [
+        ConfigFieldInfo(
+            name="db_file_path",
+            value=settings.db_file_path,
+            source=sources["db_file_path"],
+        ),
+        ConfigFieldInfo(
+            name="log_file", value=settings.log_file, source=sources["log_file"]
+        ),
+        ConfigFieldInfo(
+            name="log_file_level",
+            value=settings.log_file_level,
+            source=sources["log_file_level"],
+        ),
+        ConfigFieldInfo(
+            name="log_rotation_mb",
+            value=str(settings.log_rotation_mb),
+            source=sources["log_rotation_mb"],
+        ),
+        ConfigFieldInfo(
+            name="log_backup_count",
+            value=str(settings.log_backup_count),
+            source=sources["log_backup_count"],
+        ),
+    ]
+    return ConfigShowResult(search_paths=search_paths, fields=fields)

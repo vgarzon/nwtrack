@@ -116,3 +116,33 @@ and removed — its origin is unclear (not created by any committed change), but
   (malformed TOML, wrong value types) now exit cleanly with `Configuration error: <message>`
   and exit code 1, instead of an unhandled traceback — `entrypoints/cli/main.py` wraps
   `app()` in a `try/except ValueError`, covering both the CLI and `nwtrack tui launch`.
+
+## Addendum: `config init` shadow protection + `config show` (2026-09-21)
+
+Automated (`just check`, 420 tests):
+- [x] `InitConfig` shadow-confirm and shadow-decline paths tested with a mocked
+  `resolve_config_file()` returning a different, existing lower-priority path.
+- [x] Existing `InitConfig` tests fixed to mock `resolve_config_file()` — they previously
+  read real environment state (a latent gap the shadow-check change surfaced immediately as
+  a failing test).
+- [x] `describe_settings()` tested for: file/env/default source tagging per field; no-active
+  case (nothing found anywhere on the search path).
+- [x] `ShowConfig` use case tested via mock presenter.
+- [x] `config show` CLI registration and wiring tested.
+- [x] `ruff`, `mypy` clean.
+
+Manual (isolated `$HOME` + cwd, `./config/nwtrack/config.toml` present, nothing at the
+platformdirs location):
+1. [x] `nwtrack config show` — search-paths table correctly showed the repo-relative path as
+   `exists: yes, active: yes`, the two higher-priority paths as `exists: no`; effective
+   settings table showed `db_file_path`/`log_file` sourced from `config.toml`,
+   `log_file_level`/`log_rotation_mb`/`log_backup_count` sourced from `default`.
+2. [x] `nwtrack config init`, decline — printed "`./config/nwtrack/config.toml` is currently
+   in effect" warning, prompted, declining left no file written at the platformdirs location.
+3. [x] `nwtrack config init`, confirm — wrote the file at the platformdirs location.
+4. [x] `nwtrack config show` again — platformdirs path now `exists: yes, active: yes`;
+   `./config/nwtrack/config.toml` now `exists: yes, active: no` (still on disk, no longer in
+   effect — correctly demonstrates the shadowing this addendum makes visible instead of
+   silent).
+5. [x] Set `NWTRACK_LOGGING__LOG_FILE_LEVEL=DEBUG` and ran `config show` again — the setting
+   showed value `DEBUG` with source `env var`, all others unchanged.
