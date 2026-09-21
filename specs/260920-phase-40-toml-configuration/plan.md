@@ -163,3 +163,12 @@
 8.2. [x] Confirm no other module reads `NWTRACK_*` env vars directly (grep check) — all
      configuration should flow through `Settings`/`load_settings()`. Verified: `grep -rn
      "NWTRACK_" src/` matches only `infra/config/load.py`.
+
+## 9. Final validation fix (found during manual validation, not in original plan) [x]
+
+9.1. [x] `entrypoints/cli/main.py`'s `main()` now wraps `app()` in `try/except ValueError`,
+     printing `Configuration error: <message>` to stderr and exiting 1, instead of letting a
+     `load_settings()` error (malformed TOML, wrong value type) surface as a full unhandled
+     Rich traceback. Covers both the CLI and `nwtrack tui launch` (both go through `app()`).
+     Added `tests/entrypoints/test_cli_main.py`. See `validation.md` manual step 8 for the
+     finding that prompted this.

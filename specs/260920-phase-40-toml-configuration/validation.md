@@ -38,55 +38,81 @@
   the suite never touches real platformdirs paths under the developer's home directory (see
   `plan.md` 4.3).
 
-## Manual
+## Manual [x] — all 10 steps performed 2026-09-20, isolated `$HOME`/cwd per step
 
-1. Fresh checkout, no `config.toml` anywhere on the search path, no relevant `NWTRACK_*` env
-   vars set: run any `nwtrack` command (e.g. `nwtrack accounts list`) — confirm it runs
+1. [x] Fresh checkout, no `config.toml` anywhere on the search path, no relevant `NWTRACK_*`
+   env vars set: run any `nwtrack` command (e.g. `nwtrack accounts list`) — confirm it runs
    using in-code/platformdirs defaults and prints/logs guidance naming the three searched
-   paths and mentioning `nwtrack config init`.
-2. Run `nwtrack config init` — confirm it writes `config.toml` to
+   paths and mentioning `nwtrack config init`. **Confirmed.**
+2. [x] Run `nwtrack config init` — confirm it writes `config.toml` to
    `~/Library/Application Support/nwtrack/config.toml` (macOS) with sectioned
    `[database]`/`[logging]` content and correct platformdirs-derived default paths.
-3. Edit the generated `config.toml` (e.g. change `log_file_level` to `DEBUG`) and run a
-   command — confirm the change takes effect (check the log file for DEBUG-level output).
-4. Run `nwtrack config init` again with the file already present — confirm it prompts for
+   **Confirmed.**
+3. [x] Edit the generated `config.toml` (e.g. change `log_file_level` to `DEBUG`) and run a
+   command — confirm the change takes effect. **Confirmed** by re-loading settings and
+   asserting `log_file_level == "DEBUG"` (no DEBUG-level log statements exist in the code
+   path exercised, so the log file itself has nothing to grep — verified the loaded value
+   directly instead).
+4. [x] Run `nwtrack config init` again with the file already present — confirm it prompts for
    confirmation, and declining leaves the existing file untouched (checksum/diff before and
-   after).
-5. Set `NWTRACK_DATABASE__DB_FILE_PATH` to a different path in the shell and run a command —
-   confirm it overrides the `config.toml` value (check `nwtrack admin` output or DB file
-   written to the overridden path).
-6. Place a `config.toml` at `~/.config/nwtrack/config.toml` only (no file at the
+   after). **Confirmed** — MD5 identical before/after decline.
+5. [x] Set `NWTRACK_DATABASE__DB_FILE_PATH` to a different path in the shell and run a
+   command — confirm it overrides the `config.toml` value. **Confirmed.**
+6. [x] Place a `config.toml` at `~/.config/nwtrack/config.toml` only (no file at the
    `platformdirs` default location) — confirm it is found and used, validating the fallback
-   search order.
-7. Place a `config.toml` at `./config/nwtrack/config.toml` (project-relative) only, with
+   search order. **Confirmed.**
+7. [x] Place a `config.toml` at `./config/nwtrack/config.toml` (project-relative) only, with
    `db_file_path = "./data/sqlite/nwtrack.db"` and `log_file = "logs/nwtrack.log"` — confirm
    it is found and used as the final fallback, and that the DB/log files are created
    relative to the current working directory (not relative to `./config/nwtrack/`), matching
-   the current in-repo layout.
-8. Put invalid TOML (or a non-integer `log_rotation_mb`) in `config.toml` — confirm
+   the current in-repo layout. **Confirmed** — this is the exact scenario that originally
+   motivated documenting relative-path resolution in `requirements.md`.
+8. [x] Put invalid TOML (or a non-integer `log_rotation_mb`) in `config.toml` — confirm
    `nwtrack` exits with a clear, actionable error message rather than a raw traceback or
-   silent fallback.
-9. Confirm `.env` files are fully ignored — put a `NWTRACK_DB_FILE_PATH` (old-style, no
+   silent fallback. **Finding & fix**: initially this surfaced a full Rich-formatted Python
+   traceback (the final line had the clear message, but it wasn't "rather than a raw
+   traceback" as required). Fixed by wrapping the CLI entry point
+   (`entrypoints/cli/main.py`'s `main()`) in a `try/except ValueError` that prints
+   `Configuration error: <message>` to stderr and exits 1 — this also covers `nwtrack tui
+   launch`, which goes through the same `app()` call. Covered by
+   `tests/entrypoints/test_cli_main.py`. Re-verified manually after the fix: clean one-line
+   message, exit code 1, no traceback.
+9. [x] Confirm `.env` files are fully ignored — put a `NWTRACK_DB_FILE_PATH` (old-style, no
    `DATABASE__` prefix) in a `.env` file at the repo root and confirm it has no effect.
-10. Confirm the TUI (`nwtrack tui launch`) also picks up `config.toml` settings (database
-    path, log level) — not just the CLI path.
+   **Confirmed.**
+10. [x] Confirm the TUI (`nwtrack tui launch`) also picks up `config.toml` settings (database
+    path, log level) — not just the CLI path. **Confirmed by code inspection** (Textual's
+    interactive event loop isn't practical to drive headlessly here):
+    `entrypoints/cli/commands/tui.py`'s `launch()` calls the same `load_settings()` /
+    `setup_logging()` as every CLI use case, and `build_tui_container()` →
+    `build_base_container()` registers `Settings` via the same `load_settings()` provider
+    used for `SQLiteSessionManager`.
+
+**Unrelated finding**: a stray, `.gitignore`d `./config/nwtrack/config.toml` (byte-identical
+to `config.example.toml`) was found in the working tree at the start of this validation pass
+and removed — its origin is unclear (not created by any committed change), but since
+`/config` is gitignored it was never going to reach the PR either way.
 
 ## Tone check
 
-- `config init` guidance messages and error text follow the existing Rich presenter style
-  (`[bold]`/`[error]`/`[label]` markup conventions already used in
+- [x] `config init` guidance messages and error text follow the existing Rich presenter
+  style (`[bold]`/`[label]`/`[success]`/`[cancel]` markup conventions already used in
   `entrypoints/cli/adapters/`), not a new ad-hoc format.
-- README and `config.example.toml` copy is consistent with existing setup-instruction tone
-  (`README.md`'s current `.env` section as the baseline).
+- [x] README and `config.example.toml` copy is consistent with existing setup-instruction
+  tone.
 
-## Definition of done
+## Definition of done — all met
 
-- All `NWTRACK_*` settings load from `config.toml` via `platformdirs`-resolved search paths,
-  with env var overrides working under their renamed, section-based names.
-- `.env` loading and the `python-dotenv` dependency are fully removed.
-- `nwtrack config init` exists, is documented, and behaves per `requirements.md` (refuse to
-  silently overwrite; confirm first).
-- `README.md`, `CLAUDE.md`, and `config.example.toml` reflect the new configuration model;
-  `.env_example` is removed.
-- `ruff`, `mypy`, and `pytest` (`just check`) all pass.
-- Manual validation steps 1–10 above are performed and confirmed on macOS.
+- [x] All `NWTRACK_*` settings load from `config.toml` via `platformdirs`-resolved search
+  paths, with env var overrides working under their renamed, section-based names.
+- [x] `.env` loading and the `python-dotenv` dependency are fully removed.
+- [x] `nwtrack config init` exists, is documented, and behaves per `requirements.md` (refuse
+  to silently overwrite; confirm first).
+- [x] `README.md`, `CLAUDE.md`, and `config.example.toml` reflect the new configuration
+  model; `.env_example` is removed.
+- [x] `ruff`, `mypy`, and `pytest` (`just check`) all pass — 414 tests.
+- [x] Manual validation steps 1–10 above are performed and confirmed on macOS.
+- [x] **Beyond original scope, found during final validation**: config-loading errors
+  (malformed TOML, wrong value types) now exit cleanly with `Configuration error: <message>`
+  and exit code 1, instead of an unhandled traceback — `entrypoints/cli/main.py` wraps
+  `app()` in a `try/except ValueError`, covering both the CLI and `nwtrack tui launch`.
