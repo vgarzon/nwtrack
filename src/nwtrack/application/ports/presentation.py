@@ -14,6 +14,8 @@ from nwtrack.application.dto import (
     AccountStatusScope,
     AccountUpdateData,
     AggregationDimension,
+    ConfigFieldInfo,
+    ConfigPathInfo,
     HistoryAggregationResult,
     InstitutionListItem,
     MonthlyCategoryBalance,
@@ -1460,10 +1462,27 @@ class InitConfigPresenter(Protocol):
         """Prompt to confirm overwriting an existing config.toml."""
         ...
 
+    def confirm_shadow(self, target_path: Path, shadowed_path: Path) -> bool:
+        """Warn that writing target_path will shadow an existing lower-priority
+        config file (shadowed_path) and prompt to confirm proceeding."""
+        ...
+
     def show_success(self, path: Path) -> None:
         """Display success message after config.toml is written."""
         ...
 
     def show_cancelled(self) -> None:
         """Display message when the user declines to overwrite."""
+        ...
+
+
+class ShowConfigPresenter(Protocol):
+    """Presenter for the config show workflow."""
+
+    def display_search_paths(self, paths: list[ConfigPathInfo]) -> None:
+        """Display the config.toml search-path priority order and their status."""
+        ...
+
+    def display_settings(self, fields: list[ConfigFieldInfo]) -> None:
+        """Display resolved settings and where each value came from."""
         ...

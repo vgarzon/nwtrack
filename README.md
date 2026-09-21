@@ -38,7 +38,14 @@ nwtrack reads settings from `config.toml`, searched in this order (first found w
 
 Run `nwtrack config init` to write a default `config.toml` (with platform-appropriate
 default database and log paths already filled in) to the first location above. See
-[`config.example.toml`](./config.example.toml) for the full format.
+[`config.example.toml`](./config.example.toml) for the full format. If a lower-priority
+config.toml is already in effect, `config init` warns before writing a new file that would
+take priority over it.
+
+Run `nwtrack config show` to see which config.toml (if any) is active, the full search-path
+priority order with each location's status, and the fully-resolved effective settings —
+including whether each value came from the config file, an environment variable override, or
+a built-in default.
 
 If no `config.toml` is found, nwtrack falls back to built-in defaults and prints/logs the
 paths it searched.

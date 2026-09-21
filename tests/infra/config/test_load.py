@@ -4,8 +4,9 @@ from pathlib import Path
 
 import pytest
 
+from nwtrack.application.dto import ConfigValueSource
 from nwtrack.infra.config import load as load_module
-from nwtrack.infra.config.load import load_settings
+from nwtrack.infra.config.load import describe_settings, load_settings
 from nwtrack.infra.config.settings import Settings
 
 
@@ -160,3 +161,57 @@ def test_log_file_env_override(
     settings = load_settings()
 
     assert settings.log_file == str((tmp_path / "overridden.log").resolve())
+
+
+def test_describe_settings_marks_file_env_and_default_sources(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_file = _write_config(
+        tmp_path,
+        """
+        [database]
+        db_file_path = "from-toml.db"
+
+        [logging]
+        log_file = "from-toml.log"
+        """,
+    )
+    monkeypatch.setattr(load_module, "resolve_config_file", lambda: config_file)
+    monkeypatch.setattr(load_module, "config_search_paths", lambda: [config_file])
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("NWTRACK_LOGGING__LOG_FILE_LEVEL", "DEBUG")
+
+    result = describe_settings()
+
+    sources = {f.name: f.source for f in result.fields}
+    assert sources["db_file_path"] == ConfigValueSource.FILE
+    assert sources["log_file"] == ConfigValueSource.FILE
+    assert sources["log_file_level"] == ConfigValueSource.ENV
+    assert sources["log_rotation_mb"] == ConfigValueSource.DEFAULT
+    assert sources["log_backup_count"] == ConfigValueSource.DEFAULT
+
+    values = {f.name: f.value for f in result.fields}
+    assert values["log_file_level"] == "DEBUG"
+
+    assert len(result.search_paths) == 1
+    assert result.search_paths[0].path == config_file
+    assert result.search_paths[0].exists is True
+    assert result.search_paths[0].is_active is True
+
+
+def test_describe_settings_marks_no_path_active_when_none_found(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate_a = tmp_path / "a" / "config.toml"
+    candidate_b = tmp_path / "b" / "config.toml"
+    monkeypatch.setattr(load_module, "resolve_config_file", lambda: None)
+    monkeypatch.setattr(
+        load_module, "config_search_paths", lambda: [candidate_a, candidate_b]
+    )
+
+    result = describe_settings()
+
+    assert all(not p.exists for p in result.search_paths)
+    assert all(not p.is_active for p in result.search_paths)
+    sources = {f.name: f.source for f in result.fields}
+    assert all(s == ConfigValueSource.DEFAULT for s in sources.values())

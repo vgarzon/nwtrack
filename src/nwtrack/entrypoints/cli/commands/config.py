@@ -9,3 +9,11 @@ def init() -> None:
     import nwtrack.application.use_cases.init_config as uc
 
     uc.main()
+
+
+@config_app.command("show")
+def show() -> None:
+    """Show the active config.toml, search-path priority, and resolved settings."""
+    import nwtrack.application.use_cases.show_config as uc
+
+    uc.main()
