@@ -15,13 +15,34 @@ from nwtrack.infra.fileio.csv_io import csv_to_records
 from nwtrack.infra.persistence.schema import SchemaManager as SchemaManagerImpl
 
 
+@pytest.fixture(autouse=True)
+def _isolate_config_env(monkeypatch, tmp_path):
+    """Prevent load_settings() from touching real user config/data/log paths.
+
+    Tests that build a container without overriding Settings (e.g. CLI smoke
+    tests invoking the app callback) go through the real load_settings() path.
+    Without this, they would resolve platformdirs-based defaults and read or
+    write real files under the developer's home directory.
+    """
+    monkeypatch.setenv("NWTRACK_DATABASE__DB_FILE_PATH", ":memory:")
+    monkeypatch.setenv(
+        "NWTRACK_LOGGING__LOG_FILE", str(tmp_path / "nwtrack-test.log")
+    )
+
+
 @pytest.fixture(scope="module")
 def base_config() -> Settings:
     """Test configuration with in-memory database.
 
     Uses :memory: for fast test execution with SQLAlchemy.
     """
-    return Settings(db_file_path=":memory:")
+    return Settings(
+        db_file_path=":memory:",
+        log_file="./logs/nwtrack-test.log",
+        log_file_level="INFO",
+        log_rotation_mb=10,
+        log_backup_count=7,
+    )
 
 
 @pytest.fixture(scope="function")

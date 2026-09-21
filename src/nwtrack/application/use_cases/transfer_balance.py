@@ -214,8 +214,6 @@ def main() -> int:
     Returns:
         int: Exit code (0 for success, 1 for failure)
     """
-    from dotenv import load_dotenv
-
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.bootstrap.composition import build_base_container
     from nwtrack.bootstrap.container import Lifetime
@@ -225,9 +223,10 @@ def main() -> int:
     )
     from nwtrack.entrypoints.cli.ui.console import Console, ConsoleSettings
     from nwtrack.entrypoints.cli.ui.factory import ConsoleFactory
+    from nwtrack.infra.config.load import load_settings
 
-    load_dotenv()
-    setup_logging()
+    settings = load_settings()
+    setup_logging(settings)
 
     console_default = ConsoleSettings(record=False)
 

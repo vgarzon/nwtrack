@@ -76,8 +76,6 @@ class ImportTablesCSVCLI(ImportTablesCSVBase):
 
 
 def bootstrap() -> Container:
-    from dotenv import load_dotenv
-
     from nwtrack.bootstrap.composition import (
         build_base_container,
         build_data_services_container,
@@ -87,9 +85,10 @@ def bootstrap() -> Container:
         RichImportTablesCSVPresenter,
     )
     from nwtrack.entrypoints.cli.ui.console import build_console
+    from nwtrack.infra.config.load import load_settings
 
-    load_dotenv()
-    setup_logging()
+    settings = load_settings()
+    setup_logging(settings)
     container = build_data_services_container(build_base_container())
     container.register(
         ImportTablesCSVPresenter,  # type: ignore[type-abstract]

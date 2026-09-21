@@ -114,7 +114,6 @@ class BalanceCreator:
 
 def main() -> int:
     """Main entry point for balance creation script."""
-    from dotenv import load_dotenv
     from rich.console import Console
 
     from nwtrack.bootstrap.composition import build_base_container
@@ -124,9 +123,10 @@ def main() -> int:
         RichBalanceCreationPresenter,
     )
     from nwtrack.entrypoints.cli.ui.console import build_console
+    from nwtrack.infra.config.load import load_settings
 
-    load_dotenv()
-    setup_logging()
+    settings = load_settings()
+    setup_logging(settings)
 
     container = build_base_container()
     container.register(
