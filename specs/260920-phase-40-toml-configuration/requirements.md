@@ -28,6 +28,14 @@ environment variables).
 - Default `db_file_path` and `log_file` resolve via `platformdirs.user_data_dir("nwtrack")`
   and `platformdirs.user_log_dir("nwtrack")` respectively when not explicitly set in
   `config.toml` (e.g. `<user_data_dir>/nwtrack.db`, `<user_log_dir>/nwtrack.log`).
+- A relative `db_file_path` or `log_file` value written *inside* `config.toml` (e.g.
+  `db_file_path = "./data/sqlite/nwtrack.db"`, `log_file = "logs/nwtrack.log"`) resolves
+  relative to the current working directory at process start — matching today's `.env`
+  behavior exactly, regardless of which of the three locations `config.toml` itself was
+  found at. This is what lets a source checkout use a `./config/nwtrack/config.toml` with
+  repo-relative `db_file_path`/`log_file` entries and get the same on-disk layout as today.
+  It is *not* resolved relative to `config.toml`'s own directory. Absolute paths are used
+  as-is.
 - Shell environment variables continue to override the corresponding `config.toml` values.
   Env var names are renamed to reflect the new section structure using a `__` separator:
   - `NWTRACK_DATABASE__DB_FILE_PATH`
