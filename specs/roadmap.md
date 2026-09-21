@@ -495,8 +495,8 @@ Expected outcomes:
 
 ## Reprioritization Note
 
-Phases 34–37 are on hold. Phases 38–41 below take priority as the current active
-work. Phases 34–37 remain defined and will resume after 38–41 land, in their
+Phases 34–37 are on hold. Phases 38–42 below take priority as the current active
+work. Phases 34–37 remain defined and will resume after 38–42 land, in their
 original relative order, unless a future roadmap update says otherwise.
 
 ### [X] Phase 38: Single Account Balance History Report
@@ -566,7 +566,45 @@ Expected outcomes:
   of each stretching full-width and stacking one per row
 - `ruff`, `mypy`, and `pytest` pass (393 tests)
 
-### [ ] Phase 40: HTML Graphical Reports
+### [ ] Phase 40: TOML-Based Configuration Management
+
+Goal:
+Replace `.env`-based configuration with a `config.toml` file resolved from standard
+per-OS config locations via `platformdirs`, so configuration follows macOS/Linux
+conventions instead of a working-directory-relative dotfile.
+
+Background:
+`nwtrack` currently loads settings (`NWTRACK_DB_FILE_PATH`, `NWTRACK_LOG_FILE`,
+`NWTRACK_LOG_FILE_LEVEL`, `NWTRACK_LOG_ROTATION_MB`, `NWTRACK_LOG_BACKUP_COUNT`) from a
+`.env` file via `python-dotenv`, resolved relative to the working directory. This does not
+match standard OS config conventions and complicates the packaged-install story planned for
+macOS packaging. Moving to a `config.toml` resolved via `platformdirs` gives configuration a
+predictable, OS-conventional home ahead of packaging work, while shell environment variables
+continue to work as an override layer for users who want one.
+
+Expected outcomes:
+
+- All current `NWTRACK_*` settings (db file path, log file path, log level, log rotation
+  size, log backup count) are read from `config.toml` instead of `.env`
+- `config.toml` is resolved by searching, in priority order: `user_config_dir("nwtrack")`
+  (e.g. `~/Library/Application Support/nwtrack/` on macOS, `~/.config/nwtrack/` on Linux),
+  then `./config/nwtrack/`, using `platformdirs` (`user_config_dir`, `user_data_dir`,
+  `user_cache_dir`, `user_log_dir`) rather than hand-rolled path logic
+- Default db and log paths likewise resolve via `platformdirs` standard locations
+  (`user_data_dir`, `user_log_dir`) rather than working-directory-relative defaults
+- `.env` is no longer loaded; the `python-dotenv` dependency is removed
+- Shell environment variables (`NWTRACK_*`) still override the corresponding `config.toml`
+  values, preserving today's override semantics — this is a 1:1 replacement of `.env` as the
+  file-based source, not a new layered precedence model
+- If no `config.toml` is found at any searched location, `nwtrack` falls back to built-in
+  defaults and logs/prints guidance showing which paths were searched and how to create one
+- A new `nwtrack config init` command writes a default `config.toml` to the
+  highest-priority config location
+- `.env_example` and README configuration docs are replaced with a `config.toml` example
+  and updated instructions (clean cutover; no automated `.env` migration command)
+- `ruff`, `mypy`, and `pytest` pass
+
+### [ ] Phase 41: HTML Graphical Reports
 
 Goal:
 Add the ability to export the net worth history report and the new single-account balance
@@ -596,31 +634,25 @@ Expected outcomes:
   report commands; HTML export is strictly additive
 - `ruff`, `mypy`, and `pytest` pass
 
-### [ ] Phase 41: macOS Packaging And Deployment
+### [ ] Phase 42: macOS Packaging And Deployment
 
 Goal:
-Package `nwtrack` for local installation on macOS via a `uv`-based install path, with
-configuration and data files relocated to standard macOS application-support locations.
+Package `nwtrack` for local installation on macOS via a `uv`-based install path.
 
 Background:
-`nwtrack` currently runs from a source checkout via `uv run` with `.env`-based
-configuration and a working-directory-relative database path. A packaged macOS install
+`nwtrack` currently runs from a source checkout via `uv run`. A packaged macOS install
 should let a user install and run both the CLI and TUI entry points without manually
 managing a source checkout, while keeping the install mechanism Python/`uv`-native rather
-than introducing a compiled-binary toolchain. Code signing and notarization are explicitly
-out of scope for this phase.
+than introducing a compiled-binary toolchain. Standard-location config, data, and log path
+resolution is established in Phase 40; this phase covers packaging and install mechanics
+only. Code signing and notarization are explicitly out of scope for this phase.
 
 Expected outcomes:
 
 - An install path (e.g. `uv tool install`) installs `nwtrack` such that both the CLI
   (`nwtrack ...`) and TUI (`nwtrack tui launch`) entry points are available on `PATH`
-- Default configuration resolves to standard macOS locations when no `.env` is present:
-  database under `~/Library/Application Support/nwtrack/`, logs under
-  `~/Library/Logs/nwtrack/`
-- Existing `.env`-based configuration continues to work unchanged for users who set it
-  explicitly, preserving the current local-first configuration model
-- First-run behavior creates required application-support and log directories
-  automatically if missing
+- First-run behavior creates required config, data, and log directories automatically if
+  missing, consistent with the `platformdirs`-based resolution from Phase 40
 - Packaging and install steps are documented for a macOS user without requiring a source
   checkout beyond the documented install command
 - Code signing and notarization are explicitly out of scope for this phase; unsigned
