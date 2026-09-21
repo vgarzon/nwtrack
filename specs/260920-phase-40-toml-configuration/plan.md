@@ -172,3 +172,47 @@
      Rich traceback. Covers both the CLI and `nwtrack tui launch` (both go through `app()`).
      Added `tests/entrypoints/test_cli_main.py`. See `validation.md` manual step 8 for the
      finding that prompted this.
+
+## 10. Addendum: `config init` shadow protection + `config show` [x]
+
+See `requirements.md`'s Addendum section for the full rationale (post-merge review found
+`config init` could silently shadow an active lower-priority config with no warning).
+
+10.1. [x] `application/dto.py`: added `ConfigValueSource` (`StrEnum`: `env`/`file`/`default`),
+      `ConfigPathInfo` (path/exists/is_active), `ConfigFieldInfo` (name/value/source),
+      `ConfigShowResult` (search_paths + fields).
+10.2. [x] `infra/config/load.py`: refactored `load_settings()`'s body into a private
+      `_resolve() -> tuple[Settings, dict[str, ConfigValueSource]]` shared by `load_settings()`
+      (discards sources) and the new `describe_settings() -> ConfigShowResult` (keeps
+      sources, adds search-path existence/active flags via `config_search_paths()` +
+      `resolve_config_file()`).
+10.3. [x] `application/ports/presentation.py`: added `InitConfigPresenter.confirm_shadow(target_path,
+      shadowed_path) -> bool`, and a new `ShowConfigPresenter` protocol
+      (`display_search_paths`, `display_settings`).
+10.4. [x] `application/use_cases/init_config.py`: `InitConfig.run()` now branches — if the
+      target path already exists, unchanged overwrite-confirm flow; else, checks
+      `resolve_config_file()` and if it finds a different existing path, calls
+      `confirm_shadow()` before writing.
+10.5. [x] `application/use_cases/show_config.py` (new): `ShowConfig` use case calls
+      `describe_settings()` and hands the result to the presenter's two display methods.
+      `main()` follows the same no-DB-dependency pattern as `init_config.py`'s `main()`
+      (read-only diagnostic command, no `build_base_container()`/`setup_logging()`).
+10.6. [x] `entrypoints/cli/adapters/config_presenters.py`: `RichInitConfigPresenter.confirm_shadow`
+      (warns which file is in effect, then `Confirm.ask`); new `RichShowConfigPresenter`
+      rendering two Rich tables (`Config Search Paths`: Priority/Path/Exists/Active; and
+      `Effective Settings`: Setting/Value/Source — source values styled `config.toml` /
+      `[warning]env var[/warning]` / `[info]default[/info]`).
+10.7. [x] `entrypoints/cli/commands/config.py`: added `config show` command, mirroring the
+      `config init` wiring pattern.
+10.8. [x] Tests: `tests/use_cases/test_init_config.py` — added `confirm_shadow` to
+      `MockInitConfigPresenter`, fixed `resolve_config_file` mocking gap in existing tests
+      (they weren't mocking it before, silently depending on real environment/filesystem
+      state — a latent test-isolation bug the shadow-check change surfaced), added
+      decline/confirm shadow tests (5 tests total, was 3).
+      `tests/infra/config/test_load.py` — 2 new `describe_settings()` tests (source tracking,
+      no-active-path case; 17 tests total, was 15).
+      `tests/use_cases/test_show_config.py` (new) — 1 test.
+      `tests/entrypoints/test_cli_config.py` — added `config show` registration + wiring
+      assertions (4 tests total, was 2). 420 tests total (was 414).
+10.9. [x] Manual validation: repo-relative `./config/nwtrack/config.toml` scenario — see
+      `requirements.md` Addendum "Validation" for the full walkthrough.
