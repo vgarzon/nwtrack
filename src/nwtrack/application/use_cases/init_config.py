@@ -24,10 +24,14 @@ _CONFIG_FILE_NAME = "config.toml"
 
 _TEMPLATE = """\
 [database]
-db_file_path = "{db_file_path}"
+# db_file_path is optional. Left unset (or ""), it defaults to:
+# {db_file_path}
+# db_file_path = ""
 
 [logging]
-log_file = "{log_file}"
+# log_file is optional. Left unset (or ""), it defaults to:
+# {log_file}
+# log_file = ""
 log_file_level = "INFO"
 log_rotation_mb = 10
 log_backup_count = 7

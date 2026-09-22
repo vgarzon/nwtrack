@@ -80,6 +80,71 @@ def test_missing_config_falls_back_to_defaults(
     assert settings.log_backup_count == 7
 
 
+def test_empty_string_path_in_toml_falls_back_to_default(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_file = _write_config(
+        tmp_path,
+        """
+        [database]
+        db_file_path = ""
+
+        [logging]
+        log_file = ""
+        """,
+    )
+    monkeypatch.setattr(load_module, "resolve_config_file", lambda: config_file)
+    monkeypatch.setattr(
+        load_module, "default_db_file_path", lambda: tmp_path / "data" / "nwtrack.db"
+    )
+    monkeypatch.setattr(
+        load_module, "default_log_file_path", lambda: tmp_path / "logs" / "nwtrack.log"
+    )
+
+    settings = load_settings()
+
+    assert settings.db_file_path == str(tmp_path / "data" / "nwtrack.db")
+    assert settings.log_file == str(tmp_path / "logs" / "nwtrack.log")
+
+
+def test_empty_string_env_override_falls_back_to_default(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_file = _write_config(
+        tmp_path,
+        """
+        [database]
+        db_file_path = "from-toml.db"
+        """,
+    )
+    monkeypatch.setattr(load_module, "resolve_config_file", lambda: config_file)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("NWTRACK_DATABASE__DB_FILE_PATH", "")
+
+    settings = load_settings()
+
+    assert settings.db_file_path == str((tmp_path / "from-toml.db").resolve())
+
+
+def test_describe_settings_marks_empty_string_path_as_default_source(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_file = _write_config(
+        tmp_path,
+        """
+        [database]
+        db_file_path = ""
+        """,
+    )
+    monkeypatch.setattr(load_module, "resolve_config_file", lambda: config_file)
+    monkeypatch.setattr(load_module, "config_search_paths", lambda: [config_file])
+
+    result = describe_settings()
+
+    sources = {f.name: f.source for f in result.fields}
+    assert sources["db_file_path"] == ConfigValueSource.DEFAULT
+
+
 def test_malformed_toml_raises_clear_error(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

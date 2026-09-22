@@ -36,8 +36,9 @@ nwtrack reads settings from `config.toml`, searched in this order (first found w
 3. `./config/nwtrack/config.toml` (relative to the working directory — convenient for a
    source checkout)
 
-Run `nwtrack config init` to write a default `config.toml` (with platform-appropriate
-default database and log paths already filled in) to the first location above. See
+Run `nwtrack config init` to write a default `config.toml` to the first location above —
+`db_file_path` and `log_file` are left commented out (their platform-appropriate defaults
+are shown alongside, for reference), so a fresh install works without editing anything. See
 [`config.example.toml`](./config.example.toml) for the full format. If a lower-priority
 config.toml is already in effect, `config init` warns before writing a new file that would
 take priority over it.
@@ -48,7 +49,9 @@ including whether each value came from the config file, an environment variable 
 a built-in default.
 
 If no `config.toml` is found, nwtrack falls back to built-in defaults and prints/logs the
-paths it searched.
+paths it searched. `db_file_path` and `log_file` are both optional even when a `config.toml`
+is present — omitting the key, or setting it to `""`, falls back to the same
+`platformdirs`-derived default.
 
 Every setting can be overridden with a shell environment variable of the same name, using
 `NWTRACK_<SECTION>__<KEY>` (double underscore), e.g. `NWTRACK_DATABASE__DB_FILE_PATH` or

@@ -17,6 +17,11 @@
 #
 # Relative paths (e.g. "./data/sqlite/nwtrack.db") resolve against the current
 # working directory at process start, not against this file's location.
+#
+# db_file_path and log_file are both optional. Omitting a key (or setting it to
+# "") falls back to a platformdirs-derived default — see `nwtrack config show`
+# for the defaults on your system. The values below are a source-checkout
+# example, not required settings.
 
 [database]
 db_file_path = "./data/sqlite/nwtrack.db"

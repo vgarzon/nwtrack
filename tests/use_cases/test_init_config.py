@@ -79,6 +79,8 @@ def test_writes_default_config_when_none_exists(
     assert str(tmp_path / "data" / "nwtrack.db") in content
     assert "[logging]" in content
     assert str(tmp_path / "logs" / "nwtrack.log") in content
+    assert '# db_file_path = ""' in content
+    assert '# log_file = ""' in content
     assert "confirm_overwrite" not in presenter.calls
     assert "confirm_shadow" not in presenter.calls
 
