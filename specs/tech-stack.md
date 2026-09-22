@@ -32,10 +32,14 @@ This document defines the default implementation choices for `nwtrack` and the e
 - Configuration location: resolved via `platformdirs`, searched in order —
   `platformdirs.user_config_dir("nwtrack")`, `~/.config/nwtrack/`, then
   `./config/nwtrack/` (working-directory-relative, for running from a source checkout).
-- Database and log file defaults resolve via `platformdirs.user_data_dir`/`user_log_dir`
-  when not set explicitly in `config.toml`.
+- Database and log file defaults resolve via `platformdirs.user_data_dir`/`user_log_dir`.
+  `db_file_path`/`log_file` are optional in `config.toml` — an absent key or an explicit
+  `""` both fall back to this default, so a fresh install needs no editing. `nwtrack config
+  init`'s generated file leaves both commented out for this reason.
 - Every `config.toml` setting is overridable by a shell environment variable named
-  `NWTRACK_<SECTION>__<KEY>` (double underscore section delimiter).
+  `NWTRACK_<SECTION>__<KEY>` (double underscore section delimiter). For `db_file_path`/
+  `log_file`, an empty-string env var value is treated the same as unset (falls back rather
+  than overriding).
 - `.env`-based configuration is not used; there is no `python-dotenv` dependency.
 - `nwtrack config init` is the supported way to bootstrap a default `config.toml`.
 
