@@ -185,3 +185,55 @@ Two changes close this gap and add visibility into the resolved configuration:
   higher-priority file and `config show` then reflected the new file as active (with the
   lower-priority file still shown as existing but no longer active); an env var override was
   correctly flagged with source `env var`.
+
+## Addendum: fresh-install-friendly `db_file_path`/`log_file` defaults (2026-09-21)
+
+`config init` previously baked the resolved `platformdirs` default paths for `db_file_path`
+and `log_file` directly into the generated `config.toml` as active (uncommented) values. This
+worked, but meant a fresh install's config file carried machine-specific absolute paths from
+the moment it was created, and there was no way to express "use the default" other than
+copying it back out.
+
+### Scope
+
+- `db_file_path` and `log_file` are now optional in `config.toml`: an absent key **or** an
+  explicit empty string (`""`) both resolve to the same `platformdirs`-derived default
+  (`default_db_file_path()` / `default_log_file_path()`). This applies uniformly wherever
+  these two values are sourced — the TOML file and their env var overrides
+  (`NWTRACK_DATABASE__DB_FILE_PATH`, `NWTRACK_LOGGING__LOG_FILE`) — so an empty-string env var
+  falls back to the file/default rather than clobbering it with an empty path.
+- `nwtrack config init`'s generated `config.toml` now writes `db_file_path`/`log_file` as
+  commented-out lines, with the resolved default shown alongside as a comment for reference
+  (e.g. `# db_file_path = ""` preceded by a comment naming the actual default path on that
+  machine). The `[logging]` section's other three keys (`log_file_level`,
+  `log_rotation_mb`, `log_backup_count`) are unaffected — they already default cleanly on a
+  missing key and don't have a meaningful "empty string" case.
+- `config show`'s per-field source reporting reflects this: a config.toml with
+  `db_file_path = ""` (or the key absent) reports source `default`, matching the value
+  `load_settings()` actually produces.
+
+### Decisions
+
+- **Scoped to the two path fields only**, not generalized to all five settings — an empty
+  string has no natural meaning for `log_file_level` (a string enum-like value) or the two
+  integer fields, so extending the convention there would trade a real fresh-install pain
+  point for an inconsistency with no corresponding benefit.
+- **Comment out rather than omit the keys entirely** from the `config init` template — this
+  keeps the option discoverable and documents the resolved default inline, at the cost of a
+  couple of extra comment lines the user can freely delete.
+- **Landed as additional commits on the existing `phase-40-toml-config` branch/PR**, same
+  rationale as the prior addendum: this refines fresh-install ergonomics for work that has
+  not yet merged.
+
+### Validation
+
+- Unit tests: `tests/infra/config/test_load.py` (empty-string-in-file and
+  empty-string-env-override both fall back to default; `describe_settings()` reports
+  `default` source for an empty-string TOML value); `tests/use_cases/test_init_config.py`
+  (generated template contains the commented-out `db_file_path = ""` / `log_file = ""`
+  lines).
+- Manual: fresh `$HOME`, empty working directory, no `config.toml` anywhere — `config init`
+  wrote a config with both path keys commented out; `config show` immediately after showed
+  both `db_file_path` and `log_file` resolved to their `platformdirs` defaults with source
+  `default`, confirming no editing is required for the application to work end-to-end on a
+  first run.
