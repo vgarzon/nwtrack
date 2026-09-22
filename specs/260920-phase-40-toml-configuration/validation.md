@@ -146,3 +146,27 @@ platformdirs location):
    silent).
 5. [x] Set `NWTRACK_LOGGING__LOG_FILE_LEVEL=DEBUG` and ran `config show` again — the setting
    showed value `DEBUG` with source `env var`, all others unchanged.
+
+## Addendum: fresh-install-friendly `db_file_path`/`log_file` defaults (2026-09-21)
+
+Automated (`just check`, 423 tests):
+- [x] `test_empty_string_path_in_toml_falls_back_to_default` — `db_file_path = ""` /
+  `log_file = ""` in config.toml resolve to `platformdirs` defaults.
+- [x] `test_empty_string_env_override_falls_back_to_default` —
+  `NWTRACK_DATABASE__DB_FILE_PATH=""` does not override a set TOML value.
+- [x] `test_describe_settings_marks_empty_string_path_as_default_source` — `config show`
+  reports source `default`, not `config.toml`, for an empty-string path value.
+- [x] `test_writes_default_config_when_none_exists` updated to assert the generated template
+  contains commented-out `# db_file_path = ""` / `# log_file = ""` lines.
+- [x] `ruff`, `mypy` clean.
+
+Manual (isolated `$HOME`, empty working directory, no `config.toml` anywhere on the search
+path):
+1. [x] `nwtrack config init`, confirmed (no shadow conflict in a clean `$HOME`) — generated
+   file has `db_file_path`/`log_file` commented out, each preceded by a comment showing the
+   resolved default path for that machine; `log_file_level`/`log_rotation_mb`/
+   `log_backup_count` remain active, uncommented.
+2. [x] `nwtrack config show` immediately after — `db_file_path` and `log_file` both showed
+   their `platformdirs`-derived default values with source `default`; the newly-written
+   config.toml was listed as `exists: yes, active: yes`. Confirms a fresh install works
+   end-to-end without editing `config.toml`.

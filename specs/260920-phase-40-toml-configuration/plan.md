@@ -216,3 +216,23 @@ See `requirements.md`'s Addendum section for the full rationale (post-merge revi
       assertions (4 tests total, was 2). 420 tests total (was 414).
 10.9. [x] Manual validation: repo-relative `./config/nwtrack/config.toml` scenario — see
       `requirements.md` Addendum "Validation" for the full walkthrough.
+
+## 11. Fresh-install-friendly `db_file_path`/`log_file` defaults
+
+11.1. [x] `infra/config/load.py`: added `_path_is_set()` (key present and non-empty) and
+      `_path_value()` (empty-string-aware `_str_value()` wrapper) used only for
+      `db_file_path`/`log_file`; `_resolve()`'s source-tracking dict and env-var-override
+      block both switched to `_path_is_set()`-style empty-string checks for these two fields
+      only (the other three env var checks unchanged).
+11.2. [x] `application/use_cases/init_config.py`: `_TEMPLATE` rewritten so `db_file_path`/
+      `log_file` are commented out, each preceded by a comment naming the resolved default
+      path for that machine.
+11.3. [x] `config.example.toml`: added a note that both path keys are optional and the
+      checked-in values are a source-checkout example, not a requirement.
+11.4. [x] Tests: `tests/infra/config/test_load.py` — 3 new tests (empty string in TOML falls
+      back to default; empty-string env override falls back rather than overriding;
+      `describe_settings()` reports `default` source for an empty-string TOML value; 20 tests
+      total, was 17). `tests/use_cases/test_init_config.py` — asserts the generated template
+      contains the commented-out lines.
+11.5. [x] Docs: `README.md`, `CLAUDE.md`, and `requirements.md`/`validation.md` addenda
+      updated. 423 tests total (was 420).

@@ -278,14 +278,18 @@ The application uses:
 Settings are loaded from `config.toml`, resolved via `platformdirs` from one of (first found
 wins): `user_config_dir("nwtrack")` (e.g. `~/Library/Application Support/nwtrack/` on
 macOS), `~/.config/nwtrack/`, or `./config/nwtrack/` (relative to the working directory).
-See `config.example.toml` for the format, or run `nwtrack config init` to generate one with
-platform-appropriate defaults (`config init` warns before writing a file that would shadow
-an existing, lower-priority config.toml already in effect). Run `nwtrack config show` to see
+See `config.example.toml` for the format, or run `nwtrack config init` to generate one
+(`config init` warns before writing a file that would shadow an existing, lower-priority
+config.toml already in effect). `db_file_path`/`log_file` are written commented-out in the
+generated file — a fresh install needs no editing to work. Run `nwtrack config show` to see
 the active config file, the full search-path status, and the effective resolved settings
 with each value's source (file/env/default). If no `config.toml` is found, built-in defaults
 are used (database and log paths resolve via `platformdirs.user_data_dir`/`user_log_dir`)
-and guidance is printed/logged. Every setting can be overridden with a shell environment
-variable of the same name, using `NWTRACK_<SECTION>__<KEY>`:
+and guidance is printed/logged. `db_file_path` and `log_file` are optional in `config.toml`
+even when the file exists — an absent key, or an explicit `""`, falls back to the same
+platformdirs default (this also applies to their env var overrides: an empty-string env var
+value falls back rather than overriding). Every setting can be overridden with a shell
+environment variable of the same name, using `NWTRACK_<SECTION>__<KEY>`:
 - `[database] db_file_path` / `NWTRACK_DATABASE__DB_FILE_PATH`: Database file location
 - `[logging] log_file` / `NWTRACK_LOGGING__LOG_FILE`: Log file location
 - `[logging] log_file_level` / `NWTRACK_LOGGING__LOG_FILE_LEVEL`: Logging level (default: `INFO`)
