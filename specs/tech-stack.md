@@ -179,6 +179,9 @@ not published to PyPI. Releases are cut manually from `main`.
   4. Create a GitHub release from that tag (`gh release create vX.Y.Z` or the GitHub UI).
 - The pushed tag is what the documented install and upgrade commands (see `README.md`) point
   at via `@<tag>`.
+- `just tool-install` / `just tool-uninstall` install/uninstall the local checkout as the
+  real `uv` tool, for smoke-testing the packaged install path locally before tagging a
+  release.
 
 ## Documentation Rules
 
