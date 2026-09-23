@@ -71,6 +71,14 @@ report-networth:
 export-csv:
     uv run nwtrack export tables-csv
 
+# Install the local checkout as the packaged uv tool (for testing the packaged install path)
+tool-install:
+    uv tool install --reinstall-package nwtrack .
+
+# Uninstall the packaged uv tool
+tool-uninstall:
+    uv tool uninstall nwtrack
+
 # Clean up Python cache files
 clean:
     find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
