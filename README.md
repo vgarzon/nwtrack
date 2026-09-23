@@ -35,6 +35,10 @@ see [Releases](https://github.com/vgarzon/nwtrack/releases) for available tags. 
 `~/.local/bin` isn't already on your `PATH`, `uv` will tell you; run
 `uv tool update-shell` to fix it.
 
+`nwtrack` is not code-signed or notarized. This install path builds the package locally from
+source via `uv`, so macOS Gatekeeper (which only gates downloaded, quarantined app bundles
+and binaries) does not apply — there's no "unidentified developer" prompt to work around.
+
 ### Upgrading
 
 `nwtrack` is installed from a git ref (a tag or branch), not from PyPI, so `uv tool upgrade`

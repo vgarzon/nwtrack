@@ -107,10 +107,20 @@
 6.5. (Added during implementation) Documented the checkout-relative config fallback caveat
      found in Group 4.3 directly in the Configuration section.
 
-## 7. Validation Pass
+## 7. Validation Pass — DONE
 
 7.1. Run `ruff`, `mypy`, `pytest` — expect no code changes beyond any Group 4.4 fix, so this
-     should be a clean pass confirming nothing broke.
+     should be a clean pass confirming nothing broke. — DONE: `ruff` clean, `mypy` clean
+     (225 source files), `pytest` 423/423 passing. No Group 4.4 fix was needed (no code
+     changes this phase at all — LICENSE, `pyproject.toml` metadata, README, and
+     `specs/tech-stack.md` only).
 
 7.2. Manually walk through install → first-run → upgrade → uninstall end-to-end per
-     `validation.md`.
+     `validation.md`. — DONE (see `validation.md` Manual section and Progress Log)
+
+## Summary
+
+Phase 41 is complete. All four spec goals (install via `uv`, configuration verification,
+documentation, upgradeability) are addressed with zero source-code changes — this phase was
+packaging metadata, licensing, and documentation only, backed by empirical verification of
+the install/upgrade mechanics against a real `uv tool install` of this repo.

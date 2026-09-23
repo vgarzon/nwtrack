@@ -87,20 +87,44 @@ the primary dev checkout, so it exercises the same conditions a real user hits:
    sections verbatim, as if a new user, and confirm every command in them works exactly as
    written with no missing steps.
 
+### Roadmap & Constitution Updates — DONE
+
+- `specs/roadmap.md`: Phase 41 marked `[X]` complete.
+- `specs/tech-stack.md`: added a "Distribution" bullet to Current Platform Decisions
+  (`uv tool install` from git, no PyPI, no code signing/notarization).
+- `README.md`: added a Gatekeeper note to the Installation section, satisfying the roadmap's
+  "unsigned Gatekeeper behavior is documented" expected outcome — `uv tool install` builds
+  locally via `uv`, so there's no downloaded/quarantined app bundle for Gatekeeper to gate.
+
+## Final Validation Pass (all task groups complete)
+
+- `ruff check src/ tests/` → all checks passed.
+- `mypy src/ tests/` → success, no issues found in 225 source files.
+- `pytest` → 423 passed.
+- `uv sync` and `uv build` succeed with the updated `pyproject.toml` metadata (verified in
+  Group 1).
+- Full README install → run → first-run bootstrap → upgrade → uninstall walkthrough
+  re-confirmed against the local `git+file://` stand-in URL (verified in Groups 4–6); no
+  discrepancies between documented commands and actual behavior.
+- All test artifacts (installed tools, test git tags, one temporary test commit) were removed
+  after verification — `git log`/`git tag` carry no trace of test-only state.
+
 ## Definition of Done
 
-- `uv tool install git+<repo-url>@<tag>` is a proven, working install path for a clean
-  environment with no source checkout.
-- The upgrade command documented in the README is the one actually verified to work in
-  Group 5 of `plan.md` — not an assumed/unverified `uv tool upgrade` if that turns out not to
-  apply cleanly to a git-pinned install.
-- First-run directory bootstrap is confirmed working (or fixed) under a packaged install,
-  not just under `uv run` from a checkout.
-- `pyproject.toml` carries packaging-ready metadata (version, classifiers, project URLs) and
-  a defined semantic-versioning convention.
-- A documented release process (tag → GitHub release) exists and was exercised at least once
-  to produce the tag used in manual validation.
-- README's Installation/Upgrading/Uninstalling sections are accurate end-to-end, verified by
-  literally following them, and the existing source-checkout (`uv sync`) instructions remain
-  intact alongside the new packaged-install path.
-- `ruff`, `mypy`, `pytest` pass.
+- [x] `uv tool install git+<repo-url>@<tag>` is a proven, working install path for a clean
+      environment with no source checkout.
+- [x] The upgrade command documented in the README is the one actually verified to work in
+      Group 5 of `plan.md` — documents both the branch-ref case (`uv tool upgrade` works) and
+      the tag-pinned case (`--reinstall-package` required), rather than assuming one command
+      covers both.
+- [x] First-run directory bootstrap is confirmed working under a packaged install, not just
+      under `uv run` from a checkout. No code fix was needed.
+- [x] `pyproject.toml` carries packaging-ready metadata (version, license, classifiers,
+      project URLs) and a defined semantic-versioning convention.
+- [x] A documented release process (tag → GitHub release) exists in `specs/tech-stack.md`.
+      It was exercised against local test tags during Group 5 verification (not yet against a
+      real pushed GitHub tag — that happens at actual release time, after this PR merges).
+- [x] README's Installation/Upgrading/Uninstalling sections are accurate end-to-end, verified
+      by literally following them, and the existing source-checkout (`uv sync`) instructions
+      remain intact alongside the new packaged-install path.
+- [x] `ruff`, `mypy`, `pytest` pass.
