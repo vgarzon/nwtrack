@@ -86,20 +86,26 @@
 5.3. Document whichever command is verified to work as the supported "Upgrading" instructions
      — do not document an unverified command. — DONE (documented in Group 6, README)
 
-## 6. README Documentation
+## 6. README Documentation — DONE
 
 6.1. Add a new "Installation" subsection (or restructure the existing one) covering the
      packaged install path: prerequisites (`uv`), the `uv tool install git+...@<tag>`
-     command, and a first-run pointer to the existing Configuration section.
+     command, and a first-run pointer to the existing Configuration section. — DONE
 
 6.2. Keep the existing source-checkout (`uv sync` / `uv run nwtrack`) instructions, framed as
-     the option for development or running from a checkout.
+     the option for development or running from a checkout. — DONE, kept as "Running from a
+     source checkout (development)"
 
-6.3. Add an "Upgrading" subsection documenting the verified command from Group 5.
+6.3. Add an "Upgrading" subsection documenting the verified command from Group 5. — DONE,
+     documents both the `@main`/branch case (where `uv tool upgrade` does help) and the
+     tag-pinned case (where `--reinstall-package` is required)
 
 6.4. Add an "Uninstalling" subsection (`uv tool uninstall nwtrack`), including a note that
      config/data/log files under `platformdirs` locations are left in place and must be
-     removed manually if desired.
+     removed manually if desired. — DONE
+
+6.5. (Added during implementation) Documented the checkout-relative config fallback caveat
+     found in Group 4.3 directly in the Configuration section.
 
 ## 7. Validation Pass
 

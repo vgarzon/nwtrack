@@ -16,7 +16,46 @@ A personal net worth tracking application with a CLI and TUI interface.
 
 ## Installation
 
-Requires Python 3.12+ and [uv](https://github.com/astral-sh/uv) for dependency management.
+Requires Python 3.12+ and [uv](https://github.com/astral-sh/uv).
+
+### Install the CLI/TUI tool (recommended)
+
+Installs `nwtrack` as a standalone command on your `PATH`, without a source checkout:
+
+```bash
+uv tool install git+https://github.com/vgarzon/nwtrack@main
+
+# Run it
+nwtrack --help
+nwtrack tui launch
+```
+
+Replace `@main` with a specific release tag (e.g. `@v0.1.0`) to pin to a released version —
+see [Releases](https://github.com/vgarzon/nwtrack/releases) for available tags. If
+`~/.local/bin` isn't already on your `PATH`, `uv` will tell you; run
+`uv tool update-shell` to fix it.
+
+### Upgrading
+
+`nwtrack` is installed from a git ref (a tag or branch), not from PyPI, so `uv tool upgrade`
+only helps when you installed against a moving ref like `@main` — it re-fetches the latest
+commit on that branch. If you installed against a fixed release tag (the recommended, stable
+way to install), tags don't move, so re-run the install command with the new tag instead:
+
+```bash
+uv tool install --reinstall-package nwtrack git+https://github.com/vgarzon/nwtrack@v0.2.0
+```
+
+### Uninstalling
+
+```bash
+uv tool uninstall nwtrack
+```
+
+This removes the installed command only. Your config, database, and log files (see
+Configuration below) are left in place — remove them manually if you want a full cleanup.
+
+### Running from a source checkout (development)
 
 ```bash
 # Install dependencies
@@ -35,6 +74,11 @@ nwtrack reads settings from `config.toml`, searched in this order (first found w
 2. `~/.config/nwtrack/config.toml`
 3. `./config/nwtrack/config.toml` (relative to the working directory — convenient for a
    source checkout)
+
+If you installed `nwtrack` via `uv tool install`, only the first two locations normally
+apply — the third only kicks in if you happen to run `nwtrack` from inside a directory that
+itself has a `./config/nwtrack/config.toml` (e.g. a source checkout), since it's resolved
+relative to your current working directory, not to where `nwtrack` is installed.
 
 Run `nwtrack config init` to write a default `config.toml` to the first location above —
 `db_file_path` and `log_file` are left commented out (their platform-appropriate defaults
