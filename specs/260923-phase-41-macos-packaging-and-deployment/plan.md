@@ -1,16 +1,16 @@
 # Phase 41: macOS Packaging And Deployment — Plan
 
-## 1. Repo & Packaging Metadata
+## 1. Repo & Packaging Metadata — DONE
 
-1.1. Add an MIT `LICENSE` file at the repo root (repo is confirmed public).
+1.1. Add an MIT `LICENSE` file at the repo root (repo is confirmed public). — DONE
 
 1.2. Review `pyproject.toml` `[project]` metadata for packaging-readiness: `version`,
      `description`, `readme`, `requires-python`, add `license = "MIT"`, `classifiers`, and
      `[project.urls]` (Repository/Homepage) pointing at `https://github.com/vgarzon/nwtrack`.
-     No dependency changes.
+     No dependency changes. — DONE
 
 1.3. Confirm `[project.scripts]` still only needs the single `nwtrack` entry (CLI +
-     `nwtrack tui launch`); no new script entry required.
+     `nwtrack tui launch`); no new script entry required. — DONE (confirmed unchanged)
 
 ## 2. Versioning Scheme
 

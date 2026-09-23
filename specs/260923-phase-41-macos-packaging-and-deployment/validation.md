@@ -1,5 +1,17 @@
 # Phase 41: macOS Packaging And Deployment — Validation
 
+## Progress Log
+
+### Group 1: Repo & Packaging Metadata — DONE
+
+- Added `LICENSE` (MIT).
+- Added `license = "MIT"`, `license-files`, `classifiers`, and `[project.urls]` to
+  `pyproject.toml`; no dependency changes.
+- `uv sync` succeeds with the updated metadata.
+- `uv build` succeeds, producing a valid sdist and wheel (`nwtrack-0.1.0.tar.gz`,
+  `nwtrack-0.1.0-py3-none-any.whl`) in a scratch output directory.
+- `just check` (ruff, mypy, pytest — 423 tests) passes with no changes needed.
+
 ## Automated
 
 - `ruff` passes with no new findings.
