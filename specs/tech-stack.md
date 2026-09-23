@@ -90,6 +90,8 @@ These are intentional product constraints, not open-ended abstractions:
 - Reporting scope spans CLI commands and TUI screens; new report surfaces should target both.
 - The TUI (Textual) is the target interface. No web or other interface is planned.
 - Monthly snapshots are the permanent core model.
+- Distribution is via `uv tool install` from the project's git repository — not published to
+  PyPI. No code signing or notarization; see Release Process below.
 
 CSV portability expectations:
 
