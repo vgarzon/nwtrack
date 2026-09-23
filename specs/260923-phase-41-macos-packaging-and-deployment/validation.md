@@ -96,6 +96,17 @@ the primary dev checkout, so it exercises the same conditions a real user hits:
   "unsigned Gatekeeper behavior is documented" expected outcome — `uv tool install` builds
   locally via `uv`, so there's no downloaded/quarantined app bundle for Gatekeeper to gate.
 
+### Post-Review Addition: `just` Recipes for Local Tool Testing — DONE
+
+- Added `just tool-install` (`uv tool install --reinstall-package nwtrack .`) and
+  `just tool-uninstall` (`uv tool uninstall nwtrack`) to the `justfile`, for smoke-testing the
+  packaged install path against the local checkout before tagging a release — not an
+  end-user-facing install path (that remains `uv tool install git+...@<tag>` per the README),
+  so documented in `specs/tech-stack.md` Release Process rather than the README.
+- Verified both recipes work: `just tool-install` installs `nwtrack` from the local checkout
+  and `just tool-uninstall` removes it.
+- `just check` (ruff, mypy, pytest — 423 tests) passes with no changes needed.
+
 ## Final Validation Pass (all task groups complete)
 
 - `ruff check src/ tests/` → all checks passed.
