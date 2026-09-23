@@ -604,7 +604,7 @@ Expected outcomes:
   and updated instructions (clean cutover; no automated `.env` migration command)
 - `ruff`, `mypy`, and `pytest` pass
 
-### [ ] Phase 41: macOS Packaging And Deployment
+### [X] Phase 41: macOS Packaging And Deployment
 
 Goal:
 Package `nwtrack` for local installation on macOS via a `uv`-based install path.
