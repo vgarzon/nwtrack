@@ -19,6 +19,24 @@
   GitHub release steps.
 - No code changes; documentation only.
 
+### Groups 4 & 5: Install & Upgrade Path Verification — DONE
+
+- Installed `nwtrack` as a `uv tool` from a local `git+file://` URL (stand-in for
+  `git+https://github.com/vgarzon/nwtrack`) into an isolated environment; confirmed `nwtrack`
+  resolves on `PATH`, `--help` lists all sub-apps, and `nwtrack tui launch` renders correctly.
+- Confirmed first-run directory bootstrap works from a scratch `$HOME`/`cwd` outside the
+  source checkout (`config init`, `config show`, `accounts list` all correctly
+  create/report `platformdirs`-resolved paths). No code changes needed.
+- Found and documented a real but expected nuance: running the installed tool from inside
+  the dev checkout directory picks up `./config/nwtrack/config.toml` (the intentional
+  Phase-40 working-directory-relative fallback) — not a bug, but worth a README callout.
+- Confirmed `uv tool upgrade nwtrack` is a no-op for a tag-pinned install (tags are
+  immutable refs). Confirmed `uv tool install --reinstall-package nwtrack git+<repo-url>@<new-tag>`
+  correctly moves the install to a new tag/version. This is the command documented in the
+  README's "Upgrading" section.
+- All test installs, test tags (`v0.0.1-test`, `v0.1.1-test`), and one temporary test commit
+  were fully cleaned up afterward — `git log` and `git tag` show no trace.
+
 ## Automated
 
 - `ruff` passes with no new findings.
