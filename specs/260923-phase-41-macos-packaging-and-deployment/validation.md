@@ -37,6 +37,16 @@
 - All test installs, test tags (`v0.0.1-test`, `v0.1.1-test`), and one temporary test commit
   were fully cleaned up afterward — `git log` and `git tag` show no trace.
 
+### Group 6: README Documentation — DONE
+
+- Rewrote README "Installation" section: packaged install (recommended), Upgrading,
+  Uninstalling, and "Running from a source checkout (development)" subsections.
+- Added a Configuration-section note about the checkout-relative config fallback (found
+  during Group 4 verification).
+- Re-ran the README's install/run/uninstall steps verbatim against the local `git+file://`
+  stand-in URL — all commands work exactly as written.
+- `just check` (ruff, mypy, pytest — 423 tests) passes with no changes needed.
+
 ## Automated
 
 - `ruff` passes with no new findings.
