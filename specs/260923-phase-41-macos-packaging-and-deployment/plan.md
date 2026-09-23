@@ -36,34 +36,55 @@
      Process" section (maintainer/engineering standard, not end-user README content per
      Documentation Rules)
 
-## 4. Install Path Verification
+## 4. Install Path Verification — DONE
 
 4.1. In a throwaway environment (e.g. a temp dir or a scratch venv, not the dev checkout),
      run `uv tool install git+<repo-url>@<test-tag-or-branch>` and confirm `nwtrack` resolves
-     on `PATH`.
+     on `PATH`. — DONE, tested against `git+file:///Users/victor/repos/nwtrack@<branch>`
+     (a local git URL stands in for `https://github.com/...` without pushing anything
+     upstream before this PR lands — same `uv tool install git+...` mechanism)
 
-4.2. Confirm `nwtrack --help` and `nwtrack tui launch` both work from the installed tool.
+4.2. Confirm `nwtrack --help` and `nwtrack tui launch` both work from the installed tool. —
+     DONE: `--help` lists all expected sub-apps; `tui launch` renders the home screen
+     (Balances/Reports/Accounts/Admin) correctly
 
 4.3. Confirm first-run directory bootstrap: with no existing config/data/log directories,
      run a command that touches the database (e.g. `nwtrack accounts list`) and confirm the
      `platformdirs`-resolved data/log directories are created automatically, matching Phase
-     40 behavior under `uv run`.
+     40 behavior under `uv run`. — DONE, confirmed from a scratch `$HOME` and scratch `cwd`
+     outside the source checkout: `config init`, `config show`, and `accounts list` all
+     correctly create/report `~/Library/Application Support/nwtrack/` (db + config) and
+     `~/Library/Logs/nwtrack/` (log) with no manual setup. **Caveat found**: running the
+     installed tool from *inside* the source checkout directory picks up the checkout's
+     `./config/nwtrack/config.toml` working-directory-relative fallback (by design, per
+     Phase 40 — see `specs/tech-stack.md` Configuration Model) instead of the scratch
+     `$HOME` paths. This is expected/correct behavior, not a bug, but worth calling out in
+     README so users understand the checkout-relative fallback only applies when running
+     from within a checkout.
 
 4.4. If any first-run bootstrap gap is found under the packaged-install context specifically
      (vs. `uv run`), fix it as a minimal, targeted change — do not re-architect config
-     resolution.
+     resolution. — DONE: no gap found; no code fix needed.
 
-## 5. Upgrade Path Verification
+## 5. Upgrade Path Verification — DONE
 
 5.1. With a tool installed at an older tag, test `uv tool upgrade nwtrack` against a newer
      tag/ref and observe actual behavior (does it re-resolve the git ref, or is it a no-op
-     because the source is pinned?).
+     because the source is pinned?). — DONE: confirmed `uv tool upgrade nwtrack` is a
+     **no-op** ("Nothing to upgrade") when installed against a fixed tag, since the tag ref
+     itself doesn't move. (It *does* re-resolve automatically when installed against a
+     branch ref instead of a tag — but the documented install command uses tags, so this
+     doesn't apply to the supported path.)
 
 5.2. If `uv tool upgrade` does not correctly move the install forward, determine and test the
      correct command (e.g. `uv tool install --reinstall-package nwtrack git+<repo-url>@<new-tag>`).
+     — DONE: confirmed `uv tool install --reinstall-package nwtrack git+<repo-url>@<new-tag>`
+     correctly upgrades a tag-pinned install to a new tag/version (verified with two test
+     tags in the local repo; test tags and the temporary test commit were removed after
+     verification — no trace left in history).
 
 5.3. Document whichever command is verified to work as the supported "Upgrading" instructions
-     — do not document an unverified command.
+     — do not document an unverified command. — DONE (documented in Group 6, README)
 
 ## 6. README Documentation
 
