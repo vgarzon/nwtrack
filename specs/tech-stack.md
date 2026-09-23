@@ -161,6 +161,23 @@ The default workflow for new work is:
 9. Promote validated `devel` changes to `main` through separate pull requests.
 10. Update the constitution or feature spec if the design changed during implementation.
 
+## Release Process
+
+`nwtrack` is distributed as an installable `uv` tool (`uv tool install git+<repo-url>@<tag>`),
+not published to PyPI. Releases are cut manually from `main`.
+
+- **Versioning**: Semantic versioning (`MAJOR.MINOR.PATCH`), tracked in `pyproject.toml`'s
+  `version` field and bumped manually — no automated bump tooling.
+- **Tagging convention**: `vX.Y.Z` git tags, created on `main` after a `devel` → `main`
+  promotion.
+- **Release steps**:
+  1. Bump `version` in `pyproject.toml` on `main`.
+  2. Commit the version bump.
+  3. `git tag vX.Y.Z` and `git push --tags`.
+  4. Create a GitHub release from that tag (`gh release create vX.Y.Z` or the GitHub UI).
+- The pushed tag is what the documented install and upgrade commands (see `README.md`) point
+  at via `@<tag>`.
+
 ## Documentation Rules
 
 - Long-lived direction belongs in the constitution documents.

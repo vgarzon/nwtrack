@@ -12,6 +12,13 @@
   `nwtrack-0.1.0-py3-none-any.whl`) in a scratch output directory.
 - `just check` (ruff, mypy, pytest — 423 tests) passes with no changes needed.
 
+### Groups 2 & 3: Versioning Scheme & Release Process — DONE
+
+- Added a "Release Process" section to `specs/tech-stack.md` (after Development Workflow):
+  semantic versioning convention, `vX.Y.Z` tagging, and the bump → commit → tag → push →
+  GitHub release steps.
+- No code changes; documentation only.
+
 ## Automated
 
 - `ruff` passes with no new findings.

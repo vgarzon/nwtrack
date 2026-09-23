@@ -12,25 +12,29 @@
 1.3. Confirm `[project.scripts]` still only needs the single `nwtrack` entry (CLI +
      `nwtrack tui launch`); no new script entry required. — DONE (confirmed unchanged)
 
-## 2. Versioning Scheme
+## 2. Versioning Scheme — DONE
 
-2.1. Adopt semantic versioning (`MAJOR.MINOR.PATCH`) starting from the current `0.1.0`.
+2.1. Adopt semantic versioning (`MAJOR.MINOR.PATCH`) starting from the current `0.1.0`. — DONE
+     (documented in `specs/tech-stack.md` Release Process section; `pyproject.toml` already
+     at `0.1.0` from Group 1)
 
 2.2. Document the version-bump step as part of the release process (see Group 3) — manual
-     edit to `pyproject.toml`'s `version` field, no automated bump tooling.
+     edit to `pyproject.toml`'s `version` field, no automated bump tooling. — DONE
 
-## 3. Release Process Documentation
+## 3. Release Process Documentation — DONE
 
-3.1. Define and document the tagging convention: `vX.Y.Z` git tags on `main`.
+3.1. Define and document the tagging convention: `vX.Y.Z` git tags on `main`. — DONE
 
 3.2. Document the release steps: bump `version` in `pyproject.toml` → commit → `git tag
      vX.Y.Z` → `git push --tags` → create a GitHub release from that tag (via `gh release
-     create` or the GitHub UI).
+     create` or the GitHub UI). — DONE
 
 3.3. Write this as a short "Releasing" section — placement TBD during implementation
      (README vs. `specs/tech-stack.md` Development Workflow vs. a `CONTRIBUTING.md`); default
      to README unless it clutters the user-facing install docs, in which case put it in
-     `specs/tech-stack.md`.
+     `specs/tech-stack.md`. — DONE: placed in `specs/tech-stack.md` as a new "Release
+     Process" section (maintainer/engineering standard, not end-user README content per
+     Documentation Rules)
 
 ## 4. Install Path Verification
 
