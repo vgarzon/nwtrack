@@ -604,7 +604,32 @@ Expected outcomes:
   and updated instructions (clean cutover; no automated `.env` migration command)
 - `ruff`, `mypy`, and `pytest` pass
 
-### [ ] Phase 41: HTML Graphical Reports
+### [ ] Phase 41: macOS Packaging And Deployment
+
+Goal:
+Package `nwtrack` for local installation on macOS via a `uv`-based install path.
+
+Background:
+`nwtrack` currently runs from a source checkout via `uv run`. A packaged macOS install
+should let a user install and run both the CLI and TUI entry points without manually
+managing a source checkout, while keeping the install mechanism Python/`uv`-native rather
+than introducing a compiled-binary toolchain. Standard-location config, data, and log path
+resolution is established in Phase 40; this phase covers packaging and install mechanics
+only. Code signing and notarization are explicitly out of scope for this phase.
+
+Expected outcomes:
+
+- An install path (e.g. `uv tool install`) installs `nwtrack` such that both the CLI
+  (`nwtrack ...`) and TUI (`nwtrack tui launch`) entry points are available on `PATH`
+- First-run behavior creates required config, data, and log directories automatically if
+  missing, consistent with the `platformdirs`-based resolution from Phase 40
+- Packaging and install steps are documented for a macOS user without requiring a source
+  checkout beyond the documented install command
+- Code signing and notarization are explicitly out of scope for this phase; unsigned
+  Gatekeeper behavior is documented
+- `ruff`, `mypy`, and `pytest` pass
+
+### [ ] Phase 42: HTML Graphical Reports
 
 Goal:
 Add the ability to export the net worth history report and the new single-account balance
@@ -632,31 +657,6 @@ Expected outcomes:
   the output file path to the user
 - Output-format and file-path handling preserve current default behavior for existing
   report commands; HTML export is strictly additive
-- `ruff`, `mypy`, and `pytest` pass
-
-### [ ] Phase 42: macOS Packaging And Deployment
-
-Goal:
-Package `nwtrack` for local installation on macOS via a `uv`-based install path.
-
-Background:
-`nwtrack` currently runs from a source checkout via `uv run`. A packaged macOS install
-should let a user install and run both the CLI and TUI entry points without manually
-managing a source checkout, while keeping the install mechanism Python/`uv`-native rather
-than introducing a compiled-binary toolchain. Standard-location config, data, and log path
-resolution is established in Phase 40; this phase covers packaging and install mechanics
-only. Code signing and notarization are explicitly out of scope for this phase.
-
-Expected outcomes:
-
-- An install path (e.g. `uv tool install`) installs `nwtrack` such that both the CLI
-  (`nwtrack ...`) and TUI (`nwtrack tui launch`) entry points are available on `PATH`
-- First-run behavior creates required config, data, and log directories automatically if
-  missing, consistent with the `platformdirs`-based resolution from Phase 40
-- Packaging and install steps are documented for a macOS user without requiring a source
-  checkout beyond the documented install command
-- Code signing and notarization are explicitly out of scope for this phase; unsigned
-  Gatekeeper behavior is documented
 - `ruff`, `mypy`, and `pytest` pass
 
 ## Planning Rules
