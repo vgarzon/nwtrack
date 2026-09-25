@@ -152,16 +152,18 @@ Additional implementation standards:
 
 The default workflow for new work is:
 
-1. Start from `devel` and create a feature branch from `devel`.
-2. Write or update a spec in `specs/`.
-3. Define phase validation, including feature-specific tests, manual checks, and quality gates.
-4. Confirm domain rules and user-facing behavior.
-5. Implement the smallest viable slice.
-6. Add or update tests.
-7. Run lint, type checks, and tests.
-8. Merge feature pull requests into `devel`.
-9. Promote validated `devel` changes to `main` through separate pull requests.
-10. Update the constitution or feature spec if the design changed during implementation.
+1. Pick an item from `specs/backlog.md` (promote it to `ready` first if it's still an `idea`).
+2. Start from `devel` and create a feature branch from `devel`, named `feature/<slug>`.
+3. Write or update a spec in `specs/YYMMDD-<slug>/`.
+4. Define spec validation, including feature-specific tests, manual checks, and quality gates.
+5. Confirm domain rules and user-facing behavior.
+6. Implement the smallest viable slice.
+7. Add or update tests.
+8. Run lint, type checks, and tests.
+9. Merge feature pull requests into `devel`.
+10. Promote validated `devel` changes to `main` through separate pull requests.
+11. Update the constitution or feature spec if the design changed during implementation.
+12. Remove the item from `specs/backlog.md`/delete its `specs/backlog/<slug>.md` file, and add a one-line entry to `CHANGELOG.md`.
 
 ## Release Process
 

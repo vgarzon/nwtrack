@@ -202,12 +202,9 @@ The `nwtrack tui` entry point becomes `nwtrack`.
 
 ## Roadmap Integration
 
-The TUI transition should be reflected in `specs/roadmap.md` as one or more phases once the
-screen design (Step 3) is complete and the scope is concrete enough to phase. The current open
-phases (24–26) are independent of the TUI work and should proceed on their existing schedule.
-
-A suggested insertion point is after Phase 26, once the reporting model is stable, since the
-TUI will need to render the full reporting surface to be considered complete.
+Historical note: this section originally described how the TUI transition would be phased into
+`specs/roadmap.md`. The TUI transition is complete (see `CHANGELOG.md`), and `specs/roadmap.md`
+has been replaced by `specs/backlog.md` — new TUI-related work is now tracked as backlog items.
 
 ## Design Decisions
 

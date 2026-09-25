@@ -121,7 +121,7 @@ Rules for maintaining it:
 
 1. `specs/mission.md` defines long-lived product intent and decision priorities.
 2. `specs/tech-stack.md` defines the default implementation constraints and engineering standards.
-3. `specs/roadmap.md` defines the current best known implementation order in small phases.
+3. `specs/backlog.md` and `specs/backlog/` define the current backlog of proposed features and ideas. There is no required build order; priority is whatever the backlog says right now, and reordering is just moving a row.
 4. Feature specs should be added under `specs/` as the project evolves.
 5. When product direction changes, update the constitution in the same change set as the code or feature spec that triggered the change.
 6. The constitution supersedes [stakeholder-input.md](/Users/48678/ext-repos/nwtrack/specs/stakeholder-input.md) as the source of truth for ongoing project direction.

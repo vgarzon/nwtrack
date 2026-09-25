@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-nwtrack is a personal net worth tracking application with CLI and TUI interfaces. Data is stored in a local SQLite database, and the application allows users to track assets and liabilities across different accounts, categories, and currencies over time. The Textual TUI is the target interface and now covers all primary workflows; the Typer CLI remains fully functional during the transition (see `specs/roadmap.md`).
+nwtrack is a personal net worth tracking application with CLI and TUI interfaces. Data is stored in a local SQLite database, and the application allows users to track assets and liabilities across different accounts, categories, and currencies over time. The Textual TUI is the target interface and now covers all primary workflows; the Typer CLI remains fully functional during the transition (see `CHANGELOG.md`). Upcoming work is tracked as a flat backlog rather than a phased roadmap — see `specs/backlog.md`.
 
 ## Architecture
 
