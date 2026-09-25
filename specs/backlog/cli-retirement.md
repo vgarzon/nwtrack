@@ -8,8 +8,8 @@ status: idea
 Retire the CLI entry points once the TUI covers the full workflow scope and has been validated
 against real usage.
 
-`tui-scope.md` defines CLI retirement as the final step: the `nwtrack tui` entry point becomes
-`nwtrack`. This is optional — the CLI and TUI may coexist indefinitely if the dual-mode workflow
+`specs/archive/tui-scope.md` defines CLI retirement as the final step: the `nwtrack tui` entry
+point becomes `nwtrack`. This is optional — the CLI and TUI may coexist indefinitely if the dual-mode workflow
 proves useful in practice. Should not be picked up until the TUI has been validated against real
 data over time.
 
