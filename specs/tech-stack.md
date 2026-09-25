@@ -163,7 +163,7 @@ The default workflow for new work is:
 9. Merge feature pull requests into `devel`.
 10. Promote validated `devel` changes to `main` through separate pull requests.
 11. Update the constitution or feature spec if the design changed during implementation.
-12. Remove the item from `specs/backlog.md`/delete its `specs/backlog/<slug>.md` file, and add a one-line entry to `CHANGELOG.md`.
+12. Remove the item from `specs/backlog.md`/delete its `specs/backlog/<slug>.md` file, move `specs/YYMMDD-<slug>/` to `specs/archive/<slug>/`, and add a one-line entry to `CHANGELOG.md`.
 
 ## Release Process
 
