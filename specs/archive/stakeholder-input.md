@@ -350,6 +350,12 @@ Export all database tables to CSV files in a target directory.
 
 ## Configuration
 
+**Outdated — superseded by Phase 40.** The sections below describe the original `.env`-based
+configuration. As of Phase 40, configuration is loaded from `config.toml` (resolved via
+`platformdirs`), not `.env`; the `NWTRACK_*` environment variables now override `config.toml`
+values rather than being the primary source. See `specs/tech-stack.md` — Configuration Model
+for the current behavior.
+
 ### Environment Variables
 
 | Variable                | Default                   | Description                             |
@@ -365,6 +371,10 @@ Configuration is loaded from a `.env` file at startup (see `.env_example`).
 ---
 
 ## CLI Command Reference
+
+**Outdated.** This reflects an early command surface only — it predates institutions, tags,
+admin commands, the `tui`/`config` command groups, `import`, and several `reports` subcommands
+that exist today. Run `nwtrack --help` for the current, authoritative command tree.
 
 ```
 nwtrack
@@ -403,7 +413,7 @@ nwtrack
 
 The following are explicitly out of scope for the current version but noted for awareness:
 
-- Automatic currency conversion in net worth reports (exchange rates are stored but multi-currency aggregation is not currently implemented in reports)
-- Inactive account balances in reports (currently only active accounts appear in balance views)
+- Automatic currency conversion in net worth reports (exchange rates are stored but multi-currency aggregation is not currently implemented in reports) — still true; tracked as `specs/backlog/single-currency-conversion-reporting.md`
+- ~~Inactive account balances in reports (currently only active accounts appear in balance views)~~ — **outdated**: reports have included all accounts regardless of status since Phase 20/32
 - Archiving or soft-deleting balance history
 - Command-line flags for non-interactive balance updates (all balance operations are interactive)

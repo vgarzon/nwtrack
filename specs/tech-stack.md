@@ -191,4 +191,4 @@ not published to PyPI. Releases are cut manually from `main`.
 - Feature-specific behavior belongs in feature specs under `specs/`.
 - Feature specs should describe validation in enough detail that phase completion can be checked from the spec itself.
 - README content should stay user-oriented.
-- Legacy notes in [stakeholder-input.md](/Users/48678/ext-repos/nwtrack/specs/stakeholder-input.md) are superseded by this constitution.
+- Legacy notes in [stakeholder-input.md](/Users/48678/ext-repos/nwtrack/specs/archive/stakeholder-input.md) are superseded by this constitution.
