@@ -35,5 +35,6 @@ item must still respect. Completed work is logged in `CHANGELOG.md`, not here.
 3. Use the `feature-spec` skill to turn a `ready` item into a full spec directory
    (`specs/YYMMDD-<slug>/`) and a feature branch. The skill flips the item's status to
    `in-progress`.
-4. On completion, remove the row and delete the item file, and add a one-line entry to
+4. On completion, remove the row and delete the item file, move the feature's spec directory
+   from `specs/YYMMDD-<slug>/` to `specs/archive/<slug>/`, and add a one-line entry to
    `CHANGELOG.md` instead — this file only tracks what's still open.

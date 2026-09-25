@@ -84,7 +84,8 @@ table.
 
 This is out of scope for this skill's own workflow, but remind the user: once the feature spec's
 `validation.md` definition of done is met and merged, remove the item's row from
-`specs/backlog.md`, delete `specs/backlog/<slug>.md`, and add a one-line entry to `CHANGELOG.md`.
+`specs/backlog.md`, delete `specs/backlog/<slug>.md`, move `specs/YYMMDD-<slug>/` to
+`specs/archive/<slug>/`, and add a one-line entry to `CHANGELOG.md`.
 
 ## Constraints
 
