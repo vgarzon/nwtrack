@@ -37,7 +37,7 @@
      threshold no-warning, over-threshold increase, over-threshold decrease, exact-boundary
      (`pct_change == threshold_pct` → no warning, since the rule is strictly `>`).
 
-## 3. CLI (`BalanceUpdater`)
+## 3. CLI (`BalanceUpdater`) — DONE (deb3ffb)
 
 3.1. Extend `BalanceUpdatePresenter` protocol
      (`application/ports/presentation.py`) with `confirm_large_change(account_name: str,
