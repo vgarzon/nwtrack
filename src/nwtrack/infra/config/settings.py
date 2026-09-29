@@ -12,3 +12,4 @@ class Settings:
     log_file_level: str
     log_rotation_mb: int
     log_backup_count: int
+    change_warning_threshold_pct: float = 20.0
