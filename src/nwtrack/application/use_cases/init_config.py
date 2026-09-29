@@ -35,6 +35,12 @@ _TEMPLATE = """\
 log_file_level = "INFO"
 log_rotation_mb = 10
 log_backup_count = 7
+
+[balances]
+# Percent change (in either direction) from an account's prior balance that
+# triggers a confirmation prompt before saving a balance update. Set to 0 to
+# disable the check.
+change_warning_threshold_pct = 20.0
 """
 
 

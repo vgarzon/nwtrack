@@ -26,6 +26,7 @@ def _clear_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
         "NWTRACK_LOGGING__LOG_FILE_LEVEL",
         "NWTRACK_LOGGING__LOG_ROTATION_MB",
         "NWTRACK_LOGGING__LOG_BACKUP_COUNT",
+        "NWTRACK_BALANCES__CHANGE_WARNING_THRESHOLD_PCT",
     ):
         monkeypatch.delenv(key, raising=False)
 
@@ -44,6 +45,9 @@ def test_loads_values_from_well_formed_config_toml(
         log_file_level = "DEBUG"
         log_rotation_mb = 5
         log_backup_count = 3
+
+        [balances]
+        change_warning_threshold_pct = 15.0
         """,
     )
     monkeypatch.setattr(load_module, "resolve_config_file", lambda: config_file)
@@ -57,6 +61,7 @@ def test_loads_values_from_well_formed_config_toml(
         log_file_level="DEBUG",
         log_rotation_mb=5,
         log_backup_count=3,
+        change_warning_threshold_pct=15.0,
     )
 
 
@@ -78,6 +83,7 @@ def test_missing_config_falls_back_to_defaults(
     assert settings.log_file_level == "INFO"
     assert settings.log_rotation_mb == 10
     assert settings.log_backup_count == 7
+    assert settings.change_warning_threshold_pct == 20.0
 
 
 def test_empty_string_path_in_toml_falls_back_to_default(
@@ -171,6 +177,22 @@ def test_wrong_type_raises_clear_error(
         load_settings()
 
 
+def test_wrong_type_threshold_raises_clear_error(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_file = _write_config(
+        tmp_path,
+        """
+        [balances]
+        change_warning_threshold_pct = "twenty"
+        """,
+    )
+    monkeypatch.setattr(load_module, "resolve_config_file", lambda: config_file)
+
+    with pytest.raises(ValueError, match="change_warning_threshold_pct"):
+        load_settings()
+
+
 @pytest.mark.parametrize(
     ("env_var", "env_value", "field", "expected"),
     [
@@ -178,6 +200,12 @@ def test_wrong_type_raises_clear_error(
         ("NWTRACK_LOGGING__LOG_FILE_LEVEL", "WARNING", "log_file_level", "WARNING"),
         ("NWTRACK_LOGGING__LOG_ROTATION_MB", "42", "log_rotation_mb", 42),
         ("NWTRACK_LOGGING__LOG_BACKUP_COUNT", "2", "log_backup_count", 2),
+        (
+            "NWTRACK_BALANCES__CHANGE_WARNING_THRESHOLD_PCT",
+            "35.5",
+            "change_warning_threshold_pct",
+            35.5,
+        ),
     ],
 )
 def test_env_var_overrides_toml_value(
@@ -254,9 +282,11 @@ def test_describe_settings_marks_file_env_and_default_sources(
     assert sources["log_file_level"] == ConfigValueSource.ENV
     assert sources["log_rotation_mb"] == ConfigValueSource.DEFAULT
     assert sources["log_backup_count"] == ConfigValueSource.DEFAULT
+    assert sources["change_warning_threshold_pct"] == ConfigValueSource.DEFAULT
 
     values = {f.name: f.value for f in result.fields}
     assert values["log_file_level"] == "DEBUG"
+    assert values["change_warning_threshold_pct"] == "20.0"
 
     assert len(result.search_paths) == 1
     assert result.search_paths[0].path == config_file
@@ -280,3 +310,23 @@ def test_describe_settings_marks_no_path_active_when_none_found(
     assert all(not p.is_active for p in result.search_paths)
     sources = {f.name: f.source for f in result.fields}
     assert all(s == ConfigValueSource.DEFAULT for s in sources.values())
+
+
+def test_describe_settings_marks_threshold_file_source(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    config_file = _write_config(
+        tmp_path,
+        """
+        [balances]
+        change_warning_threshold_pct = 50
+        """,
+    )
+    monkeypatch.setattr(load_module, "resolve_config_file", lambda: config_file)
+
+    result = describe_settings()
+
+    sources = {f.name: f.source for f in result.fields}
+    values = {f.name: f.value for f in result.fields}
+    assert sources["change_warning_threshold_pct"] == ConfigValueSource.FILE
+    assert values["change_warning_threshold_pct"] == "50.0"

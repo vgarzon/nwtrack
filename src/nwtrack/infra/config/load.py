@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_LOG_FILE_LEVEL = "INFO"
 _DEFAULT_LOG_ROTATION_MB = 10
 _DEFAULT_LOG_BACKUP_COUNT = 7
+_DEFAULT_CHANGE_WARNING_THRESHOLD_PCT = 20.0
 
 _ENV_VARS: dict[str, str] = {
     "db_file_path": "NWTRACK_DATABASE__DB_FILE_PATH",
@@ -34,6 +35,7 @@ _ENV_VARS: dict[str, str] = {
     "log_file_level": "NWTRACK_LOGGING__LOG_FILE_LEVEL",
     "log_rotation_mb": "NWTRACK_LOGGING__LOG_ROTATION_MB",
     "log_backup_count": "NWTRACK_LOGGING__LOG_BACKUP_COUNT",
+    "change_warning_threshold_pct": "NWTRACK_BALANCES__CHANGE_WARNING_THRESHOLD_PCT",
 }
 
 
@@ -61,6 +63,19 @@ def _int_value(section: dict[str, Any], key: str, default: int, table_name: str)
             f"Config value '[{table_name}].{key}' must be an integer, got {value!r}."
         )
     return value
+
+
+def _float_value(
+    section: dict[str, Any], key: str, default: float, table_name: str
+) -> float:
+    if key not in section:
+        return default
+    value = section[key]
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(
+            f"Config value '[{table_name}].{key}' must be a number, got {value!r}."
+        )
+    return float(value)
 
 
 def _str_value(section: dict[str, Any], key: str, default: str, table_name: str) -> str:
@@ -92,11 +107,13 @@ def _resolve() -> tuple[Settings, dict[str, ConfigValueSource]]:
 
     database: dict[str, Any] = {}
     logging_section: dict[str, Any] = {}
+    balances_section: dict[str, Any] = {}
 
     if config_file is not None:
         data = _load_toml(config_file)
         database = data.get("database", {})
         logging_section = data.get("logging", {})
+        balances_section = data.get("balances", {})
     else:
         searched = ", ".join(str(p) for p in config_search_paths())
         logger.warning(
@@ -131,6 +148,11 @@ def _resolve() -> tuple[Settings, dict[str, ConfigValueSource]]:
             if "log_backup_count" in logging_section
             else ConfigValueSource.DEFAULT
         ),
+        "change_warning_threshold_pct": (
+            ConfigValueSource.FILE
+            if "change_warning_threshold_pct" in balances_section
+            else ConfigValueSource.DEFAULT
+        ),
     }
 
     db_file_path = _path_value(
@@ -147,6 +169,12 @@ def _resolve() -> tuple[Settings, dict[str, ConfigValueSource]]:
     )
     log_backup_count = _int_value(
         logging_section, "log_backup_count", _DEFAULT_LOG_BACKUP_COUNT, "logging"
+    )
+    change_warning_threshold_pct = _float_value(
+        balances_section,
+        "change_warning_threshold_pct",
+        _DEFAULT_CHANGE_WARNING_THRESHOLD_PCT,
+        "balances",
     )
 
     for field_name, env_var in _ENV_VARS.items():
@@ -167,6 +195,10 @@ def _resolve() -> tuple[Settings, dict[str, ConfigValueSource]]:
         log_rotation_mb = int(os.environ["NWTRACK_LOGGING__LOG_ROTATION_MB"])
     if "NWTRACK_LOGGING__LOG_BACKUP_COUNT" in os.environ:
         log_backup_count = int(os.environ["NWTRACK_LOGGING__LOG_BACKUP_COUNT"])
+    if "NWTRACK_BALANCES__CHANGE_WARNING_THRESHOLD_PCT" in os.environ:
+        change_warning_threshold_pct = float(
+            os.environ["NWTRACK_BALANCES__CHANGE_WARNING_THRESHOLD_PCT"]
+        )
 
     if db_file_path != ":memory:":
         db_file_path = _resolve_path(db_file_path)
@@ -178,6 +210,7 @@ def _resolve() -> tuple[Settings, dict[str, ConfigValueSource]]:
         log_file_level=log_file_level,
         log_rotation_mb=log_rotation_mb,
         log_backup_count=log_backup_count,
+        change_warning_threshold_pct=change_warning_threshold_pct,
     )
     return settings, sources
 
@@ -232,6 +265,11 @@ def describe_settings() -> ConfigShowResult:
             name="log_backup_count",
             value=str(settings.log_backup_count),
             source=sources["log_backup_count"],
+        ),
+        ConfigFieldInfo(
+            name="change_warning_threshold_pct",
+            value=str(settings.change_warning_threshold_pct),
+            source=sources["change_warning_threshold_pct"],
         ),
     ]
     return ConfigShowResult(search_paths=search_paths, fields=fields)
