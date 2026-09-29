@@ -8,9 +8,11 @@ import pytest
 from rich.console import Console
 from tests.helpers import init_db_tables_w_entities
 
+from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.application.use_cases.update_balances import BalanceUpdater
 from nwtrack.bootstrap.container import Container
+from nwtrack.domain.models import Balance
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.cli.adapters.balance_presenters import (
     RichBalanceUpdatePresenter,
@@ -98,7 +100,7 @@ def test_update_balances_run(
     init_db_tables_w_entities(configured_container, sample_entities)
 
     # Patch the prompt classes
-    from rich.prompt import IntPrompt, Prompt
+    from rich.prompt import Confirm, IntPrompt, Prompt
 
     monkeypatch.setattr(
         Prompt,
@@ -110,6 +112,9 @@ def test_update_balances_run(
         "ask",
         mock_int_prompt,
     )
+    # Both updates below are large percent changes from their prior balances,
+    # so always confirm past the new threshold-warning prompt.
+    monkeypatch.setattr(Confirm, "ask", lambda *args, **kwargs: True)
 
     from nwtrack.application.dto import OperationResult
 
@@ -126,6 +131,179 @@ def test_update_balances_run(
     assert re.search(r"800.+500.+300", captured_output)
 
     # TODO: Test other interactions
+
+
+class FakeBalanceUpdatePresenter:
+    """Minimal BalanceUpdatePresenter fake for threshold-warning tests."""
+
+    def __init__(
+        self,
+        account_ids: list[int | None],
+        amounts: list[int],
+        confirm_responses: list[bool] | None = None,
+    ) -> None:
+        self._account_ids = iter(account_ids)
+        self._amounts = iter(amounts)
+        self._confirm_responses = iter(confirm_responses or [])
+        self.confirm_calls: list[tuple[str, int, int, float, bool]] = []
+
+    def show_header(self) -> None:
+        pass
+
+    def display_active_accounts(self, accounts) -> None:
+        pass
+
+    def select_month(self, balance_counts):
+        return balance_counts[0][0]
+
+    def show_invalid_month_error(self) -> None:
+        pass
+
+    def show_no_balances_warning(self, month) -> None:
+        pass
+
+    def show_no_month_selected(self) -> None:
+        pass
+
+    def display_balances(self, balances, month) -> None:
+        pass
+
+    def prompt_for_account_id(self) -> int | None:
+        return next(self._account_ids)
+
+    def show_invalid_account_id(self) -> None:
+        pass
+
+    def show_current_balance_and_prompt(
+        self, account_name, account_id, month, current_balance
+    ) -> int:
+        return next(self._amounts)
+
+    def display_final_summary(self, balances, networth, month) -> None:
+        pass
+
+    def display_networth(self, nw, month) -> None:
+        pass
+
+    def confirm_large_change(
+        self, account_name, current_balance, new_amount, pct_change, increased
+    ) -> bool:
+        self.confirm_calls.append(
+            (account_name, current_balance, new_amount, pct_change, increased)
+        )
+        return next(self._confirm_responses)
+
+
+def _get_account_1_balance(container: Container) -> Balance | None:
+    return container.resolve(FetchService).get_balance_for_account_id(
+        Month(2025, 11), 1
+    )
+
+
+def test_below_threshold_change_never_prompts_confirmation(
+    configured_container: Container, sample_entities: dict[str, list]
+) -> None:
+    """Account 1's 2025-11 balance is 200; 210 is a ~5% change (below 20%)."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    presenter = FakeBalanceUpdatePresenter(account_ids=[1, None], amounts=[210])
+    updater = BalanceUpdater(
+        uow=lambda: configured_container.resolve(UnitOfWork),
+        fetcher=configured_container.resolve(FetchService),
+        presenter=presenter,
+    )
+
+    result = updater.run()
+
+    assert result.success
+    assert presenter.confirm_calls == []
+
+    balance = _get_account_1_balance(configured_container)
+    assert balance is not None
+    assert balance.amount == 210
+
+
+def test_above_threshold_change_confirmed_writes_new_amount(
+    configured_container: Container, sample_entities: dict[str, list]
+) -> None:
+    """Account 1's 2025-11 balance is 200; 300 is a 50% change (above 20%)."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    presenter = FakeBalanceUpdatePresenter(
+        account_ids=[1, None], amounts=[300], confirm_responses=[True]
+    )
+    updater = BalanceUpdater(
+        uow=lambda: configured_container.resolve(UnitOfWork),
+        fetcher=configured_container.resolve(FetchService),
+        presenter=presenter,
+    )
+
+    result = updater.run()
+
+    assert result.success
+    assert len(presenter.confirm_calls) == 1
+    account_name, current_balance, new_amount, pct_change, increased = (
+        presenter.confirm_calls[0]
+    )
+    assert current_balance == 200
+    assert new_amount == 300
+    assert pct_change == pytest.approx(50.0)
+    assert increased is True
+
+    balance = _get_account_1_balance(configured_container)
+    assert balance is not None
+    assert balance.amount == 300
+
+
+def test_above_threshold_change_declined_reprompts_and_does_not_write(
+    configured_container: Container, sample_entities: dict[str, list]
+) -> None:
+    """Declining the first (large) amount re-prompts; the second amount is small
+    enough to proceed without a further confirmation."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    presenter = FakeBalanceUpdatePresenter(
+        account_ids=[1, None],
+        amounts=[300, 205],
+        confirm_responses=[False],
+    )
+    updater = BalanceUpdater(
+        uow=lambda: configured_container.resolve(UnitOfWork),
+        fetcher=configured_container.resolve(FetchService),
+        presenter=presenter,
+    )
+
+    result = updater.run()
+
+    assert result.success
+    assert len(presenter.confirm_calls) == 1
+
+    balance = _get_account_1_balance(configured_container)
+    assert balance is not None
+    assert balance.amount == 205
+
+
+def test_disabled_threshold_never_prompts_even_for_large_change(
+    configured_container: Container, sample_entities: dict[str, list]
+) -> None:
+    init_db_tables_w_entities(configured_container, sample_entities)
+
+    presenter = FakeBalanceUpdatePresenter(account_ids=[1, None], amounts=[10_000])
+    updater = BalanceUpdater(
+        uow=lambda: configured_container.resolve(UnitOfWork),
+        fetcher=configured_container.resolve(FetchService),
+        presenter=presenter,
+        change_warning_threshold_pct=0,
+    )
+
+    result = updater.run()
+
+    assert result.success
+    assert presenter.confirm_calls == []
+
+    balance = _get_account_1_balance(configured_container)
+    assert balance is not None
+    assert balance.amount == 10_000
 
 
 def test_balance_account_relationship_loads(

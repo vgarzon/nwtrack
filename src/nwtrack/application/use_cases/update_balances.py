@@ -8,6 +8,7 @@ from collections.abc import Callable
 from nwtrack.application.dto import OperationResult
 from nwtrack.application.ports.presentation import BalanceUpdatePresenter
 from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.application.services.balance_change_check import evaluate_balance_change
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import NetWorth
 from nwtrack.domain.value_objects import Month
@@ -23,10 +24,12 @@ class BalanceUpdater:
         uow: Callable[[], UnitOfWork],
         fetcher: FetchService,
         presenter: BalanceUpdatePresenter,
+        change_warning_threshold_pct: float = 20.0,
     ) -> None:
         self._uow = uow
         self._fetcher = fetcher
         self._presenter = presenter
+        self._change_warning_threshold_pct = change_warning_threshold_pct
 
     def run(self) -> OperationResult[None]:
         """Run the balance update workflow.
@@ -134,10 +137,26 @@ class BalanceUpdater:
         balance = self._fetcher.get_balance_for_account_id(month, account_id)
         current_balance = balance.amount if balance else 0
 
-        # Prompt for new amount
-        new_amount = self._presenter.show_current_balance_and_prompt(
-            account.name, account_id, month, current_balance
-        )
+        while True:
+            # Prompt for new amount
+            new_amount = self._presenter.show_current_balance_and_prompt(
+                account.name, account_id, month, current_balance
+            )
+
+            warning = evaluate_balance_change(
+                current_balance, new_amount, self._change_warning_threshold_pct
+            )
+            if warning is None:
+                break
+            if self._presenter.confirm_large_change(
+                account.name,
+                current_balance,
+                new_amount,
+                warning.pct_change,
+                warning.increased,
+            ):
+                break
+            # Declined: re-prompt for an amount instead of writing
 
         # Update in database
         with self._uow() as uow:
@@ -195,6 +214,7 @@ def main() -> int:
             uow=lambda: c.resolve(UnitOfWork),
             fetcher=c.resolve(FetchService),
             presenter=c.resolve(RichBalanceUpdatePresenter),
+            change_warning_threshold_pct=settings.change_warning_threshold_pct,
         ),
     )
 
