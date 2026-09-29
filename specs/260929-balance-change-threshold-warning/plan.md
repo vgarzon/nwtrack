@@ -1,6 +1,6 @@
 # Balance Change Threshold Warning — Plan
 
-## 1. Config
+## 1. Config — DONE (03bd65e)
 
 1.1. Add `_float_value` typed getter in `src/nwtrack/infra/config/load.py`, following the
      existing `_int_value` pattern.

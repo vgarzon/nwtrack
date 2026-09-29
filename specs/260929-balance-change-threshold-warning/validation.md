@@ -20,11 +20,13 @@
   - TUI `BalanceUpdateScreen` (or wherever the check lands per plan §4):
     - Same four cases as above, adapted to the modal confirm flow (`ConfirmModal` shown/not
       shown; decline reopens `BalanceEditModal` with the prior amount; accept writes).
-  - Config (`tests/infra/config/`):
+  - Config (`tests/infra/config/`) — DONE (03bd65e):
     - Default `change_warning_threshold_pct` is `20.0` when unset in `config.toml`.
     - `[balances] change_warning_threshold_pct = <n>` in `config.toml` is honored.
     - `NWTRACK_BALANCES__CHANGE_WARNING_THRESHOLD_PCT` env var overrides the file value.
     - `nwtrack config show` lists the field with correct value and source (file/env/default).
+    - Wrong-type value in `[balances]` raises a clear `ValueError`.
+    - `just check` (lint + typecheck + full test suite, 426 passed) is clean after this group.
 
 ## Manual
 
