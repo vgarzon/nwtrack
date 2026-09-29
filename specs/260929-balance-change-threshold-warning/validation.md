@@ -61,6 +61,25 @@
   below), and asks "Do you want to proceed?" — consistent with existing confirm-prompt tone
   elsewhere in the CLI/TUI (e.g. deletion/transfer confirmations).
 
+## Final Validation Record (all task groups complete)
+
+- `just check` (lint + typecheck + full test suite): **442 passed**, clean lint, clean mypy.
+- `nwtrack config show` smoke-tested against a real (non-test) settings resolution: confirms
+  `change_warning_threshold_pct` appears with value `20.0` and source `default` when unset.
+- `RichBalanceUpdatePresenter.confirm_large_change` smoke-tested directly: renders "The value you
+  entered for Checking is 50.0% above the current balance (200 → 300)." matching the spec's
+  required copy.
+- Automated coverage (config, shared helper, CLI use case, TUI screen) exercises the same
+  confirm/decline/skip/disabled code paths that manual steps 1-7 above describe, via mocked
+  presenters (CLI) and Textual's `pilot` driver (TUI) rather than a live interactive terminal
+  session. A live interactive walkthrough of `nwtrack balances update` and `nwtrack tui launch`
+  against a real database (manual steps 1-7) is still recommended before merging to `devel`, since
+  this session did not drive either interface through a live terminal.
+- `config.example.toml` and `init_config.py`'s generated template both include the new
+  `[balances] change_warning_threshold_pct` setting.
+- No changes were made to `create_balance.py`, `roll_balances_forward.py`, or
+  `transfer_balance.py` — confirmed by `git diff` scope across all four commits.
+
 ## Definition of Done
 
 - All automated tests above pass; `just check` is clean.
