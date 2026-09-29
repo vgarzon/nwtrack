@@ -295,6 +295,7 @@ environment variable of the same name, using `NWTRACK_<SECTION>__<KEY>`:
 - `[logging] log_file_level` / `NWTRACK_LOGGING__LOG_FILE_LEVEL`: Logging level (default: `INFO`)
 - `[logging] log_rotation_mb` / `NWTRACK_LOGGING__LOG_ROTATION_MB`: Log file rotation size in MB (default: `10`)
 - `[logging] log_backup_count` / `NWTRACK_LOGGING__LOG_BACKUP_COUNT`: Number of backup log files to keep (default: `7`)
+- `[balances] change_warning_threshold_pct` / `NWTRACK_BALANCES__CHANGE_WARNING_THRESHOLD_PCT`: Percent change from an account's prior balance that triggers a confirmation prompt before saving a balance update, in `nwtrack balances update` and the TUI balance edit flow (default: `20.0`; `0` disables the check)
 
 Relative paths in `config.toml` resolve against the current working directory at process
 start, not against `config.toml`'s own location.
