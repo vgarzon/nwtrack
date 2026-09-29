@@ -19,7 +19,9 @@
     - Above-threshold amount + presenter declines: no write occurs; the use case re-prompts for
       an amount within the same account/loop iteration (does not abort the whole update run).
     - Threshold `0` via config: `confirm_large_change` never called even for large changes.
-  - TUI `BalanceUpdateScreen` (or wherever the check lands per plan §4):
+  - TUI `BalanceUpdateScreen`
+    (`tests/entrypoints/tui/test_balance_operations.py::TestBalanceUpdateThresholdWarning`) —
+    DONE (a2c38c8):
     - Same four cases as above, adapted to the modal confirm flow (`ConfirmModal` shown/not
       shown; decline reopens `BalanceEditModal` with the prior amount; accept writes).
   - Config (`tests/infra/config/`) — DONE (03bd65e):

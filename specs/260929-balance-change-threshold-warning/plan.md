@@ -55,10 +55,13 @@
      returns a warning, call `presenter.confirm_large_change(...)`; on decline, loop back to
      re-prompt for an amount (do not proceed to the write, do not abort the whole update loop).
 
-## 4. TUI (`BalanceUpdateScreen` / `BalanceEditModal`)
+## 4. TUI (`BalanceUpdateScreen` / `BalanceEditModal`) — DONE (a2c38c8)
 
-4.1. Resolve the threshold value into `BalanceUpdateScreen` via `bootstrap/tui_composition.py`
-     (same pattern as its existing `FetchService`/`UnitOfWork` access).
+4.1. Threaded `change_warning_threshold_pct: float = 20.0` as an explicit constructor parameter
+     through `NWTrackApp` → `HomeScreen` → `BalanceUpdateScreen`, matching the existing
+     `fetcher`/`uow` threading pattern (not container resolution — `BalanceUpdateScreen` bypasses
+     DI entirely per its own docstring). The `tui launch` CLI command passes
+     `settings.change_warning_threshold_pct`.
 
 4.2. After `BalanceEditModal` returns a non-`None` amount (`balance_update.py`, currently around
      line 149-164) and before `uow().balances.update(...)`, call
@@ -68,20 +71,20 @@
      copy from `requirements.md` §7; on `False`, reopen `BalanceEditModal` with the same
      `current_amount` instead of writing.
 
-## 5. Tests
+## 5. Tests — DONE (written alongside groups 1-4, not as a separate pass)
 
-5.1. Unit tests for `evaluate_balance_change` (see 2.3).
+5.1. Unit tests for `evaluate_balance_change` — done in group 2 (3a5a4ed).
 
 5.2. `BalanceUpdater`/CLI use case tests: confirm-declined path re-prompts and does not write;
      confirm-accepted path writes; below-threshold path never calls the confirm presenter
-     method; disabled-threshold (`0`) never calls it.
+     method; disabled-threshold (`0`) never calls it — done in group 3 (deb3ffb).
 
-5.3. TUI screen tests (`tests/entrypoints/tui/`): equivalent coverage for the modal-confirm path,
-     using existing TUI test patterns (e.g. however `RollForwardModal`/`TransferModal` are
-     tested today).
+5.3. TUI screen tests (`tests/entrypoints/tui/test_balance_operations.py`,
+     `TestBalanceUpdateThresholdWarning`): equivalent coverage for the modal-confirm path — done
+     in group 4 (a2c38c8).
 
 5.4. Config tests (`tests/infra/config/`): default value, TOML override, env-var override,
-     `config show` reflects the new field and its source.
+     `config show` reflects the new field and its source — done in group 1 (03bd65e).
 
 ## 6. Docs
 
