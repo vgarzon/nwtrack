@@ -622,8 +622,9 @@ class InstitutionDeletePresenter(Protocol):
         self, institution: Institution, account_count: int
     ) -> bool: ...
 
-    def show_delete_blocked(self, institution: Institution, account_count: int) -> None:
-        ...
+    def show_delete_blocked(
+        self, institution: Institution, account_count: int
+    ) -> None: ...
 
     def show_cancellation(self, message: str = "") -> None: ...
 
@@ -733,6 +734,28 @@ class BalanceUpdatePresenter(Protocol):
         Args:
             nw (NetWorth): NetWorth object
             month (Month): Month for the net worth
+        """
+        ...
+
+    def confirm_large_change(
+        self,
+        account_name: str,
+        current_balance: int,
+        new_amount: int,
+        pct_change: float,
+        increased: bool,
+    ) -> bool:
+        """Warn that a balance change exceeds the configured threshold and confirm.
+
+        Args:
+            account_name: Name of the account being updated
+            current_balance: The account's prior balance amount
+            new_amount: The newly entered balance amount
+            pct_change: Percent change from current_balance to new_amount
+            increased: True if new_amount is greater than current_balance
+
+        Returns:
+            True to proceed with the write, False to cancel and re-enter an amount
         """
         ...
 
