@@ -4,7 +4,8 @@
 
 - `just check` (lint + typecheck + test) passes.
 - New/updated unit tests, all passing:
-  - `evaluate_balance_change` (or equivalently named helper) covering:
+  - `evaluate_balance_change` (`application/services/balance_change_check.py`) — DONE (3a5a4ed),
+    covering:
     - No prior balance (`current_balance == 0`) → no warning.
     - Threshold `<= 0` (disabled) → no warning regardless of change size.
     - Change below threshold → no warning.

@@ -21,14 +21,13 @@
 1.6. Update `init_config.py` if it enumerates settings/sections explicitly, so `nwtrack config
      init` output stays consistent.
 
-## 2. Shared threshold-check logic
+## 2. Shared threshold-check logic — DONE (3a5a4ed)
 
-2.1. Add a small pure function, e.g. `evaluate_balance_change(current_balance: int, new_amount:
-     int, threshold_pct: float) -> BalanceChangeWarning | None` (a small dataclass/NamedTuple
-     with `pct_change: float` and `increased: bool`, or `None` if no warning is needed).
-     Location: colocate with `update_balances.py` in `application/use_cases/`, or a new
-     `application/services/` helper if that fits existing conventions better — confirm during
-     implementation which is more consistent with current module boundaries.
+2.1. Added `evaluate_balance_change(current_balance: int, new_amount: int, threshold_pct:
+     float) -> BalanceChangeWarning | None` in
+     `application/services/balance_change_check.py`, with `BalanceChangeWarning` (frozen
+     dataclass: `pct_change: float`, `increased: bool`) added to `application/dto.py` alongside
+     the other DTOs, matching existing conventions.
 
 2.2. Rules: return `None` if `current_balance == 0` (no prior balance) or `threshold_pct <= 0`
      (disabled). Otherwise compute `pct_change = abs(new_amount - current_balance) /
