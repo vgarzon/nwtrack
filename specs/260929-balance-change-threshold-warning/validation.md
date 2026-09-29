@@ -12,7 +12,8 @@
     - Change above threshold, increase → warning, `increased=True`, correct `pct_change`.
     - Change above threshold, decrease → warning, `increased=False`, correct `pct_change`.
     - Change exactly equal to threshold → no warning (strict `>` semantics).
-  - `BalanceUpdater` (CLI use case):
+  - `BalanceUpdater` (CLI use case, `tests/use_cases/test_update_balances.py`) — DONE
+    (deb3ffb):
     - Below-threshold amount: `confirm_large_change` is never called; write proceeds.
     - Above-threshold amount + presenter confirms: write proceeds with the entered amount.
     - Above-threshold amount + presenter declines: no write occurs; the use case re-prompts for
