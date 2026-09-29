@@ -24,4 +24,8 @@ def launch() -> None:
     fetcher: FetchService = container.resolve(FetchService)
     uow: Callable[[], UnitOfWork] = lambda: container.resolve(UnitOfWork)  # noqa: E731
 
-    NWTrackApp(fetcher=fetcher, uow=uow).run()
+    NWTrackApp(
+        fetcher=fetcher,
+        uow=uow,
+        change_warning_threshold_pct=settings.change_warning_threshold_pct,
+    ).run()

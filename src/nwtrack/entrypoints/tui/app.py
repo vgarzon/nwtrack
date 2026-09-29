@@ -27,10 +27,18 @@ class NWTrackApp(App):
         self,
         fetcher: FetchService,
         uow: Callable[[], UnitOfWork],
+        change_warning_threshold_pct: float = 20.0,
     ) -> None:
         super().__init__()
         self._fetcher = fetcher
         self._uow = uow
+        self._change_warning_threshold_pct = change_warning_threshold_pct
 
     def on_mount(self) -> None:
-        self.push_screen(HomeScreen(self._fetcher, self._uow))
+        self.push_screen(
+            HomeScreen(
+                self._fetcher,
+                self._uow,
+                change_warning_threshold_pct=self._change_warning_threshold_pct,
+            )
+        )

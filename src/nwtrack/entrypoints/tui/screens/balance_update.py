@@ -18,10 +18,12 @@ from textual.screen import Screen
 from textual.widgets import DataTable, Footer, Header, Label
 
 from nwtrack.application.ports.uow import UnitOfWork
+from nwtrack.application.services.balance_change_check import evaluate_balance_change
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Balance
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.tui.screens.balance_edit import BalanceEditModal
+from nwtrack.entrypoints.tui.screens.confirm_modal import ConfirmModal
 from nwtrack.entrypoints.tui.screens.month_picker import MonthPickerModal
 from nwtrack.entrypoints.tui.screens.roll_forward import RollForwardModal
 from nwtrack.entrypoints.tui.screens.transfer import TransferModal
@@ -41,10 +43,12 @@ class BalanceUpdateScreen(Screen):
         self,
         fetcher: FetchService,
         uow: Callable[[], UnitOfWork],
+        change_warning_threshold_pct: float = 20.0,
     ) -> None:
         super().__init__()
         self._fetcher = fetcher
         self._uow = uow
+        self._change_warning_threshold_pct = change_warning_threshold_pct
         self._month: Month | None = None
         self._balances: list[Balance] = []
 
@@ -83,18 +87,17 @@ class BalanceUpdateScreen(Screen):
         table = self.query_one("#balance-table", DataTable)
         table.clear(columns=True)
         table.add_columns(
-            "Institution", "Account", "Category", "Side",
+            "Institution",
+            "Account",
+            "Category",
+            "Side",
             Text("Amount", justify="right"),
         )
 
-        self._balances = self._fetcher.get_month_balances(
-            self._month, active_only=True
-        )
+        self._balances = self._fetcher.get_month_balances(self._month, active_only=True)
         for balance in self._balances:
             institution = (
-                balance.account.institution.name
-                if balance.account.institution
-                else ""
+                balance.account.institution.name if balance.account.institution else ""
             )
             table.add_row(
                 institution,
@@ -135,9 +138,7 @@ class BalanceUpdateScreen(Screen):
     # ── Event handlers ───────────────────────────────────────────────────────
 
     @work
-    async def on_data_table_row_selected(
-        self, event: DataTable.RowSelected
-    ) -> None:
+    async def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         if not self._balances or self._month is None:
             return
 
@@ -146,16 +147,37 @@ class BalanceUpdateScreen(Screen):
             return
 
         balance = self._balances[row_idx]
-        result: int | None = await self.app.push_screen_wait(
-            BalanceEditModal(
-                account_name=balance.account.name,
-                month=self._month,
-                current_amount=balance.amount,
+        current_amount = balance.amount
+        result: int | None = None
+        while True:
+            result = await self.app.push_screen_wait(
+                BalanceEditModal(
+                    account_name=balance.account.name,
+                    month=self._month,
+                    current_amount=current_amount,
+                )
             )
-        )
+            if result is None:
+                return
 
-        if result is None:
-            return
+            warning = evaluate_balance_change(
+                balance.amount, result, self._change_warning_threshold_pct
+            )
+            if warning is None:
+                break
+
+            direction = "above" if warning.increased else "below"
+            confirmed = await self.app.push_screen_wait(
+                ConfirmModal(
+                    f"The value you entered is {warning.pct_change:.1f}% {direction} "
+                    f"the current balance ({balance.amount:,} → {result:,}). "
+                    "Do you want to proceed?"
+                )
+            )
+            if confirmed:
+                break
+            # Declined: reopen the edit modal with the same prior amount
+            current_amount = balance.amount
 
         account_id = balance.account.id
         with self._uow() as uow:
