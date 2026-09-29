@@ -235,6 +235,14 @@ class ConfigShowResult:
 
 
 @dataclass(frozen=True)
+class BalanceChangeWarning:
+    """Details of a balance change that exceeds the configured warning threshold."""
+
+    pct_change: float
+    increased: bool
+
+
+@dataclass(frozen=True)
 class OperationResult[T]:
     """Generic result of an operation."""
 
