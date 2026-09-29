@@ -23,10 +23,12 @@ class HomeScreen(Screen):
         self,
         fetcher: FetchService,
         uow: Callable[[], UnitOfWork],
+        change_warning_threshold_pct: float = 20.0,
     ) -> None:
         super().__init__(classes="menu-screen")
         self._fetcher = fetcher
         self._uow = uow
+        self._change_warning_threshold_pct = change_warning_threshold_pct
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -58,7 +60,13 @@ class HomeScreen(Screen):
                 BalanceUpdateScreen,
             )
 
-            self.app.push_screen(BalanceUpdateScreen(self._fetcher, self._uow))
+            self.app.push_screen(
+                BalanceUpdateScreen(
+                    self._fetcher,
+                    self._uow,
+                    change_warning_threshold_pct=self._change_warning_threshold_pct,
+                )
+            )
         elif section == "Reports":
             from nwtrack.entrypoints.tui.screens.reports_menu import ReportsMenuScreen
 

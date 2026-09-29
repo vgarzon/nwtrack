@@ -5,13 +5,15 @@ from collections.abc import Callable
 from unittest.mock import MagicMock
 
 from textual.app import App, ComposeResult
-from textual.widgets import Input, Select
+from textual.widgets import DataTable, Input, Select
 
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.tui.app import NWTrackApp
+from nwtrack.entrypoints.tui.screens.balance_edit import BalanceEditModal
 from nwtrack.entrypoints.tui.screens.balance_update import BalanceUpdateScreen
+from nwtrack.entrypoints.tui.screens.confirm_modal import ConfirmModal
 from nwtrack.entrypoints.tui.screens.roll_forward import RollForwardModal
 from nwtrack.entrypoints.tui.screens.transfer import TransferModal, _compute_deltas
 from nwtrack.infra.persistence.orm.models import (
@@ -130,6 +132,121 @@ class _TransferTestApp(App):
                 uow=self._uow,
                 month=self._month,
             )
+        )
+
+
+# ── BalanceUpdateScreen threshold warning ──────────────────────────────────────
+
+
+def _make_balance_update_app(
+    current_amount: int,
+    change_warning_threshold_pct: float = 20.0,
+) -> tuple[NWTrackApp, MagicMock]:
+    m = _month(2025, 1)
+    cat = _make_category("Checking", Side.ASSET)
+    acc = _make_account(1, "Checking", cat)
+    balance = Balance(account_id=1, month=m, amount=current_amount)
+    balance.account = acc
+
+    fetcher = MagicMock()
+    fetcher.get_recent_months.return_value = [m]
+    fetcher.get_month_balances.return_value = [balance]
+    fetcher.get_networth.return_value = None
+    fetcher.get_balance_for_account_id.return_value = balance
+
+    uow_factory, mock_uow = _make_uow_factory()
+    app = NWTrackApp(
+        fetcher=fetcher,
+        uow=uow_factory,
+        change_warning_threshold_pct=change_warning_threshold_pct,
+    )
+    return app, mock_uow
+
+
+async def _navigate_to_balances_and_open_edit(pilot) -> None:
+    await pilot.press("enter")  # Balances (first item)
+    await pilot.pause()
+    table = pilot.app.screen.query_one("#balance-table", DataTable)
+    table.focus()
+    await pilot.pause()
+    await pilot.press("enter")  # select first row
+    await pilot.pause()
+
+
+async def _submit_edit_amount(pilot, amount: int) -> None:
+    assert isinstance(pilot.app.screen, BalanceEditModal)
+    pilot.app.screen.query_one("#edit-input", Input).value = str(amount)
+    await pilot.press("enter")
+    await pilot.pause()
+
+
+class TestBalanceUpdateThresholdWarning:
+    """Warn-and-confirm flow for balance changes above the configured threshold."""
+
+    def test_small_change_writes_without_confirmation(self) -> None:
+        app, mock_uow = _make_balance_update_app(current_amount=200)
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await _navigate_to_balances_and_open_edit(pilot)
+                await _submit_edit_amount(pilot, 210)  # ~5% change
+                assert isinstance(pilot.app.screen, BalanceUpdateScreen)
+
+        asyncio.run(_run())
+        mock_uow.balances.update.assert_called_once_with(
+            account_id=1, month=_month(2025, 1), new_amount=210
+        )
+
+    def test_large_change_confirmed_writes_new_amount(self) -> None:
+        app, mock_uow = _make_balance_update_app(current_amount=200)
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await _navigate_to_balances_and_open_edit(pilot)
+                await _submit_edit_amount(pilot, 300)  # 50% change
+                assert isinstance(pilot.app.screen, ConfirmModal)
+                await pilot.press("enter")  # confirm button has initial focus
+                await pilot.pause()
+                assert isinstance(pilot.app.screen, BalanceUpdateScreen)
+
+        asyncio.run(_run())
+        mock_uow.balances.update.assert_called_once_with(
+            account_id=1, month=_month(2025, 1), new_amount=300
+        )
+
+    def test_large_change_declined_reprompts_without_writing(self) -> None:
+        app, mock_uow = _make_balance_update_app(current_amount=200)
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await _navigate_to_balances_and_open_edit(pilot)
+                await _submit_edit_amount(pilot, 300)  # 50% change
+                assert isinstance(pilot.app.screen, ConfirmModal)
+                await pilot.press("escape")  # decline
+                await pilot.pause()
+                assert isinstance(pilot.app.screen, BalanceEditModal)
+                await _submit_edit_amount(pilot, 205)  # below threshold now
+                assert isinstance(pilot.app.screen, BalanceUpdateScreen)
+
+        asyncio.run(_run())
+        mock_uow.balances.update.assert_called_once_with(
+            account_id=1, month=_month(2025, 1), new_amount=205
+        )
+
+    def test_disabled_threshold_never_shows_confirmation(self) -> None:
+        app, mock_uow = _make_balance_update_app(
+            current_amount=200, change_warning_threshold_pct=0
+        )
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await _navigate_to_balances_and_open_edit(pilot)
+                await _submit_edit_amount(pilot, 10_000)
+                assert isinstance(pilot.app.screen, BalanceUpdateScreen)
+
+        asyncio.run(_run())
+        mock_uow.balances.update.assert_called_once_with(
+            account_id=1, month=_month(2025, 1), new_amount=10_000
         )
 
 
