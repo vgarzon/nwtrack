@@ -26,7 +26,6 @@ item must still respect. Completed work is logged in `CHANGELOG.md`, not here.
 | idea | [Single-currency conversion reporting](backlog/single-currency-conversion-reporting.md) | Convert mixed-currency balances to one reporting currency |
 | idea | [CLI retirement](backlog/cli-retirement.md) | Drop Typer once the TUI covers everything and is validated |
 | idea | [Alembic migrations](backlog/alembic-migrations.md) | Replace hand-rolled SchemaManager with versioned migrations |
-| in-progress | [Balance change threshold warning](backlog/balance-change-threshold-warning.md) | Warn user when a balance change exceeds a threshold |
 
 ## Working the backlog
 
