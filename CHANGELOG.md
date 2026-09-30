@@ -3,6 +3,10 @@
 Notable shipped features, most recent first. This replaces the "Current Baseline" and completed
 phase list formerly kept in `specs/roadmap.md` — see `specs/backlog.md` for what's still open.
 
+- Balance change threshold warning: `nwtrack balances update` (CLI) and the TUI balance edit flow
+  confirm before saving when a new balance's percent change from the prior balance exceeds a
+  configurable threshold (`[balances] change_warning_threshold_pct`, default 20%), to catch typo
+  entry errors
 - macOS packaging and deployment via `uv tool install`, with documented install/upgrade/uninstall
   paths and `just tool-install` / `just tool-uninstall` for local smoke-testing
 - TOML-based configuration (`config.toml`, resolved via `platformdirs`), replacing `.env`
