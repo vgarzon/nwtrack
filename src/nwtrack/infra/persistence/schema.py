@@ -2,13 +2,37 @@
 
 import logging
 
-from sqlalchemy import inspect, text
-from sqlalchemy.engine import Engine
+from alembic import command
+from alembic.migration import MigrationContext
+from alembic.script import ScriptDirectory
+from sqlalchemy import inspect
+from sqlalchemy.engine import Engine, Inspector
 
 from nwtrack.application.dto import SeedStatusHistoryResult
+from nwtrack.infra.persistence.alembic_runtime import build_alembic_config
+from nwtrack.infra.persistence.backup import backup_before_migration
 from nwtrack.infra.persistence.orm.base import Base
 
 logger = logging.getLogger(__name__)
+
+_PRE_INSTITUTION_ID_REVISION = "0001"
+
+
+def _detect_stamp_revision(inspector: Inspector) -> str | None:
+    """Classify an untracked database so it can be stamped before upgrading.
+
+    Returns ``None`` when there is nothing to stamp (no ``accounts`` table at
+    all — a brand new database that should run the full migration chain from
+    scratch), the pre-institution_id baseline revision id for a legacy
+    database missing that column, or ``"head"`` for a database that already
+    has the full current schema but was never stamped.
+    """
+    if not inspector.has_table("accounts"):
+        return None
+    account_columns = {column["name"] for column in inspector.get_columns("accounts")}
+    if "institution_id" not in account_columns:
+        return _PRE_INSTITUTION_ID_REVISION
+    return "head"
 
 
 class SchemaManager:
@@ -23,39 +47,59 @@ class SchemaManager:
         Base.metadata.drop_all(self._engine)
 
     def create_all_tables(self) -> None:
-        """Create all tables from ORM definitions."""
+        """Create all tables from ORM definitions and stamp them at head."""
         logger.info("Creating tables from ORM models...")
         Base.metadata.create_all(self._engine)
+        with self._engine.connect() as connection:
+            command.stamp(build_alembic_config(connection), "head")
+            connection.commit()
 
     def ensure_current_schema(self) -> None:
-        """Create missing tables and apply supported compatibility upgrades."""
+        """Bring the database to the current schema via Alembic migrations.
+
+        Adopts an untracked database (one with no ``alembic_version`` table)
+        by stamping it at the revision matching its actual shape, then runs
+        any pending migrations. A pre-migration backup of the database file
+        is taken whenever a real schema change is about to be applied.
+        """
         logger.info("Ensuring current database schema...")
-        Base.metadata.create_all(self._engine)
-        self._ensure_sqlite_legacy_columns()
+        with self._engine.connect() as connection:
+            config = build_alembic_config(connection)
+            inspector = inspect(connection)
+            had_existing_tables = bool(inspector.get_table_names())
 
-    def _ensure_sqlite_legacy_columns(self) -> None:
-        """Apply the supported SQLite compatibility upgrades in place."""
-        if self._engine.dialect.name != "sqlite":
-            return
+            if not inspector.has_table("alembic_version"):
+                stamp_revision = _detect_stamp_revision(inspector)
+                if stamp_revision is not None:
+                    command.stamp(config, stamp_revision)
+                    connection.commit()
 
-        inspector = inspect(self._engine)
-        if not inspector.has_table("accounts"):
-            return
+            head_revision = ScriptDirectory.from_config(config).get_current_head()
+            current_revision = MigrationContext.configure(
+                connection
+            ).get_current_revision()
 
-        account_columns = {
-            column["name"] for column in inspector.get_columns("accounts")
-        }
-        if "institution_id" in account_columns:
-            return
+            if current_revision == head_revision:
+                return
 
-        logger.info("Adding missing nullable accounts.institution_id column.")
-        with self._engine.begin() as connection:
-            connection.execute(
-                text(
-                    "ALTER TABLE accounts "
-                    "ADD COLUMN institution_id INTEGER REFERENCES institutions(id)"
+        # Nothing existed before (a brand new database) — there is no data to
+        # protect, so skip the no-op backup and let `upgrade head` create the
+        # full schema from scratch.
+        backup_path = (
+            backup_before_migration(self._engine) if had_existing_tables else None
+        )
+        try:
+            with self._engine.connect() as connection:
+                command.upgrade(build_alembic_config(connection), "head")
+                connection.commit()
+        except Exception as exc:
+            message = "Database schema migration failed."
+            if backup_path is not None:
+                message += (
+                    f" A pre-migration backup was saved to '{backup_path}'; "
+                    "restore it if the database is now in an unexpected state."
                 )
-            )
+            raise RuntimeError(message) from exc
 
     def seed_account_status_history(self) -> SeedStatusHistoryResult:
         """Seed status-history rows based on balance history and current account status.

@@ -1,6 +1,6 @@
 # Alembic Migrations — Plan
 
-## 1. Dependency and package layout
+## 1. Dependency and package layout — done
 
 1.1. Add `alembic` to `[project.dependencies]` in `pyproject.toml`; run `uv sync`.
 
@@ -12,11 +12,12 @@
    - `script.py.mako` — the standard Alembic revision template.
    - `versions/` — migration scripts, starting with the baseline (task 2).
 
-1.3. Confirm (via `uv build` or `just tool-install`) that these non-`.py` files
-   (`script.py.mako`) and the `versions/` package are included in the built wheel under the
-   `uv_build` backend — add explicit package-data config only if they're excluded by default.
+1.3. Confirmed via `uv build --wheel`: `migrations/` (including `script.py.mako` and
+   `versions/`) is included in the built wheel automatically under `uv_build` — no package-data
+   config needed. (`env.py` ended up connection-driven only, not URL/ini-driven as 1.2
+   originally described — see `alembic_runtime.py` and task 3.1.)
 
-## 2. Baseline and first real migration
+## 2. Baseline and first real migration — done
 
 2.1. Write `versions/0001_baseline.py`: creates every table exactly as `Base.metadata` defines
    it today (all of `currencies`, `categories`, `institutions`, `tags`, `accounts` — including
@@ -25,19 +26,28 @@
    `op.create_table` generated once via autogenerate against an empty DB and hand-checked),
    not raw SQL. `down_revision = None`.
 
-2.2. Write `versions/0002_pre_institution_id_baseline.py` as a second **base-adjacent**
-   revision only if needed to model the pre-institution_id historical shape for stamping old
-   databases — see task 4. (Decide during implementation whether this is better modeled as a
-   distinct earlier revision in the same chain, e.g. `0001` = pre-institution_id shape,
-   `0002` = adds `institution_id` via `op.add_column` in batch mode, so real upgrade path and
-   stamp-detection share one linear history instead of a synthetic baseline. Prefer this
-   simpler linear-chain shape over a branching one.)
+2.2. Decided: a single linear chain, not a branching one. `0001_initial_schema` *is* the
+   pre-institution_id baseline (matches the legacy fixture in
+   `tests/services/test_db_admin_service.py` exactly: currencies, categories, accounts with no
+   `institution_id`). `0002_full_current_schema` carries every other delta to the current model:
+   creates `institutions`, `tags`, `account_tags`, `balances`, `account_status_history`,
+   `exchange_rates`, and adds `accounts.institution_id` via `op.batch_alter_table`. Generated via
+   `alembic revision --autogenerate` against a `0001`-stamped temp database, then hand-cleaned
+   (missing `MonthType` import; unnamed FK name on `institution_id`). Batch mode's table-args
+   must explicitly re-declare `accounts`' existing unnamed `check_account_status` CHECK
+   constraint — Alembic's batch reflection silently drops unnamed constraints otherwise, which a
+   test against a real legacy fixture caught (`UserWarning: Unnamed CHECK constraint ... is
+   being omitted`).
 
-2.3. Confirm `alembic upgrade head` against a fresh in-memory/temp SQLite file produces a
-   schema identical (same tables/columns/constraints) to today's `Base.metadata.create_all()`
-   output — write a test asserting this (see Validation plan).
+2.3. Confirmed via a scratch comparison script: table and column sets match exactly between
+   `upgrade head` and `Base.metadata.create_all()`. Literal `CREATE TABLE` text differs in
+   constraint ordering and some `VARCHAR(n)` length annotations (SQLite ignores these — same
+   type affinity either way), so the committed regression test
+   (`tests/sqlite/test_alembic_migrations.py::test_fresh_database_migrates_to_head_with_full_schema`)
+   asserts structural equality (table names, column names/presence) rather than raw DDL text
+   equality, which is the correct/standard way to validate this on SQLite.
 
-## 3. `SchemaManager` integration
+## 3. `SchemaManager` integration — done
 
 3.1. Add a small internal helper (e.g. `infra/persistence/alembic_runtime.py`) that builds an
    `alembic.config.Config` pointed at the packaged `migrations/` directory (resolved via
@@ -61,16 +71,14 @@
 3.5. `application/ports/schema.py` protocol is unchanged (same three methods) — Alembic stays
    an implementation detail of the SQLAlchemy adapter.
 
-## 4. Existing-installation upgrade detection
+## 4. Existing-installation upgrade detection — done
 
-4.1. Implement the three-way detection described in requirements.md as a small pure function
-   (e.g. `_detect_stamp_revision(inspector) -> str | None`) that is unit-testable without a
-   real Alembic run: returns `None` (no stamp needed, just upgrade), the pre-institution_id
-   revision id, or `"head"`.
+4.1. Implemented `_detect_stamp_revision(inspector) -> str | None` in `schema.py` exactly as
+   planned.
 
-4.2. Wire it into `ensure_current_schema()` ahead of the `upgrade head` call.
+4.2. Wired into `ensure_current_schema()` ahead of the head-vs-current comparison.
 
-## 5. Backup and failure handling
+## 5. Backup and failure handling — done
 
 5.1. Add a small helper (e.g. `infra/persistence/backup.py`) with a `backup_before_migration(
    engine) -> Path | None` function: no-ops for `:memory:` / non-file SQLite URLs; otherwise
@@ -78,15 +86,17 @@
    the backup path.
 
 5.2. Call it from `ensure_current_schema()` immediately before any step that would actually
-   change schema (the no-tables-yet `upgrade head` case and the pre-institution_id stamp+upgrade
-   case) — not before a no-op "already current, just stamp head" case.
+   change the schema of a database that already has tables (the pre-institution_id
+   stamp+upgrade case, and any future tracked-but-behind-head case). Skip it for a brand-new
+   database with no tables at all (nothing to protect) and for the no-op "already current, just
+   stamp head" case.
 
-5.3. Wrap the stamp/upgrade calls so that on exception, the error message includes the backup
-   path (when one was taken) and re-raises; do not catch-and-continue. Confirm the CLI's startup
-   path (`entrypoints/cli/app.py`) lets this propagate as a clear fatal error rather than a
-   traceback with no guidance.
+5.3. Done — `ensure_current_schema()` wraps the `upgrade head` call and re-raises as
+   `RuntimeError` naming the backup path. `entrypoints/cli/app.py` calls `ensure_database()`
+   with no try/except around it, so this propagates as an uncaught fatal error on CLI/TUI
+   startup, which is the intended behavior (no silent partial-migration state).
 
-## 6. Tests
+## 6. Tests — done
 
 6.1. `tests/sqlite/test_alembic_migrations.py` (new):
    - Fresh temp-file SQLite DB → `ensure_current_schema()` → assert full expected table/column
@@ -104,15 +114,10 @@
    - Failure path: force `command.upgrade` to raise (e.g. monkeypatch) and assert the raised
      error message references the backup path, and that the original DB file is unmodified.
 
-6.2. Update `tests/services/test_db_admin_service.py`: the two existing tests
-   (`test_ensure_database_upgrades_legacy_sqlite_schema`,
-   `test_ensure_database_creates_tag_tables_for_legacy_sqlite_schema`) must keep passing against
-   the new Alembic-backed implementation — adjust setup/assertions only as needed to match the
-   new code path, not the behavior being tested.
+6.2. Both existing tests in `tests/services/test_db_admin_service.py` pass unchanged against the
+   new Alembic-backed implementation — no edits needed.
 
-6.3. `tests/conftest.py` fixtures are unchanged (still `Base.metadata.create_all()` against
-   `:memory:`) — add a regression assertion/comment only if useful; no functional change
-   expected.
+6.3. `tests/conftest.py` fixtures unchanged, as planned; full suite (448 tests) passes.
 
 ## 7. Documentation
 
