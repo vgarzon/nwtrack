@@ -4,7 +4,7 @@
 
 - Automated: DONE — `just check` equivalents (`ruff check`, `mypy src/ tests/`, `pytest`) pass
   (492 tests).
-- Manual: NOT YET PERFORMED — steps 1–7 below need an interactive `nwtrack tui launch` against a
+- Manual: NOT PERFORMED before merge (merged at the author's direction) — steps 1–7 below need an interactive `nwtrack tui launch` against a
   real database and are left for the author to run before merge. Their scenarios (gap, decline,
   up-to-date, empty DB, mid-gap closure, year boundary) are covered by automated tests; the
   no-backup check (step 7) holds by construction (no schema change).
