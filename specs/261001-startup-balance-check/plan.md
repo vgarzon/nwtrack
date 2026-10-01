@@ -49,7 +49,11 @@ Covered by `tests/domain/test_month.py`, `tests/sqlite/test_balances_repo.py`,
    date or empty DB; prompt on gap; decline persists nothing; approve fills and offers the
    update screen.
 
-## 4. Docs and close-out
+## 4. Docs and close-out — PARTIALLY DONE
+
+Done: `CLAUDE.md` and `README.md` updated; `just check` equivalents clean. Remaining at merge:
+the backlog/archive/`CHANGELOG.md` steps below. `specs/tech-stack.md` needs no change (no new
+dependency, no raw SQL, no schema change).
 
 1. Update `CLAUDE.md` TUI section and `README.md` if user-facing behaviour is described there.
 2. Run `just check`.
