@@ -277,12 +277,16 @@ The application uses:
 - NetWorth aggregations computed via SQLAlchemy queries
 - `account_status_history` records per-month effective status for each account, enabling historical reporting via `AccountStatusScope.HISTORICAL`
 
-Settings are loaded from `config.toml`, resolved via `platformdirs` from one of (first found
-wins): `user_config_dir("nwtrack")` (e.g. `~/Library/Application Support/nwtrack/` on
-macOS), `~/.config/nwtrack/`, or `./config/nwtrack/` (relative to the working directory).
+Settings are loaded from `config.toml`, from one of (first found wins): `./config/nwtrack/`
+(relative to the working directory), `~/.config/nwtrack/`, or `user_config_dir("nwtrack")`
+(the standard location, e.g. `~/Library/Application Support/nwtrack/` on macOS, searched
+last). An explicit file — top-level `nwtrack --config-file PATH ...` or
+`NWTRACK_CONFIG_FILE=PATH`, flag wins — bypasses the search and must exist (the Typer root
+callback records it in `infra/config/paths.py` before any settings are loaded).
 See `config.example.toml` for the format, or run `nwtrack config init` to generate one
-(`config init` warns before writing a file that would shadow an existing, lower-priority
-config.toml already in effect). `db_file_path`/`log_file` are written commented-out in the
+(it writes to the explicit file if given, else the standard location, and warns before
+writing a file that would be ignored because a higher-priority config.toml is in effect).
+`db_file_path`/`log_file` are written commented-out in the
 generated file — a fresh install needs no editing to work. Run `nwtrack config show` to see
 the active config file, the full search-path status, and the effective resolved settings
 with each value's source (file/env/default). If no `config.toml` is found, built-in defaults

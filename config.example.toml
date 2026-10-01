@@ -4,12 +4,16 @@
 # the first one found wins), or run `nwtrack config init` to generate one
 # with platform-appropriate defaults already filled in:
 #
-#   1. ~/Library/Application Support/nwtrack/config.toml   (macOS)
-#      ~/.local/share/nwtrack/config.toml                  (Linux, via platformdirs)
-#   2. ~/.config/nwtrack/config.toml
-#   3. ./config/nwtrack/config.toml                        (relative to the working
+#   1. ./config/nwtrack/config.toml                        (relative to the working
 #                                                            directory, e.g. a source
 #                                                            checkout)
+#   2. ~/.config/nwtrack/config.toml
+#   3. ~/Library/Application Support/nwtrack/config.toml   (macOS)
+#      ~/.local/share/nwtrack/config.toml                  (Linux, via platformdirs)
+#
+# To use a file elsewhere, pass `nwtrack --config-file path/to/config.toml ...`
+# or set NWTRACK_CONFIG_FILE=path/to/config.toml (the flag wins). An explicit
+# file bypasses the search above and must exist.
 #
 # Every setting below can also be overridden with a shell environment variable
 # of the same name, using NWTRACK_<SECTION>__<KEY> (double underscore), e.g.

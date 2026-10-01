@@ -34,9 +34,15 @@ This document defines the default implementation choices for `nwtrack` and the e
 
 - Configuration format: TOML (`config.toml`), parsed with the Python 3.12+ standard library
   `tomllib` — no external validation dependency (e.g. no `pydantic`) by default.
-- Configuration location: resolved via `platformdirs`, searched in order —
-  `platformdirs.user_config_dir("nwtrack")`, `~/.config/nwtrack/`, then
-  `./config/nwtrack/` (working-directory-relative, for running from a source checkout).
+- Configuration location: searched in order (first found wins) — `./config/nwtrack/`
+  (working-directory-relative, for running from a source checkout), `~/.config/nwtrack/`,
+  then `platformdirs.user_config_dir("nwtrack")` (the standard per-OS default, searched last
+  so a more specific file can override it).
+- Explicit config file: the top-level `--config-file PATH` CLI option, or the
+  `NWTRACK_CONFIG_FILE` environment variable (flag wins), bypasses the search entirely. The
+  file must exist, otherwise startup fails with an error naming it and its source; only
+  `config init` may create it. The override is recorded once by the Typer root callback in a
+  process-level holder in `infra/config/paths.py`. Config commands skip database schema setup.
 - Database and log file defaults resolve via `platformdirs.user_data_dir`/`user_log_dir`.
   `db_file_path`/`log_file` are optional in `config.toml` — an absent key or an explicit
   `""` both fall back to this default, so a fresh install needs no editing. `nwtrack config
