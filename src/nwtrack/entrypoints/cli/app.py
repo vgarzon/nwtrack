@@ -2,10 +2,10 @@
 CLI application using Typer to access use cases and services.
 """
 
+import os
 from pathlib import Path
 
 import typer
-from click.core import ParameterSource
 
 app = typer.Typer(
     name="nwtrack",
@@ -50,25 +50,26 @@ def _ensure_runtime_schema() -> None:
     container.resolve(DBAdminService).ensure_database()
 
 
-def _record_config_file_override(ctx: typer.Context, config_file: Path | None) -> None:
-    """Publish the explicit config file path (or clear it) for settings resolution."""
+def _record_config_file_override(config_file: Path | None) -> None:
+    """Publish the explicit config file path (flag, else env var) for settings
+    resolution, or clear it when neither is given."""
     from nwtrack.infra.config.paths import (
         ConfigFileOverride,
         ConfigFileOverrideSource,
         set_config_file_override,
     )
 
-    if config_file is None:
-        set_config_file_override(None)
-        return
-    source = (
-        ConfigFileOverrideSource.FLAG
-        if ctx.get_parameter_source("config_file") == ParameterSource.COMMANDLINE
-        else ConfigFileOverrideSource.ENV
-    )
-    set_config_file_override(
-        ConfigFileOverride(config_file.expanduser().resolve(), source)
-    )
+    if config_file is not None:
+        override = ConfigFileOverride(
+            config_file.expanduser().resolve(), ConfigFileOverrideSource.FLAG
+        )
+    elif env_value := os.environ.get(ConfigFileOverrideSource.ENV.value):
+        override = ConfigFileOverride(
+            Path(env_value).expanduser().resolve(), ConfigFileOverrideSource.ENV
+        )
+    else:
+        override = None
+    set_config_file_override(override)
 
 
 @app.callback()
@@ -77,12 +78,14 @@ def main(
     config_file: Path | None = typer.Option(
         None,
         "--config-file",
-        envvar="NWTRACK_CONFIG_FILE",
-        help="Use this config.toml instead of searching the standard locations.",
+        help=(
+            "Use this config.toml instead of searching the standard locations "
+            "(overrides NWTRACK_CONFIG_FILE)."
+        ),
     ),
 ) -> None:
     """Ensure the runtime database schema before executing a command."""
-    _record_config_file_override(ctx, config_file)
+    _record_config_file_override(config_file)
     # Config commands never touch the database, and `config init` must be able to
     # create the file a missing --config-file points at.
     if ctx.invoked_subcommand is None or ctx.invoked_subcommand == "config":

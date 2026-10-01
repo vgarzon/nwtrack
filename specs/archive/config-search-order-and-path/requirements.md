@@ -64,14 +64,16 @@ by placing one in a more specific location, and there is no way to point at an a
    new file would be *ignored*, not that it would *shadow* the active one. When an override is
    set, the override is by definition the file in effect, so no shadow prompt is shown.
 
-3. **Wiring.** `--config-file` is a Typer root-callback option declared with
-   `envvar="NWTRACK_CONFIG_FILE"`, so flag-over-env precedence comes from Typer itself and
-   `ctx.get_parameter_source()` distinguishes flag from env for reporting. Roughly 25 use-case
-   `main()` functions call `load_settings()` with no arguments, so instead of threading a
-   parameter through all of them, the callback records the override once in a process-level
-   holder in `infra/config/paths.py` (path + source) *before* `_ensure_runtime_schema()` runs.
-   `resolve_config_file()` and `config_search_paths()` consult that holder. This deviates from
-   "pass explicitly" only to avoid touching every use case; tests must reset the holder.
+3. **Wiring.** `--config-file` is a Typer root-callback option; the callback reads
+   `NWTRACK_CONFIG_FILE` itself when the flag is absent, so flag-over-env precedence and the
+   flag/env source are explicit. (An earlier draft used Typer's `envvar=` plus click's
+   `ParameterSource`, but `click` is only a transitive dependency and is absent from newer
+   Typer installs — importing it broke `uv tool install`.) Roughly 25 use-case `main()`
+   functions call `load_settings()` with no arguments, so instead of threading a parameter
+   through all of them, the callback records the override once in a process-level holder in
+   `infra/config/paths.py` (path + source) *before* `_ensure_runtime_schema()` runs.
+   `resolve_config_file()` and `config_search_paths()` consult that holder. Tests must reset
+   the holder.
 
 4. **Path handling.** The override path is expanded (`~`) and resolved against the current
    working directory at process start, consistent with other relative paths in the config.
