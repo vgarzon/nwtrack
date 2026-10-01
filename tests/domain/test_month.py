@@ -70,3 +70,24 @@ def test_month_max() -> None:
     month3 = Month(2023, 12)
     latest_month = max(month1, month2, month3)
     assert latest_month == month2, "Month max function failed"
+
+
+def test_months_through_same_or_earlier_is_empty() -> None:
+    assert Month(2026, 5).months_through(Month(2026, 5)) == []
+    assert Month(2026, 5).months_through(Month(2026, 3)) == []
+
+
+def test_months_through_excludes_start_includes_end() -> None:
+    assert Month(2026, 7).months_through(Month(2026, 10)) == [
+        Month(2026, 8),
+        Month(2026, 9),
+        Month(2026, 10),
+    ]
+
+
+def test_months_through_crosses_year_boundary() -> None:
+    assert Month(2025, 11).months_through(Month(2026, 2)) == [
+        Month(2025, 12),
+        Month(2026, 1),
+        Month(2026, 2),
+    ]
