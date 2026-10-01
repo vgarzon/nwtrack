@@ -54,7 +54,7 @@ class ForwardFillBalances:
         total = 0
         try:
             with self._uow() as uow:
-                source = self._previous_month(months[0])
+                source = months[0].previous()
                 for target in months:
                     count = uow.balances.copy_active_by_month(source, target)
                     if count == 0:
@@ -77,9 +77,3 @@ class ForwardFillBalances:
             )
         logger.info("Forward-filled %d months (%d balances).", len(months), total)
         return OperationResult(success=True, data=total)
-
-    @staticmethod
-    def _previous_month(month: Month) -> Month:
-        if month.month == 1:
-            return Month(month.year - 1, 12)
-        return Month(month.year, month.month - 1)

@@ -12,6 +12,9 @@ def launch() -> None:
     """Launch the Textual TUI application."""
     from nwtrack.application.ports.uow import UnitOfWork
     from nwtrack.application.services.fetch import FetchService
+    from nwtrack.application.use_cases.forward_fill_balances import (
+        ForwardFillBalances,
+    )
     from nwtrack.bootstrap.logging_config import setup_logging
     from nwtrack.bootstrap.tui_composition import build_tui_container
     from nwtrack.entrypoints.tui.app import NWTrackApp
@@ -28,4 +31,5 @@ def launch() -> None:
         fetcher=fetcher,
         uow=uow,
         change_warning_threshold_pct=settings.change_warning_threshold_pct,
+        forward_fill=container.resolve(ForwardFillBalances),
     ).run()

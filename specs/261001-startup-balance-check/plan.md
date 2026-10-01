@@ -19,7 +19,11 @@ corresponding items of group 3).
      return failure on any exception or if a month copies zero rows.
 4. Resolve it in `bootstrap/tui_composition.py`.
 
-## 2. TUI wiring
+## 2. TUI wiring — DONE
+
+Implemented in `entrypoints/tui/app.py` (`NWTrackApp._check_missing_balances`, optional
+`forward_fill`/`current_month` constructor args so existing tests are unaffected) and passed in
+from `nwtrack tui launch`. Added `Month.previous()`.
 
 1. Inject the service into `NWTrackApp` and call `find_gap` from `on_mount` after pushing
    `HomeScreen`.
@@ -31,7 +35,11 @@ corresponding items of group 3).
 4. On failure, show an error notification; no data is changed.
 5. On decline, do nothing.
 
-## 3. Tests
+## 3. Tests — DONE
+
+Covered by `tests/domain/test_month.py`, `tests/sqlite/test_balances_repo.py`,
+`tests/use_cases/test_forward_fill_balances.py` and
+`tests/entrypoints/tui/test_startup_balance_check.py`.
 
 1. Unit tests for the month range helper and the new repository method (active-only, no
    overwrite, closed account excluded via status history).
