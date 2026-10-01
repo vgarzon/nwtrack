@@ -2,7 +2,10 @@
 CLI application using Typer to access use cases and services.
 """
 
+from pathlib import Path
+
 import typer
+from click.core import ParameterSource
 
 app = typer.Typer(
     name="nwtrack",
@@ -47,12 +50,45 @@ def _ensure_runtime_schema() -> None:
     container.resolve(DBAdminService).ensure_database()
 
 
+def _record_config_file_override(ctx: typer.Context, config_file: Path | None) -> None:
+    """Publish the explicit config file path (or clear it) for settings resolution."""
+    from nwtrack.infra.config.paths import (
+        ConfigFileOverride,
+        ConfigFileOverrideSource,
+        set_config_file_override,
+    )
+
+    if config_file is None:
+        set_config_file_override(None)
+        return
+    source = (
+        ConfigFileOverrideSource.FLAG
+        if ctx.get_parameter_source("config_file") == ParameterSource.COMMANDLINE
+        else ConfigFileOverrideSource.ENV
+    )
+    set_config_file_override(
+        ConfigFileOverride(config_file.expanduser().resolve(), source)
+    )
+
+
 @app.callback()
-def main(ctx: typer.Context) -> None:
+def main(
+    ctx: typer.Context,
+    config_file: Path | None = typer.Option(
+        None,
+        "--config-file",
+        envvar="NWTRACK_CONFIG_FILE",
+        help="Use this config.toml instead of searching the standard locations.",
+    ),
+) -> None:
     """Ensure the runtime database schema before executing a command."""
-    if ctx.invoked_subcommand is None:
+    _record_config_file_override(ctx, config_file)
+    # Config commands never touch the database, and `config init` must be able to
+    # create the file a missing --config-file points at.
+    if ctx.invoked_subcommand is None or ctx.invoked_subcommand == "config":
         return
     _ensure_runtime_schema()
+
 
 # import command modules so decorators register commands
 from nwtrack.entrypoints.cli.commands import (  # noqa: F401, E402

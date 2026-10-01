@@ -330,3 +330,41 @@ def test_describe_settings_marks_threshold_file_source(
     values = {f.name: f.value for f in result.fields}
     assert sources["change_warning_threshold_pct"] == ConfigValueSource.FILE
     assert values["change_warning_threshold_pct"] == "50.0"
+
+
+def test_load_settings_reads_override_file(monkeypatch, tmp_path: Path) -> None:
+    from nwtrack.infra.config import paths
+
+    config_file = tmp_path / "explicit.toml"
+    config_file.write_text("[logging]\nlog_file_level = \"DEBUG\"\n")
+    paths.set_config_file_override(
+        paths.ConfigFileOverride(config_file, paths.ConfigFileOverrideSource.ENV)
+    )
+
+    assert load_settings().log_file_level == "DEBUG"
+
+
+def test_describe_settings_reports_override_and_no_active_search_path(
+    monkeypatch, tmp_path: Path
+) -> None:
+    from nwtrack.infra.config import paths
+
+    searched = tmp_path / "searched.toml"
+    searched.write_text("")
+    config_file = tmp_path / "explicit.toml"
+    config_file.write_text("")
+    monkeypatch.setattr(load_module, "config_search_paths", lambda: [searched])
+    paths.set_config_file_override(
+        paths.ConfigFileOverride(config_file, paths.ConfigFileOverrideSource.FLAG)
+    )
+
+    result = describe_settings()
+
+    assert result.override is not None
+    assert result.override.path == config_file
+    assert result.override.source == "--config-file"
+    assert [p.is_active for p in result.search_paths] == [False]
+
+
+def test_describe_settings_has_no_override_by_default() -> None:
+    assert describe_settings().override is None

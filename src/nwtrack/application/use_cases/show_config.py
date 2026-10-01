@@ -20,6 +20,8 @@ class ShowConfig:
     def run(self) -> OperationResult[None]:
         logger.info("Starting ShowConfig use case")
         result = describe_settings()
+        if result.override is not None:
+            self._presenter.display_override(result.override)
         self._presenter.display_search_paths(result.search_paths)
         self._presenter.display_settings(result.fields)
         logger.info("Finished ShowConfig")
