@@ -136,7 +136,7 @@ a `./config/nwtrack/config.toml` with repo-relative paths.
 uv run nwtrack tui launch
 ```
 
-The TUI is the primary interface. It covers all balance workflows, reporting, account management, and administrative CRUD for categories, institutions, and tags.
+The TUI is the primary interface. It covers all balance workflows, reporting, account management, and administrative CRUD for categories, institutions, and tags. On launch it checks that the current month has balances and, if months are missing, offers to roll the latest balances forward through the current month.
 
 ### CLI (administrative tasks)
 

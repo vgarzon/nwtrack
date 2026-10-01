@@ -1,5 +1,14 @@
 # Startup Balance Check — Validation
 
+## Status
+
+- Automated: DONE — `just check` equivalents (`ruff check`, `mypy src/ tests/`, `pytest`) pass
+  (492 tests).
+- Manual: NOT YET PERFORMED — steps 1–7 below need an interactive `nwtrack tui launch` against a
+  real database and are left for the author to run before merge. Their scenarios (gap, decline,
+  up-to-date, empty DB, mid-gap closure, year boundary) are covered by automated tests; the
+  no-backup check (step 7) holds by construction (no schema change).
+
 ## Automated
 
 - `just check` (ruff, mypy, pytest) passes.
@@ -37,7 +46,7 @@ marks; consistent with existing `ConfirmModal` messages.
 
 ## Definition of done
 
-- All automated checks above pass and `just check` is clean.
-- Manual steps 1–7 verified.
-- No schema migration was needed, and `CLAUDE.md` is updated if it describes TUI startup.
-- Backlog item, archive move and `CHANGELOG.md` entry done at merge time.
+- [x] All automated checks above pass and `just check` is clean.
+- [ ] Manual steps 1–7 verified.
+- [x] No schema migration was needed, and `CLAUDE.md`/`README.md` are updated.
+- [ ] Backlog item, archive move and `CHANGELOG.md` entry done at merge time.

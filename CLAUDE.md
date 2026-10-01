@@ -66,6 +66,10 @@ src/nwtrack/
   - `screens/`: one module per screen (home, balance\_update, balance\_edit, accounts, networth\_history, aggregation, account\_balance\_history, roll\_forward, transfer, categories, institutions, tags, admin\_menu, reports\_menu, month\_picker, confirm\_modal, stub)
   - Each screen owns its workflow end-to-end; use cases and services are resolved from `bootstrap/tui_composition.py`
   - Launched via `nwtrack tui launch`
+  - On launch, `NWTrackApp` runs a startup balance check: `ForwardFillBalances.find_gap` finds the
+    months after the latest balance month through the current month, and (after a `ConfirmModal`
+    approval) `run` forward-fills them in one transaction via `BalancesRepository.copy_active_by_month`
+    (accounts inactive in a target month are skipped). Skipped on an empty database
 
 **Infrastructure Layer**:
 - **Persistence Layer** (`infra/persistence/`) - Database-agnostic ORM components:
