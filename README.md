@@ -81,28 +81,41 @@ uv run nwtrack --help
 
 nwtrack reads settings from `config.toml`, searched in this order (first found wins):
 
-1. `~/Library/Application Support/nwtrack/config.toml` (macOS) /
-   `~/.local/share/nwtrack/config.toml` (Linux, via [`platformdirs`](https://github.com/tox-dev/platformdirs))
-2. `~/.config/nwtrack/config.toml`
-3. `./config/nwtrack/config.toml` (relative to the working directory — convenient for a
+1. `./config/nwtrack/config.toml` (relative to the working directory — convenient for a
    source checkout)
+2. `~/.config/nwtrack/config.toml`
+3. `~/Library/Application Support/nwtrack/config.toml` (macOS) /
+   `~/.local/share/nwtrack/config.toml` (Linux, via [`platformdirs`](https://github.com/tox-dev/platformdirs))
+   — the standard location, searched last so a more specific file can override it
 
-If you installed `nwtrack` via `uv tool install`, only the first two locations normally
-apply — the third only kicks in if you happen to run `nwtrack` from inside a directory that
-itself has a `./config/nwtrack/config.toml` (e.g. a source checkout), since it's resolved
-relative to your current working directory, not to where `nwtrack` is installed.
+If you installed `nwtrack` via `uv tool install`, the first location only applies if you
+happen to run `nwtrack` from inside a directory that itself has a `./config/nwtrack/config.toml`
+(e.g. a source checkout), since it's resolved relative to your current working directory, not
+to where `nwtrack` is installed.
 
-Run `nwtrack config init` to write a default `config.toml` to the first location above —
-`db_file_path` and `log_file` are left commented out (their platform-appropriate defaults
-are shown alongside, for reference), so a fresh install works without editing anything. See
-[`config.example.toml`](./config.example.toml) for the full format. If a lower-priority
-config.toml is already in effect, `config init` warns before writing a new file that would
-take priority over it.
+To use a specific file and skip the search entirely, pass `--config-file` before the command
+or set `NWTRACK_CONFIG_FILE`; the flag wins over the environment variable:
 
-Run `nwtrack config show` to see which config.toml (if any) is active, the full search-path
-priority order with each location's status, and the fully-resolved effective settings —
-including whether each value came from the config file, an environment variable override, or
-a built-in default.
+```bash
+nwtrack --config-file path/to/config.toml accounts list
+NWTRACK_CONFIG_FILE=/path/to/config.toml nwtrack accounts list
+```
+
+The file must exist (otherwise nwtrack exits with an error naming it), except for
+`nwtrack config init`, which creates it.
+
+Run `nwtrack config init` to write a default `config.toml` to the `--config-file` path if given,
+otherwise to the standard location (the last one above) — `db_file_path` and `log_file` are left
+commented out (their platform-appropriate defaults are shown alongside, for reference), so a
+fresh install works without editing anything. See
+[`config.example.toml`](./config.example.toml) for the full format. If a higher-priority
+config.toml is already in effect, `config init` warns before writing a new file that would be
+ignored.
+
+Run `nwtrack config show` to see which config.toml (if any) is active, any `--config-file` /
+`NWTRACK_CONFIG_FILE` override, the full search-path priority order with each location's
+status, and the fully-resolved effective settings — including whether each value came from the
+config file, an environment variable override, or a built-in default.
 
 If no `config.toml` is found, nwtrack falls back to built-in defaults and prints/logs the
 paths it searched. `db_file_path` and `log_file` are both optional even when a `config.toml`

@@ -54,14 +54,14 @@
    because a higher-priority file is in effect (`resolve_config_file()` result, compared with
    the target).
 
-## 6. Docs
+## 6. Docs — DONE
 
 1. `CLAUDE.md` Database Operations/config paragraph, `specs/tech-stack.md` Configuration
    Model, `config.example.toml`, `README.md`: new order, `--config-file`, `NWTRACK_CONFIG_FILE`,
    precedence.
 2. `CHANGELOG.md`: entry including the order-change note.
 
-## 7. Tests
+## 7. Tests — DONE (written alongside groups 1–5)
 
 1. `tests/infra/config/test_paths.py`: update order test and the three fallback tests for the
    reversed order; add override tests (file exists, missing -> error naming source).

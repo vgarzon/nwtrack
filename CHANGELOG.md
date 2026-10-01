@@ -3,6 +3,10 @@
 Notable shipped features, most recent first. This replaces the "Current Baseline" and completed
 phase list formerly kept in `specs/roadmap.md` — see `specs/backlog.md` for what's still open.
 
+- Config file selection: the `config.toml` search order is reversed (`./config/nwtrack/`, then
+  `~/.config/nwtrack/`, then the standard per-OS location last), and `--config-file` /
+  `NWTRACK_CONFIG_FILE` select an explicit file (flag wins). **Behavior change:** a config in
+  `./config/nwtrack/` or `~/.config/nwtrack/` now takes priority over the standard location
 - Alembic-backed schema migrations: `SchemaManager` now applies versioned Alembic migrations
   instead of the hand-rolled `Base.metadata.create_all()` + legacy-column shim, auto-adopting
   untracked existing databases and taking an automatic pre-migration backup before any real
