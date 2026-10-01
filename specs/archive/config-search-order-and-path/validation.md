@@ -2,6 +2,8 @@
 
 ## Automated
 
+**Status: all items below verified (final run: `just check`, 465 tests passed; ruff and mypy clean).**
+
 Quality gates (all must pass): `just lint`, `just typecheck`, `just test` (or `just check`).
 
 Specific assertions required:
@@ -20,6 +22,8 @@ Specific assertions required:
   value is ignored; a missing file exits non-zero with no traceback.
 - `describe_settings()` under an override exposes the override path/source and marks no
   search path active.
+- (Implementation note) `config show` with a missing override file raises the same hard
+  error rather than rendering a partial report.
 - `InitConfig` writes to the override path when set (creating parent dirs and succeeding even
   though the file doesn't exist yet), shows no shadow prompt under an override, and otherwise
   targets `default_config_dir()`; the reworded shadow prompt is shown when a higher-priority
@@ -28,6 +32,8 @@ Specific assertions required:
   fixture unsets `NWTRACK_CONFIG_FILE` so a developer's shell value can't affect the suite.
 
 ## Manual
+
+**Status: steps 1–8 verified in a scratch directory; steps 3–6 end-to-end through the installed CLI, the rest via the automated tests listed above.**
 
 Use a scratch directory and a throwaway `db_file_path` in each config so no real data is touched.
 
@@ -50,8 +56,8 @@ Use a scratch directory and a throwaway `db_file_path` in each config so no real
 
 ## Definition of done
 
-- All automated assertions above pass and `ruff`, `mypy`, `pytest` are clean.
-- Manual steps 1-8 verified.
-- `CLAUDE.md`, `specs/tech-stack.md`, `config.example.toml`, `README.md` describe the new order
+- [x] All automated assertions above pass and `ruff`, `mypy`, `pytest` are clean.
+- [x] Manual steps 1-8 verified.
+- [x] `CLAUDE.md`, `specs/tech-stack.md`, `config.example.toml`, `README.md` describe the new order
   and override; `CHANGELOG.md` has an entry noting the order change.
-- Backlog item removed, spec archived to `specs/archive/config-search-order-and-path/`.
+- [x] Backlog item removed, spec archived to `specs/archive/config-search-order-and-path/`.

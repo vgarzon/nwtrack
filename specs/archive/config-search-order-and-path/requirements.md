@@ -27,7 +27,8 @@ by placing one in a more specific location, and there is no way to point at an a
 
 3. **`config show`** reports the override: the active file is the override path, annotated with
    its source (flag or env); the search-path listing is still shown (none marked active when an
-   override is in effect).
+   override is in effect). If the override file is missing, `config show` fails with the same
+   hard error as any other command (implementation note: it is not special-cased).
 
 4. **`config init`** writes to the override path when one is given, otherwise to the standard
    per-OS user dir (unchanged). The existing shadow warning is kept, recomputed against the new
@@ -48,6 +49,9 @@ by placing one in a more specific location, and there is no way to point at an a
    path and where it came from (flag or env). No fallback to the search path, so a typo cannot
    silently load a different config. Exception: `config init`, which may create the file at
    the override path.
+   Config commands (`config init`/`config show`) skip database schema setup in the root
+   callback, so the missing-file error is raised by settings resolution rather than by the
+   callback and `config init` is never blocked by it.
    *(Interview answer: "Hard error", extended with the `config init` exception because init
    must be able to create the file it is pointed at.)*
 
