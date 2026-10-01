@@ -9,6 +9,7 @@ from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.data_loader import InitDataService
 from nwtrack.bootstrap.composition import build_base_container
 from nwtrack.bootstrap.container import Container, Lifetime
+from nwtrack.infra.config.paths import set_config_file_override
 from nwtrack.infra.config.settings import Settings
 from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
 from nwtrack.infra.fileio.csv_io import csv_to_records
@@ -24,10 +25,14 @@ def _isolate_config_env(monkeypatch, tmp_path):
     Without this, they would resolve platformdirs-based defaults and read or
     write real files under the developer's home directory.
     """
+    monkeypatch.delenv("NWTRACK_CONFIG_FILE", raising=False)
+    set_config_file_override(None)
     monkeypatch.setenv("NWTRACK_DATABASE__DB_FILE_PATH", ":memory:")
     monkeypatch.setenv(
         "NWTRACK_LOGGING__LOG_FILE", str(tmp_path / "nwtrack-test.log")
     )
+    yield
+    set_config_file_override(None)
 
 
 @pytest.fixture(scope="module")

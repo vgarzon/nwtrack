@@ -1,13 +1,13 @@
 # Plan: Config Search Order and Path
 
-## 1. Search order
+## 1. Search order — DONE
 
 1. In `infra/config/paths.py`, reorder `config_search_paths()` to
    `./config/nwtrack`, `~/.config/nwtrack`, then `default_config_dir()`.
 2. Update the docstrings that say "highest-priority" (`default_config_dir` is now the
    *lowest*-priority location but still the `config init` default write target).
 
-## 2. Override holder and resolution
+## 2. Override holder and resolution — DONE
 
 1. In `paths.py`, add a small process-level override: a frozen dataclass
    `ConfigFileOverride(path: Path, source: ConfigFileOverrideSource)` where the source enum
