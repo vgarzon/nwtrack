@@ -3,6 +3,10 @@
 Notable shipped features, most recent first. This replaces the "Current Baseline" and completed
 phase list formerly kept in `specs/roadmap.md` — see `specs/backlog.md` for what's still open.
 
+- Alembic-backed schema migrations: `SchemaManager` now applies versioned Alembic migrations
+  instead of the hand-rolled `Base.metadata.create_all()` + legacy-column shim, auto-adopting
+  untracked existing databases and taking an automatic pre-migration backup before any real
+  schema change
 - Balance change threshold warning: `nwtrack balances update` (CLI) and the TUI balance edit flow
   confirm before saving when a new balance's percent change from the prior balance exceeds a
   configurable threshold (`[balances] change_warning_threshold_pct`, default 20%), to catch typo
