@@ -154,3 +154,12 @@ def test_config_init_runs_with_missing_override_file(
 
     assert result.exit_code == 0
     assert target.is_file()
+
+
+def test_cli_app_does_not_import_click_directly() -> None:
+    """click is only a transitive dependency of Typer and is absent from newer
+    Typer installs; importing it directly breaks `uv tool install`."""
+    import nwtrack.entrypoints.cli.app as app_module
+
+    assert app_module.__file__ is not None
+    assert "click" not in Path(app_module.__file__).read_text()
