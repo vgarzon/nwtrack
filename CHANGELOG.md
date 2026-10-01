@@ -3,6 +3,10 @@
 Notable shipped features, most recent first. This replaces the "Current Baseline" and completed
 phase list formerly kept in `specs/roadmap.md` — see `specs/backlog.md` for what's still open.
 
+- Startup balance check: on TUI launch, if months are missing between the latest balance month and
+  the current month, a single confirmation forward-fills them (each month from its predecessor,
+  skipping accounts inactive that month) in one transaction, then offers to open the balance
+  update screen
 - Config file selection: the `config.toml` search order is reversed (`./config/nwtrack/`, then
   `~/.config/nwtrack/`, then the standard per-OS location last), and `--config-file` /
   `NWTRACK_CONFIG_FILE` select an explicit file (flag wins). **Behavior change:** a config in
