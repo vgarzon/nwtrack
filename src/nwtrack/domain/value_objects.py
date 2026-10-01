@@ -66,6 +66,11 @@ class Month:
         else:
             return Month(self.year, self.month + 1)
 
+    def previous(self) -> "Month":
+        if self.month == 1:
+            return Month(self.year - 1, 12)
+        return Month(self.year, self.month - 1)
+
     def months_through(self, end: "Month") -> list["Month"]:
         """Return the months after this one up to and including ``end``.
 

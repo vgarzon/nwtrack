@@ -91,3 +91,8 @@ def test_months_through_crosses_year_boundary() -> None:
         Month(2026, 1),
         Month(2026, 2),
     ]
+
+
+def test_month_previous() -> None:
+    assert Month(2026, 5).previous() == Month(2026, 4)
+    assert Month(2026, 1).previous() == Month(2025, 12)
