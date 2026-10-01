@@ -13,6 +13,11 @@ This document defines the default implementation choices for `nwtrack` and the e
 - TUI framework: Textual (active; TUI screens cover all primary workflows as of Phase 33)
 - Database: SQLite
 - ORM and persistence layer: SQLAlchemy 2.x
+- Schema migrations: Alembic, using its SQLite batch-mode support (SQLite's limited `ALTER
+  TABLE` requires a copy-and-swap for anything beyond adding a nullable column); migrations
+  are packaged inside the installed tool (`src/nwtrack/infra/persistence/migrations/`), not a
+  top-level repo directory, and are configured programmatically against an existing connection
+  rather than a filesystem `alembic.ini`
 - Test framework: Pytest
 - Linting and formatting: Ruff
 - Static type checking: mypy
@@ -139,6 +144,14 @@ Required quality gates before merge:
 
 Additional implementation standards:
 
+- Every schema-changing feature spec adds exactly one new Alembic revision, authored or
+  reviewed by hand even when generated via `alembic revision --autogenerate`; the feature's
+  `validation.md` must prove the migration applies cleanly against a representative
+  pre-migration database shape, not just that `ruff`/`mypy`/`pytest` pass.
+- `SchemaManager.ensure_current_schema()` takes an automatic `VACUUM INTO` backup of the
+  database file before applying any migration that would change the schema of a database that
+  already has data; backups are never auto-deleted, consistent with the local-ownership
+  default — the user owns cleanup, same as CSV exports and other local artifacts.
 - Prefer clear domain modeling over clever abstractions.
 - Model controlled reference data explicitly instead of encoding it as unchecked free text when the product requires reuse or validation.
 - Avoid raw SQL unless there is a justified performance or expressiveness need.

@@ -119,7 +119,7 @@
 
 6.3. `tests/conftest.py` fixtures unchanged, as planned; full suite (448 tests) passes.
 
-## 7. Documentation
+## 7. Documentation — done
 
 7.1. `CLAUDE.md`:
    - Replace the "Database schema is managed entirely through SQLAlchemy ORM models ... Schema

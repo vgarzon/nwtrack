@@ -109,7 +109,7 @@ src/nwtrack/
    - CSV export uses SQLAlchemy's mapper inspection to get correct database column names
    - ORM relationships use `viewonly=True` + `lazy="selectin"` + `init=False, default=None, compare=False, repr=False`: `Account.category` and `Balance.account` are loaded in a batched SELECT before session closes, making `balance.account.category` accessible after the UoW context exits. `viewonly=True` is critical — omitting it causes SQLAlchemy to null out the FK column when the relationship field is `None` at construction time.
 
-8. **Schema Management Port**: Schema operations (create/drop tables) are abstracted via `SchemaManager` protocol, with SQLAlchemy implementation in infrastructure. Follows ports-and-adapters pattern keeping application layer independent of SQLAlchemy engine details.
+8. **Schema Management Port**: Schema operations (create/drop/ensure-current) are abstracted via `SchemaManager` protocol, with a SQLAlchemy + Alembic implementation in infrastructure. Follows ports-and-adapters pattern keeping application layer independent of SQLAlchemy/Alembic details — see Database Operations below for the migration flow.
 
 ## Development Commands
 
@@ -266,7 +266,9 @@ just check
 
 ### Database Operations
 
-The database schema is managed entirely through SQLAlchemy ORM models in `src/nwtrack/infra/persistence/orm/models.py`. Schema creation is handled by `Base.metadata.create_all()` via the `SchemaManager` implementation.
+The database schema is defined by SQLAlchemy ORM models in `src/nwtrack/infra/persistence/orm/models.py` and versioned through Alembic migrations under `src/nwtrack/infra/persistence/migrations/` (packaged with the installed tool, not a top-level repo directory). `SchemaManager.ensure_current_schema()` runs these migrations automatically — it's called from the CLI's startup callback and from the CSV init/import use cases, so a schema upgrade happens transparently the first time `nwtrack` runs after installing a version with a new migration. An untracked database (no `alembic_version` table — the shape every pre-Alembic installation is in) is auto-detected and stamped at the matching revision before `upgrade head` runs, with no user action required. Alembic is configured programmatically against an already-open connection (`infra/persistence/alembic_runtime.py`), never through a filesystem `alembic.ini`, since the database location is resolved through `Settings` at runtime. Before any migration step that would actually change an existing (non-empty) database's schema, `infra/persistence/backup.py` takes a `VACUUM INTO` snapshot next to the live file as `<db_file_path>.bak-<timestamp>`; these backups are never auto-deleted. A migration failure raises `RuntimeError` naming the backup path rather than leaving the database in a silently half-migrated state. `SchemaManager.create_all_tables()` (used by the destructive `init_database()` reset path) still creates the schema directly from `Base.metadata` and then stamps the fresh database at `head`.
+
+**Adding a schema migration**: every schema-changing feature spec adds exactly one new Alembic revision under `migrations/versions/`, authored or reviewed by hand even when generated via `alembic revision --autogenerate` (SQLite's batch-mode table recreation can silently drop unnamed constraints — pass `table_args` explicitly when touching a table that has one). The feature's own `validation.md` must prove the migration applies cleanly against a representative pre-migration database shape, in addition to the usual `ruff`/`mypy`/`pytest` gates. Downgrades are implemented (Alembic requires the function to exist) but are not exposed through any user-facing command — restoring the automatic pre-migration backup, or re-importing from CSV, is the supported way to undo a migration.
 
 The application uses:
 - SQLite database (default location: `platformdirs.user_data_dir("nwtrack")/nwtrack.db`, overridable via `config.toml`)
