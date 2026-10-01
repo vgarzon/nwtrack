@@ -1,6 +1,6 @@
 ---
 name: html-graphical-reports
-status: ready
+status: idea
 ---
 
 ## Problem

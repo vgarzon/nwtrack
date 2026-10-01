@@ -21,11 +21,12 @@ item must still respect. Completed work is logged in `CHANGELOG.md`, not here.
 
 | Status | Item | One-liner |
 |---|---|---|
-| ready | [HTML graphical reports](backlog/html-graphical-reports.md) | Export net worth/account history as self-contained HTML charts |
+| in-progress | [Alembic migrations](backlog/alembic-migrations.md) | Replace hand-rolled SchemaManager with versioned migrations |
+| idea | [HTML graphical reports](backlog/html-graphical-reports.md) | Export net worth/account history as self-contained HTML charts |
 | idea | [Reporting UX options](backlog/reporting-ux-options.md) | Long/wide history layout, CSV output for aggregated history reports |
 | idea | [Single-currency conversion reporting](backlog/single-currency-conversion-reporting.md) | Convert mixed-currency balances to one reporting currency |
 | idea | [CLI retirement](backlog/cli-retirement.md) | Drop Typer once the TUI covers everything and is validated |
-| idea | [Alembic migrations](backlog/alembic-migrations.md) | Replace hand-rolled SchemaManager with versioned migrations |
+| idea | [Account display order](backlog/account-display-order.md) | List account balances in a user-specified display order instead of account id |
 
 ## Working the backlog
 
