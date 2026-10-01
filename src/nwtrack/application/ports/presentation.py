@@ -15,6 +15,7 @@ from nwtrack.application.dto import (
     AccountUpdateData,
     AggregationDimension,
     ConfigFieldInfo,
+    ConfigOverrideInfo,
     ConfigPathInfo,
     HistoryAggregationResult,
     InstitutionListItem,
@@ -1486,8 +1487,8 @@ class InitConfigPresenter(Protocol):
         ...
 
     def confirm_shadow(self, target_path: Path, shadowed_path: Path) -> bool:
-        """Warn that writing target_path will shadow an existing lower-priority
-        config file (shadowed_path) and prompt to confirm proceeding."""
+        """Warn that target_path will be ignored because a higher-priority config
+        file (shadowed_path) is in effect, and prompt to confirm proceeding."""
         ...
 
     def show_success(self, path: Path) -> None:
@@ -1501,6 +1502,10 @@ class InitConfigPresenter(Protocol):
 
 class ShowConfigPresenter(Protocol):
     """Presenter for the config show workflow."""
+
+    def display_override(self, override: ConfigOverrideInfo) -> None:
+        """Display the explicit config file path in effect and where it came from."""
+        ...
 
     def display_search_paths(self, paths: list[ConfigPathInfo]) -> None:
         """Display the config.toml search-path priority order and their status."""

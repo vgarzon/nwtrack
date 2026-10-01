@@ -10,6 +10,7 @@ from typing import Any
 
 from nwtrack.application.dto import (
     ConfigFieldInfo,
+    ConfigOverrideInfo,
     ConfigPathInfo,
     ConfigShowResult,
     ConfigValueSource,
@@ -18,6 +19,7 @@ from nwtrack.infra.config.paths import (
     config_search_paths,
     default_db_file_path,
     default_log_file_path,
+    get_config_file_override,
     resolve_config_file,
 )
 from nwtrack.infra.config.settings import Settings
@@ -237,9 +239,14 @@ def describe_settings() -> ConfigShowResult:
     """
     settings, sources = _resolve()
     active = resolve_config_file()
+    override_info = get_config_file_override()
 
     search_paths = [
-        ConfigPathInfo(path=p, exists=p.is_file(), is_active=(p == active))
+        ConfigPathInfo(
+            path=p,
+            exists=p.is_file(),
+            is_active=(override_info is None and p == active),
+        )
         for p in config_search_paths()
     ]
     fields = [
@@ -272,4 +279,14 @@ def describe_settings() -> ConfigShowResult:
             source=sources["change_warning_threshold_pct"],
         ),
     ]
-    return ConfigShowResult(search_paths=search_paths, fields=fields)
+    return ConfigShowResult(
+        search_paths=search_paths,
+        fields=fields,
+        override=(
+            ConfigOverrideInfo(
+                path=override_info.path, source=override_info.source.value
+            )
+            if override_info is not None
+            else None
+        ),
+    )

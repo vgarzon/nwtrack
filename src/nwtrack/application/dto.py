@@ -227,11 +227,20 @@ class ConfigFieldInfo:
 
 
 @dataclass(frozen=True)
+class ConfigOverrideInfo:
+    """An explicit config file path (flag or env var) in effect, for `config show`."""
+
+    path: Path
+    source: str
+
+
+@dataclass(frozen=True)
 class ConfigShowResult:
     """Full picture of nwtrack's resolved configuration, for `config show`."""
 
     search_paths: list[ConfigPathInfo]
     fields: list[ConfigFieldInfo]
+    override: ConfigOverrideInfo | None = None
 
 
 @dataclass(frozen=True)

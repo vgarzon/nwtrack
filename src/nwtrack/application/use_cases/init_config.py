@@ -1,9 +1,10 @@
 """
-Write a default config.toml to the highest-priority config location.
+Write a default config.toml to the explicit override path if one is set, else to
+the standard per-OS config location.
 
-Prompts before overwriting a file already at that location, and separately
-prompts before writing a new file there if doing so would shadow an existing,
-lower-priority config.toml that is currently in effect.
+Prompts before overwriting a file already at the target, and separately prompts
+before writing a new file at the standard location if a higher-priority
+config.toml is currently in effect (the new file would be ignored).
 """
 
 import logging
@@ -15,6 +16,7 @@ from nwtrack.infra.config.paths import (
     default_config_dir,
     default_db_file_path,
     default_log_file_path,
+    get_config_file_override,
     resolve_config_file,
 )
 
@@ -52,7 +54,12 @@ class InitConfig:
 
     def run(self) -> OperationResult[Path]:
         logger.info("Starting InitConfig use case")
-        target_path = default_config_dir() / _CONFIG_FILE_NAME
+        override = get_config_file_override()
+        target_path = (
+            override.path
+            if override is not None
+            else default_config_dir() / _CONFIG_FILE_NAME
+        )
         self._presenter.show_target_path(target_path)
 
         if target_path.exists():
@@ -60,7 +67,7 @@ class InitConfig:
                 self._presenter.show_cancelled()
                 logger.info("InitConfig cancelled: user declined overwrite")
                 return OperationResult(success=False)
-        else:
+        elif override is None:
             active_path = resolve_config_file()
             if active_path is not None and active_path != target_path:
                 if not self._presenter.confirm_shadow(target_path, active_path):

@@ -6,7 +6,12 @@ from rich.console import Console
 from rich.prompt import Confirm
 from rich.table import Table
 
-from nwtrack.application.dto import ConfigFieldInfo, ConfigPathInfo, ConfigValueSource
+from nwtrack.application.dto import (
+    ConfigFieldInfo,
+    ConfigOverrideInfo,
+    ConfigPathInfo,
+    ConfigValueSource,
+)
 
 
 class RichInitConfigPresenter:
@@ -26,12 +31,12 @@ class RichInitConfigPresenter:
 
     def confirm_shadow(self, target_path: Path, shadowed_path: Path) -> bool:
         self._console.print(
-            f"[warning]{shadowed_path} is currently in effect.[/warning]"
+            f"[warning]{shadowed_path} is currently in effect and has higher "
+            "priority.[/warning]"
         )
         return self._confirm.ask(
-            f"[label]Writing {target_path} will take priority over it going "
-            "forward — the existing file will no longer be used. Proceed?"
-            "[/label]",
+            f"[label]{target_path} will be ignored while that file exists. "
+            "Proceed?[/label]",
             default=False,
         )
 
@@ -82,6 +87,12 @@ class RichShowConfigPresenter:
 
     def __init__(self, console: Console) -> None:
         self._console = console
+
+    def display_override(self, override: ConfigOverrideInfo) -> None:
+        self._console.print(
+            f"[bold]Config file override:[/bold] {override.path} "
+            f"(from {override.source})"
+        )
 
     def display_search_paths(self, paths: list[ConfigPathInfo]) -> None:
         self._console.print(_build_search_paths_table(paths))

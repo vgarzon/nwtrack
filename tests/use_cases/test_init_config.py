@@ -173,3 +173,54 @@ def test_confirms_shadow_writes_target_file(monkeypatch, tmp_path: Path) -> None
     assert "[database]" in target.read_text()
     assert shadowed.read_text() == "lower priority content"
     assert "show_success" in presenter.calls
+
+
+def _set_override(path: Path) -> None:
+    from nwtrack.infra.config.paths import (
+        ConfigFileOverride,
+        ConfigFileOverrideSource,
+        set_config_file_override,
+    )
+
+    set_config_file_override(ConfigFileOverride(path, ConfigFileOverrideSource.FLAG))
+
+
+def test_override_target_is_created_without_shadow_prompt(
+    monkeypatch, tmp_path: Path
+) -> None:
+    """With an override, init creates the (missing) file, parents included, and
+    never prompts about shadowing even though another config is on the search path."""
+    config_dir = tmp_path / "config-dir"
+    _patch_defaults(monkeypatch, tmp_path, config_dir)
+    other = tmp_path / "other" / "config.toml"
+    monkeypatch.setattr(
+        "nwtrack.application.use_cases.init_config.resolve_config_file",
+        lambda: other,
+    )
+    target = tmp_path / "nested" / "custom.toml"
+    _set_override(target)
+    presenter = MockInitConfigPresenter()
+
+    result = InitConfig(presenter).run()
+
+    assert result.success
+    assert result.data == target
+    assert presenter.shown_target == target
+    assert "[database]" in target.read_text()
+    assert not (config_dir / "config.toml").exists()
+    assert "confirm_shadow" not in presenter.calls
+
+
+def test_override_target_prompts_before_overwrite(monkeypatch, tmp_path: Path) -> None:
+    config_dir = tmp_path / "config-dir"
+    _patch_defaults(monkeypatch, tmp_path, config_dir)
+    target = tmp_path / "custom.toml"
+    target.write_text("existing content")
+    _set_override(target)
+    presenter = MockInitConfigPresenter(confirm_overwrite=False)
+
+    result = InitConfig(presenter).run()
+
+    assert not result.success
+    assert target.read_text() == "existing content"
+    assert "confirm_overwrite" in presenter.calls

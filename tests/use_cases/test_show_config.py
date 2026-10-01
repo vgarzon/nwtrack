@@ -4,6 +4,7 @@ from pathlib import Path
 
 from nwtrack.application.dto import (
     ConfigFieldInfo,
+    ConfigOverrideInfo,
     ConfigPathInfo,
     ConfigShowResult,
     ConfigValueSource,
@@ -16,6 +17,11 @@ class MockShowConfigPresenter:
         self.calls: list[str] = []
         self.shown_paths: list[ConfigPathInfo] | None = None
         self.shown_fields: list[ConfigFieldInfo] | None = None
+        self.shown_override: ConfigOverrideInfo | None = None
+
+    def display_override(self, override: ConfigOverrideInfo) -> None:
+        self.calls.append("display_override")
+        self.shown_override = override
 
     def display_search_paths(self, paths: list[ConfigPathInfo]) -> None:
         self.calls.append("display_search_paths")
@@ -52,3 +58,23 @@ def test_run_displays_search_paths_and_settings(monkeypatch) -> None:
     assert presenter.calls == ["display_search_paths", "display_settings"]
     assert presenter.shown_paths == fake_result.search_paths
     assert presenter.shown_fields == fake_result.fields
+
+
+def test_run_displays_override_before_search_paths(monkeypatch) -> None:
+    override = ConfigOverrideInfo(path=Path("/x/config.toml"), source="--config-file")
+    fake_result = ConfigShowResult(search_paths=[], fields=[], override=override)
+    monkeypatch.setattr(
+        "nwtrack.application.use_cases.show_config.describe_settings",
+        lambda: fake_result,
+    )
+    presenter = MockShowConfigPresenter()
+
+    result = ShowConfig(presenter).run()
+
+    assert result.success
+    assert presenter.calls == [
+        "display_override",
+        "display_search_paths",
+        "display_settings",
+    ]
+    assert presenter.shown_override == override

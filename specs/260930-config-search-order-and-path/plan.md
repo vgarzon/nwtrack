@@ -19,7 +19,7 @@
 3. `config_search_paths()` is unchanged by the override (it still lists the standard
    candidates for display).
 
-## 3. CLI wiring
+## 3. CLI wiring — DONE
 
 1. In `entrypoints/cli/app.py`, add to the root callback:
    `config_file: Path | None = typer.Option(None, "--config-file", envvar="NWTRACK_CONFIG_FILE", help=...)`.
@@ -34,7 +34,7 @@
 5. `config init` and `config show` run through the same callback; make sure a missing override
    file does not block `config init` (see group 5.2).
 
-## 4. `config show`
+## 4. `config show` — DONE
 
 1. Extend `ConfigShowResult` in `application/dto.py` with an optional
    `override: ConfigFileOverrideInfo | None` (path, source label, exists).
@@ -44,7 +44,7 @@
    a "Config file override: <path> (from --config-file | NWTRACK_CONFIG_FILE)" line above the
    search-path table, and the order shown is the new one.
 
-## 5. `config init`
+## 5. `config init` — DONE
 
 1. `InitConfig.run()`: target = override path if set, else
    `default_config_dir() / "config.toml"`.
