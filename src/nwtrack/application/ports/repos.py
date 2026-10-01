@@ -276,6 +276,13 @@ class BalancesRepository(Repository[Balance], Protocol):
         """Copy balance entries from one month to another."""
         ...
 
+    def copy_active_by_month(self, from_month: Month, to_month: Month) -> int:
+        """Copy balances to ``to_month`` for accounts active in that month.
+
+        Existing balances in ``to_month`` are left untouched.
+        """
+        ...
+
 
 class NetWorthRepository(Protocol):
     """Protocol for net worth repository operations."""

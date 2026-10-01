@@ -8,7 +8,8 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
-from sqlalchemy import delete, func, select, text, update
+from sqlalchemy import delete, func, literal, select, text, update
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -16,7 +17,13 @@ from nwtrack.application.ports.repos import (
     BalancesRepository as BalancesRepositoryProtocol,
 )
 from nwtrack.domain.value_objects import Month
-from nwtrack.infra.persistence.orm.models import Account, Balance, Status
+from nwtrack.infra.persistence.orm.models import (
+    Account,
+    AccountStatusHistory,
+    Balance,
+    Status,
+)
+from nwtrack.infra.persistence.orm.types import MonthType
 
 logger = logging.getLogger(__name__)
 
@@ -283,6 +290,55 @@ class BalancesRepository(BalancesRepositoryProtocol):
         row_count = result.rowcount or 0  # type: ignore[attr-defined]
         logger.info(
             "Copied %d balances from %s to %s.", row_count, source_month, target_month
+        )
+        return row_count
+
+    def copy_active_by_month(self, from_month: Month, to_month: Month) -> int:
+        """Copy balances to ``to_month`` for accounts active in that month.
+
+        An account's status in ``to_month`` is the latest
+        ``account_status_history`` row effective on or before it, falling back
+        to ``Account.status`` when the account has no history. Rows already
+        present in ``to_month`` are not overwritten.
+
+        Args:
+            from_month: Source Month object
+            to_month: Target Month object
+
+        Returns:
+            Number of copied balance records
+        """
+        history_status = (
+            select(AccountStatusHistory.status)
+            .where(AccountStatusHistory.account_id == Balance.account_id)
+            .where(AccountStatusHistory.effective_month <= to_month)
+            .order_by(AccountStatusHistory.effective_month.desc())
+            .limit(1)
+            .correlate(Balance)
+            .scalar_subquery()
+        )
+        source_rows = (
+            select(
+                Balance.account_id,
+                literal(to_month, MonthType),
+                Balance.amount,
+            )
+            .join(Account, Account.id == Balance.account_id)
+            .where(Balance.month == from_month)
+            .where(func.coalesce(history_status, Account.status) == Status.ACTIVE)
+        )
+        stmt = (
+            sqlite_insert(Balance)
+            .from_select(["account_id", "month", "amount"], source_rows)
+            .on_conflict_do_nothing()
+        )
+        result = self._session.execute(stmt)
+        row_count = result.rowcount or 0  # type: ignore[attr-defined]
+        logger.info(
+            "Copied %d active-account balances from %s to %s.",
+            row_count,
+            from_month,
+            to_month,
         )
         return row_count
 

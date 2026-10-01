@@ -1,6 +1,12 @@
 # Startup Balance Check — Plan
 
-## 1. Application logic
+## 1. Application logic — DONE
+
+Implemented as `Month.months_through`, `BalancesRepository.copy_active_by_month` (ORM
+`insert().from_select()` with `on_conflict_do_nothing`, no raw SQL) and
+`use_cases/forward_fill_balances.py` (`ForwardFillBalances`), registered in
+`tui_composition.py`. Unit tests for all three were written alongside (covering the
+corresponding items of group 3).
 
 1. Add `Month` helpers if missing (e.g. a range/`months_between(start, end)`), with unit tests.
 2. Add a repository method on balances to copy source → target restricted to accounts active in
