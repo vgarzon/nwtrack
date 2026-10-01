@@ -50,6 +50,14 @@ way to install), tags don't move, so re-run the install command with the new tag
 uv tool install --reinstall-package nwtrack git+https://github.com/vgarzon/nwtrack@v0.2.0
 ```
 
+Database schema upgrades happen automatically the next time `nwtrack` runs after installing a
+new version — there's no separate migration command to run. If an upgrade needs to change your
+existing database's schema, `nwtrack` first saves a timestamped backup of the database file
+right next to it (`<your-db-file>.bak-<timestamp>`); these backups are never deleted
+automatically, so clean them up yourself once you're confident the upgrade went smoothly,
+consistent with everything else about how `nwtrack` leaves your data under Local Ownership
+(see Configuration below for where the database file lives).
+
 ### Uninstalling
 
 ```bash
