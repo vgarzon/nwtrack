@@ -16,6 +16,7 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
+    "alembic>=1.14.0",
     "platformdirs>=4.5.0",
     "rich>=14.2.0",
     "sqlalchemy>=2.0.46",

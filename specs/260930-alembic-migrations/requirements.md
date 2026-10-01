@@ -95,16 +95,22 @@ in scope:
 
 - **Backup before migrating**: `ensure_current_schema()` runs on every `nwtrack` invocation, so
   an existing user's file-backed database gets upgraded automatically and silently the first
-  time they run any command after updating. Before applying any *actual* migration step (i.e.
-  skip this when the detected action is a no-op stamp-at-head with no schema change), take a
-  consistent on-disk snapshot of the database file using SQLite's `VACUUM INTO` command issued
-  over a raw connection — this is the one justified exception to the "avoid raw SQL" standard,
-  parallel to how `infra/db/sqlite/manager.py` already issues raw `PRAGMA` statements, because
-  it is a snapshot/backup mechanism, not business-logic querying, and is the only SQLite-correct
-  way to get a consistent copy regardless of journal mode. The backup is written next to the
-  live DB file as `<db_file_path>.bak-<timestamp>` and is never deleted automatically (the user
-  owns cleanup, consistent with "Local Ownership" in `specs/mission.md`). Skipped entirely for
-  `:memory:` databases (tests).
+  time they run any command after updating. Before applying any step that would actually change
+  an existing database's schema, take a consistent on-disk snapshot of the database file using
+  SQLite's `VACUUM INTO` command issued over a raw connection — this is the one justified
+  exception to the "avoid raw SQL" standard, parallel to how `infra/db/sqlite/manager.py`
+  already issues raw `PRAGMA` statements, because it is a snapshot/backup mechanism, not
+  business-logic querying, and is the only SQLite-correct way to get a consistent copy
+  regardless of journal mode. The backup is written next to the live DB file as
+  `<db_file_path>.bak-<timestamp>` and is never deleted automatically (the user owns cleanup,
+  consistent with "Local Ownership" in `specs/mission.md`). Skipped in three cases, none of
+  which puts existing data at risk: a brand-new database with no tables at all (nothing to
+  protect — the full schema is simply created from scratch), a database that is already fully
+  current and only needs to be stamped with no DDL applied, and `:memory:` databases (tests).
+  (This refines the original draft, which proposed also backing up the brand-new-database case;
+  implementation showed that produces a pointless backup file on every fresh install with
+  nothing in it, so the rule was narrowed to only back up when a real schema change is about to
+  touch a database that already has tables.)
 - **Failure policy**: if `upgrade head` (or the stamp step) raises, `ensure_current_schema()`
   must not swallow the error or leave the application silently running against a
   partially-migrated database. It propagates the failure with a message that names the backup
