@@ -1,5 +1,8 @@
 """Account repository tests for display order and hidden flag."""
 
+from collections.abc import Mapping
+from typing import Any
+
 from tests.helpers import _uow_factory, init_db_tables_w_entities
 
 from nwtrack.bootstrap.composition import build_data_services_container
@@ -121,7 +124,7 @@ def test_hydrate_parses_optional_display_columns(base_container) -> None:
 def test_hydrate_many_assigns_slots_to_records_without_one(base_container) -> None:
     container = build_data_services_container(base_container)
     base = {"description": "", "category": "checking", "currency": "USD"}
-    records = [
+    records: list[Mapping[str, Any]] = [
         {**base, "name": "x", "status": "active"},
         {**base, "name": "y", "status": "active", "display_order": "5"},
         {**base, "name": "z", "status": "active"},
