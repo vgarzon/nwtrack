@@ -217,6 +217,7 @@ class AccountsListScreen(Screen):
         Binding("escape", "app.pop_screen", "Back"),
         Binding("c", "create", "Create"),
         Binding("d", "delete", "Delete"),
+        Binding("h", "toggle_hidden", "Show/hide hidden"),
     ]
 
     def __init__(
@@ -228,6 +229,7 @@ class AccountsListScreen(Screen):
         self._fetcher = fetcher
         self._uow = uow
         self._accounts: list[Account] = []
+        self._show_hidden = False
 
     def on_mount(self) -> None:
         self.sub_title = "Accounts"
@@ -250,8 +252,11 @@ class AccountsListScreen(Screen):
             "Institution",
             "Currency",
             "Tags",
+            "Hidden",
         )
-        self._accounts = self._fetcher.get_accounts(active_only=False)
+        self._accounts = self._fetcher.get_accounts(
+            active_only=False, include_hidden=self._show_hidden
+        )
         for acc in self._accounts:
             institution_name = acc.institution.name if acc.institution else ""
             tag_names = ", ".join(t.name for t in acc.tags) if acc.tags else ""
@@ -264,9 +269,17 @@ class AccountsListScreen(Screen):
                 institution_name,
                 acc.currency_code,
                 tag_names,
+                "yes" if acc.is_hidden else "",
                 key=str(acc.id),
             )
         table.refresh(layout=True)
+
+    def action_toggle_hidden(self) -> None:
+        self._show_hidden = not self._show_hidden
+        self._refresh_table()
+        self.notify(
+            "Showing hidden accounts" if self._show_hidden else "Hiding hidden accounts"
+        )
 
     def _load_form_deps(
         self,

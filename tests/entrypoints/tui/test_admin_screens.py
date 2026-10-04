@@ -467,7 +467,9 @@ class TestAccountsListScreen:
             async with app.run_test() as pilot:
                 await self._navigate_to_accounts(pilot)
                 assert isinstance(app.screen, AccountsListScreen)
-                fetcher.get_accounts.assert_called_with(active_only=False)
+                fetcher.get_accounts.assert_called_with(
+                    active_only=False, include_hidden=False
+                )
 
         asyncio.run(_run())
 
@@ -581,6 +583,7 @@ class TestConfirmModal:
                 await pilot.pause()
                 modal = app.query_one(ConfirmModal)
                 from textual.widgets import Button
+
                 btn = modal.query_one("#btn-cancel", Button)
                 assert str(btn.label) == "No Thanks"
 

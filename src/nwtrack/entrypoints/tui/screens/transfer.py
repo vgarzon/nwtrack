@@ -62,7 +62,12 @@ class TransferModal(ModalScreen[bool]):
         self._accounts: list[Account] = []
 
     def compose(self) -> ComposeResult:
-        self._accounts = self._fetcher.get_accounts(active_only=True)
+        # Hidden accounts are not offered, except an explicitly prefilled From account.
+        self._accounts = [
+            a
+            for a in self._fetcher.get_accounts(active_only=True)
+            if not a.is_hidden or a.id == self._from_account_id
+        ]
         account_options = [(a.name, str(a.id)) for a in self._accounts]
 
         with Vertical(id="tr-container", classes="modal-container"):
