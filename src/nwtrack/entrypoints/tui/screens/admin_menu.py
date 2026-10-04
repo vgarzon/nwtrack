@@ -11,7 +11,7 @@ from textual.widgets import Footer, Header, Label, ListItem, ListView
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.fetch import FetchService
 
-_MENU_ITEMS = ["Institutions", "Tags", "Categories"]
+_MENU_ITEMS = ["Institutions", "Tags", "Categories", "Account Order"]
 
 
 class AdminMenuScreen(Screen):
@@ -34,7 +34,8 @@ class AdminMenuScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
         items = [
-            ListItem(Label(item), id=f"admin-{item.lower()}") for item in _MENU_ITEMS
+            ListItem(Label(item), id=f"admin-{item.lower().replace(' ', '-')}")
+            for item in _MENU_ITEMS
         ]
         with Vertical(id="admin-menu-panel", classes="menu-panel"):
             yield Label("Admin", classes="menu-title")
@@ -60,3 +61,9 @@ class AdminMenuScreen(Screen):
             )
 
             self.app.push_screen(CategoriesListScreen(self._fetcher, self._uow))
+        elif item_id == "admin-account-order":
+            from nwtrack.entrypoints.tui.screens.account_order import (
+                AccountOrderScreen,
+            )
+
+            self.app.push_screen(AccountOrderScreen(self._fetcher, self._uow))

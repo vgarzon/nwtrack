@@ -20,7 +20,7 @@ from textual.widgets import DataTable, Footer, Header, Label
 from nwtrack.application.ports.uow import UnitOfWork
 from nwtrack.application.services.balance_change_check import evaluate_balance_change
 from nwtrack.application.services.fetch import FetchService
-from nwtrack.domain.models import Balance
+from nwtrack.domain.models import Balance, Side
 from nwtrack.domain.value_objects import Month
 from nwtrack.entrypoints.tui.screens.balance_edit import BalanceEditModal
 from nwtrack.entrypoints.tui.screens.confirm_modal import ConfirmModal
@@ -37,6 +37,7 @@ class BalanceUpdateScreen(Screen):
         Binding("m", "pick_month", "Change month"),
         Binding("r", "roll_forward", "Roll forward"),
         Binding("t", "transfer", "Transfer"),
+        Binding("h", "toggle_hidden", "Show/hide hidden"),
     ]
 
     def __init__(
@@ -51,6 +52,7 @@ class BalanceUpdateScreen(Screen):
         self._change_warning_threshold_pct = change_warning_threshold_pct
         self._month: Month | None = None
         self._balances: list[Balance] = []
+        self._show_hidden = False
 
     # ── Layout ──────────────────────────────────────────────────────────────
 
@@ -58,6 +60,7 @@ class BalanceUpdateScreen(Screen):
         yield Header()
         yield DataTable(id="balance-table", zebra_stripes=True, cursor_type="row")
         yield Label("", id="networth-label")
+        yield Label("", id="visible-total-label")
         yield Footer()
 
     # ── Lifecycle ────────────────────────────────────────────────────────────
@@ -94,7 +97,9 @@ class BalanceUpdateScreen(Screen):
             Text("Amount", justify="right"),
         )
 
-        self._balances = self._fetcher.get_month_balances(self._month, active_only=True)
+        self._balances = self._fetcher.get_month_balances(
+            self._month, active_only=True, include_hidden=self._show_hidden
+        )
         for balance in self._balances:
             institution = (
                 balance.account.institution.name if balance.account.institution else ""
@@ -108,9 +113,30 @@ class BalanceUpdateScreen(Screen):
                 key=str(balance.account.id),
             )
 
+    def _refresh_visible_total(self) -> None:
+        """Per-currency sum of the shown rows, liabilities counted negative."""
+        totals: dict[str, int] = {}
+        for balance in self._balances:
+            account = balance.account
+            sign = -1 if account.category.side == Side.LIABILITY else 1
+            totals[account.currency_code] = (
+                totals.get(account.currency_code, 0) + sign * balance.amount
+            )
+        label = self.query_one("#visible-total-label", Label)
+        if not totals:
+            label.update("")
+            return
+        parts = "  ".join(
+            f"[bold]{self._format_amount(amount)}[/bold] {currency}"
+            for currency, amount in sorted(totals.items())
+        )
+        suffix = " (incl. hidden)" if self._show_hidden else ""
+        label.update(f"Visible rows{suffix}: {parts}")
+
     def _refresh_networth(self) -> None:
         if self._month is None:
             return
+        self._refresh_visible_total()
         nw = self._fetcher.get_networth(self._month, "USD")
         label = self.query_one("#networth-label", Label)
         if nw is not None:
@@ -195,6 +221,14 @@ class BalanceUpdateScreen(Screen):
             self._month, account_id
         )
         self._refresh_networth()
+
+    def action_toggle_hidden(self) -> None:
+        self._show_hidden = not self._show_hidden
+        self._refresh_table()
+        self._refresh_networth()
+        self.notify(
+            "Showing hidden accounts" if self._show_hidden else "Hiding hidden accounts"
+        )
 
     @work
     async def action_roll_forward(self) -> None:

@@ -21,7 +21,7 @@
    repositories through the UoW directly, so the new screen follows that pattern.
 5. CSV: add the two columns to `accounts` export; import defaults when absent.
 
-## 3. TUI
+## 3. TUI — DONE
 1. Balance-update table: `include_hidden` toggle key, visible-total line, net-worth label
    unchanged.
 2. Accounts list screen and account pickers (transfer, balance create/edit): ordered, hidden
@@ -29,7 +29,7 @@
 3. New `account_order.py` admin screen (all accounts, hidden marked, move up/down, toggle
    hidden); wire into `admin_menu.py` and `tui_composition.py`.
 
-## 4. CLI
+## 4. CLI — DONE (ordering comes from the repository; no CLI code change needed)
 1. Ensure CLI account/balance listings use the new order (no hiding).
 
 ## 5. Tests and docs
