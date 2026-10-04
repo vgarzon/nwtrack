@@ -26,7 +26,7 @@ class _SampleAccount:
 
 _CURRENCIES = [
     {"code": "USD", "description": "United States Dollar"},
-    {"code": "CHF", "description": "Swiss Franc"},
+    {"code": "CAD", "description": "Canadian Dollar"},
 ]
 
 _CATEGORIES = [
@@ -40,7 +40,7 @@ _CATEGORIES = [
 _INSTITUTIONS = [
     {"id": 1, "name": "Harbor Bank", "description": "Everyday banking and mortgage"},
     {"id": 2, "name": "Summit Brokerage", "description": "Investment brokerage"},
-    {"id": 3, "name": "Alpine Bank", "description": "Swiss savings bank"},
+    {"id": 3, "name": "Maple Credit Union", "description": "Canadian savings"},
 ]
 
 _TAGS = [
@@ -50,16 +50,16 @@ _TAGS = [
 
 _ACCOUNTS = [
     _SampleAccount(
-        1, "Everyday Checking", "Demo checking", "checking", 1, "USD", 12_000, 300
+        1, "Everyday Checking", "Demo checking", "checking", 1, "USD", 6_000, 150
     ),
     _SampleAccount(
-        2, "Rainy Day Savings", "Demo savings", "savings", 1, "USD", 45_000, 1_400
+        2, "Rainy Day Savings", "Demo savings", "savings", 1, "USD", 22_500, 700
     ),
     _SampleAccount(
-        3, "Index Fund", "Demo brokerage", "investment", 2, "USD", 590_000, 5_500
+        3, "Index Fund", "Demo brokerage", "investment", 2, "USD", 59_000, 550
     ),
     _SampleAccount(
-        4, "Swiss Savings", "Demo CHF savings", "savings", 3, "CHF", 36_000, 400
+        4, "Canadian Savings", "Demo CAD savings", "savings", 3, "CAD", 3_600, 40
     ),
     _SampleAccount(
         5,
@@ -72,7 +72,7 @@ _ACCOUNTS = [
         200,
     ),
     _SampleAccount(
-        6, "Home Mortgage", "Demo mortgage", "mortgage", 1, "USD", 640_000, -1_200
+        6, "Home Mortgage", "Demo mortgage", "mortgage", 1, "USD", 320_000, -600
     ),
     _SampleAccount(
         7, "Old Savings", "Demo closed account", "savings", 1, "USD", 10_000, 200
@@ -81,7 +81,7 @@ _ACCOUNTS = [
 
 _ACCOUNT_TAGS = [(1, 1), (2, 1), (3, 2), (4, 2), (6, 2)]
 
-_CHF_RATE_START_PERCENT = 88  # CHF per USD, in hundredths, drifting up 0.5 / month
+_CAD_RATE_START = 1350  # CAD per USD in thousandths, drifting up 0.005 / month
 
 
 def sample_months(today: Month) -> list[Month]:
@@ -151,9 +151,9 @@ def build_sample_records(today: Month) -> dict[str, list[dict]]:
     exchange_rates = [
         {
             "id": index + 1,
-            "currency": "CHF",
+            "currency": "CAD",
             "month": str(month),
-            "rate": f"{(_CHF_RATE_START_PERCENT * 10 + 5 * index) / 1000:.3f}",
+            "rate": f"{(_CAD_RATE_START + 5 * index) / 1000:.3f}",
         }
         for index, month in enumerate(months)
     ]

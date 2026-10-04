@@ -23,8 +23,8 @@ Minimal and representative, not comprehensive over the schema.
 
 | Entity | Content |
 |---|---|
-| Currencies | 2 (USD, CHF) |
-| Exchange rates | CHF series covering the balance months |
+| Currencies | 2 (USD, CAD) |
+| Exchange rates | CAD series covering the balance months |
 | Categories | A few asset and liability categories (e.g. checking, savings, investment, mortgage, revolving_credit) |
 | Institutions | 2-3 fictional institutions |
 | Tags | 2-3 (e.g. core, long-term) |

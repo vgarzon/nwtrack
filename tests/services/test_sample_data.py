@@ -28,7 +28,7 @@ def test_sample_months_are_consecutive_and_end_today() -> None:
 
 def test_dataset_shape() -> None:
     records = build_sample_records(TODAY)
-    assert {r["code"] for r in records["currencies"]} == {"USD", "CHF"}
+    assert {r["code"] for r in records["currencies"]} == {"USD", "CAD"}
     assert 2 <= len(records["institutions"]) <= 3
     assert 2 <= len(records["tags"]) <= 3
     assert 6 <= len(records["accounts"]) <= 8
