@@ -34,6 +34,8 @@ class ExportCSV:
             "institution_id",
             "currency",
             "status",
+            "display_order",
+            "is_hidden",
         ),
         "balances": ("id", "account_id", "month", "amount"),
         "exchange_rates": ("id", "currency", "month", "rate"),

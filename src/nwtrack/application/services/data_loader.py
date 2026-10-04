@@ -46,6 +46,8 @@ class InitDataService:
         "exchange_rates": ("id", "currency", "month", "rate"),
         "account_status_history": ("id", "account_id", "status", "effective_month"),
     }
+    # Trailing columns that newer exports add; a bundle may omit them all.
+    OPTIONAL_IMPORT_HEADERS = {"accounts": ("display_order", "is_hidden")}
     IMPORT_ENTITY_TABLE_NAMES = (
         "currencies",
         "categories",
@@ -163,7 +165,10 @@ class InitDataService:
             actual_fields = tuple(reader.fieldnames or ())
 
         expected_fields = self.IMPORT_HEADERS[table_name]
-        if actual_fields != expected_fields:
+        extended_fields = expected_fields + self.OPTIONAL_IMPORT_HEADERS.get(
+            table_name, ()
+        )
+        if actual_fields not in (expected_fields, extended_fields):
             raise ValueError(
                 "Malformed CSV header for "
                 f"{csv_path.name}: expected {expected_fields}, got {actual_fields}"

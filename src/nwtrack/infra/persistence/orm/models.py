@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Column,
     Float,
@@ -133,6 +134,13 @@ class Account(MappedAsDataclass, Base):
     status: Mapped[Status] = mapped_column(
         SQLEnum(Status, values_callable=lambda x: [e.value for e in x]),
         default=Status.ACTIVE,
+    )
+    # 1-based display slot; 0 means "unassigned" and is replaced by max+1 on insert.
+    display_order: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0"
+    )
+    is_hidden: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0"
     )
     category: Mapped[Category] = relationship(
         "Category",

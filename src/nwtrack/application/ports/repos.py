@@ -148,6 +148,14 @@ class AccountsRepository(Repository[Account], Protocol):
         """Get all accounts where institution_id is NULL, ordered by name."""
         ...
 
+    def move(self, account_id: int, direction: int) -> bool:
+        """Swap display slot with the neighbour (-1 up, +1 down); False at edge."""
+        ...
+
+    def set_hidden(self, account_id: int, hidden: bool) -> int:
+        """Set the hidden flag on an account."""
+        ...
+
 
 class InstitutionsRepository(Repository[Institution], Protocol):
     """Protocol for institution repository operations."""

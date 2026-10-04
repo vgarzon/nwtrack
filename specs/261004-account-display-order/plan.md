@@ -1,10 +1,12 @@
 # Account Display Order — Plan
 
-## 1. Data
+## 1. Data — DONE
 1. Add `display_order: Mapped[int]` and `is_hidden: Mapped[bool]` (defaults) to `Account` in
-   `orm/models.py`; add unique constraint on `display_order`.
+   `orm/models.py`. (No unique constraint: a swap would need temp values and CSV import would
+   fight it; contiguity is maintained by the repository.)
 2. Alembic revision `0003`: add both columns (batch mode, explicit `table_args`), backfill
-   `display_order` by `id` rank, add unique constraint; author downgrade.
+   `display_order` by `id` rank; author downgrade. Also fix untracked-DB stamp detection so a
+   pre-0003 database is stamped `0002`, not `head`.
 3. `SchemaManager.create_all_tables()` path: confirm fresh DBs get the columns and are stamped
    at head.
 

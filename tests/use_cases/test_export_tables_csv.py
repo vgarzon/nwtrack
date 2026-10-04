@@ -268,11 +268,11 @@ def test_export_tables_interactive(
         revolving_credit,liability
     """).lstrip()
     accounts_expected = textwrap.dedent("""
-        id,name,description,category,institution_id,currency,status
-        1,bank_1_checking,bank_1 checking,checking,,USD,active
-        2,bank_2_savings,bank_2_savings,savings,,USD,active
-        3,credit_cards_1,credit_cards_1,revolving_credit,,USD,active
-        4,mortgage_1,mortgage_1,mortgage,,USD,inactive
+        id,name,description,category,institution_id,currency,status,display_order,is_hidden
+        1,bank_1_checking,bank_1 checking,checking,,USD,active,1,False
+        2,bank_2_savings,bank_2_savings,savings,,USD,active,2,False
+        3,credit_cards_1,credit_cards_1,revolving_credit,,USD,active,3,False
+        4,mortgage_1,mortgage_1,mortgage,,USD,inactive,4,False
     """).lstrip()
 
     with open(tmp_path / "currencies.csv", encoding="utf-8") as f:
@@ -319,13 +319,14 @@ def test_export_accounts_csv_includes_institution_id_when_present(
         accounts_csv = f.read().splitlines()
 
     assert accounts_csv[0] == (
-        "id,name,description,category,institution_id,currency,status"
+        "id,name,description,category,institution_id,currency,status,"
+        "display_order,is_hidden"
     )
     assert any(
         line
         == (
             "5,phase10_export_account,Export compatibility check,"
-            "checking,1,USD,active"
+            "checking,1,USD,active,5,False"
         )
         for line in accounts_csv[1:]
     )
