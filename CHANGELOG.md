@@ -3,6 +3,9 @@
 Notable shipped features, most recent first. This replaces the "Current Baseline" and completed
 phase list formerly kept in `specs/roadmap.md` — see `specs/backlog.md` for what's still open.
 
+- Sample database command: `nwtrack admin create-sample-db PATH` creates a new database with a
+  minimal fictional dataset (never overwrites an existing path, never touches the configured
+  database) and prints how to activate it via `config.toml` or `NWTRACK_DATABASE__DB_FILE_PATH`
 - Startup balance check: on TUI launch, if months are missing between the latest balance month and
   the current month, a single confirmation forward-fills them (each month from its predecessor,
   skipping accounts inactive that month) in one transaction, then offers to open the balance

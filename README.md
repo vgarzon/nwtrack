@@ -149,6 +149,7 @@ uv run nwtrack import tables-csv
 
 # Admin
 uv run nwtrack admin seed-status-history
+uv run nwtrack admin create-sample-db /path/to/demo.db
 
 # Reports (non-interactive)
 uv run nwtrack reports networth-history
@@ -161,6 +162,25 @@ uv run nwtrack accounts list
 uv run nwtrack institutions list
 uv run nwtrack tags list
 ```
+
+### Try it with sample data
+
+`nwtrack admin create-sample-db PATH` creates a new SQLite database at `PATH` filled with a small
+fictional dataset (two currencies, a few institutions, tags, seven accounts, and twelve months of
+balances ending this month). It never overwrites: it fails if `PATH` already exists, and it does
+not change your configuration or touch your current database.
+
+```bash
+nwtrack admin create-sample-db ~/nwtrack-demo.db
+
+# Use it for one command or shell session...
+NWTRACK_DATABASE__DB_FILE_PATH=~/nwtrack-demo.db nwtrack tui launch
+
+# ...or switch by setting db_file_path in config.toml (nwtrack config show finds the file)
+```
+
+To go back to your real data, unset the environment variable or restore your previous
+`db_file_path` (commenting it out falls back to the default location).
 
 ## Architecture
 
