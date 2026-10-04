@@ -217,11 +217,18 @@ class BalanceUpdateScreen(Screen):
     async def action_transfer(self) -> None:
         if self._month is None:
             return
+        row_idx = self.query_one("#balance-table", DataTable).cursor_row
+        from_account_id = (
+            self._balances[row_idx].account.id
+            if 0 <= row_idx < len(self._balances)
+            else None
+        )
         await self.app.push_screen_wait(
             TransferModal(
                 fetcher=self._fetcher,
                 uow=self._uow,
                 month=self._month,
+                from_account_id=from_account_id,
             )
         )
         self.call_after_refresh(self._refresh_table)
