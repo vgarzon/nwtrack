@@ -1,10 +1,12 @@
 # Plan: Demo Sample Data Command
 
-## 1. Sample dataset
+## 1. Sample dataset — DONE
 
 1. Add a module (e.g. `application/services/sample_data.py`) exposing a pure function that
-   returns the sample entities for a given reference month (currencies, categories,
+   returns the sample records for a given reference month (currencies, categories,
    institutions, tags, accounts, account-tag links, status history, balances, exchange rates).
+   Records are CSV-shaped and load through a new public `InitDataService.import_records()`,
+   reusing the proven CSV import path.
 2. Keep amounts as integer smallest units; liabilities positive; 12 months ending at the
    reference month; at least one inactive account with status history to match.
 

@@ -116,6 +116,13 @@ class InitDataService:
 
         self._import_records(records)
 
+    def import_records(self, records: dict[str, list[dict]]) -> None:
+        """Import CSV-shaped records (one list per import table) in one transaction."""
+        missing = [n for n in self.IMPORT_TABLE_NAMES if n not in records]
+        if missing:
+            raise ValueError(f"Missing import tables: {', '.join(sorted(missing))}")
+        self._import_records(records)
+
     def validate_import_bundle(self, source_dir: Path) -> dict[str, str]:
         """Validate a standard CSV bundle before mutating database data."""
         if not source_dir.exists():
