@@ -1,6 +1,6 @@
 # Validation: Demo Sample Data Command
 
-## Automated
+## Automated — DONE (ruff, mypy, pytest all green)
 
 Quality gates (all must pass): `just lint`, `just typecheck`, `just test` (or `just check`).
 
@@ -26,7 +26,7 @@ Required assertions:
     `NWTRACK_DATABASE__DB_FILE_PATH` alternative.
 - No new Alembic revision is added (schema untouched).
 
-## Manual
+## Manual — DONE (steps 1-4, 6, 7 run against the real CLI; step 5 by test, see note)
 
 1. `uv run nwtrack admin create-sample-db /tmp/nwtrack-demo.db` succeeds and prints activation
    guidance.
@@ -45,6 +45,16 @@ Required assertions:
 
 Presenter output is concise, states what was and was not changed, and uses the same style as
 the other admin presenters.
+
+## Result notes
+
+- Step 5 (TUI): not launched interactively. The no-forward-fill-prompt expectation is covered
+  by `test_reports_run_against_sample_database` (latest balance month == current month, so
+  `ForwardFillBalances.find_gap` returns nothing).
+- Step 7: missing-directory case verified; the unwritable-directory case is covered by the
+  `OSError` branch around the exclusive create (not exercised manually).
+- Spec deviation: the root callback cannot see the nested command name under click 8.3, so the
+  schema-check exemption lives in a new `admin` group callback (see `plan.md` group 3).
 
 ## Definition of done
 

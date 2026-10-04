@@ -72,7 +72,7 @@ _ACCOUNTS = [
         6_000,
     ),
     _SampleAccount(
-        6, "Home Mortgage", "Demo mortgage", "mortgage", 1, "USD", 25_000_000, -60_000
+        6, "Home Mortgage", "Demo mortgage", "mortgage", 1, "USD", 6_500_000, -20_000
     ),
     _SampleAccount(
         7, "Old Savings", "Demo closed account", "savings", 1, "USD", 300_000, 5_000
