@@ -1,9 +1,16 @@
 ---
 name: feature-spec
-description: Kicks off a new feature by picking an item from specs/backlog.md, creating a git branch, interviewing the user about scope/decisions/context, and writing a spec directory under specs/ containing plan.md, requirements.md, and validation.md. Trigger when the user says "feature spec", "start the next feature", "work on <backlog item>", or invokes /feature-spec.
+description: Kicks off a new feature by picking an item from specs/backlog.md, creating a git branch, reading the constitution and relevant code, interviewing the user only about unresolved scope/surface/data-impact/edge-case questions, and writing a spec directory under specs/ containing plan.md, requirements.md, and validation.md. Trigger when the user says "feature spec", "start the next feature", "work on <backlog item>", or invokes /feature-spec.
 ---
 
 # Feature Spec
+
+Lifecycle: **`feature-spec`** → `feature-implement` → `feature-close`
+
+**Starts from:** a backlog item (`idea` or `ready`) and a clean `devel`.
+**Ends with:** branch `feature/<slug>`, a spec directory `specs/YYMMDD-<slug>/`, and the item
+marked `in-progress`. Nothing is committed or pushed by this skill.
+**Next:** `feature-implement`, which commits these docs and builds the feature.
 
 ## Workflow
 
@@ -25,25 +32,44 @@ git checkout -b feature/<slug>
 
 ### 3. Ask user for initial instruction or context
 
-Ask user if there are any preamble they want to provide before you start asking the three main
-questions. Input can be in the form of general instructions or content from a file. For example:
-input file format and instructions provided in a markdown file.
+Ask the user for any preamble they want to provide before you research and interview. Input can
+be general instructions or content from a file (for example input file format and instructions
+in a markdown file). Keep what they give you; step 5 must not re-ask it.
 
-### 4. Interview the user — BEFORE writing any files
+### 4. Read guidance and relevant code — BEFORE interviewing
 
-Use `Ask User Question` tool with exactly **3 questions in one call**:
+Read `specs/mission.md` and `specs/tech-stack.md`, the backlog item, the preamble, and the code
+the feature will touch or imitate (neighbouring use cases, presenters, CLI/TUI screens,
+repositories, existing specs under `specs/archive/`). Use this to:
 
-| Header | Question focus |
-|--------|---------------|
-| **Scope** | What the feature collects, exposes, or does — fields, behaviour, data shape |
-| **Decisions** | Key implementation choices — storage, visibility, validation, UX pattern |
-| **Context** | Tone, constraints, or anything shaping the spec — copy style, stack limits, open questions |
+- list what the preamble and the code already settle (these become decisions, not questions);
+- find the real unknowns, and the recommended answer to each from existing conventions;
+- note cross-cutting interactions (CLI startup callbacks, schema/migrations, CSV round trip,
+  existing user data) that the feature may touch.
 
-Do **not** write any files until the user has answered all three questions.
+### 5. Interview the user — BEFORE writing any files
 
-### 5. Read guidance files
+Use `Ask User Question` with **2–4 questions in one call**. Ask only about dimensions that are
+still unresolved after step 4, and mark the recommended option first. Candidate dimensions:
 
-Read `specs/mission.md` and `specs/tech-stack.md` before drafting.
+| Header | Settles |
+|--------|---------|
+| **Scope** | Behaviour, inputs/outputs, data shape — and explicit non-goals |
+| **Surface** | CLI, TUI, or both; UX shape. New report surfaces should target both (see `tech-stack.md`) |
+| **Data impact** | Schema change or migration, CSV export/import round trip, effect on an existing database, safety of production data |
+| **Edge cases & proof** | Failure modes that matter, and what `validation.md` must prove |
+
+Rules:
+
+- Skip any dimension the preamble or code already answers; never re-ask what the user said.
+- Use the `preview` field when options are visual or numeric: CLI output mockups, TUI layouts,
+  or a small table of sample values the user should approve (tunable data, copy, defaults).
+- Free-text context comes through the tool's built-in "Other" option; no separate Context
+  question.
+- Anything inferred rather than asked goes into `requirements.md` under "Assumptions and open
+  questions" (step 6), never into the spec as a silent fact.
+
+Do **not** write any files until the user has answered.
 
 ### 6. Create the spec directory
 
@@ -51,8 +77,11 @@ Name: `specs/YYMMDD-<slug>/` using today's date and the backlog item's slug.
 
 #### `requirements.md`
 - Scope section: what is and is not included; field/data table if applicable
+- Non-goals section: what this feature deliberately does not do
 - Decisions section: choices made and why (draw from user answers)
 - Context section: tone rules, stack pointers, existing patterns to follow
+- Assumptions and open questions section: every inference made without asking, and anything
+  still unresolved, so the user can correct it before implementation
 
 #### `plan.md`
 - Numbered task groups appropriate to the feature (for example: Data → Components → Page & Route → Navigation → Tests)
@@ -72,20 +101,20 @@ as `specs/YYMMDD-<slug>/input-format.md`.
 
 ### 8. Ask user about missing details
 
-Use the `Ask User Question` tool to ask any follow-up questions needed to fill in gaps in the
-spec. Skip this step if the spec is already sufficiently detailed and clear.
+Use the `Ask User Question` tool for follow-up questions needed to fill gaps or resolve open
+questions listed in `requirements.md`, then update that section. Skip this step if the spec is
+already sufficiently detailed and clear.
 
 ### 9. Update the backlog
 
 Set the item's status to `in-progress` in `specs/backlog/<slug>.md` and in the `specs/backlog.md`
 table.
 
-## When the feature ships
+## Hand-off
 
-This is out of scope for this skill's own workflow, but remind the user: once the feature spec's
-`validation.md` definition of done is met and merged, remove the item's row from
-`specs/backlog.md`, delete `specs/backlog/<slug>.md`, move `specs/YYMMDD-<slug>/` to
-`specs/archive/<slug>/`, and add a one-line entry to `CHANGELOG.md`.
+Leave the new files uncommitted and tell the user the next step is `feature-implement`
+(commit the spec docs, build the feature, open the PR) and then `feature-close` (archive,
+changelog, merge). Do not repeat their steps here.
 
 ## Constraints
 
