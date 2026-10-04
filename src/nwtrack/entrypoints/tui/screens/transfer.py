@@ -24,6 +24,9 @@ class TransferModal(ModalScreen[bool]):
     Handles asset/liability side semantics when computing balance deltas.
     Missing balances for the selected month are treated as zero.
 
+    When ``from_account_id`` names an active account, the From picker is
+    pre-populated with it and focus starts on the To picker.
+
     Dismisses with True on success, False on cancel.
     """
 
@@ -49,11 +52,13 @@ class TransferModal(ModalScreen[bool]):
         fetcher: FetchService,
         uow: Callable[[], UnitOfWork],
         month: Month,
+        from_account_id: int | None = None,
     ) -> None:
         super().__init__()
         self._fetcher = fetcher
         self._uow = uow
         self._month = month
+        self._from_account_id = from_account_id
         self._accounts: list[Account] = []
 
     def compose(self) -> ComposeResult:
@@ -87,7 +92,12 @@ class TransferModal(ModalScreen[bool]):
             yield Footer()
 
     def on_mount(self) -> None:
-        self.query_one("#select-from", Select).focus()
+        from_select = self.query_one("#select-from", Select)
+        if self._from_account_id in {a.id for a in self._accounts}:
+            from_select.value = str(self._from_account_id)
+            self.query_one("#select-to", Select).focus()
+        else:
+            from_select.focus()
 
     @work
     async def action_pick_month(self) -> None:

@@ -116,11 +116,13 @@ class _TransferTestApp(App):
         fetcher: FetchService,
         uow: Callable[[], UnitOfWork],
         month: Month,
+        from_account_id: int | None = None,
     ) -> None:
         super().__init__()
         self._fetcher = fetcher
         self._uow = uow
         self._month = month
+        self._from_account_id = from_account_id
 
     def compose(self) -> ComposeResult:
         return iter([])
@@ -131,6 +133,7 @@ class _TransferTestApp(App):
                 fetcher=self._fetcher,
                 uow=self._uow,
                 month=self._month,
+                from_account_id=self._from_account_id,
             )
         )
 
@@ -290,6 +293,39 @@ class TestBalanceUpdateScreenBindings:
 
         asyncio.run(_run())
 
+    def test_t_prefills_from_account_with_highlighted_row(self) -> None:
+        m = _month(2025, 1)
+        cat = _make_category("Savings", Side.ASSET)
+        acc1 = _make_account(1, "A", cat)
+        acc2 = _make_account(2, "B", cat)
+        b1 = Balance(account_id=1, month=m, amount=10)
+        b1.account = acc1
+        b2 = Balance(account_id=2, month=m, amount=20)
+        b2.account = acc2
+        fetcher = MagicMock()
+        fetcher.get_recent_months.return_value = [m]
+        fetcher.get_month_balances.return_value = [b1, b2]
+        fetcher.get_accounts.return_value = [acc1, acc2]
+        fetcher.get_networth.return_value = None
+        uow_factory, _ = _make_uow_factory()
+        app = NWTrackApp(fetcher=fetcher, uow=uow_factory)
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await pilot.press("enter")
+                await pilot.pause()
+                await pilot.press("down")
+                await pilot.press("t")
+                await pilot.pause()
+                modal = app.screen
+                assert isinstance(modal, TransferModal)
+                assert modal.query_one("#select-from", Select).value == "2"
+                assert modal.focused is modal.query_one("#select-to", Select)
+                await pilot.press("escape")
+                await pilot.pause()
+
+        asyncio.run(_run())
+
     def test_r_does_nothing_when_no_month_data(self) -> None:
         app = _make_nwtrack_app(months=[])
 
@@ -426,6 +462,7 @@ def _make_tr_app(
     accounts: list[Account],
     month: Month,
     get_by_account_side_effect=None,
+    from_account_id: int | None = None,
 ) -> tuple[_TransferTestApp, MagicMock, MagicMock]:
     fetcher = MagicMock()
     fetcher.get_accounts.return_value = accounts
@@ -434,11 +471,47 @@ def _make_tr_app(
     uow_factory, mock_uow = _make_uow_factory(
         get_by_account_side_effect=get_by_account_side_effect
     )
-    app = _TransferTestApp(fetcher=fetcher, uow=uow_factory, month=month)
+    app = _TransferTestApp(
+        fetcher=fetcher,
+        uow=uow_factory,
+        month=month,
+        from_account_id=from_account_id,
+    )
     return app, uow_factory, mock_uow
 
 
 class TestTransferModal:
+    def test_from_account_prefilled_and_to_focused(self) -> None:
+        cat = _make_category("Savings", Side.ASSET)
+        acc1 = _make_account(1, "A", cat)
+        acc2 = _make_account(2, "B", cat)
+        app, _, _ = _make_tr_app([acc1, acc2], _month(2025, 1), from_account_id=2)
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await pilot.pause()
+                modal = app.screen
+                assert isinstance(modal, TransferModal)
+                assert modal.query_one("#select-from", Select).value == "2"
+                assert modal.focused is modal.query_one("#select-to", Select)
+
+        asyncio.run(_run())
+
+    def test_no_from_account_keeps_from_empty_and_focused(self) -> None:
+        cat = _make_category("Savings", Side.ASSET)
+        acc1 = _make_account(1, "A", cat)
+        app, _, _ = _make_tr_app([acc1], _month(2025, 1))
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await pilot.pause()
+                modal = app.screen
+                assert isinstance(modal, TransferModal)
+                assert modal.query_one("#select-from", Select).value is Select.NULL
+                assert modal.focused is modal.query_one("#select-from", Select)
+
+        asyncio.run(_run())
+
     def test_cancel_does_not_write_data(self) -> None:
         cat = _make_category("Savings", Side.ASSET)
         acc1 = _make_account(1, "A", cat)
