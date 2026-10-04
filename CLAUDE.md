@@ -63,7 +63,7 @@ src/nwtrack/
 - **Migration Status**: Presenter pattern is applied to all interactive use cases — migration is complete. No use case module imports Rich directly.
 - **TUI Layer** (`entrypoints/tui/`): Textual application with screen-stack navigation
   - `app.py`: `NWTrackApp` entry point; mounts home screen on startup
-  - `screens/`: one module per screen (home, balance\_update, balance\_edit, accounts, networth\_history, aggregation, account\_balance\_history, roll\_forward, transfer, categories, institutions, tags, admin\_menu, reports\_menu, month\_picker, confirm\_modal, stub)
+  - `screens/`: one module per screen (home, balance\_update, balance\_edit, accounts, networth\_history, aggregation, account\_balance\_history, roll\_forward, transfer, categories, institutions, tags, account\_order, admin\_menu, reports\_menu, month\_picker, confirm\_modal, stub)
   - Each screen owns its workflow end-to-end; use cases and services are resolved from `bootstrap/tui_composition.py`
   - Launched via `nwtrack tui launch`
   - On launch, `NWTrackApp` runs a startup balance check: `ForwardFillBalances.find_gap` finds the
@@ -303,6 +303,7 @@ The application uses:
 - Tables: `currencies`, `categories`, `institutions`, `tags`, `accounts`, `account_status_history`, `balances`, `exchange_rates`
 - ORM models with CHECK constraints (`Category.side`, `Account.status`) and composite UNIQUE constraints (`Balance`, `ExchangeRate`)
 - NetWorth aggregations computed via SQLAlchemy queries
+- `accounts.display_order` (contiguous 1..N, maintained by `AccountsRepository`: appended on insert, renumbered on delete, swapped by `move()`) and `accounts.is_hidden` control listing order and visibility. Repositories always return accounts in display order; TUI account lists hide hidden accounts behind an `h` toggle (`FetchService.get_accounts/get_month_balances(include_hidden=...)`), while net worth and reports always include them. Both columns are optional in the accounts CSV (older bundles import with order by CSV row). The order is edited in the TUI Admin → Account Order screen
 - `account_status_history` records per-month effective status for each account, enabling historical reporting via `AccountStatusScope.HISTORICAL`
 
 Settings are loaded from `config.toml`, from one of (first found wins): `./config/nwtrack/`

@@ -26,3 +26,20 @@
 ## Definition of done
 - All automated checks pass, manual walkthrough done, `CLAUDE.md` and `CHANGELOG.md` updated,
   PR into `devel` open.
+
+## Results (final validation)
+
+- `just check` equivalents run: ruff clean, mypy clean, full pytest green.
+- Automated coverage added: migration backfill (stamped and untracked pre-0003 DB, backup taken),
+  repository order/move/edge no-ops/delete renumber/hidden/hydrate slots, FetchService
+  filtering and net-worth invariance, CSV export columns and legacy-header import, TUI order
+  screen (move up/down with cursor following, hide toggle, admin menu route), balance screen
+  toggle and visible-total (per currency, liabilities negative), accounts list toggle, transfer
+  modal (hidden omitted; hidden prefilled From kept).
+- Manual (CLI, temp sample DB): `admin create-sample-db` yields slots 1..N and stamps `0003`;
+  `accounts list` runs. Found and fixed during this walkthrough: CSV import/sample paths use
+  `session.merge`, bypassing `insert`, leaving slots at 0 — fixed in `hydrate_many`.
+- Not exercised: an interactive TUI session on a real database copy (covered only by Textual
+  pilot tests), and the CLI `balances update` command visually.
+- Drift from spec: no `ReorderAccounts` use case (screen calls the repository via the UoW like
+  the tags/institutions screens); no DB unique constraint on `display_order`.

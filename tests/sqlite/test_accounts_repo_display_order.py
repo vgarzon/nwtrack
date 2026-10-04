@@ -116,3 +116,16 @@ def test_hydrate_parses_optional_display_columns(base_container) -> None:
         full = uow.accounts.hydrate({**base, "display_order": "7", "is_hidden": "True"})
     assert (legacy.display_order, legacy.is_hidden) == (0, False)
     assert (full.display_order, full.is_hidden) == (7, True)
+
+
+def test_hydrate_many_assigns_slots_to_records_without_one(base_container) -> None:
+    container = build_data_services_container(base_container)
+    base = {"description": "", "category": "checking", "currency": "USD"}
+    records = [
+        {**base, "name": "x", "status": "active"},
+        {**base, "name": "y", "status": "active", "display_order": "5"},
+        {**base, "name": "z", "status": "active"},
+    ]
+    with _uow_factory(container) as uow:
+        accounts = uow.accounts.hydrate_many(records)
+    assert [a.display_order for a in accounts] == [6, 5, 7]

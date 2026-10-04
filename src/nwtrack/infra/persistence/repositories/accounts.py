@@ -429,4 +429,12 @@ class AccountsRepository(AccountsRepositoryProtocol):
         Returns:
             List of Account objects
         """
-        return [self.hydrate(record) for record in data]
+        accounts = [self.hydrate(record) for record in data]
+        # Records without a display slot (e.g. CSVs from before display order)
+        # get sequential slots after any explicit ones, in record order.
+        next_slot = max((a.display_order for a in accounts), default=0) + 1
+        for account in accounts:
+            if account.display_order <= 0:
+                account.display_order = next_slot
+                next_slot += 1
+        return accounts
