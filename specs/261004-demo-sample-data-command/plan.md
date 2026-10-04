@@ -23,13 +23,15 @@
 4. `main(path)` builds a container whose settings/engine/UoW point at `PATH` (not the
    configured database), registers the presenter, runs the use case, returns exit code.
 
-## 3. CLI wiring
+## 3. CLI wiring — DONE
 
 1. Add `create-sample-db` to `entrypoints/cli/commands/admin.py` with a required `PATH`
    argument (`typer.Argument`), lazy-importing the use case.
-2. Exempt this command from `_ensure_runtime_schema()` in the root callback in
-   `entrypoints/cli/app.py` (same mechanism as `config`; compare `ctx.invoked_subcommand`
-   and the nested command name so only `admin create-sample-db` is skipped).
+2. Exempt this command from `_ensure_runtime_schema()`. The root callback cannot see the
+   nested command name (click 8.3 consumes the args before it runs), so the root callback
+   now skips `config` and `admin`, and a new `admin_app` callback in
+   `entrypoints/cli/app.py` runs the schema check for every admin command except
+   `create-sample-db`.
 3. Exit non-zero on failure.
 
 ## 4. Presenter — DONE

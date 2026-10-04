@@ -64,9 +64,7 @@ class RichInstitutionCreationPresenter:
             )
 
     def _collect_description(self, default: str = "") -> str:
-        description = prompt_for_institution_description(
-            self._console, default=default
-        )
+        description = prompt_for_institution_description(self._console, default=default)
         if description.lower() == "q":
             raise KeyboardInterrupt("Quit while collecting institution description.")
         return description
@@ -155,9 +153,7 @@ class RichInstitutionUpdatePresenter:
             )
 
     def _collect_description(self, default: str = "") -> str:
-        description = prompt_for_institution_description(
-            self._console, default=default
-        )
+        description = prompt_for_institution_description(self._console, default=default)
         if description.lower() == "q":
             raise KeyboardInterrupt("Quit while collecting institution description.")
         return description
