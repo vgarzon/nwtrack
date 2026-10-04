@@ -619,3 +619,38 @@ class TestComputeDeltas:
         assert _compute_deltas(
             self._acc(Side.LIABILITY), self._acc(Side.LIABILITY), 100
         ) == (+100, -100)
+
+
+class TestBalanceUpdateTableWidthAfterTransfer:
+    """Regression: columns must not be truncated after the transfer modal closes."""
+
+    def test_columns_fit_content_after_transfer_modal_closes(self) -> None:
+        m = _month(2025, 1)
+        cat = _make_category("a-rather-long-category-name", Side.ASSET)
+        acc = _make_account(1, "A-rather-long-account-name", cat)
+        balance = Balance(account_id=1, month=m, amount=1000)
+        balance.account = acc
+
+        fetcher = MagicMock()
+        fetcher.get_recent_months.return_value = [m]
+        acc2 = _make_account(2, "Other", cat)
+        balance2 = Balance(account_id=2, month=m, amount=5)
+        balance2.account = acc2
+        fetcher.get_month_balances.return_value = [balance, balance2]
+        fetcher.get_networth.return_value = None
+        uow_factory, _ = _make_uow_factory()
+        app = NWTrackApp(fetcher=fetcher, uow=uow_factory)
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await pilot.press("enter")
+                await pilot.pause()
+                await pilot.press("t")
+                await pilot.pause()
+                assert isinstance(app.screen, TransferModal)
+                await pilot.press("escape")
+                await pilot.pause()
+                await pilot.pause()
+                assert "A-rather-long-account-name" in app.export_screenshot()
+
+        asyncio.run(_run())

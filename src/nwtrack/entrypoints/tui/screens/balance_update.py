@@ -224,8 +224,8 @@ class BalanceUpdateScreen(Screen):
                 month=self._month,
             )
         )
-        self._refresh_table()
-        self._refresh_networth()
+        self.call_after_refresh(self._refresh_table)
+        self.call_after_refresh(self._refresh_networth)
 
     # ── Helpers ──────────────────────────────────────────────────────────────
 
