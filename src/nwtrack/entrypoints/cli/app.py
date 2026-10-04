@@ -87,8 +87,20 @@ def main(
     """Ensure the runtime database schema before executing a command."""
     _record_config_file_override(config_file)
     # Config commands never touch the database, and `config init` must be able to
-    # create the file a missing --config-file points at.
-    if ctx.invoked_subcommand is None or ctx.invoked_subcommand == "config":
+    # create the file a missing --config-file points at. The admin group does its
+    # own check in `_admin_callback`, because only that callback can see which
+    # admin command was invoked.
+    if ctx.invoked_subcommand in (None, "config", "admin"):
+        return
+    _ensure_runtime_schema()
+
+
+@admin_app.callback()
+def _admin_callback(ctx: typer.Context) -> None:
+    """Ensure the runtime schema, except for commands that build their own database."""
+    # `create-sample-db` writes a brand-new database elsewhere and must not create
+    # or migrate the configured one as a side effect.
+    if ctx.invoked_subcommand in (None, "create-sample-db"):
         return
     _ensure_runtime_schema()
 
