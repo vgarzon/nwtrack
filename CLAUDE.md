@@ -176,6 +176,29 @@ just clean             # Remove Python cache files
 - Promote `devel` to `main` through separate pull requests after changes are validated.
 - Do not merge routine feature work directly into `main`.
 
+### Bug Fixes
+
+Bugs are tracked separately from the feature backlog: `specs/bugs.md` (board) and
+`specs/bugs/<slug>.md` (one file per bug), managed with the `bug-fix` skill. Statuses: `reported`,
+`confirmed`, `in-progress`, `wontfix`, `cannot-reproduce`; severities: `critical`, `major`,
+`minor`.
+
+- **Tiers**: small bugs (local cause, no schema change, no design decision) need only the bug
+  file and a PR. Large bugs (migration, design decision, multi-layer) move to `specs/backlog.md`
+  as `ready` and follow the `feature-spec` workflow.
+- **Order of work**: reproduce with a failing regression test first, then fix minimally, then
+  run `just check`.
+- **Branch**: `fix/<slug>` from `devel`; commit as `fix(<scope>): <summary>`; PR into `devel`
+  with Symptom / Root cause / Fix / Regression test / Risk / Data impact sections.
+- **Hotfixes**: no special path — critical bugs also go through `devel`, followed by a
+  fast-tracked `devel` → `main` promotion PR.
+- **Close-out**: before the `--rebase --delete-branch` merge, commit on the fix branch the removal
+  of the board row and the bug file (the PR description is the record), plus a `Fixed:` line in
+  `CHANGELOG.md` only for user-visible bugs, so nothing lands on `devel` outside a PR. No archive
+  directory for small bugs.
+- A bug whose fix needs existing databases repaired must ship that repair as an Alembic
+  migration (see Database Operations).
+
 ### Running the Application
 
 ```bash
