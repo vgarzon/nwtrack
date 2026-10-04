@@ -10,7 +10,7 @@
 2. Keep amounts as integer smallest units; liabilities positive; 12 months ending at the
    reference month; at least one inactive account with status history to match.
 
-## 2. Use case and ports
+## 2. Use case and ports — DONE
 
 1. Add `AdminCreateSampleDbPresenter` Protocol to `application/ports/presentation.py`
    (`show_header`, `show_success(path, summary)`, `show_error(message)`).
@@ -32,7 +32,7 @@
    and the nested command name so only `admin create-sample-db` is skipped).
 3. Exit non-zero on failure.
 
-## 4. Presenter
+## 4. Presenter — DONE
 
 1. Add `RichAdminCreateSampleDbPresenter` in `entrypoints/cli/adapters/admin_presenters.py`.
 2. Success output: absolute path, dataset summary, `config.toml` snippet, env var

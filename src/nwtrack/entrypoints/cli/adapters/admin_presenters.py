@@ -1,10 +1,14 @@
 """Rich-based presenters for admin use cases."""
 
+import json
+import shlex
+
 from rich.console import Console
+from rich.markup import escape
 from rich.prompt import Confirm, IntPrompt
 from rich.table import Table
 
-from nwtrack.application.dto import SeedStatusHistoryResult
+from nwtrack.application.dto import SampleDatabaseResult, SeedStatusHistoryResult
 from nwtrack.application.services.fetch import FetchService
 from nwtrack.domain.models import Account, Institution
 from nwtrack.entrypoints.cli.ui.renderers import build_indexed_institutions_table
@@ -153,3 +157,51 @@ class RichAdminSeedStatusHistoryPresenter:
             parts.append(f"{result.skipped} account(s) already up to date")
         summary = ", ".join(parts) if parts else "nothing to do"
         self._console.print(f"[success]{summary}.[/success]")
+
+
+class RichAdminCreateSampleDbPresenter:
+    """Rich implementation of AdminCreateSampleDbPresenter."""
+
+    def __init__(self, console: Console) -> None:
+        self._console = console
+
+    def show_header(self) -> None:
+        self._console.rule("[header]Create Sample Database[/header]")
+
+    def show_success(self, result: SampleDatabaseResult) -> None:
+        path = str(result.path)
+        self._console.print(
+            f"[success]Created sample database:[/success] {escape(path)}",
+            soft_wrap=True,
+        )
+        self._console.print(
+            f"  {result.accounts} accounts, {result.balances} balances "
+            f"({result.first_month} to {result.last_month}), "
+            f"{result.currencies} currencies, {result.institutions} institutions, "
+            f"{result.tags} tags"
+        )
+        self._console.print()
+        self._console.print("To use it, set this in your config.toml:")
+        self._console.print(
+            escape(f"  [database]\n  db_file_path = {json.dumps(path)}"),
+            soft_wrap=True,
+            highlight=False,
+        )
+        self._console.print(
+            "  (run [bold]nwtrack config show[/bold] to find the active config file, "
+            "or [bold]nwtrack config init[/bold] to create one)"
+        )
+        self._console.print("Or for a single shell/command:")
+        self._console.print(
+            escape(f"  NWTRACK_DATABASE__DB_FILE_PATH={shlex.quote(path)}"),
+            soft_wrap=True,
+            highlight=False,
+        )
+        self._console.print()
+        self._console.print(
+            "[dim]No configuration was changed; "
+            "your current database is untouched.[/dim]"
+        )
+
+    def show_error(self, message: str) -> None:
+        self._console.print(f"[error]{escape(message)}[/error]")

@@ -200,6 +200,20 @@ class SeedStatusHistoryResult:
     skipped: int   # accounts left unchanged (already had correct rows)
 
 
+@dataclass(frozen=True)
+class SampleDatabaseResult:
+    """Summary of a freshly created sample database."""
+
+    path: Path
+    currencies: int
+    institutions: int
+    tags: int
+    accounts: int
+    balances: int
+    first_month: Month
+    last_month: Month
+
+
 class ConfigValueSource(StrEnum):
     """Where a resolved config.toml setting's value came from."""
 

@@ -21,6 +21,7 @@ from nwtrack.application.dto import (
     InstitutionListItem,
     MonthlyCategoryBalance,
     NewAccountData,
+    SampleDatabaseResult,
     SeedStatusHistoryResult,
     SingleMonthAggregationResult,
     TagListItem,
@@ -1472,6 +1473,22 @@ class AdminSeedStatusHistoryPresenter(Protocol):
 
     def show_result(self, result: SeedStatusHistoryResult) -> None:
         """Display the seeding summary."""
+        ...
+
+
+class AdminCreateSampleDbPresenter(Protocol):
+    """Presenter for the create-sample-db admin command."""
+
+    def show_header(self) -> None:
+        """Display the command header."""
+        ...
+
+    def show_success(self, result: SampleDatabaseResult) -> None:
+        """Display the created database summary and how to activate it."""
+        ...
+
+    def show_error(self, message: str) -> None:
+        """Display an error message."""
         ...
 
 
