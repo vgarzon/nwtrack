@@ -50,16 +50,16 @@ _TAGS = [
 
 _ACCOUNTS = [
     _SampleAccount(
-        1, "Everyday Checking", "Demo checking", "checking", 1, "USD", 420_000, 7_500
+        1, "Everyday Checking", "Demo checking", "checking", 1, "USD", 12_000, 300
     ),
     _SampleAccount(
-        2, "Rainy Day Savings", "Demo savings", "savings", 1, "USD", 1_500_000, 40_000
+        2, "Rainy Day Savings", "Demo savings", "savings", 1, "USD", 45_000, 1_400
     ),
     _SampleAccount(
-        3, "Index Fund", "Demo brokerage", "investment", 2, "USD", 6_000_000, 90_000
+        3, "Index Fund", "Demo brokerage", "investment", 2, "USD", 590_000, 5_500
     ),
     _SampleAccount(
-        4, "Swiss Savings", "Demo CHF savings", "savings", 3, "CHF", 900_000, 15_000
+        4, "Swiss Savings", "Demo CHF savings", "savings", 3, "CHF", 36_000, 400
     ),
     _SampleAccount(
         5,
@@ -68,14 +68,14 @@ _ACCOUNTS = [
         "revolving_credit",
         1,
         "USD",
-        85_000,
-        6_000,
+        2_800,
+        200,
     ),
     _SampleAccount(
-        6, "Home Mortgage", "Demo mortgage", "mortgage", 1, "USD", 6_500_000, -20_000
+        6, "Home Mortgage", "Demo mortgage", "mortgage", 1, "USD", 640_000, -1_200
     ),
     _SampleAccount(
-        7, "Old Savings", "Demo closed account", "savings", 1, "USD", 300_000, 5_000
+        7, "Old Savings", "Demo closed account", "savings", 1, "USD", 10_000, 200
     ),
 ]
 
