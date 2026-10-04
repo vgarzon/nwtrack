@@ -9,7 +9,7 @@ TUI views without deactivating them.
 
 | Column | Type | Default | Meaning |
 |---|---|---|---|
-| `display_order` | INTEGER NOT NULL | backfilled from `id` rank | 1-based slot; unique, contiguous |
+| `display_order` | INTEGER NOT NULL | backfilled from `id` rank | 1-based slot; contiguous (maintained by the repository, no DB unique constraint) |
 | `is_hidden` | BOOLEAN NOT NULL | `false` | Hidden from TUI account lists unless "show hidden" is on |
 
 - One Alembic revision adds the columns and backfills `display_order` by increasing `id`.

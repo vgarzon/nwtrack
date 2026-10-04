@@ -202,3 +202,68 @@ def test_migration_failure_preserves_original_database(tmp_path: Path) -> None:
 
     backups = _backup_files(tmp_path)
     assert len(backups) == 1
+
+
+def _create_pre_display_order_database(db_path: Path, *, stamped: bool) -> None:
+    """Create a 0002-shape accounts table with non-contiguous ids."""
+    with sqlite3.connect(db_path) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE currencies (code TEXT PRIMARY KEY, description TEXT NOT NULL);
+            CREATE TABLE categories (
+                name TEXT PRIMARY KEY,
+                side TEXT NOT NULL CHECK(side IN ('asset', 'liability'))
+            );
+            CREATE TABLE institutions (
+                id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, description TEXT
+            );
+            CREATE TABLE accounts (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                description TEXT NOT NULL,
+                category TEXT NOT NULL REFERENCES categories(name),
+                currency TEXT NOT NULL REFERENCES currencies(code),
+                status TEXT NOT NULL,
+                institution_id INTEGER REFERENCES institutions(id),
+                CONSTRAINT check_account_status
+                    CHECK (status IN ('active', 'inactive'))
+            );
+            INSERT INTO currencies VALUES ('USD', 'US Dollar');
+            INSERT INTO categories VALUES ('checking', 'asset');
+            INSERT INTO accounts (id, name, description, category, currency, status)
+            VALUES (2, 'b', '', 'checking', 'USD', 'active'),
+                   (5, 'a', '', 'checking', 'USD', 'active'),
+                   (9, 'c', '', 'checking', 'USD', 'inactive');
+            """
+        )
+        if stamped:
+            connection.executescript(
+                """
+                CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL);
+                INSERT INTO alembic_version VALUES ('0002');
+                """
+            )
+
+
+@pytest.mark.parametrize("stamped", [True, False])
+def test_display_order_migration_backfills_by_id_rank(
+    tmp_path: Path, stamped: bool
+) -> None:
+    db_path = tmp_path / "pre3.db"
+    _create_pre_display_order_database(db_path, stamped=stamped)
+    settings = _settings(tmp_path, "pre3.db")
+    session_manager = SQLiteSessionManager(settings)
+    schema_manager = SchemaManagerImpl(session_manager.engine)
+
+    schema_manager.ensure_current_schema()
+
+    with sqlite3.connect(db_path) as connection:
+        rows = connection.execute(
+            "SELECT id, display_order, is_hidden, status FROM accounts ORDER BY id"
+        ).fetchall()
+    assert rows == [
+        (2, 1, 0, "active"),
+        (5, 2, 0, "active"),
+        (9, 3, 0, "inactive"),
+    ]
+    assert len(_backup_files(tmp_path)) == 1

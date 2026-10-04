@@ -191,6 +191,7 @@ class BalancesRepository(BalancesRepositoryProtocol):
         )
         if active_only:
             query = query.where(Account.status == Status.ACTIVE)
+        query = query.order_by(Account.display_order, Account.id)
 
         result = self._session.execute(query).scalars()
         return list(result)

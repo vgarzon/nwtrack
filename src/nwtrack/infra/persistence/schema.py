@@ -16,6 +16,7 @@ from nwtrack.infra.persistence.orm.base import Base
 logger = logging.getLogger(__name__)
 
 _PRE_INSTITUTION_ID_REVISION = "0001"
+_PRE_DISPLAY_ORDER_REVISION = "0002"
 
 
 def _detect_stamp_revision(inspector: Inspector) -> str | None:
@@ -24,14 +25,18 @@ def _detect_stamp_revision(inspector: Inspector) -> str | None:
     Returns ``None`` when there is nothing to stamp (no ``accounts`` table at
     all — a brand new database that should run the full migration chain from
     scratch), the pre-institution_id baseline revision id for a legacy
-    database missing that column, or ``"head"`` for a database that already
-    has the full current schema but was never stamped.
+    database missing that column, the pre-display-order revision id for a
+    database with ``institution_id`` but no ``display_order``, or ``"head"``
+    for a database that already has the full current schema but was never
+    stamped.
     """
     if not inspector.has_table("accounts"):
         return None
     account_columns = {column["name"] for column in inspector.get_columns("accounts")}
     if "institution_id" not in account_columns:
         return _PRE_INSTITUTION_ID_REVISION
+    if "display_order" not in account_columns:
+        return _PRE_DISPLAY_ORDER_REVISION
     return "head"
 
 

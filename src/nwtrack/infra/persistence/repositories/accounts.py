@@ -41,6 +41,8 @@ class AccountsRepository(AccountsRepositoryProtocol):
             Last row id of inserted account
         """
         try:
+            if data.display_order <= 0:
+                data.display_order = self._max_display_order() + 1
             self._session.add(data)
             self._session.flush()
             last_id = data.id
@@ -56,6 +58,11 @@ class AccountsRepository(AccountsRepositoryProtocol):
         Args:
             data: List of Account objects
         """
+        next_slot = self._max_display_order() + 1
+        for account in data:
+            if account.display_order <= 0:
+                account.display_order = next_slot
+            next_slot = max(next_slot, account.display_order) + 1
         self._session.add_all(data)
         self._session.flush()
         logger.info("Inserted %d account rows.", len(data))
@@ -87,23 +94,27 @@ class AccountsRepository(AccountsRepositoryProtocol):
         ).scalar_one_or_none()
 
     def get_active(self) -> list[Account]:
-        """Get all active accounts.
+        """Get all active accounts ordered by display order.
 
         Returns:
             List of active account objects
         """
         result = self._session.execute(
-            select(Account).where(Account.status == Status.ACTIVE)
+            select(Account)
+            .where(Account.status == Status.ACTIVE)
+            .order_by(Account.display_order, Account.id)
         ).scalars()
         return list(result)
 
     def get_all(self) -> list[Account]:
-        """Get all accounts.
+        """Get all accounts ordered by display order.
 
         Returns:
             List of account objects
         """
-        result = self._session.execute(select(Account)).scalars()
+        result = self._session.execute(
+            select(Account).order_by(Account.display_order, Account.id)
+        ).scalars()
         return list(result)
 
     def get_without_institution(self) -> list[Account]:
@@ -170,6 +181,7 @@ class AccountsRepository(AccountsRepositoryProtocol):
             )
         else:
             logger.info(f"Deleted account with ID {account_id}.")
+            self._renumber_display_order()
         return rowcount
 
     def update(self, data: Account) -> int:
@@ -319,6 +331,65 @@ class AccountsRepository(AccountsRepositoryProtocol):
             logger.info("Updated account %d description.", account_id)
         return rowcount
 
+    def move(self, account_id: int, direction: int) -> bool:
+        """Swap an account's display slot with its neighbour.
+
+        Args:
+            account_id: The account ID
+            direction: -1 to move up (earlier), +1 to move down (later)
+
+        Returns:
+            True if the account moved, False if it is already at the edge or
+            does not exist
+        """
+        ordered = self.get_all()
+        ids = [account.id for account in ordered]
+        if account_id not in ids:
+            return False
+        index = ids.index(account_id)
+        target = index + direction
+        if not 0 <= target < len(ids):
+            return False
+        ids[index], ids[target] = ids[target], ids[index]
+        self._assign_display_order(ids)
+        logger.info("Moved account %d to display slot %d.", account_id, target + 1)
+        return True
+
+    def set_hidden(self, account_id: int, hidden: bool) -> int:
+        """Set the hidden flag on an account.
+
+        Args:
+            account_id: The account ID
+            hidden: Whether the account should be hidden from default lists
+
+        Returns:
+            Number of updated account entries
+        """
+        result = self._session.execute(
+            update(Account).where(Account.id == account_id).values(is_hidden=hidden)
+        )
+        return result.rowcount or 0  # type: ignore[attr-defined]
+
+    def _max_display_order(self) -> int:
+        return (
+            self._session.execute(select(func.max(Account.display_order))).scalar()
+            or 0
+        )
+
+    def _renumber_display_order(self) -> None:
+        """Close gaps so display_order is contiguous from 1."""
+        self._assign_display_order([account.id for account in self.get_all()])
+
+    def _assign_display_order(self, ordered_ids: list[int]) -> None:
+        for slot, account_id in enumerate(ordered_ids, start=1):
+            self._session.execute(
+                update(Account)
+                .where(Account.id == account_id)
+                .values(display_order=slot)
+            )
+        # Entities already loaded in this session must not keep stale slots.
+        self._session.expire_all()
+
     def hydrate(self, record: Mapping[str, Any]) -> Account:
         """Hydrate record to Account entity.
 
@@ -339,6 +410,9 @@ class AccountsRepository(AccountsRepositoryProtocol):
             ),
             currency_code=record["currency"],
             status=Status(record["status"]),
+            display_order=int(record.get("display_order") or 0),
+            is_hidden=str(record.get("is_hidden", "")).strip().lower()
+            in ("true", "1"),
         )
         # Set id after construction (init=False in ORM model)
         # Only set id if it's present and non-zero (0 means auto-generate)
