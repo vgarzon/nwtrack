@@ -10,14 +10,15 @@
 3. `SchemaManager.create_all_tables()` path: confirm fresh DBs get the columns and are stamped
    at head.
 
-## 2. Repository and services
+## 2. Repository and services — DONE
 1. `AccountsRepository`: order `get_all`/`get_active` by `display_order`; `insert` assigns
    `max+1`; delete renumbers; add `move(account_id, direction)` and `set_hidden(account_id, bool)`.
 2. Balances queries that return per-account rows (`get_month_balances` etc.) join/sort by
    `Account.display_order`.
 3. `FetchService`: `get_accounts(..., include_hidden=True)` and `get_month_balances(...,
    include_hidden=True)` parameters; default keeps CLI/report behaviour (nothing hidden).
-4. Use case `ReorderAccounts` (move up/down, toggle hidden) returning `OperationResult`.
+4. ~~Use case `ReorderAccounts`~~ — dropped: existing admin screens (tags, institutions) call
+   repositories through the UoW directly, so the new screen follows that pattern.
 5. CSV: add the two columns to `accounts` export; import defaults when absent.
 
 ## 3. TUI

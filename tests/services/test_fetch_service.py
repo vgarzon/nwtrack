@@ -142,3 +142,40 @@ def test_fetch_service_lists_available_aggregation_months(
     assert months == sorted(months)
     assert months[0] == Month(2024, 6)
     assert months[-1] == Month(2025, 11)
+
+
+def test_fetch_service_orders_by_display_order_and_filters_hidden(
+    configured_container: Container, sample_entities
+) -> None:
+    """Accounts and month balances follow display order; hidden ones can be dropped."""
+    init_db_tables_w_entities(configured_container, sample_entities)
+    fetcher = FetchService(uow=lambda: configured_container.resolve(UnitOfWork))
+    month = fetcher.get_recent_months(n_months=1)[0]
+
+    accounts = fetcher.get_accounts(active_only=True)
+    first, second = accounts[0], accounts[1]
+    uow_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with uow_manager as uow:
+        uow.accounts.move(first.id, 1)  # swap first and second
+        uow.accounts.set_hidden(accounts[-1].id, True)
+
+    reordered = fetcher.get_accounts(active_only=True)
+    assert [a.id for a in reordered[:2]] == [second.id, first.id]
+    assert len(reordered) == len(accounts)
+
+    visible = fetcher.get_accounts(active_only=True, include_hidden=False)
+    assert accounts[-1].id not in {a.id for a in visible}
+
+    balances_all = fetcher.get_month_balances(month, active_only=True)
+    balances_visible = fetcher.get_month_balances(
+        month, active_only=True, include_hidden=False
+    )
+    assert [b.account.id for b in balances_all[:2]] == [second.id, first.id]
+    assert len(balances_visible) == len(balances_all) - 1
+
+    # Hiding is cosmetic: net worth is unchanged by the flag.
+    hidden_nw = fetcher.get_networth(month, "USD")
+    unhide_manager: UnitOfWork = configured_container.resolve(UnitOfWork)
+    with unhide_manager as uow:
+        uow.accounts.set_hidden(accounts[-1].id, False)
+    assert fetcher.get_networth(month, "USD") == hidden_nw
