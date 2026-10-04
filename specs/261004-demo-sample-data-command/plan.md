@@ -40,7 +40,7 @@
 2. Success output: absolute path, dataset summary, `config.toml` snippet, env var
    alternative, and the "configuration not modified" note.
 
-## 5. Tests
+## 5. Tests — DONE
 
 1. Dataset: counts, 12 consecutive months ending at the reference month, liabilities in
    liability categories, every account has an institution, status history consistent.
@@ -52,7 +52,7 @@
    run does not create or modify the configured database; output contains the path and
    `db_file_path` snippet.
 
-## 6. Docs
+## 6. Docs — DONE
 
 1. `README.md`: new-user "try it with sample data" section.
 2. `CLAUDE.md`: add `admin create-sample-db` to the command list and note the root-callback
