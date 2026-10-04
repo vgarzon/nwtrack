@@ -25,7 +25,7 @@ item must still respect. Completed work is logged in `CHANGELOG.md`, not here.
 | idea | [Reporting UX options](backlog/reporting-ux-options.md) | Long/wide history layout, CSV output for aggregated history reports |
 | idea | [Single-currency conversion reporting](backlog/single-currency-conversion-reporting.md) | Convert mixed-currency balances to one reporting currency |
 | idea | [CLI retirement](backlog/cli-retirement.md) | Drop Typer once the TUI covers everything and is validated |
-| idea | [Account display order](backlog/account-display-order.md) | List account balances in a user-specified display order instead of account id |
+| in-progress | [Account display order](backlog/account-display-order.md) | List account balances in a user-specified display order instead of account id |
 
 ## Working the backlog
 

@@ -1,6 +1,6 @@
 ---
 name: account-display-order
-status: idea
+status: in-progress
 ---
 
 ## Problem
