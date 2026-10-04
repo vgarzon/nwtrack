@@ -28,14 +28,17 @@ class FetchService:
     def __init__(self, uow: Callable[[], UnitOfWork]) -> None:
         self._uow = uow
 
-    def get_accounts(self, active_only: bool = True) -> list[Account]:
-        """Get a list of all accounts.
+    def get_accounts(
+        self, active_only: bool = True, include_hidden: bool = True
+    ) -> list[Account]:
+        """Get accounts in display order.
 
         Args:
             active_only (bool): Whether to include only active accounts.
+            include_hidden (bool): Whether to include accounts flagged hidden.
 
         Returns:
-            list[Account]: List of active Account objects.
+            list[Account]: List of Account objects ordered by display order.
         """
         if active_only:
             with self._uow() as uow:
@@ -43,6 +46,8 @@ class FetchService:
         else:
             with self._uow() as uow:
                 accounts = uow.accounts.get_all()
+        if not include_hidden:
+            accounts = [a for a in accounts if not a.is_hidden]
         return accounts
 
     def get_all_categories(self) -> list[Category]:
@@ -223,19 +228,22 @@ class FetchService:
         return recent_months
 
     def get_month_balances(
-        self, month: Month, active_only: bool = True
+        self, month: Month, active_only: bool = True, include_hidden: bool = True
     ) -> list[Balance]:
-        """Get balance all accounts on a specific month.
+        """Get balance all accounts on a specific month, in account display order.
 
         Args:
             month (Month): Month object
             active_only (bool): Whether to include only active accounts
+            include_hidden (bool): Whether to include hidden accounts
 
         Return:
             list[Balance]: List of Balance object for the specified account and month.
         """
         with self._uow() as uow:
             balances = uow.balances.get_month(month, active_only)
+        if not include_hidden:
+            balances = [b for b in balances if not b.account.is_hidden]
         return balances
 
     def check_month_in_balances(self, month: Month) -> bool:
