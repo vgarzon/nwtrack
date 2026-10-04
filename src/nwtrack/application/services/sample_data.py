@@ -68,8 +68,8 @@ _ACCOUNTS = [
         "revolving_credit",
         1,
         "USD",
-        2_800,
-        200,
+        5_000,
+        -150,
     ),
     _SampleAccount(
         6, "Home Mortgage", "Demo mortgage", "mortgage", 1, "USD", 102_000, -200
