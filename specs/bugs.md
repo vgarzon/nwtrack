@@ -25,6 +25,7 @@ this file; the pull request description is the permanent record of the root caus
 
 | Status | Severity | Item | One-liner |
 |---|---|---|---|
+| `in-progress` | `minor` | [balance-table-truncated-after-transfer](bugs/balance-table-truncated-after-transfer.md) | Balance table columns can render truncated after the transfer modal closes (DataTable stale render cache race); makes a TUI test flaky |
 
 ## Working the bugs
 
