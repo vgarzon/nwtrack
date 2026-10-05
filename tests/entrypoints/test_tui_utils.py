@@ -67,7 +67,6 @@ class TestMonthsToGrid:
         assert len(result[0]) == 3
         assert len(result[1]) == 1
 
-
     def test_single_month(self) -> None:
         months = [Month(2026, 3)]
         result = months_to_grid(months, cols=3)

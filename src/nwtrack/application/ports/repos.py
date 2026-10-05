@@ -323,9 +323,7 @@ class AccountStatusHistoryRepository(Protocol):
         """Return all history rows."""
         ...
 
-    def get_effective_status(
-        self, account_id: int, month: Month
-    ) -> Status | None:
+    def get_effective_status(self, account_id: int, month: Month) -> Status | None:
         """Return the effective status for an account at a given month."""
         ...
 

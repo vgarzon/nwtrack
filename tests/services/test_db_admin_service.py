@@ -68,9 +68,10 @@ def test_ensure_database_creates_tag_tables_for_legacy_sqlite_schema(
 
     assert "tags" in inspector.get_table_names()
     assert "account_tags" in inspector.get_table_names()
-    assert {
-        column["name"] for column in inspector.get_columns("account_tags")
-    } == {"account_id", "tag_id"}
+    assert {column["name"] for column in inspector.get_columns("account_tags")} == {
+        "account_id",
+        "tag_id",
+    }
 
 
 def _create_legacy_database(db_path: Path) -> None:

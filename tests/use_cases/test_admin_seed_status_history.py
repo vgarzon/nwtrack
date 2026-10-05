@@ -56,20 +56,27 @@ def test_seed_use_case_seeds_accounts_with_no_history(
     engine: Engine = base_container.resolve(SQLiteSessionManager).engine
 
     with engine.begin() as conn:
-        conn.execute(text(
-            "INSERT INTO currencies (code, description) VALUES ('USD', 'US Dollar')"
-        ))
-        conn.execute(text(
-            "INSERT INTO categories (name, side) VALUES ('checking', 'asset')"
-        ))
-        conn.execute(text(
-            "INSERT INTO accounts (id, name, description, category, currency, status)"
-            " VALUES (50, 'acct_seed', '', 'checking', 'USD', 'active')"
-        ))
-        conn.execute(text(
-            "INSERT INTO balances (account_id, month, amount)"
-            " VALUES (50, '2024-01', 100)"
-        ))
+        conn.execute(
+            text(
+                "INSERT INTO currencies (code, description) VALUES ('USD', 'US Dollar')"
+            )
+        )
+        conn.execute(
+            text("INSERT INTO categories (name, side) VALUES ('checking', 'asset')")
+        )
+        conn.execute(
+            text(
+                "INSERT INTO accounts"
+                " (id, name, description, category, currency, status)"
+                " VALUES (50, 'acct_seed', '', 'checking', 'USD', 'active')"
+            )
+        )
+        conn.execute(
+            text(
+                "INSERT INTO balances (account_id, month, amount)"
+                " VALUES (50, '2024-01', 100)"
+            )
+        )
 
     presenter = MagicMock(spec=AdminSeedStatusHistoryPresenter)
     use_case = SeedAccountStatusHistory(

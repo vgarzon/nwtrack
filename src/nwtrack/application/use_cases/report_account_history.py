@@ -62,9 +62,7 @@ class ReportAccountBalanceHistory:
             account_name = account.name
             category_name = account.category_name
             currency_code = account.currency_code
-            institution_name = (
-                account.institution.name if account.institution else None
-            )
+            institution_name = account.institution.name if account.institution else None
 
         rows: list[AccountBalanceHistoryRow] = []
         actual_months: list[Month] = []

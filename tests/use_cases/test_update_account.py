@@ -488,8 +488,7 @@ def test_account_updater_records_history_row_on_status_change(
         history = uow.account_status_history.get_all()
 
     transition_rows = [
-        r for r in history
-        if r.account_id == 1 and r.status == Status.INACTIVE
+        r for r in history if r.account_id == 1 and r.status == Status.INACTIVE
     ]
     assert len(transition_rows) == 1
     assert transition_rows[0].effective_month == Month(today.year, today.month)

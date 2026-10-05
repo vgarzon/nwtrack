@@ -372,8 +372,7 @@ class AccountsRepository(AccountsRepositoryProtocol):
 
     def _max_display_order(self) -> int:
         return (
-            self._session.execute(select(func.max(Account.display_order))).scalar()
-            or 0
+            self._session.execute(select(func.max(Account.display_order))).scalar() or 0
         )
 
     def _renumber_display_order(self) -> None:
@@ -411,8 +410,7 @@ class AccountsRepository(AccountsRepositoryProtocol):
             currency_code=record["currency"],
             status=Status(record["status"]),
             display_order=int(record.get("display_order") or 0),
-            is_hidden=str(record.get("is_hidden", "")).strip().lower()
-            in ("true", "1"),
+            is_hidden=str(record.get("is_hidden", "")).strip().lower() in ("true", "1"),
         )
         # Set id after construction (init=False in ORM model)
         # Only set id if it's present and non-zero (0 means auto-generate)

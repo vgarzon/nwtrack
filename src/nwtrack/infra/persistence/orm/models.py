@@ -136,12 +136,8 @@ class Account(MappedAsDataclass, Base):
         default=Status.ACTIVE,
     )
     # 1-based display slot; 0 means "unassigned" and is replaced by max+1 on insert.
-    display_order: Mapped[int] = mapped_column(
-        Integer, default=0, server_default="0"
-    )
-    is_hidden: Mapped[bool] = mapped_column(
-        Boolean, default=False, server_default="0"
-    )
+    display_order: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    is_hidden: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     category: Mapped[Category] = relationship(
         "Category",
         foreign_keys="[Account.category_name]",
@@ -203,9 +199,7 @@ class AccountStatusHistory(MappedAsDataclass, Base):
 
     __tablename__ = "account_status_history"
     __table_args__ = (
-        UniqueConstraint(
-            "account_id", "effective_month", name="uq_ash_account_month"
-        ),
+        UniqueConstraint("account_id", "effective_month", name="uq_ash_account_month"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)

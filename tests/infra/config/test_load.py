@@ -237,9 +237,7 @@ def test_env_var_overrides_toml_value(
     assert getattr(settings, field) == expected
 
 
-def test_log_file_env_override(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_log_file_env_override(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     config_file = _write_config(
         tmp_path,
         """
@@ -336,7 +334,7 @@ def test_load_settings_reads_override_file(monkeypatch, tmp_path: Path) -> None:
     from nwtrack.infra.config import paths
 
     config_file = tmp_path / "explicit.toml"
-    config_file.write_text("[logging]\nlog_file_level = \"DEBUG\"\n")
+    config_file.write_text('[logging]\nlog_file_level = "DEBUG"\n')
     paths.set_config_file_override(
         paths.ConfigFileOverride(config_file, paths.ConfigFileOverrideSource.ENV)
     )

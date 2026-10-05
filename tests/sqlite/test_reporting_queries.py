@@ -99,9 +99,7 @@ def _setup_history_reporting_fixture(base_container, sample_entities):
         uow.balances.insert(Balance(account_id=1, month=end_month, amount=200))
         uow.balances.insert(Balance(account_id=2, month=end_month, amount=500))
         uow.balances.insert(Balance(account_id=3, month=end_month, amount=600))
-        uow.balances.insert(
-            Balance(account_id=4, month=end_month, amount=200)
-        )
+        uow.balances.insert(Balance(account_id=4, month=end_month, amount=200))
         uow.balances.insert(
             Balance(account_id=swiss_account.id, month=end_month, amount=700)
         )
@@ -488,12 +486,14 @@ def _setup_historical_fixture(base_container, sample_entities):
     with _uow_factory(container) as uow:
         # Clear any existing history, then set up test-specific history rows
         ash = AccountStatusHistory
-        uow.account_status_history.insert_many([
-            ash(account_id=1, status=Status.ACTIVE, effective_month=jan),
-            ash(account_id=1, status=Status.INACTIVE, effective_month=feb),
-            ash(account_id=2, status=Status.ACTIVE, effective_month=jan),
-            ash(account_id=2, status=Status.ACTIVE, effective_month=feb),
-        ])
+        uow.account_status_history.insert_many(
+            [
+                ash(account_id=1, status=Status.ACTIVE, effective_month=jan),
+                ash(account_id=1, status=Status.INACTIVE, effective_month=feb),
+                ash(account_id=2, status=Status.ACTIVE, effective_month=jan),
+                ash(account_id=2, status=Status.ACTIVE, effective_month=feb),
+            ]
+        )
         uow.balances.insert(Balance(account_id=1, month=jan, amount=100))
         uow.balances.insert(Balance(account_id=1, month=feb, amount=200))
         uow.balances.insert(Balance(account_id=2, month=jan, amount=300))

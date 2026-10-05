@@ -159,8 +159,7 @@ def test_account_creation_presenter_exposes_tag_ids_field(monkeypatch) -> None:
     assert data.tag_ids == []
     output = console.export_text()
     assert (
-        "No institutions available. Continuing with no institution assigned."
-        in output
+        "No institutions available. Continuing with no institution assigned." in output
     )
     assert "No tags available. Continuing with no tags assigned." in output
 

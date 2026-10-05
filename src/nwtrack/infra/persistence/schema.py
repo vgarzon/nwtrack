@@ -158,7 +158,9 @@ class SchemaManager:
                         select(AccountStatusHistory)
                         .where(AccountStatusHistory.account_id == account.id)
                         .order_by(AccountStatusHistory.effective_month)
-                    ).scalars().all()
+                    )
+                    .scalars()
+                    .all()
                 )
 
                 balance_months = list(
@@ -166,7 +168,9 @@ class SchemaManager:
                         select(Balance.month)
                         .where(Balance.account_id == account.id)
                         .order_by(Balance.month)
-                    ).scalars().all()
+                    )
+                    .scalars()
+                    .all()
                 )
 
                 first_month: Month = balance_months[0] if balance_months else sentinel
@@ -176,35 +180,43 @@ class SchemaManager:
 
                 if account.status == Status.ACTIVE:
                     if not existing:
-                        session.add(AccountStatusHistory(
-                            account_id=account.id,
-                            status=Status.ACTIVE,
-                            effective_month=first_month,
-                        ))
+                        session.add(
+                            AccountStatusHistory(
+                                account_id=account.id,
+                                status=Status.ACTIVE,
+                                effective_month=first_month,
+                            )
+                        )
                         seeded += 1
                     else:
                         skipped += 1
                 else:
                     if not existing:
                         if last_month is not None and last_month != first_month:
-                            session.add(AccountStatusHistory(
-                                account_id=account.id,
-                                status=Status.ACTIVE,
-                                effective_month=first_month,
-                            ))
-                            session.add(AccountStatusHistory(
-                                account_id=account.id,
-                                status=account.status,
-                                effective_month=last_month,
-                            ))
+                            session.add(
+                                AccountStatusHistory(
+                                    account_id=account.id,
+                                    status=Status.ACTIVE,
+                                    effective_month=first_month,
+                                )
+                            )
+                            session.add(
+                                AccountStatusHistory(
+                                    account_id=account.id,
+                                    status=account.status,
+                                    effective_month=last_month,
+                                )
+                            )
                         else:
-                            session.add(AccountStatusHistory(
-                                account_id=account.id,
-                                status=account.status,
-                                effective_month=(
-                                    last_month if last_month else first_month
-                                ),
-                            ))
+                            session.add(
+                                AccountStatusHistory(
+                                    account_id=account.id,
+                                    status=account.status,
+                                    effective_month=(
+                                        last_month if last_month else first_month
+                                    ),
+                                )
+                            )
                         seeded += 1
                     elif (
                         len(existing) == 1
@@ -215,16 +227,20 @@ class SchemaManager:
                         # Migrate old-style seed: single non-active row → two rows
                         session.delete(existing[0])
                         session.flush()
-                        session.add(AccountStatusHistory(
-                            account_id=account.id,
-                            status=Status.ACTIVE,
-                            effective_month=first_month,
-                        ))
-                        session.add(AccountStatusHistory(
-                            account_id=account.id,
-                            status=account.status,
-                            effective_month=last_month,
-                        ))
+                        session.add(
+                            AccountStatusHistory(
+                                account_id=account.id,
+                                status=Status.ACTIVE,
+                                effective_month=first_month,
+                            )
+                        )
+                        session.add(
+                            AccountStatusHistory(
+                                account_id=account.id,
+                                status=account.status,
+                                effective_month=last_month,
+                            )
+                        )
                         migrated += 1
                     else:
                         skipped += 1
@@ -234,7 +250,9 @@ class SchemaManager:
         logger.info(
             "account_status_history seeding complete: "
             "%d seeded, %d migrated, %d skipped.",
-            seeded, migrated, skipped,
+            seeded,
+            migrated,
+            skipped,
         )
         return SeedStatusHistoryResult(
             seeded=seeded, migrated=migrated, skipped=skipped

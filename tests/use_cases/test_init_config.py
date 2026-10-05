@@ -60,9 +60,7 @@ def _no_shadow(monkeypatch) -> None:
     )
 
 
-def test_writes_default_config_when_none_exists(
-    monkeypatch, tmp_path: Path
-) -> None:
+def test_writes_default_config_when_none_exists(monkeypatch, tmp_path: Path) -> None:
     config_dir = tmp_path / "config-dir"
     _patch_defaults(monkeypatch, tmp_path, config_dir)
     _no_shadow(monkeypatch)
@@ -85,9 +83,7 @@ def test_writes_default_config_when_none_exists(
     assert "confirm_shadow" not in presenter.calls
 
 
-def test_declines_overwrite_leaves_file_untouched(
-    monkeypatch, tmp_path: Path
-) -> None:
+def test_declines_overwrite_leaves_file_untouched(monkeypatch, tmp_path: Path) -> None:
     config_dir = tmp_path / "config-dir"
     config_dir.mkdir(parents=True)
     target = config_dir / "config.toml"
@@ -122,9 +118,7 @@ def test_confirms_overwrite_replaces_file(monkeypatch, tmp_path: Path) -> None:
     assert "show_success" in presenter.calls
 
 
-def test_declines_shadow_leaves_no_file_written(
-    monkeypatch, tmp_path: Path
-) -> None:
+def test_declines_shadow_leaves_no_file_written(monkeypatch, tmp_path: Path) -> None:
     """No file at the target location, but a lower-priority config.toml is
     active — declining the shadow warning must not write anything."""
     config_dir = tmp_path / "config-dir"

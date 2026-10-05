@@ -405,6 +405,7 @@ class TestCategoriesListScreen:
                 await self._navigate_to_categories(pilot)
                 assert isinstance(app.screen, CategoriesListScreen)
                 from textual.widgets import DataTable
+
                 table = app.screen.query_one("#categories-table", DataTable)
                 assert table.row_count == 1
 
@@ -561,6 +562,7 @@ class TestConfirmModal:
                 await pilot.pause()
                 modal = app.query_one(ConfirmModal)
                 from textual.widgets import Button
+
                 btn = modal.query_one("#btn-confirm", Button)
                 assert str(btn.label) == "Yes"
 

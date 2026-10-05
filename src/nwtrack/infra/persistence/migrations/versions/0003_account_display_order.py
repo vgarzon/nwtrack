@@ -30,9 +30,7 @@ _TABLE_ARGS = (
 def upgrade() -> None:
     with op.batch_alter_table("accounts", schema=None, table_args=_TABLE_ARGS) as b:
         b.add_column(
-            sa.Column(
-                "display_order", sa.Integer(), nullable=False, server_default="0"
-            )
+            sa.Column("display_order", sa.Integer(), nullable=False, server_default="0")
         )
         b.add_column(
             sa.Column("is_hidden", sa.Boolean(), nullable=False, server_default="0")

@@ -41,10 +41,12 @@ class TestAccountStatusHistoryRepository:
         init_db_tables_w_entities(container, sample_entities)
 
         with _uow_factory(container) as uow:
-            uow.account_status_history.insert_many([
-                _make_entry(1, Status.INACTIVE, Month(2025, 6)),
-                _make_entry(2, Status.INACTIVE, Month(2025, 6)),
-            ])
+            uow.account_status_history.insert_many(
+                [
+                    _make_entry(1, Status.INACTIVE, Month(2025, 6)),
+                    _make_entry(2, Status.INACTIVE, Month(2025, 6)),
+                ]
+            )
             rows = uow.account_status_history.get_all()
 
         assert any(
@@ -75,10 +77,12 @@ class TestAccountStatusHistoryRepository:
         init_db_tables_w_entities(container, sample_entities)
 
         with _uow_factory(container) as uow:
-            uow.account_status_history.insert_many([
-                _make_entry(1, Status.ACTIVE, Month(2023, 6)),
-                _make_entry(1, Status.INACTIVE, Month(2024, 3)),
-            ])
+            uow.account_status_history.insert_many(
+                [
+                    _make_entry(1, Status.ACTIVE, Month(2023, 6)),
+                    _make_entry(1, Status.INACTIVE, Month(2024, 3)),
+                ]
+            )
             result = uow.account_status_history.get_effective_status(1, Month(2024, 6))
 
         assert result == Status.INACTIVE
@@ -132,30 +136,41 @@ class TestSchemaSeeding:
         engine = base_container.resolve(SQLiteSessionManager).engine
 
         with engine.begin() as conn:
-            conn.execute(text(
-                "INSERT INTO currencies (code, description) VALUES ('USD', 'US Dollar')"
-            ))
-            conn.execute(text(
-                "INSERT INTO categories (name, side) VALUES ('checking', 'asset')"
-            ))
-            conn.execute(text(
-                "INSERT INTO accounts (id, name, description, category, "
-                "currency, status) VALUES "
-                "(10, 'acct_a', '', 'checking', 'USD', 'active')"
-            ))
-            conn.execute(text(
-                "INSERT INTO accounts (id, name, description, category, "
-                "currency, status) VALUES "
-                "(11, 'acct_b', '', 'checking', 'USD', 'inactive')"
-            ))
-            conn.execute(text(
-                "INSERT INTO balances (account_id, month, amount) "
-                "VALUES (10, '2023-03', 100)"
-            ))
-            conn.execute(text(
-                "INSERT INTO balances (account_id, month, amount) "
-                "VALUES (10, '2023-01', 200)"
-            ))
+            conn.execute(
+                text(
+                    "INSERT INTO currencies (code, description)"
+                    " VALUES ('USD', 'US Dollar')"
+                )
+            )
+            conn.execute(
+                text("INSERT INTO categories (name, side) VALUES ('checking', 'asset')")
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO accounts (id, name, description, category, "
+                    "currency, status) VALUES "
+                    "(10, 'acct_a', '', 'checking', 'USD', 'active')"
+                )
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO accounts (id, name, description, category, "
+                    "currency, status) VALUES "
+                    "(11, 'acct_b', '', 'checking', 'USD', 'inactive')"
+                )
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO balances (account_id, month, amount) "
+                    "VALUES (10, '2023-03', 100)"
+                )
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO balances (account_id, month, amount) "
+                    "VALUES (10, '2023-01', 200)"
+                )
+            )
 
         SchemaManager(engine).seed_account_status_history()
 
@@ -165,11 +180,15 @@ class TestSchemaSeeding:
         from nwtrack.infra.persistence.orm.models import AccountStatusHistory
 
         with Session(engine) as session:
-            rows = session.execute(
-                select(AccountStatusHistory)
-                .where(AccountStatusHistory.account_id.in_([10, 11]))
-                .order_by(AccountStatusHistory.account_id)
-            ).scalars().all()
+            rows = (
+                session.execute(
+                    select(AccountStatusHistory)
+                    .where(AccountStatusHistory.account_id.in_([10, 11]))
+                    .order_by(AccountStatusHistory.account_id)
+                )
+                .scalars()
+                .all()
+            )
 
         assert len(rows) == 2
         acct_a = next(r for r in rows if r.account_id == 10)
@@ -187,17 +206,22 @@ class TestSchemaSeeding:
         engine = base_container.resolve(SQLiteSessionManager).engine
 
         with engine.begin() as conn:
-            conn.execute(text(
-                "INSERT INTO currencies (code, description) VALUES ('USD', 'US Dollar')"
-            ))
-            conn.execute(text(
-                "INSERT INTO categories (name, side) VALUES ('checking', 'asset')"
-            ))
-            conn.execute(text(
-                "INSERT INTO accounts (id, name, description, category, "
-                "currency, status) VALUES "
-                "(20, 'acct_c', '', 'checking', 'USD', 'active')"
-            ))
+            conn.execute(
+                text(
+                    "INSERT INTO currencies (code, description)"
+                    " VALUES ('USD', 'US Dollar')"
+                )
+            )
+            conn.execute(
+                text("INSERT INTO categories (name, side) VALUES ('checking', 'asset')")
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO accounts (id, name, description, category, "
+                    "currency, status) VALUES "
+                    "(20, 'acct_c', '', 'checking', 'USD', 'active')"
+                )
+            )
 
         schema_mgr = SchemaManager(engine)
         schema_mgr.seed_account_status_history()
@@ -209,11 +233,15 @@ class TestSchemaSeeding:
         from nwtrack.infra.persistence.orm.models import AccountStatusHistory
 
         with Session(engine) as session:
-            rows = session.execute(
-                select(AccountStatusHistory).where(
-                    AccountStatusHistory.account_id == 20
+            rows = (
+                session.execute(
+                    select(AccountStatusHistory).where(
+                        AccountStatusHistory.account_id == 20
+                    )
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
 
         assert len(rows) == 1
 
@@ -227,25 +255,34 @@ class TestSchemaSeeding:
         engine = base_container.resolve(SQLiteSessionManager).engine
 
         with engine.begin() as conn:
-            conn.execute(text(
-                "INSERT INTO currencies (code, description) VALUES ('USD', 'US Dollar')"
-            ))
-            conn.execute(text(
-                "INSERT INTO categories (name, side) VALUES ('checking', 'asset')"
-            ))
-            conn.execute(text(
-                "INSERT INTO accounts (id, name, description, category, "
-                "currency, status) VALUES "
-                "(30, 'acct_d', '', 'checking', 'USD', 'inactive')"
-            ))
-            conn.execute(text(
-                "INSERT INTO balances (account_id, month, amount) "
-                "VALUES (30, '2022-01', 100)"
-            ))
-            conn.execute(text(
-                "INSERT INTO balances (account_id, month, amount) "
-                "VALUES (30, '2024-06', 200)"
-            ))
+            conn.execute(
+                text(
+                    "INSERT INTO currencies (code, description)"
+                    " VALUES ('USD', 'US Dollar')"
+                )
+            )
+            conn.execute(
+                text("INSERT INTO categories (name, side) VALUES ('checking', 'asset')")
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO accounts (id, name, description, category, "
+                    "currency, status) VALUES "
+                    "(30, 'acct_d', '', 'checking', 'USD', 'inactive')"
+                )
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO balances (account_id, month, amount) "
+                    "VALUES (30, '2022-01', 100)"
+                )
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO balances (account_id, month, amount) "
+                    "VALUES (30, '2024-06', 200)"
+                )
+            )
 
         SchemaManager(engine).seed_account_status_history()
 
@@ -255,11 +292,15 @@ class TestSchemaSeeding:
         from nwtrack.infra.persistence.orm.models import AccountStatusHistory
 
         with Session(engine) as session:
-            rows = session.execute(
-                select(AccountStatusHistory)
-                .where(AccountStatusHistory.account_id == 30)
-                .order_by(AccountStatusHistory.effective_month)
-            ).scalars().all()
+            rows = (
+                session.execute(
+                    select(AccountStatusHistory)
+                    .where(AccountStatusHistory.account_id == 30)
+                    .order_by(AccountStatusHistory.effective_month)
+                )
+                .scalars()
+                .all()
+            )
 
         assert len(rows) == 2
         assert rows[0].status == Status.ACTIVE
@@ -267,9 +308,7 @@ class TestSchemaSeeding:
         assert rows[1].status == Status.INACTIVE
         assert rows[1].effective_month == Month(2024, 6)
 
-    def test_seeding_migrates_old_style_inactive_row(
-        self, base_container
-    ) -> None:
+    def test_seeding_migrates_old_style_inactive_row(self, base_container) -> None:
         from sqlalchemy import text
 
         from nwtrack.infra.db.sqlite.manager import SQLiteSessionManager
@@ -277,31 +316,42 @@ class TestSchemaSeeding:
         engine = base_container.resolve(SQLiteSessionManager).engine
 
         with engine.begin() as conn:
-            conn.execute(text(
-                "INSERT INTO currencies (code, description) VALUES ('USD', 'US Dollar')"
-            ))
-            conn.execute(text(
-                "INSERT INTO categories (name, side) VALUES ('checking', 'asset')"
-            ))
-            conn.execute(text(
-                "INSERT INTO accounts (id, name, description, category, "
-                "currency, status) VALUES "
-                "(40, 'acct_e', '', 'checking', 'USD', 'inactive')"
-            ))
-            conn.execute(text(
-                "INSERT INTO balances (account_id, month, amount) "
-                "VALUES (40, '2021-03', 500)"
-            ))
-            conn.execute(text(
-                "INSERT INTO balances (account_id, month, amount) "
-                "VALUES (40, '2023-09', 600)"
-            ))
+            conn.execute(
+                text(
+                    "INSERT INTO currencies (code, description)"
+                    " VALUES ('USD', 'US Dollar')"
+                )
+            )
+            conn.execute(
+                text("INSERT INTO categories (name, side) VALUES ('checking', 'asset')")
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO accounts (id, name, description, category, "
+                    "currency, status) VALUES "
+                    "(40, 'acct_e', '', 'checking', 'USD', 'inactive')"
+                )
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO balances (account_id, month, amount) "
+                    "VALUES (40, '2021-03', 500)"
+                )
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO balances (account_id, month, amount) "
+                    "VALUES (40, '2023-09', 600)"
+                )
+            )
             # Simulate old-style seed: single inactive row at first_month
-            conn.execute(text(
-                "INSERT INTO account_status_history "
-                "(account_id, status, effective_month) "
-                "VALUES (40, 'inactive', '2021-03')"
-            ))
+            conn.execute(
+                text(
+                    "INSERT INTO account_status_history "
+                    "(account_id, status, effective_month) "
+                    "VALUES (40, 'inactive', '2021-03')"
+                )
+            )
 
         SchemaManager(engine).seed_account_status_history()
 
@@ -311,11 +361,15 @@ class TestSchemaSeeding:
         from nwtrack.infra.persistence.orm.models import AccountStatusHistory
 
         with Session(engine) as session:
-            rows = session.execute(
-                select(AccountStatusHistory)
-                .where(AccountStatusHistory.account_id == 40)
-                .order_by(AccountStatusHistory.effective_month)
-            ).scalars().all()
+            rows = (
+                session.execute(
+                    select(AccountStatusHistory)
+                    .where(AccountStatusHistory.account_id == 40)
+                    .order_by(AccountStatusHistory.effective_month)
+                )
+                .scalars()
+                .all()
+            )
 
         assert len(rows) == 2
         assert rows[0].status == Status.ACTIVE
