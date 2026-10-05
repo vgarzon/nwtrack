@@ -3,6 +3,12 @@
 Notable shipped features, most recent first. This replaces the "Current Baseline" and completed
 phase list formerly kept in `specs/roadmap.md` — see `specs/backlog.md` for what's still open.
 
+- Account display order: accounts can be ordered and hidden. **Account lists now follow a user-set
+  display order instead of account id** (TUI Admin → Account Order: `u`/`d` move, `h` hide/unhide;
+  new accounts are appended). TUI balance, accounts and transfer views hide hidden accounts behind
+  an `h` toggle and the balance screen shows a "Visible rows" total; net worth and reports always
+  include hidden accounts. Adds migration `0003` (`accounts.display_order`, `accounts.is_hidden`);
+  both columns are exported to, and optional in, the accounts CSV
 - Fixed: TUI balances screen columns no longer collapse to header width after a transfer
 - Sample database command: `nwtrack admin create-sample-db PATH` creates a new database with a
   minimal fictional dataset (never overwrites an existing path, never touches the configured
