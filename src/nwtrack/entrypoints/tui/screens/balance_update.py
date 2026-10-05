@@ -88,30 +88,43 @@ class BalanceUpdateScreen(Screen):
         if self._month is None:
             return
         table = self.query_one("#balance-table", DataTable)
-        table.clear(columns=True)
-        table.add_columns(
-            "Institution",
-            "Account",
-            "Category",
-            "Side",
-            Text("Amount", justify="right"),
-        )
-
         self._balances = self._fetcher.get_month_balances(
             self._month, active_only=True, include_hidden=self._show_hidden
         )
+        headers: list[Text] = [
+            Text("Institution"),
+            Text("Account"),
+            Text("Category"),
+            Text("Side"),
+            Text("Amount", justify="right"),
+        ]
+        rows: list[list[Text]] = []
         for balance in self._balances:
             institution = (
                 balance.account.institution.name if balance.account.institution else ""
             )
-            table.add_row(
-                institution,
-                balance.account.name,
-                balance.account.category.name,
-                balance.account.category.side.value,
-                Text(self._format_amount(balance.amount), justify="right"),
-                key=str(balance.account.id),
+            rows.append(
+                [
+                    Text(institution),
+                    Text(balance.account.name),
+                    Text(balance.account.category.name),
+                    Text(balance.account.category.side.value),
+                    Text(self._format_amount(balance.amount), justify="right"),
+                ]
             )
+
+        # Explicit widths: DataTable's auto-width is recomputed only on idle and its
+        # render cache is not keyed by width, so a render in between left cells
+        # truncated for good (see specs/bugs: balance-table-truncated-after-transfer).
+        widths = [
+            max(header.cell_len, *(row[i].cell_len for row in rows), 0)
+            for i, header in enumerate(headers)
+        ]
+        table.clear(columns=True)
+        for header, width in zip(headers, widths, strict=True):
+            table.add_column(header, width=width)
+        for balance, row in zip(self._balances, rows, strict=True):
+            table.add_row(*row, key=str(balance.account.id))
 
     def _refresh_visible_total(self) -> None:
         """Per-currency sum of the shown rows, liabilities counted negative."""
@@ -212,11 +225,11 @@ class BalanceUpdateScreen(Screen):
             )
 
         table = self.query_one("#balance-table", DataTable)
-        table.update_cell_at(
-            Coordinate(row_idx, 4),
-            Text(self._format_amount(result), justify="right"),
-            update_width=True,
-        )
+        amount_text = Text(self._format_amount(result), justify="right")
+        # Columns have explicit widths (see _refresh_table), so widen by hand.
+        amount_column = table.ordered_columns[4]
+        amount_column.width = max(amount_column.width, amount_text.cell_len)
+        table.update_cell_at(Coordinate(row_idx, 4), amount_text, update_width=True)
         self._balances[row_idx] = self._fetcher.get_balance_for_account_id(
             self._month, account_id
         )
