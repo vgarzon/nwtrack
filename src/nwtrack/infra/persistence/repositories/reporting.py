@@ -71,9 +71,11 @@ class ReportingQueries:
         if currency_code is not None:
             stmt = stmt.where(Account.currency_code == currency_code)
 
-        results = self._session.execute(
-            stmt.distinct().order_by(Balance.month)
-        ).scalars().all()
+        results = (
+            self._session.execute(stmt.distinct().order_by(Balance.month))
+            .scalars()
+            .all()
+        )
         return list(results)
 
     def get_month_currencies(
@@ -86,8 +88,10 @@ class ReportingQueries:
             .join(Account, Balance.account_id == Account.id)
             .where(Balance.month == month)
         )
-        stmt = self._apply_status_scope(stmt, status_scope).distinct().order_by(
-            Account.currency_code
+        stmt = (
+            self._apply_status_scope(stmt, status_scope)
+            .distinct()
+            .order_by(Account.currency_code)
         )
         results = self._session.execute(stmt).scalars().all()
         return list(results)
@@ -106,8 +110,10 @@ class ReportingQueries:
             .where(Balance.month >= start_month)
             .where(Balance.month <= end_month)
         )
-        stmt = self._apply_status_scope(stmt, status_scope).distinct().order_by(
-            Account.currency_code
+        stmt = (
+            self._apply_status_scope(stmt, status_scope)
+            .distinct()
+            .order_by(Account.currency_code)
         )
         results = self._session.execute(stmt).scalars().all()
         return list(results)
@@ -566,9 +572,7 @@ class ReportingQueries:
                 .correlate(Account, Balance)
                 .scalar_subquery()
             )
-            stmt = stmt.where(
-                coalesce(history_subq, Account.status) == Status.ACTIVE
-            )
+            stmt = stmt.where(coalesce(history_subq, Account.status) == Status.ACTIVE)
         return stmt
 
     def _resolve_result_currency_code(

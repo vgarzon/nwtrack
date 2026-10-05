@@ -28,9 +28,7 @@ def _isolate_config_env(monkeypatch, tmp_path):
     monkeypatch.delenv("NWTRACK_CONFIG_FILE", raising=False)
     set_config_file_override(None)
     monkeypatch.setenv("NWTRACK_DATABASE__DB_FILE_PATH", ":memory:")
-    monkeypatch.setenv(
-        "NWTRACK_LOGGING__LOG_FILE", str(tmp_path / "nwtrack-test.log")
-    )
+    monkeypatch.setenv("NWTRACK_LOGGING__LOG_FILE", str(tmp_path / "nwtrack-test.log"))
     yield
     set_config_file_override(None)
 

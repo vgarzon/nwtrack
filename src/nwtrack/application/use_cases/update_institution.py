@@ -101,9 +101,7 @@ class UpdateInstitutionInteractive:
         with self._uow() as uow:
             uow.institutions.update(updated_institution)
 
-    def _verify_update(
-        self, institution_id: int, update_data: Institution
-    ) -> bool:
+    def _verify_update(self, institution_id: int, update_data: Institution) -> bool:
         retrieved_data = self._get_institution(institution_id)
         if retrieved_data is None:
             logger.error("Error retrieving updated institution.")

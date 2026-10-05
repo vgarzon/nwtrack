@@ -55,7 +55,9 @@ class TestNetWorthHistoryScreenNavigation:
         months = _make_months((2025, 1), (2025, 2))
         rows = [
             HistoryAggregationRow(Month(2025, 1), "asset", "asset", 100_000, "USD"),
-            HistoryAggregationRow(Month(2025, 1), "liability", "liability", 40_000, "USD"),  # noqa: E501
+            HistoryAggregationRow(
+                Month(2025, 1), "liability", "liability", 40_000, "USD"
+            ),  # noqa: E501
         ]
         result = _make_history_result(months, rows)
         app = _make_app(months, result)
@@ -77,7 +79,9 @@ class TestNetWorthHistoryScreenNavigation:
         months = _make_months((2025, 1), (2025, 2))
         rows = [
             HistoryAggregationRow(Month(2025, 1), "asset", "asset", 100_000, "USD"),
-            HistoryAggregationRow(Month(2025, 1), "liability", "liability", 40_000, "USD"),  # noqa: E501
+            HistoryAggregationRow(
+                Month(2025, 1), "liability", "liability", 40_000, "USD"
+            ),  # noqa: E501
         ]
         result = _make_history_result(months, rows)
         app = _make_app(months, result)
@@ -250,7 +254,9 @@ class TestNetWorthHistoryScreenNavigation:
         months = _make_months((2025, 1), (2025, 2))
         rows = [
             HistoryAggregationRow(Month(2025, 1), "asset", "asset", 100_000, "USD"),
-            HistoryAggregationRow(Month(2025, 1), "liability", "liability", 40_000, "USD"),  # noqa: E501
+            HistoryAggregationRow(
+                Month(2025, 1), "liability", "liability", 40_000, "USD"
+            ),  # noqa: E501
         ]
         result = _make_history_result(months, rows)
         app = _make_app(months, result)

@@ -27,7 +27,9 @@ class SeedAccountStatusHistory:
         self._presenter.show_result(result)
         logger.info(
             "Finished SeedAccountStatusHistory: seeded=%d migrated=%d skipped=%d",
-            result.seeded, result.migrated, result.skipped,
+            result.seeded,
+            result.migrated,
+            result.skipped,
         )
         return OperationResult(success=True, data=result)
 
@@ -69,9 +71,9 @@ def main() -> int:
         ),
     )
 
-    op: OperationResult[SeedStatusHistoryResult] = (
-        container.resolve(SeedAccountStatusHistory).run()
-    )
+    op: OperationResult[SeedStatusHistoryResult] = container.resolve(
+        SeedAccountStatusHistory
+    ).run()
     return 0 if op.success else 1
 
 

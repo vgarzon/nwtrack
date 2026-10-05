@@ -31,9 +31,7 @@ def test_config_init_invokes_use_case(monkeypatch) -> None:
         calls.append(True)
         return 0
 
-    monkeypatch.setattr(
-        "nwtrack.application.use_cases.init_config.main", fake_main
-    )
+    monkeypatch.setattr("nwtrack.application.use_cases.init_config.main", fake_main)
 
     result = runner.invoke(app, ["config", "init"])
 
@@ -49,9 +47,7 @@ def test_config_show_invokes_use_case(monkeypatch) -> None:
         calls.append(True)
         return 0
 
-    monkeypatch.setattr(
-        "nwtrack.application.use_cases.show_config.main", fake_main
-    )
+    monkeypatch.setattr("nwtrack.application.use_cases.show_config.main", fake_main)
 
     result = runner.invoke(app, ["config", "show"])
 

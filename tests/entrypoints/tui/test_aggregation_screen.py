@@ -53,7 +53,9 @@ def _make_app(
 
 class TestAggregationScreenNavigation:
     def test_screen_pushes_from_reports_menu(self) -> None:
-        months = _make_months((2025, 3),)
+        months = _make_months(
+            (2025, 3),
+        )
         groups = [SingleMonthAggregationGroup("cat1", "Savings", 50_000, "USD")]
         result = _make_agg_result(months[0], AggregationDimension.CATEGORY, groups)
         app = _make_app(months, result)
@@ -73,7 +75,9 @@ class TestAggregationScreenNavigation:
     def test_escape_from_screen_pops_to_reports_menu(self) -> None:
         from nwtrack.entrypoints.tui.screens.reports_menu import ReportsMenuScreen
 
-        months = _make_months((2025, 3),)
+        months = _make_months(
+            (2025, 3),
+        )
         groups = [SingleMonthAggregationGroup("cat1", "Savings", 50_000, "USD")]
         result = _make_agg_result(months[0], AggregationDimension.CATEGORY, groups)
         app = _make_app(months, result)
@@ -132,7 +136,9 @@ class TestAggregationScreenNavigation:
         asyncio.run(_run())
 
     def test_default_status_scope_is_historical(self) -> None:
-        months = _make_months((2025, 3),)
+        months = _make_months(
+            (2025, 3),
+        )
         groups = [SingleMonthAggregationGroup("cat1", "Savings", 50_000, "USD")]
         result = _make_agg_result(months[0], AggregationDimension.CATEGORY, groups)
         app = _make_app(months, result)
@@ -154,7 +160,9 @@ class TestAggregationScreenNavigation:
     def test_scope_selector_widget_is_present(self) -> None:
         from textual.widgets import Select
 
-        months = _make_months((2025, 3),)
+        months = _make_months(
+            (2025, 3),
+        )
         groups = [SingleMonthAggregationGroup("cat1", "Savings", 50_000, "USD")]
         result = _make_agg_result(months[0], AggregationDimension.CATEGORY, groups)
         app = _make_app(months, result)
@@ -177,7 +185,9 @@ class TestAggregationScreenNavigation:
     def test_scope_change_to_active_updates_status_scope(self) -> None:
         from textual.widgets import Select
 
-        months = _make_months((2025, 3),)
+        months = _make_months(
+            (2025, 3),
+        )
         groups = [SingleMonthAggregationGroup("cat1", "Savings", 50_000, "USD")]
         result = _make_agg_result(months[0], AggregationDimension.CATEGORY, groups)
         app = _make_app(months, result)
@@ -202,7 +212,9 @@ class TestAggregationScreenNavigation:
     def test_scope_change_to_all_updates_status_scope(self) -> None:
         from textual.widgets import Select
 
-        months = _make_months((2025, 3),)
+        months = _make_months(
+            (2025, 3),
+        )
         groups = [SingleMonthAggregationGroup("cat1", "Savings", 50_000, "USD")]
         result = _make_agg_result(months[0], AggregationDimension.CATEGORY, groups)
         app = _make_app(months, result)
@@ -225,7 +237,9 @@ class TestAggregationScreenNavigation:
         asyncio.run(_run())
 
     def test_default_dimension_is_category(self) -> None:
-        months = _make_months((2025, 3),)
+        months = _make_months(
+            (2025, 3),
+        )
         groups = [SingleMonthAggregationGroup("cat1", "Savings", 50_000, "USD")]
         result = _make_agg_result(months[0], AggregationDimension.CATEGORY, groups)
         app = _make_app(months, result)
@@ -248,7 +262,9 @@ class TestAggregationScreenHelpers:
     def test_show_error_makes_label_visible_and_clears_table(self) -> None:
         from textual.widgets import DataTable, Label
 
-        months = _make_months((2025, 3),)
+        months = _make_months(
+            (2025, 3),
+        )
         groups = [SingleMonthAggregationGroup("cat1", "Savings", 50_000, "USD")]
         result = _make_agg_result(months[0], AggregationDimension.CATEGORY, groups)
         app = _make_app(months, result)

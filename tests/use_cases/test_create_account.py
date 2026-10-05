@@ -455,9 +455,9 @@ def test_account_creator_records_initial_status_history_row(
         lambda *args, **kwargs: True,
     )
 
-    result: OperationResult[tuple[int, int]] = (
-        configured_container.resolve(AccountCreator).run()
-    )
+    result: OperationResult[tuple[int, int]] = configured_container.resolve(
+        AccountCreator
+    ).run()
     assert result.success
     assert result.data is not None
     account_id, _ = result.data

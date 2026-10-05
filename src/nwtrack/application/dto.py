@@ -195,9 +195,9 @@ class ValidationResult:
 class SeedStatusHistoryResult:
     """Counts returned by SchemaManager.seed_account_status_history()."""
 
-    seeded: int    # accounts with no prior rows that received new rows
+    seeded: int  # accounts with no prior rows that received new rows
     migrated: int  # accounts whose old single-inactive row was replaced
-    skipped: int   # accounts left unchanged (already had correct rows)
+    skipped: int  # accounts left unchanged (already had correct rows)
 
 
 @dataclass(frozen=True)

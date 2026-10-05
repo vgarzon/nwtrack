@@ -174,9 +174,7 @@ class HistoryAggregatedBalanceReport:
 
         balance_counts = self._fetcher.get_balance_count_per_month()
         balance_counts.sort(key=lambda item: item[0], reverse=True)
-        selected_month = self._presenter.prompt_for_end_month_choice(
-            balance_counts[:3]
-        )
+        selected_month = self._presenter.prompt_for_end_month_choice(balance_counts[:3])
         if selected_month is None:
             self._presenter.show_no_end_month_selected_message()
             return None
