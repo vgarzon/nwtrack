@@ -123,7 +123,7 @@ The project includes a `justfile` for running common commands. Install `just` if
 # List all available commands
 just
 
-# Run all checks (lint + typecheck + test)
+# Run all checks (lint + format-check + typecheck + test)
 just check
 ```
 
@@ -155,8 +155,9 @@ just test-pattern <pattern>  # Run tests matching pattern
 just lint              # Run ruff linter
 just lint-fix          # Auto-fix linting issues
 just format            # Format code with ruff
+just format-check      # Verify formatting without changing files (part of `just check`)
 just typecheck         # Run mypy type checker
-just check             # Run all checks (lint + typecheck + test)
+just check             # Run all checks (lint + format-check + typecheck + test)
 
 # CLI/TUI commands
 just cli-help          # Show CLI help
