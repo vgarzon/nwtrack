@@ -727,3 +727,56 @@ class TestBalanceUpdateTableWidthAfterTransfer:
                 assert "A-rather-long-account-name" in app.export_screenshot()
 
         asyncio.run(_run())
+
+    def test_render_before_idle_does_not_cache_truncated_cells(self) -> None:
+        """A render landing between add_row and DataTable's idle pass must not stick.
+
+        DataTable recomputes auto column widths only on idle, and its cell render
+        cache is not keyed by width, so cells drawn in that window stayed truncated.
+        """
+        m = _month(2025, 1)
+        cat = _make_category("a-rather-long-category-name", Side.ASSET)
+        acc = _make_account(1, "A-rather-long-account-name", cat)
+        balance = Balance(account_id=1, month=m, amount=1000)
+        balance.account = acc
+
+        fetcher = MagicMock()
+        fetcher.get_recent_months.return_value = [m]
+        fetcher.get_month_balances.return_value = [balance]
+        fetcher.get_networth.return_value = None
+        uow_factory, _ = _make_uow_factory()
+        app = NWTrackApp(fetcher=fetcher, uow=uow_factory)
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await pilot.press("enter")
+                await pilot.pause()
+                screen = app.screen
+                assert isinstance(screen, BalanceUpdateScreen)
+                table = screen.query_one("#balance-table", DataTable)
+
+                screen._refresh_table()
+                # Simulate the screen being rendered before DataTable goes idle.
+                for y in range(3):
+                    table.render_line(y)
+                await pilot.pause()
+
+                rows = [table.render_line(y).text for y in range(3)]
+                assert "A-rather-long-account-name" in rows[1]
+
+        asyncio.run(_run())
+
+    def test_editing_amount_to_wider_value_widens_column(self) -> None:
+        app, _ = _make_balance_update_app(
+            current_amount=200, change_warning_threshold_pct=0
+        )
+
+        async def _run() -> None:
+            async with app.run_test() as pilot:
+                await _navigate_to_balances_and_open_edit(pilot)
+                await _submit_edit_amount(pilot, 9_999_999)
+                table = pilot.app.screen.query_one("#balance-table", DataTable)
+                await pilot.pause()
+                assert "9,999,999" in table.render_line(1).text
+
+        asyncio.run(_run())
