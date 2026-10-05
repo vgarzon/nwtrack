@@ -10,11 +10,11 @@ install:
 
 # Run all tests
 test:
-    uv run pytest tests/
+    uv run pytest -n auto tests/
 
 # Run tests with verbose output
 test-v:
-    uv run pytest -v tests/
+    uv run pytest -n auto -v tests/
 
 # Run specific test file
 test-file FILE:
