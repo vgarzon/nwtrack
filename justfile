@@ -36,12 +36,16 @@ lint-fix:
 format:
     uv run ruff format src/ tests/
 
+# Verify formatting without changing files
+format-check:
+    uv run ruff format --check src/ tests/
+
 # Type check with mypy
 typecheck:
     uv run mypy src/ tests/
 
-# Run all checks (lint + typecheck + test)
-check: lint typecheck test
+# Run all checks (lint + format-check + typecheck + test)
+check: lint format-check typecheck test
 
 # Run CLI help
 cli-help:
