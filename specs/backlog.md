@@ -24,6 +24,8 @@ item must still respect. Completed work is logged in `CHANGELOG.md`, not here.
 | idea | [HTML graphical reports](backlog/html-graphical-reports.md) | Export net worth/account history as self-contained HTML charts |
 | idea | [Reporting UX options](backlog/reporting-ux-options.md) | Long/wide history layout, CSV output for aggregated history reports |
 | idea | [Single-currency conversion reporting](backlog/single-currency-conversion-reporting.md) | Convert mixed-currency balances to one reporting currency |
+| idea | [Networth history liability ratio](backlog/networth-history-liability-ratio.md) | Add a liabilities-to-assets percentage column before "Delta" in the networth history report |
+| idea | [Account status transition history](backlog/account-status-transition-history.md) | Insert a baseline ACTIVE history row on deactivation and share one transition path between the use case and TUI |
 | idea | [CLI retirement](backlog/cli-retirement.md) | Drop Typer once the TUI covers everything and is validated |
 
 ## Working the backlog

@@ -25,6 +25,7 @@ this file; the pull request description is the permanent record of the root caus
 
 | Status | Severity | Item | One-liner |
 |---|---|---|---|
+| reported | minor | [transfer-modal-focus-stays-on-destination](bugs/transfer-modal-focus-stays-on-destination.md) | Transfer modal: focus stays on destination account instead of moving to the amount box |
 
 ## Working the bugs
 
